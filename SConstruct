@@ -63,3 +63,4 @@ else:
 
 allAliases = [softimageSpliceAlias]
 spliceEnv.Alias('all', allAliases)
+spliceEnv.Default(allAliases)
