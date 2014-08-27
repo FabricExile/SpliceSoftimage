@@ -58,9 +58,6 @@ if FABRIC_BUILD_TYPE == 'Debug' and FABRIC_BUILD_OS == 'Windows':
 
 # todo: install the python client
 
-# # install extensions
-# softimageFiles.extend(installExtensions(os.path.join(STAGE_DIR.abspath, 'Exts'), env, installedModule))
-
 alias = env.Alias('splicesoftimage', softimageFiles)
 spliceData = (alias, softimageFiles)
 Return('spliceData')
