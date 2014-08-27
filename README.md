@@ -12,7 +12,7 @@ This repository will be maintained and kept up to date by Fabric Technologies to
 Supported platforms
 ===================
 
-To date all three major platforms (windows, linux, osx) are supported, if you build the thirdparty dependencies for the corresponding platform.
+To date all Softimage supported platforms (windows, linux) are supported, if you build the thirdparty dependencies for the corresponding platform.
 
 Building
 ========
@@ -38,7 +38,7 @@ You can use the bash script below to clone the repositories accordingly:
 
 To inform scons where to find the Fabric Core includes as well as the thirdparty libraries, you need to set the following environment variables:
 
-* FABRIC_BUILD_OS: Should be the type of OS you are building for (Windows, Darwin, Linux)
+* FABRIC_BUILD_OS: Should be the type of OS you are building for (Windows, Linux)
 * FABRIC_BUILD_ARCH: The architecture you are building for (x86, x86_64)
 * FABRIC_BUILD_TYPE: The optimization type (Release, Debug)
 * FABRIC_SPLICE_VERSION: Refers to the version you want to build. Typically the name of the branch (for example 1.13.0)
