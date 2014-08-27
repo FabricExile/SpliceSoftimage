@@ -1,4 +1,18 @@
 import os, platform
+import shutil
+
+spliceEnv = Environment()
+
+def RemoveFolderCmd(target, source, env):
+  if os.path.exists(source[0].abspath):
+    shutil.rmtree(source[0].abspath)
+
+# define the clean target
+if 'clean' in COMMAND_LINE_TARGETS:
+  cleanBuild = spliceEnv.Command( spliceEnv.File('cleaning build folder'), spliceEnv.Dir('.build'), RemoveFolderCmd )
+  cleanStage = spliceEnv.Command( spliceEnv.File('cleaning stage folder'), spliceEnv.Dir('.stage'), RemoveFolderCmd )
+  spliceEnv.Alias('clean', [cleanBuild, cleanStage])
+  Return()
 
 # check environment variables
 for var in ['FABRIC_CAPI_DIR', 'FABRIC_SPLICE_VERSION', 'FABRIC_BUILD_OS', 'FABRIC_BUILD_ARCH', 'FABRIC_BUILD_TYPE', 'BOOST_DIR', 'SOFTIMAGE_INCLUDE_DIR', 'SOFTIMAGE_LIB_DIR', 'SOFTIMAGE_VERSION']:
@@ -9,8 +23,6 @@ for var in ['FABRIC_CAPI_DIR', 'FABRIC_SPLICE_VERSION', 'FABRIC_BUILD_OS', 'FABR
     if not os.path.exists(os.environ[var]):
       print 'The path for environment variable %s does not exist.' % var
       exit(0)
-
-spliceEnv = Environment()
 
 if not os.path.exists(spliceEnv.Dir('.stage').abspath):
   os.makedirs(spliceEnv.Dir('.stage').abspath)
