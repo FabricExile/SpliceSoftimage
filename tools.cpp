@@ -477,6 +477,16 @@ public:
 
     bool result = klevent.callMethod("Boolean", "isAccepted", 0, 0).getBoolean();
 
+    // The manipulation system has requested that a custom command be invoked. 
+    // Invoke the custom command passing the speficied args. 
+    CString customCommand(host.maybeGetMember("customCommand").getStringCString());
+    if(!customCommand.IsEmpty()){
+      CValue returnVal;
+      CValueArray args(1);
+      args[0] = CString(host.maybeGetMember("customCommandArg").getStringCString());
+      Application().ExecuteCommand(customCommand, args, returnVal);
+    }
+
     if(host.maybeGetMember("redrawRequested").getBoolean())
       in_ctxt.Redraw(true);
 
