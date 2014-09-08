@@ -104,6 +104,54 @@ void getCMatrix4FromRTVal(const FabricCore::RTVal & rtVal, MATH::CMatrix4 & valu
   value.SetValue(3, 3, getFloat64FromRTVal(row3.maybeGetMember("t")));
 }
 
+void getRTValFromCTransformation(const MATH::CTransformation & value, FabricCore::RTVal & rtVal)
+{
+  rtVal = FabricSplice::constructRTVal("Xfo");
+  FabricCore::RTVal sc = FabricSplice::constructRTVal("Vec3");
+  FabricCore::RTVal ori = FabricSplice::constructRTVal("Quat");
+  FabricCore::RTVal oriAxis = FabricSplice::constructRTVal("Vec3");
+  FabricCore::RTVal tr = FabricSplice::constructRTVal("Vec3");
+
+  MATH::CQuaternion quat = value.GetRotationQuaternion();
+
+  sc.setMember("x", FabricSplice::constructFloat64RTVal(value.GetSclX());
+  sc.setMember("y", FabricSplice::constructFloat64RTVal(value.GetSclY()));
+  sc.setMember("z", FabricSplice::constructFloat64RTVal(value.GetSclZ()));
+  rtVal.setMember("sc", sc);
+  oriAxis.setMember("x", FabricSplice::constructFloat64RTVal(quat.GetX()));
+  oriAxis.setMember("y", FabricSplice::constructFloat64RTVal(quat.GetY()));
+  oriAxis.setMember("z", FabricSplice::constructFloat64RTVal(quat.GetZ()));
+  ori.setMember("v", oriAxis);
+  ori.setMember("w", FabricSplice::constructFloat64RTVal(quat.GetW()));
+  rtVal.setMember("ori", ori);
+  tr.setMember("x", FabricSplice::constructFloat64RTVal(value.GetPosX()));
+  tr.setMember("y", FabricSplice::constructFloat64RTVal(value.GetPosY());
+  tr.setMember("z", FabricSplice::constructFloat64RTVal(value.GetPosZ());
+  rtVal.setMember("tr", tr);
+
+}
+
+void getCTransformationFromRTVal(const FabricCore::RTVal & rtVal, MATH::CTransformation & value)
+{
+  FabricCore::RTVal sc = rtVal.maybeGetMember("sc");
+  FabricCore::RTVal ori = rtVal.maybeGetMember("ori");
+  FabricCore::RTVal oriAxis = ori.maybeGetMember("v");
+  FabricCore::RTVal tr = rtVal.maybeGetMember("tr");
+
+  MATH::CQuaternion quat(	getFloat64FromRTVal(ori.maybeGetMember("w")),
+							getFloat64FromRTVal(oriAxis.maybeGetMember("x")), 
+							getFloat64FromRTVal(oriAxis.maybeGetMember("y")), 
+							getFloat64FromRTVal(oriAxis.maybeGetMember("z")));
+
+  value.SetSclX(getFloat64FromRTVal(sc.maybeGetMember("x")));
+  value.SetSclY(getFloat64FromRTVal(sc.maybeGetMember("y")));
+  value.SetSclZ(getFloat64FromRTVal(sc.maybeGetMember("z")));
+  value.SetRotationFromQuaternion(quat);
+  value.SetPosX(getFloat64FromRTVal(tr.maybeGetMember("x")));
+  value.SetPosY(getFloat64FromRTVal(tr.maybeGetMember("y")));
+  value.SetPosZ(getFloat64FromRTVal(tr.maybeGetMember("z")));
+}
+
 CRefArray getCRefArrayFromCString(const CString & targets)
 {
   if(targets.IsEmpty())
