@@ -281,7 +281,7 @@ class fabricSpliceTool {
 
 private:
 
-  FabricCore::RTVal mEventDispatcherHandle;
+  FabricCore::RTVal mEventDispatcher;
 
 public:
   fabricSpliceTool(){
@@ -296,10 +296,11 @@ public:
     in_ctxt.SetCursor( cursor );
 
     try{
-      mEventDispatcherHandle = FabricSplice::constructObjectRTVal("EventDispatcherHandle");
+		FabricCore::RTVal eventDispatcherHandle = FabricSplice::constructObjectRTVal("EventDispatcherHandle");
+		mEventDispatcher = eventDispatcherHandle.callMethod("EventDispatcher", "getEventDispatcher", 0, 0);
 
-      if(mEventDispatcherHandle.isValid()){
-        mEventDispatcherHandle.callMethod("", "activateManipulation", 0, 0);
+      if(mEventDispatcher.isValid()){
+        mEventDispatcher.callMethod("", "activateManipulation", 0, 0);
         in_ctxt.Redraw(true);
       }
     }
@@ -317,13 +318,13 @@ public:
 
   CStatus Deactivate( ToolContext& in_ctxt )
   {
-    if(mEventDispatcherHandle.isValid()){
+    if(mEventDispatcher.isValid()){
       // By deactivating the manipulation, we enable the manipulators to perform
       // cleanup, such as hiding paint brushes/gizmos. 
-      mEventDispatcherHandle.callMethod("", "deactivateManipulation", 0, 0);
+      mEventDispatcher.callMethod("", "deactivateManipulation", 0, 0);
       in_ctxt.Redraw(true);
 
-      mEventDispatcherHandle.invalidate();
+      mEventDispatcher.invalidate();
     }
 
     return CStatus::OK;
@@ -464,7 +465,7 @@ public:
     //////////////////////////
     // Invoke the event...
     try{
-      mEventDispatcherHandle.callMethod("Boolean", "onEvent", 1, &klevent);
+      mEventDispatcher.callMethod("Boolean", "onEvent", 1, &klevent);
     }
     catch(FabricCore::Exception e)    {
       xsiLogFunc(e.getDesc_cstr());
@@ -506,7 +507,7 @@ public:
 
   CStatus MouseMove( ToolContext& in_ctxt )
   {
-    if(!mEventDispatcherHandle.isValid())
+    if(!mEventDispatcher.isValid())
       return false;
 
     FabricCore::RTVal klevent = FabricSplice::constructObjectRTVal("MouseEvent");
@@ -524,7 +525,7 @@ public:
 
   CStatus MouseDrag( ToolContext& in_ctxt )
   {
-    if(!mEventDispatcherHandle.isValid())
+    if(!mEventDispatcher.isValid())
       return false;
     
     FabricCore::RTVal klevent = FabricSplice::constructObjectRTVal("MouseEvent");
@@ -541,7 +542,7 @@ public:
 
   CStatus MouseDown( ToolContext& in_ctxt )
   {
-    if(!mEventDispatcherHandle.isValid())
+    if(!mEventDispatcher.isValid())
       return false;
     
     FabricCore::RTVal klevent = FabricSplice::constructObjectRTVal("MouseEvent");
@@ -558,7 +559,7 @@ public:
 
   CStatus MouseUp( ToolContext& in_ctxt )
   {
-    if(!mEventDispatcherHandle.isValid())
+    if(!mEventDispatcher.isValid())
       return false;
     
     FabricCore::RTVal klevent = FabricSplice::constructObjectRTVal("MouseEvent");
@@ -575,7 +576,7 @@ public:
 
   CStatus MouseEnter( ToolContext &in_ctxt )
   {
-    if(!mEventDispatcherHandle.isValid())
+    if(!mEventDispatcher.isValid())
       return false;
     
     FabricCore::RTVal klevent = FabricSplice::constructObjectRTVal("MouseEvent");
@@ -590,7 +591,7 @@ public:
 
   CStatus MouseLeave( ToolContext &in_ctxt )
   {
-    if(!mEventDispatcherHandle.isValid())
+    if(!mEventDispatcher.isValid())
       return false;
     
 
@@ -606,7 +607,7 @@ public:
 
   CStatus KeyDown( ToolContext &in_ctxt )
   {
-    if(!mEventDispatcherHandle.isValid())
+    if(!mEventDispatcher.isValid())
       return false;
 
     FabricCore::RTVal klevent = FabricSplice::constructObjectRTVal("KeyEvent");
@@ -630,7 +631,7 @@ public:
 
   CStatus KeyUp( ToolContext &in_ctxt )
   {
-    if(!mEventDispatcherHandle.isValid())
+    if(!mEventDispatcher.isValid())
       return false;
     
 
@@ -655,7 +656,7 @@ public:
 
   CStatus ModifierChanged( ToolContext &in_ctxt )
   {
-    if(!mEventDispatcherHandle.isValid())
+    if(!mEventDispatcher.isValid())
       return false;
     
     FabricCore::RTVal klevent = FabricSplice::constructObjectRTVal("MouseEvent");
