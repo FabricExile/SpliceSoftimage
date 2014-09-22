@@ -61,7 +61,7 @@ FabricCore::RTVal & getDrawContext(int viewportWidth, int viewportHeight, XSI::C
 
   //////////////////////////
   // Setup the viewport
-  FabricCore::RTVal inlineViewport = FabricSplice::constructObjectRTVal("InlineViewport");
+  FabricCore::RTVal inlineViewport = sDrawContext.maybeGetMember("viewport");
   {
     FabricCore::RTVal viewportDim = FabricSplice::constructRTVal("Vec2");
     viewportDim.setMember("x", FabricSplice::constructFloat64RTVal(viewportWidth));
@@ -70,7 +70,7 @@ FabricCore::RTVal & getDrawContext(int viewportWidth, int viewportHeight, XSI::C
   }
 
   {
-    FabricCore::RTVal inlineCamera = FabricSplice::constructObjectRTVal("InlineCamera");
+    FabricCore::RTVal inlineCamera = inlineViewport.maybeGetMember("camera");
 
     Primitive cameraPrim = camera.GetActivePrimitive();
     LONG projType = cameraPrim.GetParameterValue(L"proj");
@@ -131,11 +131,7 @@ FabricCore::RTVal & getDrawContext(int viewportWidth, int viewportHeight, XSI::C
 
       inlineCamera.setMember("mat44", cameraMat);
     }
-
-    inlineViewport.setMember("camera", inlineCamera);
   }
-
-  sDrawContext.setMember("viewport", inlineViewport);
 
   return sDrawContext;
 }
