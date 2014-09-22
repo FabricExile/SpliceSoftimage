@@ -29,6 +29,9 @@ env.Append(CPPDEFINES = ["_SPLICE_SOFTIMAGE_VERSION="+str(SOFTIMAGE_VERSION[:4])
 env.MergeFlags(sharedCapiFlags)
 env.MergeFlags(spliceFlags)
 
+if FABRIC_BUILD_OS == 'Linux':
+  env.Append(LIBS=['boost_filesystem', 'boost_system'])
+
 target = 'FabricSpliceSoftimage' + SOFTIMAGE_VERSION
 
 softimageModule = env.SharedLibrary(target = target, source = Glob('*.cpp'), SHLIBPREFIX='')
