@@ -296,8 +296,8 @@ public:
     in_ctxt.SetCursor( cursor );
 
     try{
-		FabricCore::RTVal eventDispatcherHandle = FabricSplice::constructObjectRTVal("EventDispatcherHandle");
-		mEventDispatcher = eventDispatcherHandle.callMethod("EventDispatcher", "getEventDispatcher", 0, 0);
+        FabricCore::RTVal eventDispatcherHandle = FabricSplice::constructObjectRTVal("EventDispatcherHandle");
+        mEventDispatcher = eventDispatcherHandle.callMethod("EventDispatcher", "getEventDispatcher", 0, 0);
 
       if(mEventDispatcher.isValid()){
         mEventDispatcher.callMethod("", "activateManipulation", 0, 0);
@@ -354,17 +354,10 @@ public:
     // Note: In Softimage, we don't get independent events from Mousebutton down.
     klevent.setMember("button", FabricSplice::constructUInt32RTVal(buttons));
     klevent.setMember("buttons", FabricSplice::constructUInt32RTVal(buttons));
-
-    long modifiers = 0;
-    if(in_ctxt.IsShiftKeyDown())
-      modifiers += ModiferKey_Shift;
-    if(in_ctxt.IsControlKeyDown())
-      modifiers += ModiferKey_Ctrl;
-    klevent.setMember("modifiers", FabricSplice::constructUInt32RTVal(modifiers));
   }
 
 
-  bool InvokeKLEvent(ToolContext& in_ctxt, FabricCore::RTVal klevent){
+  bool InvokeKLEvent(ToolContext& in_ctxt, FabricCore::RTVal klevent, int eventType){
 
     //////////////////////////
     // Setup the viewport
@@ -453,14 +446,30 @@ public:
       }
     }
 
-    klevent.setMember("viewport", inlineViewport);
-
     //////////////////////////
     // Setup the Host
     // We cannot set an interface value via RTVals.
     FabricCore::RTVal host = FabricSplice::constructObjectRTVal("Host");
     host.setMember("hostName", FabricSplice::constructStringRTVal("Softimage"));
-    klevent.setMember("host", host);
+
+    // Note: the modifiers keys need to be testes.
+    long modifiers = in_ctxt.GetShortcutKeyModifiers();
+
+    // long modifiers = 0;
+    // if(in_ctxt.IsShiftKeyDown())
+    //   modifiers += ModiferKey_Shift;
+    // if(in_ctxt.IsControlKeyDown())
+    //   modifiers += ModiferKey_Ctrl;
+    // klevent.setMember("modifiers", FabricSplice::constructUInt32RTVal(modifiers));
+
+    //////////////////////////
+    // Configure the event...
+    std::vector<FabricCore::RTVal> args(4);
+    args[0] = host;
+    args[1] = inlineViewport;
+    args[2] = FabricSplice::constructUInt32RTVal(eventType);
+    args[3] = FabricSplice::constructUInt32RTVal(modifiers);
+    klevent.callMethod("", "init", 4, &args[0]);
 
     //////////////////////////
     // Invoke the event...
@@ -512,13 +521,9 @@ public:
 
     FabricCore::RTVal klevent = FabricSplice::constructObjectRTVal("MouseEvent");
 
-    int eventType = Event_MouseMove;
-    klevent.setMember("eventType", FabricSplice::constructUInt32RTVal(eventType));
-
-
     ConfigureMouseEvent(in_ctxt, klevent);
 
-    InvokeKLEvent(in_ctxt, klevent);
+    InvokeKLEvent(in_ctxt, klevent, Event_MouseMove);
 
     return CStatus::OK;
   }
@@ -530,12 +535,9 @@ public:
     
     FabricCore::RTVal klevent = FabricSplice::constructObjectRTVal("MouseEvent");
 
-    int eventType = Event_MouseMove;
-    klevent.setMember("eventType", FabricSplice::constructUInt32RTVal(eventType));
-
     ConfigureMouseEvent(in_ctxt, klevent);
 
-    InvokeKLEvent(in_ctxt, klevent);
+    InvokeKLEvent(in_ctxt, klevent, Event_MouseMove);
 
     return CStatus::OK;
   }
@@ -547,12 +549,9 @@ public:
     
     FabricCore::RTVal klevent = FabricSplice::constructObjectRTVal("MouseEvent");
 
-    int eventType = Event_MouseButtonPress;
-    klevent.setMember("eventType", FabricSplice::constructUInt32RTVal(eventType));
-
     ConfigureMouseEvent(in_ctxt, klevent);
 
-    InvokeKLEvent(in_ctxt, klevent);
+    InvokeKLEvent(in_ctxt, klevent, Event_MouseButtonPress);
 
     return CStatus::OK;
   }
@@ -564,12 +563,9 @@ public:
     
     FabricCore::RTVal klevent = FabricSplice::constructObjectRTVal("MouseEvent");
 
-    int eventType = Event_MouseButtonRelease;
-    klevent.setMember("eventType", FabricSplice::constructUInt32RTVal(eventType));
-
     ConfigureMouseEvent(in_ctxt, klevent);
 
-    InvokeKLEvent(in_ctxt, klevent);
+    InvokeKLEvent(in_ctxt, klevent, Event_MouseButtonRelease);
 
     return CStatus::OK;
   }
@@ -581,10 +577,7 @@ public:
     
     FabricCore::RTVal klevent = FabricSplice::constructObjectRTVal("MouseEvent");
 
-    int eventType = Event_Enter;
-    klevent.setMember("eventType", FabricSplice::constructUInt32RTVal(eventType));
-
-    InvokeKLEvent(in_ctxt, klevent);
+    InvokeKLEvent(in_ctxt, klevent, Event_Enter);
 
     return CStatus::OK;
   }
@@ -593,14 +586,10 @@ public:
   {
     if(!mEventDispatcher.isValid())
       return false;
-    
 
     FabricCore::RTVal klevent = FabricSplice::constructObjectRTVal("MouseEvent");
 
-    int eventType = Event_Leave;
-    klevent.setMember("eventType", FabricSplice::constructUInt32RTVal(eventType));
-
-    InvokeKLEvent(in_ctxt, klevent);
+    InvokeKLEvent(in_ctxt, klevent, Event_Leave);
 
     return CStatus::OK;
   }
@@ -612,19 +601,13 @@ public:
 
     FabricCore::RTVal klevent = FabricSplice::constructObjectRTVal("KeyEvent");
 
-    int eventType = Event_KeyPress;
-    klevent.setMember("eventType", FabricSplice::constructUInt32RTVal(eventType));
-
     int key = in_ctxt.GetShortcutKey();
     klevent.setMember("key", FabricSplice::constructUInt32RTVal(key));
-
-    long modifiers = in_ctxt.GetShortcutKeyModifiers();
-    klevent.setMember("modifiers", FabricSplice::constructUInt32RTVal(modifiers));
 
     long count = 1;
     klevent.setMember("count", FabricSplice::constructUInt32RTVal(count));
 
-    InvokeKLEvent(in_ctxt, klevent);
+    InvokeKLEvent(in_ctxt, klevent, Event_KeyPress);
 
     return CStatus::OK;
   }
@@ -633,23 +616,16 @@ public:
   {
     if(!mEventDispatcher.isValid())
       return false;
-    
 
     FabricCore::RTVal klevent = FabricSplice::constructObjectRTVal("KeyEvent");
-
-    int eventType = Event_KeyRelease;
-    klevent.setMember("eventType", FabricSplice::constructUInt32RTVal(eventType));
 
     int key = in_ctxt.GetShortcutKey();
     klevent.setMember("key", FabricSplice::constructUInt32RTVal(key));
 
-    long modifiers = in_ctxt.GetShortcutKeyModifiers();
-    klevent.setMember("modifiers", FabricSplice::constructUInt32RTVal(modifiers));
-
     long count = 1;
     klevent.setMember("count", FabricSplice::constructUInt32RTVal(count));
 
-    InvokeKLEvent(in_ctxt, klevent);
+    InvokeKLEvent(in_ctxt, klevent, Event_KeyRelease);
 
     return CStatus::OK;
   }
@@ -661,12 +637,9 @@ public:
     
     FabricCore::RTVal klevent = FabricSplice::constructObjectRTVal("MouseEvent");
 
-    int eventType = Event_ModifiedChange;
-    klevent.setMember("eventType", FabricSplice::constructUInt32RTVal(eventType));
-
     ConfigureMouseEvent(in_ctxt, klevent);
 
-    InvokeKLEvent(in_ctxt, klevent);
+    InvokeKLEvent(in_ctxt, klevent, Event_ModifiedChange);
 
     return CStatus::OK;
   }
