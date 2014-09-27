@@ -38,9 +38,17 @@ void xsiLogFunc(const char * message, unsigned int length)
   Application().LogMessage(CString("[Splice] ")+CString(message));
 }
 
+bool gErrorEnabled = true;
+void xsiErrorLogEnable(bool enable)
+{
+  gErrorEnabled = enable;
+}
+
 bool gErrorOccured = false;
 void xsiLogErrorFunc(const char * message, unsigned int length)
 {
+  if(!gErrorEnabled)
+    return;
   Application().LogMessage(CString("[Splice] ")+CString(message), siErrorMsg);
   gErrorOccured = true;
 }
