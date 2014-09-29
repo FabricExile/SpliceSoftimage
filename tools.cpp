@@ -491,9 +491,12 @@ public:
     // Invoke the custom command passing the speficied args. 
     CString customCommand(host.maybeGetMember("customCommand").getStringCString());
     if(!customCommand.IsEmpty()){
+      FabricCore::RTVal customCommandArgs = host.maybeGetMember("customCommandArgs");
       CValue returnVal;
-      CValueArray args(1);
-      args[0] = CString(host.maybeGetMember("customCommandArg").getStringCString());
+      CValueArray args(customCommandArgs.getArraySize());
+      for(int i=0; i<customCommandArgs.getArraySize(); i++){
+        args[i] = CString(customCommandArgs.getArrayElement(i).getStringCString());
+      }
       Application().ExecuteCommand(customCommand, args, returnVal);
     }
 
