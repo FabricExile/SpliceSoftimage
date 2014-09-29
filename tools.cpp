@@ -452,15 +452,12 @@ public:
     FabricCore::RTVal host = FabricSplice::constructObjectRTVal("Host");
     host.setMember("hostName", FabricSplice::constructStringRTVal("Softimage"));
 
-    // Note: the modifiers keys need to be testes.
-    long modifiers = in_ctxt.GetShortcutKeyModifiers();
-
-    // long modifiers = 0;
-    // if(in_ctxt.IsShiftKeyDown())
-    //   modifiers += ModiferKey_Shift;
-    // if(in_ctxt.IsControlKeyDown())
-    //   modifiers += ModiferKey_Ctrl;
-    // klevent.setMember("modifiers", FabricSplice::constructUInt32RTVal(modifiers));
+    long modifiers = 0;
+    if(in_ctxt.IsShiftKeyDown())
+      modifiers += ModiferKey_Shift;
+    if(in_ctxt.IsControlKeyDown())
+      modifiers += ModiferKey_Ctrl;
+    klevent.setMember("modifiers", FabricSplice::constructUInt32RTVal(modifiers));
 
     //////////////////////////
     // Configure the event...
