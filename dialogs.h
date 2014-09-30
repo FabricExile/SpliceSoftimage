@@ -46,7 +46,7 @@ private:
 class LicenseDialog
 {
 public:
-	LicenseDialog(const char * message);
+	LicenseDialog();
 	~LicenseDialog();
 	bool show();
 	XSI::CustomProperty getProp() { return _prop; }
