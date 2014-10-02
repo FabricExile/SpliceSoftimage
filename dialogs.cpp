@@ -1384,7 +1384,7 @@ SICALLBACK ImportSpliceDialog_PPGEvent( CRef& in_ctxt )
   return CStatus::OK;
 }
 
-LicenseDialog::LicenseDialog(const char * message)
+LicenseDialog::LicenseDialog()
 {
   CValueArray addpropArgs(5) ;
   addpropArgs[0] = L"CustomProperty";
@@ -1401,29 +1401,15 @@ LicenseDialog::LicenseDialog(const char * message)
   retVal = retValArray[0];
   _prop = (CRef)retVal;
 
-  FabricCore::Variant json = FabricCore::Variant::CreateFromJSON(message);
-  const FabricCore::Variant * hostIds = json.getDictValue("hostIds");
-  CString macAddress;
-  if(hostIds)
-  {
-    const FabricCore::Variant * hostId = hostIds->getArrayElement(0);
-    macAddress = hostId->getStringData();
-  }
-
   Parameter param;
   _prop.AddParameter(L"opName", CValue::siString, siPersistable, "", "", "", param);
   _prop.AddParameter(L"logoBitmap", CValue::siInt4, siReadOnly, "", "", 0, param);
   _prop.AddParameter(L"licenseServer", CValue::siString, siPersistable, "", "", "", param);
-  _prop.AddParameter(L"license", CValue::siString, siPersistable, "", "", "", param);
   
   CString licenseText;
-  licenseText += "Your copy of Fabric:Splice is unlicensed. Unlicensed copies will show this dialog and pause the execution for 15 seconds upon startup.\n\n";
-  licenseText += "Please enter the license text OR the server below.\nThe server format needs to be rlm://host:port,\nso for example rlm://127.0.0.1:5053.\n\n";
+  licenseText += "Please enter the license server below.\nThe server format needs to be rlm://host:port,\nso for example rlm://127.0.0.1:5053.\n\n";
   licenseText += "You may also follow the link below to request a new license.\n";
-  if(macAddress.Length() > 0)
-    licenseText += "Use this mac adress when requesting a license:\n"+macAddress+"\n";
-  licenseText += "\n";
-  licenseText += "http://fabricengine.com/creation/rlm-license/\n";
+  licenseText += "http://fabricengine.com/get-fabric/\n";
     
   PPGLayout layout = _prop.GetPPGLayout();
   layout.Clear();
@@ -1432,8 +1418,6 @@ LicenseDialog::LicenseDialog(const char * message)
   item.PutAttribute(siUINoLabel, true);
   layout.AddStaticText(licenseText);
   item = layout.AddItem("licenseServer", "Server");
-  layout.AddStaticText(L"OR");
-  item = layout.AddString("license", "License", true, 120);
 }
 
 LicenseDialog::~LicenseDialog()

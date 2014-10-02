@@ -38,9 +38,17 @@ void xsiLogFunc(const char * message, unsigned int length)
   Application().LogMessage(CString("[Splice] ")+CString(message));
 }
 
+bool gErrorEnabled = true;
+void xsiErrorLogEnable(bool enable)
+{
+  gErrorEnabled = enable;
+}
+
 bool gErrorOccured = false;
 void xsiLogErrorFunc(const char * message, unsigned int length)
 {
+  if(!gErrorEnabled)
+    return;
   Application().LogMessage(CString("[Splice] ")+CString(message), siErrorMsg);
   gErrorOccured = true;
 }
@@ -95,36 +103,7 @@ void xsiCompilerErrorFunc(unsigned int row, unsigned int col, const char * file,
 
 void xsiKLStatusFunc(const char * topic, unsigned int topicLength,  const char * message, unsigned int messageLength)
 {
-  if(std::string(topic) == "licensing" && Application().IsInteractive())
-  {
-    XSISPLICE_CATCH_BEGIN()
-    LicenseDialog dialog(message);
-    if(dialog.show())
-    {
-      CString server = dialog.getProp().GetParameterValue(L"licenseServer");
-      CString license = dialog.getProp().GetParameterValue(L"license");
-      if(!license.IsEmpty())
-        FabricSplice::setStandaloneLicense(license.GetAsciiString());
-      else if(!server.IsEmpty())
-        FabricSplice::setLicenseServer(server.GetAsciiString());
-
-      if(FabricSplice::isLicenseValid())
-      {
-        LONG result;
-        Application().GetUIToolkit().MsgBox(L"Your license has been validated successfully.", siMsgOkOnly | siMsgInformation, "Fabric:Splice", result);
-        return;
-      }
-      else
-      {
-        LONG result;
-        Application().GetUIToolkit().MsgBox(L"Invalid license.", siMsgOkOnly | siMsgCritical, "Fabric:Splice", result);
-        return;
-      }
-    }
-    XSISPLICE_CATCH_END_VOID()
-  }
-  else
-    Application().LogMessage(CString("[KL Status]: ")+CString(message));
+  Application().LogMessage(CString("[KL Status]: ")+CString(message));
 }
 
 CString xsiGetWorkgroupPath()
@@ -208,7 +187,7 @@ void xsiInitializeSplice()
 
   gSpliceInitialized = true;
   CString workgroupFolder = xsiGetWorkgroupPath();
-  CString extFolder = workgroupFolder + "/../../Exts"; // above the 'Applications' folder
+  CString extFolder = workgroupFolder + "/../../../Exts"; // above the 'Applications' folder
   FabricSplice::addExtFolder(extFolder.GetAsciiString());
 
   FabricSplice::Initialize();
