@@ -4,7 +4,19 @@
 
 import os, sys, platform, copy
 
-Import('parentEnv', 'FABRIC_CAPI_DIR', 'FABRIC_SPLICE_VERSION', 'STAGE_DIR', 'FABRIC_BUILD_OS', 'FABRIC_BUILD_TYPE', 'SOFTIMAGE_INCLUDE_DIR', 'SOFTIMAGE_LIB_DIR','SOFTIMAGE_VERSION', 'sharedCapiFlags', 'spliceFlags')
+Import(
+  'parentEnv',
+  'FABRIC_DIR',
+  'FABRIC_SPLICE_VERSION',
+  'STAGE_DIR',
+  'FABRIC_BUILD_OS',
+  'FABRIC_BUILD_TYPE',
+  'SOFTIMAGE_INCLUDE_DIR',
+  'SOFTIMAGE_LIB_DIR',
+  'SOFTIMAGE_VERSION',
+  'sharedCapiFlags',
+  'spliceFlags'
+  )
 
 env = parentEnv.Clone()
 
@@ -47,10 +59,14 @@ softimageFiles.append(env.Install(STAGE_DIR, env.File('license.txt')))
 
 # also install the FabricCore dynamic library
 if FABRIC_BUILD_OS == 'Linux':
-  env.Append(LINKFLAGS = [Literal('-Wl,-rpath,$ORIGIN/../../../../../CAPI/lib/')])
-else:
-  softimageFiles.append(env.Install(os.path.join(STAGE_DIR.abspath, 'Application', 'Plugins'), env.Glob(os.path.join(FABRIC_CAPI_DIR, 'lib', '*.dylib'))))
-  softimageFiles.append(env.Install(os.path.join(STAGE_DIR.abspath, 'Application', 'Plugins'), env.Glob(os.path.join(FABRIC_CAPI_DIR, 'lib', '*.dll'))))
+  env.Append(LINKFLAGS = [Literal('-Wl,-rpath,$ORIGIN/../../../../../lib/')])
+if FABRIC_BUILD_OS == 'Windows':
+  softimageFiles.append(
+    env.Install(
+      os.path.join(STAGE_DIR.abspath, 'Application', 'Plugins'),
+      env.Glob(os.path.join(FABRIC_DIR, 'bin', '*.dll'))
+      )
+    )
 
 # install PDB files on windows
 if FABRIC_BUILD_TYPE == 'Debug' and FABRIC_BUILD_OS == 'Windows':
