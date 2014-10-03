@@ -1836,6 +1836,9 @@ CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Va
   bool skipPicking = FabricSplice::Scripting::consumeBooleanArgument(scriptArgs, "skipPicking", false, true);
 
   FabricSplice::PersistenceInfo info;
+  info.hostAppName = FabricCore::Variant::CreateString("Softimage");
+  info.hostAppVersion = FabricCore::Variant::CreateString(Application().GetVersion().GetAsciiString());
+  info.filePath = FabricCore::Variant::CreateString(fileName.GetAsciiString());
 
   if(!_spliceGraph.loadFromFile(fileName.GetAsciiString(), &info))
     return CStatus::Unexpected;
