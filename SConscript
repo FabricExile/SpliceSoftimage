@@ -59,7 +59,7 @@ softimageFiles.append(env.Install(STAGE_DIR, env.File('license.txt')))
 
 # also install the FabricCore dynamic library
 if FABRIC_BUILD_OS == 'Linux':
-  env.Append(LINKFLAGS = [Literal('-Wl,-rpath,$ORIGIN/../../../../../lib/')])
+  env.Append(LINKFLAGS = [Literal('-Wl,-rpath,$ORIGIN/../../../../lib/')])
 if FABRIC_BUILD_OS == 'Windows':
   softimageFiles.append(
     env.Install(
