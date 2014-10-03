@@ -187,7 +187,7 @@ void xsiInitializeSplice()
 
   gSpliceInitialized = true;
   CString workgroupFolder = xsiGetWorkgroupPath();
-  CString extFolder = workgroupFolder + "/../../../Exts"; // above the 'Applications' folder
+  CString extFolder = workgroupFolder + "/../../Exts"; // above the 'SpliceIntegrations' folder
   FabricSplice::addExtFolder(extFolder.GetAsciiString());
 
   FabricSplice::Initialize();
