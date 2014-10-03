@@ -1965,7 +1965,8 @@ CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Va
     //     continue;
     //   }
     // }
-    else if(dataType.IsEqualNoCase(L"Mat44") || 
+    else if(dataType.IsEqualNoCase(L"Mat44") ||
+      dataType.IsEqualNoCase(L"Xfo") || 
       dataType.IsEqualNoCase(L"PolygonMesh") ||
       port.getOption("ICEAttribute").isString() || 
       (!isSoftimageFile || portType == SoftimagePortType_Port || portType == SoftimagePortType_ICE))
@@ -2008,7 +2009,8 @@ CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Va
       dataType.IsEqualNoCase(L"Integer") || 
       dataType.IsEqualNoCase(L"Scalar") || 
       dataType.IsEqualNoCase(L"String") || 
-      dataType.IsEqualNoCase(L"Mat44") || 
+      dataType.IsEqualNoCase(L"Mat44") ||
+	  dataType.IsEqualNoCase(L"Xfo") || 
       dataType.IsEqualNoCase(L"PolygonMesh"))
       && (!isSoftimageFile || portType == SoftimagePortType_Port)) || isICEAttribute)
     {

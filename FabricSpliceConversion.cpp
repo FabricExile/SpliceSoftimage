@@ -202,7 +202,17 @@ CString getSpliceDataTypeFromRefArray(const CRefArray &refs, const CString & por
 CString getSpliceDataTypeFromRef(const CRef &ref, const CString & portType)
 {
   if(KinematicState(ref).IsValid())
-    return "Mat44";
+	switch(portType)
+    {
+      case "":
+      {
+		return "Mat44";
+	  }
+      case "":
+      {
+		return "Xfo";
+	  }
+	}
   if(Primitive(ref).GetType().IsEqualNoCase("polymsh"))
     return "PolygonMesh";
   if(Primitive(ref).GetType().IsEqualNoCase("crvlist"))
