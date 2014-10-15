@@ -131,10 +131,10 @@ CStatus FabricSpliceBaseInterface::updateXSIOperator()
     }
     for(LONG i=0;i<targetRefs.GetCount();i++)
     {
-      // for IO ports, softimage changes the order of the 
+      // for IO ports, softimage changes the order of the
       // ports and the port indices.
       // since we need the port indices for figuring out the
-      // output array index for array ports, 
+      // output array index for array ports,
       // we'll have to rebuild all of it. the port layout
       // changes are as follows:
       //
@@ -231,7 +231,7 @@ CStatus FabricSpliceBaseInterface::updateXSIOperator()
       }
       else if(oldExpression.IsValid())
       {
-        // todo: expression copying doesn't work... 
+        // todo: expression copying doesn't work...
         // CString definition = oldExpression.GetParameterValue(L"definition");
         // Expression expression = param.AddExpression(definition);
         // if(expression.IsValid())
@@ -245,7 +245,7 @@ CStatus FabricSpliceBaseInterface::updateXSIOperator()
     CValue returnVal;
     CValueArray args(1);
     args[0] = oldRef.GetAsText();
-    Application().ExecuteCommand("DeleteObj", args, returnVal);    
+    Application().ExecuteCommand("DeleteObj", args, returnVal);
   }
 
   op = CustomOperator();
@@ -272,13 +272,13 @@ CStatus FabricSpliceBaseInterface::constructXSIParameters(CustomOperator & op, F
 
     float uiMin = port.getScalarOption("uiMin");
     float uiMax = port.getScalarOption("uiMax");
-    if(uiMin < uiMax) 
+    if(uiMin < uiMax)
     {
       minValue = uiMin;
       maxValue = uiMax;
       float uiSoftMin = port.getScalarOption("uiSoftMin");
       float uiSoftMax = port.getScalarOption("uiSoftMax");
-      if(uiSoftMin < uiSoftMax) 
+      if(uiSoftMin < uiSoftMax)
       {
         minSoftValue = uiSoftMin;
         maxSoftValue = uiSoftMax;
@@ -444,18 +444,18 @@ CStatus FabricSpliceBaseInterface::addXSIParameter(const CString &portName, cons
 CStatus FabricSpliceBaseInterface::addXSIPort(const CRefArray & targets, const CString &portName, const CString &dataType, const FabricSplice::Port_Mode &portMode, const XSI::CString & dgNode, bool validateDataType)
 {
   if(validateDataType &&
-     dataType != "Boolean" && 
-     dataType != "Integer" && 
-     dataType != "Scalar" && 
-     dataType != "String" && 
-     dataType != "Boolean[]" && 
-     dataType != "Integer[]" && 
-     dataType != "Scalar[]" && 
-     dataType != "String[]" && 
-     dataType != "Mat44" && 
+     dataType != "Boolean" &&
+     dataType != "Integer" &&
+     dataType != "Scalar" &&
+     dataType != "String" &&
+     dataType != "Boolean[]" &&
+     dataType != "Integer[]" &&
+     dataType != "Scalar[]" &&
+     dataType != "String[]" &&
+     dataType != "Mat44" &&
      dataType != "Mat44[]" &&
-     dataType != "Xfo" && 
-     dataType != "Xfo[]" && 
+     dataType != "Xfo" &&
+     dataType != "Xfo[]" &&
      dataType != "PolygonMesh" &&
      dataType != "PolygonMesh[]" &&
      dataType != "Lines" &&
@@ -601,7 +601,7 @@ CStatus FabricSpliceBaseInterface::rerouteXSIPort(const CString &portName, Fabri
       filter = L"geometry";
 
     targetRefs = PickObjectArray(
-      L"Pick new target for "+portName, L"Pick next target for "+portName, 
+      L"Pick new target for "+portName, L"Pick next target for "+portName,
       filter, (!portIt->second.isArray || isICEAttribute) ? 1 : 0);
   }
   if(targetRefs.GetCount() == 0)
@@ -804,9 +804,9 @@ CStatus FabricSpliceBaseInterface::transferInputPorts(OperatorContext & context)
       if(iceAttr.IsValid())
         convertInputICEAttribute(splicePort, it->second.dataType, iceAttr, xsiGeo);
     }
-    else if(it->second.dataType == "Boolean" || 
-       it->second.dataType == "Integer" || 
-       it->second.dataType == "Scalar" || 
+    else if(it->second.dataType == "Boolean" ||
+       it->second.dataType == "Integer" ||
+       it->second.dataType == "Scalar" ||
        it->second.dataType == "String")
     {
       FabricCore::RTVal rtVal;
@@ -814,9 +814,9 @@ CStatus FabricSpliceBaseInterface::transferInputPorts(OperatorContext & context)
       if(convertBasicInputParameter(it->second.dataType, value, rtVal))
         splicePort.setRTVal(rtVal);
     }
-    else if(it->second.dataType == "Boolean[]" || 
-       it->second.dataType == "Integer[]" || 
-       it->second.dataType == "Scalar[]" || 
+    else if(it->second.dataType == "Boolean[]" ||
+       it->second.dataType == "Integer[]" ||
+       it->second.dataType == "Scalar[]" ||
        it->second.dataType == "String[]")
     {
       CString singleDataType = it->second.dataType.GetSubString(0, it->second.dataType.Length()-2);
@@ -873,7 +873,7 @@ CStatus FabricSpliceBaseInterface::transferInputPorts(OperatorContext & context)
         KinematicState kine((CRef)context.GetInputValue(it->second.realPortName+portIndexStr));
         if(!kine.IsValid())
           break;
-        MATH::CTransformation transform = kine.GetTransform());
+        MATH::CTransformation transform = kine.GetTransform();
         FabricCore::RTVal rtVal;
         getRTValFromCTransformation(transform, rtVal);
         arrayVal.callMethod("", "push", 1, &rtVal);
@@ -916,7 +916,7 @@ CStatus FabricSpliceBaseInterface::transferInputPorts(OperatorContext & context)
         }
       }
       else
-      { 
+      {
         Primitive prim;
         if(it->second.portMode == FabricSplice::Port_Mode_IO && it->first == outPortName)
           prim = context.GetOutputTarget();
@@ -1073,7 +1073,7 @@ CStatus FabricSpliceBaseInterface::transferInputPorts(OperatorContext & context)
         }
       }
       else
-      { 
+      {
         Primitive prim;
         if(it->second.portMode == FabricSplice::Port_Mode_IO && it->first == outPortName)
           prim = context.GetOutputTarget();
@@ -1163,7 +1163,7 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
      it->second.dataType == "Integer" ||
      it->second.dataType == "Scalar" ||
      it->second.dataType == "String" ||
-     it->second.dataType == "Color" || 
+     it->second.dataType == "Color" ||
      it->second.dataType == "Vec3")
   {
     CValue value;
@@ -1333,7 +1333,7 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
       if(requireTopoUpdate)
       {
         xsiIndices.Resize(nbPolygons  + nbSamples);
-        FabricCore::RTVal indices = 
+        FabricCore::RTVal indices =
           FabricSplice::constructExternalArrayRTVal("UInt32", xsiIndices.GetCount(), &xsiIndices[0]);
         rtVal.callMethod("", "getTopologyAsCombinedExternalArray", 1, &indices);
       }
@@ -1919,7 +1919,7 @@ CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Va
       portType = (SoftimagePortType)portTypeFlag.getSInt32();
 
     CString dataType = port.getDataType();
-    if((dataType.IsEqualNoCase(L"Boolean") || 
+    if((dataType.IsEqualNoCase(L"Boolean") ||
       dataType.IsEqualNoCase(L"Integer") ||
       dataType.IsEqualNoCase(L"Scalar") ||
       dataType.IsEqualNoCase(L"String")) &&
@@ -1966,9 +1966,9 @@ CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Va
     //   }
     // }
     else if(dataType.IsEqualNoCase(L"Mat44") ||
-      dataType.IsEqualNoCase(L"Xfo") || 
+      dataType.IsEqualNoCase(L"Xfo") ||
       dataType.IsEqualNoCase(L"PolygonMesh") ||
-      port.getOption("ICEAttribute").isString() || 
+      port.getOption("ICEAttribute").isString() ||
       (!isSoftimageFile || portType == SoftimagePortType_Port || portType == SoftimagePortType_ICE))
     {
       portInfo info;
@@ -2005,12 +2005,12 @@ CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Va
       portType = (SoftimagePortType)portTypeFlag.getSInt32();
 
     if(((
-      dataType.IsEqualNoCase(L"Boolean") || 
-      dataType.IsEqualNoCase(L"Integer") || 
-      dataType.IsEqualNoCase(L"Scalar") || 
-      dataType.IsEqualNoCase(L"String") || 
+      dataType.IsEqualNoCase(L"Boolean") ||
+      dataType.IsEqualNoCase(L"Integer") ||
+      dataType.IsEqualNoCase(L"Scalar") ||
+      dataType.IsEqualNoCase(L"String") ||
       dataType.IsEqualNoCase(L"Mat44") ||
-	  dataType.IsEqualNoCase(L"Xfo") || 
+	  dataType.IsEqualNoCase(L"Xfo") ||
       dataType.IsEqualNoCase(L"PolygonMesh"))
       && (!isSoftimageFile || portType == SoftimagePortType_Port)) || isICEAttribute)
     {
@@ -2037,7 +2037,7 @@ CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Va
           filter = L"geometry";
 
         targetRefs = PickObjectArray(
-          L"Pick new target for "+portName, L"Pick next target for "+portName, 
+          L"Pick new target for "+portName, L"Pick next target for "+portName,
           filter, (!info.isArray || isICEAttribute) ? 1 : 0);
 
         if(isICEAttribute)
@@ -2054,9 +2054,9 @@ CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Va
       {
         if(targetRefs.GetCount() == 0)
         {
-          if(dataType.IsEqualNoCase(L"Boolean") || 
-          dataType.IsEqualNoCase(L"Integer") || 
-          dataType.IsEqualNoCase(L"Scalar") || 
+          if(dataType.IsEqualNoCase(L"Boolean") ||
+          dataType.IsEqualNoCase(L"Integer") ||
+          dataType.IsEqualNoCase(L"Scalar") ||
           dataType.IsEqualNoCase(L"String")) {
             continue;
           }
@@ -2113,12 +2113,12 @@ CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Va
 
   if(!allConnected)
     return CStatus::Unexpected;
-    
+
   if(!updateXSIOperator().Succeeded())
     return CStatus::Unexpected;
   else if(Application().IsInteractive() && !hideUI)
   {
-    showSpliceEcitor(getObjectID());
+    showSpliceEditor(getObjectID());
   }
 
   XSISPLICE_CATCH_END_CSTATUS()
@@ -2401,7 +2401,7 @@ CStatus FabricSpliceBaseInterface::cleanupForImport(Model & model)
     CRef propRef;
     propRef.Set(x3d.GetFullName()+".SpliceInfo");
     if(propRef.IsValid())
-      toDelete.Add(propRef);        
+      toDelete.Add(propRef);
 
     CRefArray children = x3d.GetChildren();
     for(ULONG j=0;j<children.GetCount();j++)

@@ -114,7 +114,7 @@ void getRTValFromCTransformation(const MATH::CTransformation & value, FabricCore
 
   MATH::CQuaternion quat = value.GetRotationQuaternion();
 
-  sc.setMember("x", FabricSplice::constructFloat64RTVal(value.GetSclX());
+  sc.setMember("x", FabricSplice::constructFloat64RTVal(value.GetSclX()));
   sc.setMember("y", FabricSplice::constructFloat64RTVal(value.GetSclY()));
   sc.setMember("z", FabricSplice::constructFloat64RTVal(value.GetSclZ()));
   rtVal.setMember("sc", sc);
@@ -125,8 +125,8 @@ void getRTValFromCTransformation(const MATH::CTransformation & value, FabricCore
   ori.setMember("w", FabricSplice::constructFloat64RTVal(quat.GetW()));
   rtVal.setMember("ori", ori);
   tr.setMember("x", FabricSplice::constructFloat64RTVal(value.GetPosX()));
-  tr.setMember("y", FabricSplice::constructFloat64RTVal(value.GetPosY());
-  tr.setMember("z", FabricSplice::constructFloat64RTVal(value.GetPosZ());
+  tr.setMember("y", FabricSplice::constructFloat64RTVal(value.GetPosY()));
+  tr.setMember("z", FabricSplice::constructFloat64RTVal(value.GetPosZ()));
   rtVal.setMember("tr", tr);
 
 }
@@ -201,18 +201,10 @@ CString getSpliceDataTypeFromRefArray(const CRefArray &refs, const CString & por
 
 CString getSpliceDataTypeFromRef(const CRef &ref, const CString & portType)
 {
+//TODO: add a custom picking tool that will give the ability to chose the data type depending of the context
   if(KinematicState(ref).IsValid())
-	switch(portType)
-    {
-      case "":
-      {
-		return "Mat44";
-	  }
-      case "":
-      {
-		return "Xfo";
-	  }
-	}
+	return "Mat44"
+	//return portType;
   if(Primitive(ref).GetType().IsEqualNoCase("polymsh"))
     return "PolygonMesh";
   if(Primitive(ref).GetType().IsEqualNoCase("crvlist"))

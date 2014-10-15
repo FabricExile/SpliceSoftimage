@@ -274,7 +274,7 @@ void editorSetObjectIDFromSelection()
   }
 }
 
-void showSpliceEcitor(unsigned int objectID)
+void showSpliceEditor(unsigned int objectID)
 {
   CustomProperty editorProp = editorPropGetEnsureExists();
   editorProp.PutParameterValue("objectID", (LONG)objectID);
@@ -448,6 +448,10 @@ SICALLBACK SpliceEditor_PPGEvent( CRef& in_ctxt )
             portName = "matrix";
           else if(dataType == "Mat44[]")
             portName = "matrices";
+          else if(dataType == "Xfo")
+            portName = "xfo";
+          else if(dataType == "Xfo[]")
+            portName = "xfos";
           else if(dataType == "Boolean")
             portName = "value";
           else if(dataType == "Integer")
@@ -1209,6 +1213,8 @@ void updateImportSpliceDialogGrids(CustomProperty & prop)
         portType == L"String" || 
         portType == L"Mat44" || 
         portType == L"Mat44[]" || 
+        portType == L"Xfo" ||
+        portType == L"Xfo[]" ||
         portType == L"PolygonMesh" ||
         portType == L"Lines") || 
         xsiPortType != SoftimagePortType_Port)
