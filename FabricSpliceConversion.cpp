@@ -203,7 +203,7 @@ CString getSpliceDataTypeFromRef(const CRef &ref, const CString & portType)
 {
 //TODO: add a custom picking tool that will give the ability to chose the data type depending of the context
   if(KinematicState(ref).IsValid())
-	return "Mat44"
+	return "Mat44";
 	//return portType;
   if(Primitive(ref).GetType().IsEqualNoCase("polymsh"))
     return "PolygonMesh";
