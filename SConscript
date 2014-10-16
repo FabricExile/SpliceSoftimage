@@ -68,6 +68,14 @@ if FABRIC_BUILD_OS == 'Windows':
       )
     )
 
+softimageFiles.append(
+  env.Install(
+    os.path.join(STAGE_DIR.abspath, 'Application', 'Plugins'),
+    env.File('FabricSplice_Python.py')
+    )
+  )
+
+
 # install PDB files on windows
 if FABRIC_BUILD_TYPE == 'Debug' and FABRIC_BUILD_OS == 'Windows':
   env['CCPDBFLAGS']  = ['${(PDB and "/Fd%s_incremental.pdb /Zi" % File(PDB)) or ""}']
