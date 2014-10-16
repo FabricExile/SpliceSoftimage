@@ -25,6 +25,8 @@
 #include <xsi_property.h>
 #include <xsi_argument.h>
 
+#include <boost/filesystem.hpp>
+
 #include "plugin.h"
 #include "operators.h"
 #include "dialogs.h"
@@ -188,7 +190,8 @@ void xsiInitializeSplice()
   gSpliceInitialized = true;
   CString workgroupFolder = xsiGetWorkgroupPath();
   CString extFolder = workgroupFolder + "/../../Exts"; // above the 'SpliceIntegrations' folder
-  FabricSplice::addExtFolder(extFolder.GetAsciiString());
+  if(boost::filesystem::exists(extFolder.GetAsciiString()))
+    FabricSplice::addExtFolder(extFolder.GetAsciiString());
 
   FabricSplice::Initialize();
   FabricSplice::Logging::setLogFunc(xsiLogFunc);
