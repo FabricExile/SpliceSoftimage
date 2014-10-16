@@ -25,6 +25,8 @@
 #include <xsi_property.h>
 #include <xsi_argument.h>
 
+#include <boost/filesystem.hpp>
+
 #include "plugin.h"
 #include "operators.h"
 #include "dialogs.h"
@@ -35,7 +37,7 @@ using namespace XSI;
 
 void xsiLogFunc(const char * message, unsigned int length)
 {
-  Application().LogMessage(CString("[Splice] ")+CString(message));
+  Application().LogMessage(CString("[Splice] ")+CString(message), siVerboseMsg);
 }
 
 bool gErrorEnabled = true;
@@ -103,7 +105,7 @@ void xsiCompilerErrorFunc(unsigned int row, unsigned int col, const char * file,
 
 void xsiKLStatusFunc(const char * topic, unsigned int topicLength,  const char * message, unsigned int messageLength)
 {
-  Application().LogMessage(CString("[KL Status]: ")+CString(message));
+  Application().LogMessage(CString("[KL Status]: ")+CString(message), siVerboseMsg);
 }
 
 CString xsiGetWorkgroupPath()
@@ -156,6 +158,7 @@ SICALLBACK XSILoadPlugin( PluginRegistrar& in_reg )
   // commands
   in_reg.RegisterCommand(L"fabricSplice", L"fabricSplice");
   in_reg.RegisterCommand(L"fabricSpliceManipulation", L"fabricSpliceManipulation");
+  in_reg.RegisterCommand(L"proceedToNextScene", L"proceedToNextScene");
 
   // tools
   in_reg.RegisterTool(L"fabricSpliceTool");
@@ -188,7 +191,8 @@ void xsiInitializeSplice()
   gSpliceInitialized = true;
   CString workgroupFolder = xsiGetWorkgroupPath();
   CString extFolder = workgroupFolder + "/../../Exts"; // above the 'SpliceIntegrations' folder
-  FabricSplice::addExtFolder(extFolder.GetAsciiString());
+  if(boost::filesystem::exists(extFolder.GetAsciiString()))
+    FabricSplice::addExtFolder(extFolder.GetAsciiString());
 
   FabricSplice::Initialize();
   FabricSplice::Logging::setLogFunc(xsiLogFunc);
@@ -235,8 +239,16 @@ bool xsiIsLoadingScene()
   return gIsOpeningScene;
 }
 
+CString gScenePath;
+CString xsiGetLastLoadedScene()
+{
+  return gScenePath;
+}
+
 XSIPLUGINCALLBACK CStatus FabricSpliceOpenBeginScene_OnEvent(CRef & ctxt)
 {
+  Context c(ctxt);
+  gScenePath = c.GetAttribute("FileName");
   gIsOpeningScene = true;
   return true;
 }

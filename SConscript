@@ -44,7 +44,7 @@ env.MergeFlags(spliceFlags)
 if FABRIC_BUILD_OS == 'Linux':
   env.Append(LIBS=['boost_filesystem', 'boost_system'])
 
-target = 'FabricSpliceSoftimage' + SOFTIMAGE_VERSION
+target = 'FabricSpliceSoftimage'
 
 softimageModule = env.SharedLibrary(target = target, source = Glob('*.cpp'), SHLIBPREFIX='')
 
