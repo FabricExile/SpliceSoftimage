@@ -158,6 +158,7 @@ SICALLBACK XSILoadPlugin( PluginRegistrar& in_reg )
   // commands
   in_reg.RegisterCommand(L"fabricSplice", L"fabricSplice");
   in_reg.RegisterCommand(L"fabricSpliceManipulation", L"fabricSpliceManipulation");
+  in_reg.RegisterCommand(L"proceedToNextScene", L"proceedToNextScene");
 
   // tools
   in_reg.RegisterTool(L"fabricSpliceTool");
@@ -238,8 +239,16 @@ bool xsiIsLoadingScene()
   return gIsOpeningScene;
 }
 
+CString gScenePath;
+CString xsiGetLastLoadedScene()
+{
+  return gScenePath;
+}
+
 XSIPLUGINCALLBACK CStatus FabricSpliceOpenBeginScene_OnEvent(CRef & ctxt)
 {
+  Context c(ctxt);
+  gScenePath = c.GetAttribute("FileName");
   gIsOpeningScene = true;
   return true;
 }
