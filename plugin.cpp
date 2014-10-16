@@ -35,7 +35,7 @@ using namespace XSI;
 
 void xsiLogFunc(const char * message, unsigned int length)
 {
-  Application().LogMessage(CString("[Splice] ")+CString(message));
+  Application().LogMessage(CString("[Splice] ")+CString(message), siVerboseMsg);
 }
 
 bool gErrorEnabled = true;
@@ -103,7 +103,7 @@ void xsiCompilerErrorFunc(unsigned int row, unsigned int col, const char * file,
 
 void xsiKLStatusFunc(const char * topic, unsigned int topicLength,  const char * message, unsigned int messageLength)
 {
-  Application().LogMessage(CString("[KL Status]: ")+CString(message));
+  Application().LogMessage(CString("[KL Status]: ")+CString(message), siVerboseMsg);
 }
 
 CString xsiGetWorkgroupPath()
