@@ -1817,6 +1817,7 @@ CStatus FabricSpliceBaseInterface::saveToFile(CString fileName)
   FabricSplice::PersistenceInfo info;
   info.hostAppName = FabricCore::Variant::CreateString("Softimage");
   info.hostAppVersion = FabricCore::Variant::CreateString(Application().GetVersion().GetAsciiString());
+  info.filePath = FabricCore::Variant::CreateString(fileName.GetAsciiString());
   if(!_spliceGraph.saveToFile(fileName.GetAsciiString(), &info))
     return CStatus::Unexpected;
 
