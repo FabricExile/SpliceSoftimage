@@ -18,5 +18,6 @@ XSI::CString xsiGetWorkgroupPath();
 void xsiInitializeSplice();
 XSI::CString xsiGetKLKeyWords();
 bool xsiIsLoadingScene();
+XSI::CString xsiGetLastLoadedScene();
 
 #endif

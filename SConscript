@@ -44,7 +44,7 @@ env.MergeFlags(spliceFlags)
 if FABRIC_BUILD_OS == 'Linux':
   env.Append(LIBS=['boost_filesystem', 'boost_system'])
 
-target = 'FabricSpliceSoftimage' + SOFTIMAGE_VERSION
+target = 'FabricSpliceSoftimage'
 
 softimageModule = env.SharedLibrary(target = target, source = Glob('*.cpp'), SHLIBPREFIX='')
 
@@ -67,6 +67,14 @@ if FABRIC_BUILD_OS == 'Windows':
       env.Glob(os.path.join(FABRIC_DIR, 'bin', '*.dll'))
       )
     )
+
+softimageFiles.append(
+  env.Install(
+    os.path.join(STAGE_DIR.abspath, 'Application', 'Plugins'),
+    env.File('FabricSplice_Python.py')
+    )
+  )
+
 
 # install PDB files on windows
 if FABRIC_BUILD_TYPE == 'Debug' and FABRIC_BUILD_OS == 'Windows':
