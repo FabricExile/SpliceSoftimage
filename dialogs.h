@@ -7,7 +7,7 @@
 XSI::CustomProperty editorPropGet();
 XSI::CustomProperty editorPropGetEnsureExists(bool clearErrors = false);
 void editorSetObjectIDFromSelection();
-void showSpliceEcitor(unsigned int objectID);
+void showSpliceEditor(unsigned int objectID);
 
 class AddPortDialog
 {
