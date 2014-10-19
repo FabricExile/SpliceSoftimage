@@ -609,7 +609,7 @@ SICALLBACK proceedToNextScene_Execute(CRef & in_ctxt)
   boost::filesystem::path currentSample = sceneFileName.GetAsciiString();
   boost::filesystem::path samplesDir = currentSample.parent_path();
 
-  while(samplesDir.stem().string() != "Samples") {
+  while(samplesDir.stem().string() != "Samples" && samplesDir.stem().string() != "Splice") {
     samplesDir = samplesDir.parent_path();
     if(samplesDir.empty()) {
       Application().LogMessage("You can only use proceedToNextScene on the Fabric Engine sample scenes.", siWarningMsg);
