@@ -68,7 +68,7 @@ SICALLBACK SpliceEditor_DefineLayout( CRef& in_ctxt )
   layout.Clear();
 
   CString logoPath = xsiGetWorkgroupPath()+CUtils::Slash()+"Application"+CUtils::Slash()+"UI"+CUtils::Slash()+"FE_logo.bmp";
-  
+
   layout.AddTab("Connections");
   item = layout.AddItem("logoBitmap", "SpliceLogo", siControlBitmap);
   item.PutAttribute(siUIFilePath, logoPath);
@@ -366,7 +366,7 @@ void updateSpliceEditorGrids(CustomProperty & prop)
         prop.PutParameterValue(L"klCode", kl);
       }
     }
-    else 
+    else
     {
       prop.PutParameterValue(L"operatorName", L"");
       prop.PutParameterValue(L"kl", L"");
@@ -394,7 +394,7 @@ CLongArray getGridWidgetSelection(GridWidget & widget, GridData & data)
 SICALLBACK SpliceEditor_PPGEvent( CRef& in_ctxt )
 {
   PPGEventContext ctxt( in_ctxt );
-  
+
   CRefArray inspected = ctxt.GetInspectedObjects();
 
   if(ctxt.GetEventID() == PPGEventContext::siOnInit)
@@ -442,6 +442,12 @@ SICALLBACK SpliceEditor_PPGEvent( CRef& in_ctxt )
           CString portName = "result";
           if(dataType == "PolygonMesh")
             portName = "mesh0";
+          if(dataType == "EnvelopeWeight")
+            portName = "EnvelopeWeight";
+          if(dataType == "WeightMap")
+            portName = "WeightMap";
+          if(dataType == "ShapeProperty")
+            portName = "Shape";
           else if(dataType == "Lines")
             portName = "lines";
           else if(dataType == "Mat44")
@@ -673,6 +679,12 @@ SICALLBACK SpliceEditor_PPGEvent( CRef& in_ctxt )
             filter = L"polymsh";
           else if(dataType.IsEqualNoCase(L"Lines") || dataType.IsEqualNoCase(L"Lines[]"))
             filter = L"crvlist";
+          else if(dataType.IsEqualNoCase(L"EnvelopeWeight"))
+            filter = L"envweights";
+          else if(dataType.IsEqualNoCase(L"WeightMap"))
+            filter = L"wtmap";
+          else if(dataType.IsEqualNoCase(L"ShapeProperty"))
+            filter = L"clskey";
           CRefArray items = PickObjectArray(L"Pick object", L"Pick next object", filter, isArray ? 0 : 1);
           if(items.GetCount() > 0)
           {
@@ -832,7 +844,7 @@ SICALLBACK SpliceEditor_PPGEvent( CRef& in_ctxt )
             Application().ExecuteCommand(L"fabricSplice", args, returnVal);
             updateSpliceEditorGrids(prop);
             requiresRefresh = true;
-          }          
+          }
         }
         else
         {
@@ -859,7 +871,7 @@ SICALLBACK SpliceEditor_PPGEvent( CRef& in_ctxt )
             args[2] = L"{\"opName\":\""+opName+"\"}";
             args[3] = kl;
             Application().ExecuteCommand(L"fabricSplice", args, returnVal);
-          }          
+          }
         }
       }
 
@@ -882,7 +894,7 @@ SICALLBACK SpliceEditor_PPGEvent( CRef& in_ctxt )
 //       Parameter gridParam = ctxt.GetSource();
 
 //       if(ctxt.GetEventID() == PPGEventContext::siGridDataOnContextMenuInit)
-//       {    
+//       {
 //         CValueArray items;
 //         if(gridParam.GetScriptName().IsEqualNoCase(L"ports"))
 //         {
@@ -903,7 +915,7 @@ SICALLBACK SpliceEditor_PPGEvent( CRef& in_ctxt )
 //         ctxt.PutAttribute("Return", items);
 //       }
 //       else if(ctxt.GetEventID() == PPGEventContext::siGridDataOnContextMenuInit)
-//       {    
+//       {
 //       }
 //     }
 // #endif
@@ -1124,7 +1136,7 @@ SICALLBACK ImportSpliceDialog_DefineLayout( CRef& in_ctxt )
   layout.Clear();
 
   CString logoPath = xsiGetWorkgroupPath()+CUtils::Slash()+"Application"+CUtils::Slash()+"UI"+CUtils::Slash()+"FE_logo.bmp";
-  
+
   item = layout.AddItem("logoBitmap", "SpliceLogo", siControlBitmap);
   item.PutAttribute(siUIFilePath, logoPath);
   item.PutAttribute(siUINoLabel, true);
@@ -1207,16 +1219,19 @@ void updateImportSpliceDialogGrids(CustomProperty & prop)
         targetsStr += port.getOption("ICEAttribute").getStringData();
       }
       else if(!(
-        portType == L"Boolean" || 
-        portType == L"Integer" || 
-        portType == L"Scalar" || 
-        portType == L"String" || 
-        portType == L"Mat44" || 
-        portType == L"Mat44[]" || 
+        portType == L"Boolean" ||
+        portType == L"Integer" ||
+        portType == L"Scalar" ||
+        portType == L"String" ||
+        portType == L"Mat44" ||
+        portType == L"Mat44[]" ||
         portType == L"Xfo" ||
         portType == L"Xfo[]" ||
         portType == L"PolygonMesh" ||
-        portType == L"Lines") || 
+        portType == L"EnvelopeWeight" ||
+        portType == L"WeightMap" ||
+        portType == L"ShapeProperty" ||
+        portType == L"Lines") ||
         xsiPortType != SoftimagePortType_Port)
         continue;
 
@@ -1233,7 +1248,7 @@ void updateImportSpliceDialogGrids(CustomProperty & prop)
 SICALLBACK ImportSpliceDialog_PPGEvent( CRef& in_ctxt )
 {
   PPGEventContext ctxt( in_ctxt );
-  
+
   CRefArray inspected = ctxt.GetInspectedObjects();
 
   if(ctxt.GetEventID() == PPGEventContext::siOnInit)
@@ -1323,7 +1338,7 @@ SICALLBACK ImportSpliceDialog_PPGEvent( CRef& in_ctxt )
           rtVal.setJSON(FabricSplice::constructStringRTVal(jsonForMat.c_str()));
           MATH::CMatrix4 matrix;
           getCMatrix4FromRTVal(rtVal, matrix);
-          
+
           MATH::CTransformation transform;
           transform.SetMatrix4(matrix);
           target.GetKinematics().GetGlobal().PutTransform(transform);
@@ -1357,7 +1372,7 @@ SICALLBACK ImportSpliceDialog_PPGEvent( CRef& in_ctxt )
         if(isIceAttribute)
           filter = L"geometry";
         CRefArray items = PickObjectArray(
-          L"Pick target for "+portName, L"Pick next target for "+portName, 
+          L"Pick target for "+portName, L"Pick next target for "+portName,
           filter, (!isArray || isIceAttribute) ? 1 : 0);
         if(items.GetCount() > 0)
         {
@@ -1411,12 +1426,12 @@ LicenseDialog::LicenseDialog()
   _prop.AddParameter(L"opName", CValue::siString, siPersistable, "", "", "", param);
   _prop.AddParameter(L"logoBitmap", CValue::siInt4, siReadOnly, "", "", 0, param);
   _prop.AddParameter(L"licenseServer", CValue::siString, siPersistable, "", "", "", param);
-  
+
   CString licenseText;
   licenseText += "Please enter the license server below.\nThe server format needs to be rlm://host:port,\nso for example rlm://127.0.0.1:5053.\n\n";
   licenseText += "You may also follow the link below to request a new license.\n";
   licenseText += "http://fabricengine.com/get-fabric/\n";
-    
+
   PPGLayout layout = _prop.GetPPGLayout();
   layout.Clear();
   PPGItem item = layout.AddItem("logoBitmap", "SpliceLogo", siControlBitmap);
