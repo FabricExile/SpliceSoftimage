@@ -1055,7 +1055,7 @@ CStatus FabricSpliceBaseInterface::transferInputPorts(OperatorContext & context)
             std::vector<FabricCore::RTVal> args(2);
             args[0] = FabricSplice::constructExternalArrayRTVal("Float32", values.GetCount(), &values[0]);
             args[1] = FabricSplice::constructUInt32RTVal(components); // components
-            rtVal.callMethod("", "setEnvelopeWeightsAsExternalArray", 2, &args[0]);
+            rtVal.callMethod("", "setEnvelopeWeightsFromExternalArray", 2, &args[0]);
             values.Clear();
           }
           catch(FabricCore::Exception e)
@@ -1456,7 +1456,7 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
         {
           ClusterProperty prop(envelopeWeightsRefs[0]);
           LONG components = EnvelopeWeight(envelopeWeightsRefs[0]).GetDeformers().GetCount();
-          CFloatArray values(nbSamples * components);
+          CFloatArray values(nbPoints * components);
 
           if(values.GetCount() > 0 && values.GetCount() == prop.GetElements().GetCount() * components)
           {
