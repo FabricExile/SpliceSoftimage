@@ -15,6 +15,9 @@
 #include <xsi_kinematicstate.h>
 #include <xsi_primitive.h>
 #include <xsi_geometry.h>
+#include <xsi_clusterproperty.h>
+#include <xsi_envelopeweight.h>
+#include <xsi_shapekey.h>
 #include <xsi_iceattribute.h>
 #include <xsi_iceattributedataarray.h>
 #include <xsi_comapihandler.h>
@@ -139,8 +142,8 @@ void getCTransformationFromRTVal(const FabricCore::RTVal & rtVal, MATH::CTransfo
   FabricCore::RTVal tr = rtVal.maybeGetMember("tr");
 
   MATH::CQuaternion quat(	getFloat64FromRTVal(ori.maybeGetMember("w")),
-							getFloat64FromRTVal(oriAxis.maybeGetMember("x")), 
-							getFloat64FromRTVal(oriAxis.maybeGetMember("y")), 
+							getFloat64FromRTVal(oriAxis.maybeGetMember("x")),
+							getFloat64FromRTVal(oriAxis.maybeGetMember("y")),
 							getFloat64FromRTVal(oriAxis.maybeGetMember("z")));
 
   value.SetSclX(getFloat64FromRTVal(sc.maybeGetMember("x")));
@@ -209,7 +212,13 @@ CString getSpliceDataTypeFromRef(const CRef &ref, const CString & portType)
     return "PolygonMesh";
   if(Primitive(ref).GetType().IsEqualNoCase("crvlist"))
     return "Lines";
-  
+  if(ClusterProperty(ref).GetType().IsEqualNoCase("envweights"))
+    return "EnvelopeWeight";
+  if(ClusterProperty(ref).GetType().IsEqualNoCase("wtmap"))
+    return "WeightMap";
+  if(ClusterProperty(ref).GetType().IsEqualNoCase("clskey"))
+    return "ShapeProperty";
+
   Parameter param(ref);
   if(param.IsValid())
   {
@@ -257,6 +266,46 @@ CString getSpliceDataTypeFromRef(const CRef &ref, const CString & portType)
   }
   return CString();
 }
+
+/*
+void convertInputClusterProperties(FabricSplice::DGPort & port, CString dataType, XSI::ClusterProperty & prop)
+{
+  if(ClusterProperty(prop).GetType().IsEqualNoCase("envweights") && dataType == L"EnvelopeWeight")
+  {
+    CDoubleArray xsiValues = prop.GetElements().GetArray();
+    port.setArrayData(&portValues[0], sizeof(double) * portValues.size());
+  }
+  else if(ClusterProperty(prop).GetType().IsEqualNoCase("wtmap") && dataType == L"WeightMap")
+  {
+    CDoubleArray xsiValues = prop.GetElements().GetArray();
+    port.setArrayData(&xsiValues[0], sizeof(double) * xsiValues.GetCount());
+  }
+  else if(ClusterProperty(prop).GetType().IsEqualNoCase("clskey") && dataType == L"ShapeProperty")
+  {
+    CDoubleArray xsiValues = prop.GetElements().GetArray();
+    port.setArrayData(&xsiValues[0], sizeof(double) * xsiValues.GetCount());
+  }
+}
+
+void convertInputClusterProperties(FabricSplice::DGPort & port, CString dataType, XSI::ClusterProperty & prop)
+{
+  if(ClusterProperty(prop).GetType().IsEqualNoCase("envweights") && dataType == L"EnvelopeWeight")
+  {
+    CDoubleArray xsiValues = prop.GetElements().GetArray();
+    port.setArrayData(&portValues[0], sizeof(double) * portValues.size());
+  }
+  else if(ClusterProperty(prop).GetType().IsEqualNoCase("wtmap") && dataType == L"WeightMap")
+  {
+    CDoubleArray xsiValues = prop.GetElements().GetArray();
+    port.setArrayData(&xsiValues[0], sizeof(double) * xsiValues.GetCount());
+  }
+  else if(ClusterProperty(prop).GetType().IsEqualNoCase("clskey") && dataType == L"ShapeProperty")
+  {
+    CDoubleArray xsiValues = prop.GetElements().GetArray();
+    port.setArrayData(&xsiValues[0], sizeof(double) * xsiValues.GetCount());
+  }
+}
+*/
 
 CString getSpliceDataTypeFromICEAttribute(const CRefArray &refs, const CString & iceAttrName, CString & errorMessage)
 {
@@ -693,6 +742,18 @@ CRefArray PickSingleObject(CString title, CString filter)
         target = filterX3DObjectPickedRef(members[i], filter);
         targets.Add(target);
       }
+    }
+    else if(ClusterProperty(target).IsValid())
+    {
+      if(ClusterProperty(target).GetType().IsEqualNoCase(L"wtmap"))
+        targets.Add(target);
+      if(EnvelopeWeight(target).GetType().IsEqualNoCase(L"envweights"))
+        targets.Add(target);
+    }
+    else if(ShapeKey(target).IsValid())
+    {
+      if(ShapeKey(target).GetType().IsEqualNoCase(L"clskey"))
+        targets.Add(target);
     }
     else if(Primitive(target).IsValid())
     {

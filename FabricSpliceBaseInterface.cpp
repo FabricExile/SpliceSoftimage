@@ -40,6 +40,7 @@
 #include <xsi_plugin.h>
 #include <xsi_color4f.h>
 #include <xsi_x3dobject.h>
+#include <xsi_envelopeweight.h>
 #include <xsi_comapihandler.h>
 
 using namespace XSI;
@@ -392,7 +393,9 @@ CValueArray FabricSpliceBaseInterface::getSpliceXSIPortTypeCombo()
   combo.Add(L"String"); combo.Add(L"String");
   combo.Add(L"Mat44"); combo.Add(L"Mat44");
   combo.Add(L"Xfo"); combo.Add(L"Xfo");
-  //combo.Add(L"WeigthMap"); combo.Add(L"WeigthMap");
+  combo.Add(L"EnvelopeWeight"); combo.Add(L"EnvelopeWeight");
+  combo.Add(L"WeightMap"); combo.Add(L"WeightMap");
+  combo.Add(L"ShapeProperty"); combo.Add(L"ShapeProperty");
   combo.Add(L"Lines"); combo.Add(L"Lines");
   combo.Add(L"PolygonMesh"); combo.Add(L"PolygonMesh");
   return combo;
@@ -458,6 +461,9 @@ CStatus FabricSpliceBaseInterface::addXSIPort(const CRefArray & targets, const C
      dataType != "Xfo[]" &&
      dataType != "PolygonMesh" &&
      dataType != "PolygonMesh[]" &&
+     dataType != "EnvelopeWeight" &&
+     dataType != "WeightMap" &&
+     dataType != "ShapeProperty" &&
      dataType != "Lines" &&
      dataType != "Lines[]")
   {
@@ -1035,6 +1041,29 @@ CStatus FabricSpliceBaseInterface::transferInputPorts(OperatorContext & context)
             continue;
           }
         }
+
+        CRefArray envelopeWeightsRefs = acc.GetEnvelopeWeights();
+        if(envelopeWeightsRefs.GetCount() > 0)
+        {
+          ClusterProperty prop(envelopeWeightsRefs[0]);
+          LONG components = EnvelopeWeight(envelopeWeightsRefs[0]).GetDeformers().GetCount();
+          CFloatArray values;
+          prop.GetValues(values);
+
+          try
+          {
+            std::vector<FabricCore::RTVal> args(2);
+            args[0] = FabricSplice::constructExternalArrayRTVal("Float32", values.GetCount(), &values[0]);
+            args[1] = FabricSplice::constructUInt32RTVal(components); // components
+            rtVal.callMethod("", "setEnvelopeWeightsAsExternalArray", 2, &args[0]);
+            values.Clear();
+          }
+          catch(FabricCore::Exception e)
+          {
+            xsiLogFunc(e.getDesc_cstr());
+          }
+        }
+
       }
       splicePort.setRTVal(mainRTVal);
     }
@@ -1410,6 +1439,34 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
               args[1] = FabricSplice::constructUInt32RTVal(4); // components
               rtVal.callMethod("", "getVertexColorsAsExternalArray", 2, &args[0]);
               prop.SetValues(&values[0], values.GetCount() / 4);
+              values.Clear();
+            }
+            catch(FabricCore::Exception e)
+            {
+              xsiLogFunc(e.getDesc_cstr());
+            }
+          }
+        }
+      }
+
+      if(rtVal.callMethod("Boolean", "hasSkinningData", 0, 0).getBoolean())
+      {
+        CRefArray envelopeWeightsRefs = acc.GetEnvelopeWeights();
+        if(envelopeWeightsRefs.GetCount() > 0)
+        {
+          ClusterProperty prop(envelopeWeightsRefs[0]);
+          LONG components = EnvelopeWeight(envelopeWeightsRefs[0]).GetDeformers().GetCount();
+          CFloatArray values(nbSamples * components);
+
+          if(values.GetCount() > 0 && values.GetCount() == prop.GetElements().GetCount() * components)
+          {
+            try
+            {
+              std::vector<FabricCore::RTVal> args(2);
+              args[0] = FabricSplice::constructExternalArrayRTVal("Float32", values.GetCount(), &values[0]);
+              args[1] = FabricSplice::constructUInt32RTVal(components); // components
+              rtVal.callMethod("", "getEnvelopeWeightsAsExternalArray", 2, &args[0]);
+              prop.SetValues(&values[0], values.GetCount() / components);
               values.Clear();
             }
             catch(FabricCore::Exception e)
