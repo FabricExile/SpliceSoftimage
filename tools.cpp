@@ -413,7 +413,7 @@ public:
         inlineCamera.setMember("nearDistance", FabricSplice::constructFloat64RTVal(near));
         inlineCamera.setMember("farDistance", FabricSplice::constructFloat64RTVal(far));
 
-        FabricCore::RTVal cameraMat = inlineCamera.maybeGetMember("mat44");
+        FabricCore::RTVal cameraMat = FabricSplice::constructRTVal("Mat44");
         FabricCore::RTVal cameraMatData = cameraMat.callMethod("Data", "data", 0, 0);
 
         MATH::CTransformation xsiCameraXfo = camera.GetKinematics().GetGlobal().GetTransform();
@@ -439,7 +439,7 @@ public:
           cameraMatFloats[14] = (float)xsiCameraMatDoubles[11];
           cameraMatFloats[15] = (float)xsiCameraMatDoubles[15];
 
-          inlineCamera.setMember("mat44", cameraMat);
+          inlineCamera.callMethod("", "setFromMat44", 1, &cameraMat);
         }
 
         inlineViewport.setMember("camera", inlineCamera);
