@@ -213,11 +213,11 @@ CString getSpliceDataTypeFromRef(const CRef &ref, const CString & portType)
   if(Primitive(ref).GetType().IsEqualNoCase("crvlist"))
     return "Lines";
   if(ClusterProperty(ref).GetType().IsEqualNoCase("envweights"))
-    return "EnvelopeWeight";
+    return "SkinningAttribute";
   if(ClusterProperty(ref).GetType().IsEqualNoCase("wtmap"))
-    return "WeightMap";
+    return "Float64[]";
   if(ClusterProperty(ref).GetType().IsEqualNoCase("clskey"))
-    return "ShapeProperty";
+    return "Vec3[]";
 
   Parameter param(ref);
   if(param.IsValid())

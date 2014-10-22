@@ -393,9 +393,9 @@ CValueArray FabricSpliceBaseInterface::getSpliceXSIPortTypeCombo()
   combo.Add(L"String"); combo.Add(L"String");
   combo.Add(L"Mat44"); combo.Add(L"Mat44");
   combo.Add(L"Xfo"); combo.Add(L"Xfo");
-  combo.Add(L"EnvelopeWeight"); combo.Add(L"EnvelopeWeight");
-  combo.Add(L"WeightMap"); combo.Add(L"WeightMap");
-  combo.Add(L"ShapeProperty"); combo.Add(L"ShapeProperty");
+  combo.Add(L"EnvelopeWeight"); combo.Add(L"SkinningAttribute");
+  combo.Add(L"WeightMap"); combo.Add(L"Float64[]");
+  combo.Add(L"ShapeProperty"); combo.Add(L"Vec3[]");
   combo.Add(L"Lines"); combo.Add(L"Lines");
   combo.Add(L"PolygonMesh"); combo.Add(L"PolygonMesh");
   return combo;
@@ -461,9 +461,9 @@ CStatus FabricSpliceBaseInterface::addXSIPort(const CRefArray & targets, const C
      dataType != "Xfo[]" &&
      dataType != "PolygonMesh" &&
      dataType != "PolygonMesh[]" &&
-     dataType != "EnvelopeWeight" &&
-     dataType != "WeightMap" &&
-     dataType != "ShapeProperty" &&
+     dataType != "SkinningAttribute" &&
+     dataType != "Float64[]" &&
+     dataType != "Vec3[]" &&
      dataType != "Lines" &&
      dataType != "Lines[]")
   {
@@ -838,6 +838,20 @@ CStatus FabricSpliceBaseInterface::transferInputPorts(OperatorContext & context)
         portIndexStr = CString(portIndex++);
       }
       splicePort.setRTVal(arrayVal);
+    }
+    else if(
+       it->second.dataType == "Float64[]" ||
+       it->second.dataType == "Vec3[]")
+    {
+      CString singleDataType = it->second.dataType.GetSubString(0, it->second.dataType.Length()-2);
+      FabricCore::RTVal arrayVal = FabricSplice::constructVariableArrayRTVal(singleDataType.GetAsciiString());
+      ClusterProperty clsProp((CRef)context.GetInputValue(it->second.realPortName+portIndexStr));
+      CClusterPropertyElementArray clsPropElem(clsProp.GetElements());
+      Application().LogMessage("-------");
+      Application().LogMessage(CString(clsPropElem.GetArray().GetAsText()));
+      Application().LogMessage(CString(clsPropElem.GetArray().GetCount()));
+      Application().LogMessage(CString(clsProp.GetValueSize() *  clsPropElem.GetCount()));
+      splicePort.setArrayData(&clsPropElem.GetArray()[0], sizeof(double) * clsProp.GetValueSize() *  clsPropElem.GetCount());
     }
     else if(it->second.dataType == "Mat44")
     {
@@ -1225,6 +1239,22 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
       if(convertBasicOutputParameter(singleDataType, value, rtValElement))
         xsiPort.PutValue(value);
     }
+  }
+  else if(
+     it->second.dataType == "Float64[]" ||
+     it->second.dataType == "Vec3[]")
+  {
+    FabricCore::RTVal rtVal = splicePort.getRTVal();
+
+    ClusterProperty clsProp((CRef)context.GetOutputTarget());
+    CClusterPropertyElementArray clsPropElem(clsProp.GetElements());
+
+    std::vector<double> spliceValues;
+    spliceValues.resize(clsProp.GetValueSize() * clsPropElem.GetCount());
+    splicePort.getArrayData(&spliceValues[0], sizeof(double) * clsProp.GetValueSize() * clsPropElem.GetCount());
+    CDoubleArray XsiValues;
+    XsiValues.Attach(&spliceValues[0], clsProp.GetValueSize() * clsPropElem.GetCount());
+    clsPropElem.PutArray(XsiValues);
   }
   else if(it->second.dataType == "Mat44")
   {

@@ -78,18 +78,12 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
 
     if(actionStr == "constructClient")
     {
-      bool clientCreated = FabricSplice::ConstructClient().isValid();
+      FabricCore::Client client = FabricSplice::ConstructClient();
+      bool clientCreated = client.isValid();
       ctxt.PutAttribute(L"ReturnValue", clientCreated);
 
-      const FabricCore::Client* pClient = NULL;
-      FECS_DGGraph_getClient(&pClient);
+      client.loadExtension("Envelope", "", false);
 
-      // No client, nothing to do (the extension will be loaded when requested
-      if(pClient == nullptr)
-        return false;
-
-      FEC_ClientLoadExtension(pClient->getFECClientRef(), "Envelope", "", true);
-      //return TRUE;
       return xsiErrorOccured();
     }
     else if(actionStr == "destroyClient")
