@@ -393,7 +393,7 @@ CValueArray FabricSpliceBaseInterface::getSpliceXSIPortTypeCombo()
   combo.Add(L"String"); combo.Add(L"String");
   combo.Add(L"Mat44"); combo.Add(L"Mat44");
   combo.Add(L"Xfo"); combo.Add(L"Xfo");
-  combo.Add(L"EnvelopeWeight"); combo.Add(L"SkinningAttribute");
+  combo.Add(L"EnvelopeWeight"); combo.Add(L"Float64[]");
   combo.Add(L"WeightMap"); combo.Add(L"Float64[]");
   combo.Add(L"ShapeProperty"); combo.Add(L"Vec3[]");
   combo.Add(L"Lines"); combo.Add(L"Lines");
@@ -461,7 +461,6 @@ CStatus FabricSpliceBaseInterface::addXSIPort(const CRefArray & targets, const C
      dataType != "Xfo[]" &&
      dataType != "PolygonMesh" &&
      dataType != "PolygonMesh[]" &&
-     dataType != "SkinningAttribute" &&
      dataType != "Float64[]" &&
      dataType != "Vec3[]" &&
      dataType != "Lines" &&
@@ -1320,7 +1319,7 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
     {
       // todo: maybe we should be caching this....
       MATH::CTransformation transform;
-	  getCTransformationFromRTVal(rtVal.getArrayElement(arrayIndex), transform);
+      getCTransformationFromRTVal(rtVal.getArrayElement(arrayIndex), transform);
 
       KinematicState kine(context.GetOutputTarget());
       kine.PutTransform(transform);
@@ -2098,7 +2097,7 @@ CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Va
       dataType.IsEqualNoCase(L"Scalar") ||
       dataType.IsEqualNoCase(L"String") ||
       dataType.IsEqualNoCase(L"Mat44") ||
-	  dataType.IsEqualNoCase(L"Xfo") ||
+      dataType.IsEqualNoCase(L"Xfo") ||
       dataType.IsEqualNoCase(L"PolygonMesh"))
       && (!isSoftimageFile || portType == SoftimagePortType_Port)) || isICEAttribute)
     {

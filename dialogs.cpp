@@ -442,10 +442,8 @@ SICALLBACK SpliceEditor_PPGEvent( CRef& in_ctxt )
           CString portName = "result";
           if(dataType == "PolygonMesh")
             portName = "mesh0";
-          if(dataType == "SkinningAttribute")
-            portName = "SkinningAttribute";
-          if(dataType == "Scalar[]")
-            portName = "Scalar[]";
+          if(dataType == "FLoat64[]")
+            portName = "FLoat64[]";
           if(dataType == "Vec3[]")
             portName = "Vec3[]";
           else if(dataType == "Lines")
@@ -679,12 +677,7 @@ SICALLBACK SpliceEditor_PPGEvent( CRef& in_ctxt )
             filter = L"polymsh";
           else if(dataType.IsEqualNoCase(L"Lines") || dataType.IsEqualNoCase(L"Lines[]"))
             filter = L"crvlist";
-          else if(dataType.IsEqualNoCase(L"SkinningAttribute"))
-            filter = L"envweights";
-          else if(dataType.IsEqualNoCase(L"Float64[]"))
-            filter = L"wtmap";
-          else if(dataType.IsEqualNoCase(L"Vec3[]"))
-            filter = L"clskey";
+
           CRefArray items = PickObjectArray(L"Pick object", L"Pick next object", filter, isArray ? 0 : 1);
           if(items.GetCount() > 0)
           {
@@ -1228,7 +1221,6 @@ void updateImportSpliceDialogGrids(CustomProperty & prop)
         portType == L"Xfo" ||
         portType == L"Xfo[]" ||
         portType == L"PolygonMesh" ||
-        portType == L"SkinningAttribute" ||
         portType == L"Float64[]" ||
         portType == L"Vec3[]" ||
         portType == L"Lines") ||

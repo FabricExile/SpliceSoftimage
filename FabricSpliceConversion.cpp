@@ -141,10 +141,10 @@ void getCTransformationFromRTVal(const FabricCore::RTVal & rtVal, MATH::CTransfo
   FabricCore::RTVal oriAxis = ori.maybeGetMember("v");
   FabricCore::RTVal tr = rtVal.maybeGetMember("tr");
 
-  MATH::CQuaternion quat(	getFloat64FromRTVal(ori.maybeGetMember("w")),
-							getFloat64FromRTVal(oriAxis.maybeGetMember("x")),
-							getFloat64FromRTVal(oriAxis.maybeGetMember("y")),
-							getFloat64FromRTVal(oriAxis.maybeGetMember("z")));
+  MATH::CQuaternion quat(  getFloat64FromRTVal(ori.maybeGetMember("w")),
+              getFloat64FromRTVal(oriAxis.maybeGetMember("x")),
+              getFloat64FromRTVal(oriAxis.maybeGetMember("y")),
+              getFloat64FromRTVal(oriAxis.maybeGetMember("z")));
 
   value.SetSclX(getFloat64FromRTVal(sc.maybeGetMember("x")));
   value.SetSclY(getFloat64FromRTVal(sc.maybeGetMember("y")));
@@ -206,15 +206,19 @@ CString getSpliceDataTypeFromRef(const CRef &ref, const CString & portType)
 {
 //TODO: add a custom picking tool that will give the ability to chose the data type depending of the context
   if(KinematicState(ref).IsValid())
-	return "Mat44";
-	//return portType;
+    return "Mat44";
+  //return portType;
   if(Primitive(ref).GetType().IsEqualNoCase("polymsh"))
     return "PolygonMesh";
   if(Primitive(ref).GetType().IsEqualNoCase("crvlist"))
     return "Lines";
   if(ClusterProperty(ref).GetType().IsEqualNoCase("envweights"))
-    return "SkinningAttribute";
+    return "Float64[]";
   if(ClusterProperty(ref).GetType().IsEqualNoCase("wtmap"))
+    return "Float64[]";
+  if(ClusterProperty(ref).GetType().IsEqualNoCase("vertexcolor"))
+    return "Float64[]";
+  if(ClusterProperty(ref).GetType().IsEqualNoCase("uvspace"))
     return "Float64[]";
   if(ClusterProperty(ref).GetType().IsEqualNoCase("clskey"))
     return "Vec3[]";
@@ -266,46 +270,6 @@ CString getSpliceDataTypeFromRef(const CRef &ref, const CString & portType)
   }
   return CString();
 }
-
-/*
-void convertInputClusterProperties(FabricSplice::DGPort & port, CString dataType, XSI::ClusterProperty & prop)
-{
-  if(ClusterProperty(prop).GetType().IsEqualNoCase("envweights") && dataType == L"EnvelopeWeight")
-  {
-    CDoubleArray xsiValues = prop.GetElements().GetArray();
-    port.setArrayData(&portValues[0], sizeof(double) * portValues.size());
-  }
-  else if(ClusterProperty(prop).GetType().IsEqualNoCase("wtmap") && dataType == L"WeightMap")
-  {
-    CDoubleArray xsiValues = prop.GetElements().GetArray();
-    port.setArrayData(&xsiValues[0], sizeof(double) * xsiValues.GetCount());
-  }
-  else if(ClusterProperty(prop).GetType().IsEqualNoCase("clskey") && dataType == L"ShapeProperty")
-  {
-    CDoubleArray xsiValues = prop.GetElements().GetArray();
-    port.setArrayData(&xsiValues[0], sizeof(double) * xsiValues.GetCount());
-  }
-}
-
-void convertInputClusterProperties(FabricSplice::DGPort & port, CString dataType, XSI::ClusterProperty & prop)
-{
-  if(ClusterProperty(prop).GetType().IsEqualNoCase("envweights") && dataType == L"EnvelopeWeight")
-  {
-    CDoubleArray xsiValues = prop.GetElements().GetArray();
-    port.setArrayData(&portValues[0], sizeof(double) * portValues.size());
-  }
-  else if(ClusterProperty(prop).GetType().IsEqualNoCase("wtmap") && dataType == L"WeightMap")
-  {
-    CDoubleArray xsiValues = prop.GetElements().GetArray();
-    port.setArrayData(&xsiValues[0], sizeof(double) * xsiValues.GetCount());
-  }
-  else if(ClusterProperty(prop).GetType().IsEqualNoCase("clskey") && dataType == L"ShapeProperty")
-  {
-    CDoubleArray xsiValues = prop.GetElements().GetArray();
-    port.setArrayData(&xsiValues[0], sizeof(double) * xsiValues.GetCount());
-  }
-}
-*/
 
 CString getSpliceDataTypeFromICEAttribute(const CRefArray &refs, const CString & iceAttrName, CString & errorMessage)
 {
@@ -749,10 +713,11 @@ CRefArray PickSingleObject(CString title, CString filter)
         targets.Add(target);
       if(EnvelopeWeight(target).GetType().IsEqualNoCase(L"envweights"))
         targets.Add(target);
-    }
-    else if(ShapeKey(target).IsValid())
-    {
       if(ShapeKey(target).GetType().IsEqualNoCase(L"clskey"))
+        targets.Add(target);
+      if(ClusterProperty(target).GetType().IsEqualNoCase(L"vertexcolor"))
+        targets.Add(target);
+      if(ClusterProperty(target).GetType().IsEqualNoCase(L"uvspace"))
         targets.Add(target);
     }
     else if(Primitive(target).IsValid())
