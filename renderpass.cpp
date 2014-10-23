@@ -59,6 +59,9 @@ FabricCore::RTVal & getDrawContext(int viewportWidth, int viewportHeight, XSI::C
   else if(sDrawContext.isNullObject())
     sDrawContext = FabricSplice::constructObjectRTVal("DrawContext");
 
+  // sync the time
+  sDrawContext.setMember("time", FabricSplice::constructFloat32RTVal(CTime().GetTime( CTime::Seconds )));
+
   //////////////////////////
   // Setup the viewport
   FabricCore::RTVal inlineViewport = sDrawContext.maybeGetMember("viewport");
