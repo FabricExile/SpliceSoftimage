@@ -66,25 +66,26 @@ FabricCore::RTVal & getDrawContext(int viewportWidth, int viewportHeight, XSI::C
   // Setup the viewport
   FabricCore::RTVal inlineViewport = sDrawContext.maybeGetMember("viewport");
   {
-    FabricCore::RTVal viewportDim = FabricSplice::constructRTVal("Vec2");
-    viewportDim.setMember("x", FabricSplice::constructFloat64RTVal(viewportWidth));
-    viewportDim.setMember("y", FabricSplice::constructFloat64RTVal(viewportHeight));
-    inlineViewport.setMember("dimensions", viewportDim);
+    std::vector<FabricCore::RTVal> args(3);
+    args[0] = sDrawContext;
+    args[1] = FabricSplice::constructFloat64RTVal(viewportWidth);
+    args[2] = FabricSplice::constructFloat64RTVal(viewportHeight);
+    inlineViewport.callMethod("", "resize", 3, &args[0]);
   }
 
   {
-    FabricCore::RTVal inlineCamera = inlineViewport.maybeGetMember("camera");
+    FabricCore::RTVal inlineCamera = FabricSplice::constructObjectRTVal("InlineCamera");
 
     Primitive cameraPrim = camera.GetActivePrimitive();
     LONG projType = cameraPrim.GetParameterValue(L"proj");
-    inlineCamera.setMember("isOrthographic", FabricSplice::constructBooleanRTVal(projType == 0));
+    inlineCamera.callMethod("", "setOrthographic", 1, &FabricSplice::constructBooleanRTVal(projType == 0));
 
     double xsiViewportAspect = double(viewportWidth) / double(viewportHeight);
     double cameraAspect = cameraPrim.GetParameterValue(L"aspect");
     
     if(projType == 0){ // orthographic projection
       double orthoheight = cameraPrim.GetParameterValue(L"orthoheight");
-      inlineCamera.setMember("orthographicFrustumH", FabricSplice::constructFloat64RTVal(orthoheight));
+      inlineCamera.callMethod("", "setOrthographicFrustumHeight", 1, &FabricSplice::constructFloat64RTVal(orthoheight));
     }
     else{ // Perspective projection.
       double fovX = MATH::DegreesToRadians(cameraPrim.GetParameterValue(L"fov"));
@@ -97,14 +98,14 @@ FabricCore::RTVal & getDrawContext(int viewportWidth, int viewportHeight, XSI::C
         // bars left and right
         fovY = atan( tan(fovX * 0.5) / cameraAspect ) * 2.0;
       }
-      inlineCamera.setMember("fovY", FabricSplice::constructFloat64RTVal(fovY));
+      inlineCamera.callMethod("", "setFovY", 1, &FabricSplice::constructFloat64RTVal(fovY));
     }
 
 
     double near = cameraPrim.GetParameterValue(L"near");
     double far = cameraPrim.GetParameterValue(L"far");
-    inlineCamera.setMember("nearDistance", FabricSplice::constructFloat64RTVal(near));
-    inlineCamera.setMember("farDistance", FabricSplice::constructFloat64RTVal(far));
+    inlineCamera.callMethod("", "setNearDistance", 1, &FabricSplice::constructFloat64RTVal(near));
+    inlineCamera.callMethod("", "setFarDistance", 1, &FabricSplice::constructFloat64RTVal(far));
 
     FabricCore::RTVal cameraMat = FabricSplice::constructRTVal("Mat44");
     FabricCore::RTVal cameraMatData = cameraMat.callMethod("Data", "data", 0, 0);
@@ -134,6 +135,7 @@ FabricCore::RTVal & getDrawContext(int viewportWidth, int viewportHeight, XSI::C
 
       inlineCamera.callMethod("", "setFromMat44", 1, &cameraMat);
     }
+    inlineViewport.callMethod("", "setCamera", 1, &inlineCamera);
   }
 
   return sDrawContext;

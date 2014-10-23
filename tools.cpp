@@ -359,119 +359,156 @@ public:
 
   bool InvokeKLEvent(ToolContext& in_ctxt, FabricCore::RTVal klevent, int eventType){
 
-    //////////////////////////
-    // Setup the viewport
-    FabricCore::RTVal inlineViewport = FabricSplice::constructObjectRTVal("InlineViewport");
+    try
     {
-
-      LONG width, height;
-      in_ctxt.GetViewSize(width, height);
-
-      FabricCore::RTVal viewportDim = FabricSplice::constructRTVal("Vec2");
-      viewportDim.setMember("x", FabricSplice::constructFloat64RTVal(width));
-      viewportDim.setMember("y", FabricSplice::constructFloat64RTVal(height));
-      inlineViewport.setMember("dimensions", viewportDim);
-
+      //////////////////////////
+      // Setup the viewport
+      FabricCore::RTVal inlineViewport = FabricSplice::constructObjectRTVal("InlineViewport");
       {
-        FabricCore::RTVal inlineCamera = FabricSplice::constructObjectRTVal("InlineCamera");
 
-        Camera camera = in_ctxt.GetCamera();
-        Primitive cameraPrim = camera.GetActivePrimitive();
-        LONG projType = cameraPrim.GetParameterValue(L"proj");
-        inlineCamera.setMember("isOrthographic", FabricSplice::constructBooleanRTVal(projType == 0));
+        LONG width, height;
+        in_ctxt.GetViewSize(width, height);
 
-        double xsiViewportAspect = double(width) / double(height);
-        double cameraAspect = cameraPrim.GetParameterValue(L"aspect");
+        // Note: There is a task open to unify the viewports between rendering and manipulation
+        // This will mean that resize can occur against the propper draw context. 
+        // Here I create a temporary DrawContext, but that should be eliminated.
+        FabricCore::RTVal drawContext = FabricSplice::constructObjectRTVal("DrawContext");
+        drawContext.setMember("viewport", inlineViewport);
+        std::vector<FabricCore::RTVal> args(3);
+        args[0] = drawContext;
+        args[1] = FabricSplice::constructFloat64RTVal(width);
+        args[2] = FabricSplice::constructFloat64RTVal(height);
+        inlineViewport.callMethod("", "resize", 3, &args[0]);
 
-        double fov = MATH::DegreesToRadians(cameraPrim.GetParameterValue(L"fov"));
-        LONG fovType = cameraPrim.GetParameterValue(L"fovType");
-        double fovY;
-        if(fovType != 0){ // Perspective projection.
-          double fovX = fov;
-          if(xsiViewportAspect < cameraAspect){
-            // bars top and bottom
-            fovY = atan( tan(fovX * 0.5) / xsiViewportAspect ) * 2.0;
+        {
+          FabricCore::RTVal inlineCamera = FabricSplice::constructObjectRTVal("InlineCamera");
+
+          Camera camera = in_ctxt.GetCamera();
+          Primitive cameraPrim = camera.GetActivePrimitive();
+          LONG projType = cameraPrim.GetParameterValue(L"proj");
+          inlineCamera.callMethod("", "setOrthographic", 1, &FabricSplice::constructBooleanRTVal(projType == 0));
+
+          double xsiViewportAspect = double(width) / double(height);
+          double cameraAspect = cameraPrim.GetParameterValue(L"aspect");
+
+          double fov = MATH::DegreesToRadians(cameraPrim.GetParameterValue(L"fov"));
+          LONG fovType = cameraPrim.GetParameterValue(L"fovType");
+          double fovY;
+          if(fovType != 0){ // Perspective projection.
+            double fovX = fov;
+            if(xsiViewportAspect < cameraAspect){
+              // bars top and bottom
+              fovY = atan( tan(fovX * 0.5) / xsiViewportAspect ) * 2.0;
+            }
+            else{
+              // bars left and right
+              fovY = atan( tan(fovX * 0.5) / cameraAspect ) * 2.0;
+            }
           }
-          else{
-            // bars left and right
-            fovY = atan( tan(fovX * 0.5) / cameraAspect ) * 2.0;
+          else{ // orthographic projection
+            fovY = fov;
+            if(xsiViewportAspect < cameraAspect){
+              // bars top and bottom
+              double fovX = atan( tan(fovY * 0.5) * cameraAspect ) * 2.0;
+              fovY = atan( tan(fovX * 0.5) / xsiViewportAspect ) * 2.0;
+            }
           }
-        }
-        else{ // orthographic projection
-          fovY = fov;
-          if(xsiViewportAspect < cameraAspect){
-            // bars top and bottom
-            double fovX = atan( tan(fovY * 0.5) * cameraAspect ) * 2.0;
-            fovY = atan( tan(fovX * 0.5) / xsiViewportAspect ) * 2.0;
+          inlineCamera.callMethod("", "setFovY", 1, &FabricSplice::constructFloat64RTVal(fovY));
+
+
+          double near = cameraPrim.GetParameterValue(L"near");
+          double far = cameraPrim.GetParameterValue(L"far");
+          inlineCamera.callMethod("", "setNearDistance", 1, &FabricSplice::constructFloat64RTVal(near));
+          inlineCamera.callMethod("", "setFarDistance", 1, &FabricSplice::constructFloat64RTVal(far));
+
+          FabricCore::RTVal cameraMat = FabricSplice::constructRTVal("Mat44");
+          FabricCore::RTVal cameraMatData = cameraMat.callMethod("Data", "data", 0, 0);
+
+          MATH::CTransformation xsiCameraXfo = camera.GetKinematics().GetGlobal().GetTransform();
+          MATH::CMatrix4 xsiCameraMat = xsiCameraXfo.GetMatrix4();
+          const double * xsiCameraMatDoubles = (const double*)&xsiCameraMat;
+
+          float * cameraMatFloats = (float*)cameraMatData.getData();
+          if(cameraMatFloats != NULL) {
+            cameraMatFloats[0] = (float)xsiCameraMatDoubles[0];
+            cameraMatFloats[1] = (float)xsiCameraMatDoubles[4];
+            cameraMatFloats[2] = (float)xsiCameraMatDoubles[8];
+            cameraMatFloats[3] = (float)xsiCameraMatDoubles[12];
+            cameraMatFloats[4] = (float)xsiCameraMatDoubles[1];
+            cameraMatFloats[5] = (float)xsiCameraMatDoubles[5];
+            cameraMatFloats[6] = (float)xsiCameraMatDoubles[9];
+            cameraMatFloats[7] = (float)xsiCameraMatDoubles[13];
+            cameraMatFloats[8] = (float)xsiCameraMatDoubles[2];
+            cameraMatFloats[9] = (float)xsiCameraMatDoubles[6];
+            cameraMatFloats[10] = (float)xsiCameraMatDoubles[10];
+            cameraMatFloats[11] = (float)xsiCameraMatDoubles[14];
+            cameraMatFloats[12] = (float)xsiCameraMatDoubles[3];
+            cameraMatFloats[13] = (float)xsiCameraMatDoubles[7];
+            cameraMatFloats[14] = (float)xsiCameraMatDoubles[11];
+            cameraMatFloats[15] = (float)xsiCameraMatDoubles[15];
+
+            inlineCamera.callMethod("", "setFromMat44", 1, &cameraMat);
           }
+
+          inlineViewport.callMethod("", "setCamera", 1, &inlineCamera);
         }
-        inlineCamera.setMember("fovY", FabricSplice::constructFloat64RTVal(fovY));
-
-
-        double near = cameraPrim.GetParameterValue(L"near");
-        double far = cameraPrim.GetParameterValue(L"far");
-        inlineCamera.setMember("nearDistance", FabricSplice::constructFloat64RTVal(near));
-        inlineCamera.setMember("farDistance", FabricSplice::constructFloat64RTVal(far));
-
-        FabricCore::RTVal cameraMat = FabricSplice::constructRTVal("Mat44");
-        FabricCore::RTVal cameraMatData = cameraMat.callMethod("Data", "data", 0, 0);
-
-        MATH::CTransformation xsiCameraXfo = camera.GetKinematics().GetGlobal().GetTransform();
-        MATH::CMatrix4 xsiCameraMat = xsiCameraXfo.GetMatrix4();
-        const double * xsiCameraMatDoubles = (const double*)&xsiCameraMat;
-
-        float * cameraMatFloats = (float*)cameraMatData.getData();
-        if(cameraMatFloats != NULL) {
-          cameraMatFloats[0] = (float)xsiCameraMatDoubles[0];
-          cameraMatFloats[1] = (float)xsiCameraMatDoubles[4];
-          cameraMatFloats[2] = (float)xsiCameraMatDoubles[8];
-          cameraMatFloats[3] = (float)xsiCameraMatDoubles[12];
-          cameraMatFloats[4] = (float)xsiCameraMatDoubles[1];
-          cameraMatFloats[5] = (float)xsiCameraMatDoubles[5];
-          cameraMatFloats[6] = (float)xsiCameraMatDoubles[9];
-          cameraMatFloats[7] = (float)xsiCameraMatDoubles[13];
-          cameraMatFloats[8] = (float)xsiCameraMatDoubles[2];
-          cameraMatFloats[9] = (float)xsiCameraMatDoubles[6];
-          cameraMatFloats[10] = (float)xsiCameraMatDoubles[10];
-          cameraMatFloats[11] = (float)xsiCameraMatDoubles[14];
-          cameraMatFloats[12] = (float)xsiCameraMatDoubles[3];
-          cameraMatFloats[13] = (float)xsiCameraMatDoubles[7];
-          cameraMatFloats[14] = (float)xsiCameraMatDoubles[11];
-          cameraMatFloats[15] = (float)xsiCameraMatDoubles[15];
-
-          inlineCamera.callMethod("", "setFromMat44", 1, &cameraMat);
-        }
-
-        inlineViewport.setMember("camera", inlineCamera);
       }
-    }
 
-    //////////////////////////
-    // Setup the Host
-    // We cannot set an interface value via RTVals.
-    FabricCore::RTVal host = FabricSplice::constructObjectRTVal("Host");
-    host.setMember("hostName", FabricSplice::constructStringRTVal("Softimage"));
+      //////////////////////////
+      // Setup the Host
+      // We cannot set an interface value via RTVals.
+      FabricCore::RTVal host = FabricSplice::constructObjectRTVal("Host");
+      host.setMember("hostName", FabricSplice::constructStringRTVal("Softimage"));
 
-    long modifiers = 0;
-    if(in_ctxt.IsShiftKeyDown())
-      modifiers += ModiferKey_Shift;
-    if(in_ctxt.IsControlKeyDown())
-      modifiers += ModiferKey_Ctrl;
-    klevent.setMember("modifiers", FabricSplice::constructUInt32RTVal(modifiers));
+      long modifiers = 0;
+      if(in_ctxt.IsShiftKeyDown())
+        modifiers += ModiferKey_Shift;
+      if(in_ctxt.IsControlKeyDown())
+        modifiers += ModiferKey_Ctrl;
+      klevent.setMember("modifiers", FabricSplice::constructUInt32RTVal(modifiers));
 
-    //////////////////////////
-    // Configure the event...
-    std::vector<FabricCore::RTVal> args(4);
-    args[0] = host;
-    args[1] = inlineViewport;
-    args[2] = FabricSplice::constructUInt32RTVal(eventType);
-    args[3] = FabricSplice::constructUInt32RTVal(modifiers);
-    klevent.callMethod("", "init", 4, &args[0]);
+      //////////////////////////
+      // Configure the event...
+      std::vector<FabricCore::RTVal> args(4);
+      args[0] = host;
+      args[1] = inlineViewport;
+      args[2] = FabricSplice::constructUInt32RTVal(eventType);
+      args[3] = FabricSplice::constructUInt32RTVal(modifiers);
+      klevent.callMethod("", "init", 4, &args[0]);
 
-    //////////////////////////
-    // Invoke the event...
-    try{
+      //////////////////////////
+      // Invoke the event...
       mEventDispatcher.callMethod("Boolean", "onEvent", 1, &klevent);
+
+      bool result = klevent.callMethod("Boolean", "isAccepted", 0, 0).getBoolean();
+
+      // The manipulation system has requested that a custom command be invoked. 
+      // Invoke the custom command passing the speficied args. 
+      CString customCommand(host.maybeGetMember("customCommand").getStringCString());
+      if(!customCommand.IsEmpty()){
+        FabricCore::RTVal customCommandArgs = host.maybeGetMember("customCommandArgs");
+        CValue returnVal;
+        CValueArray args(customCommandArgs.getArraySize());
+        for(int i=0; i<customCommandArgs.getArraySize(); i++){
+          args[i] = CString(customCommandArgs.getArrayElement(i).getStringCString());
+        }
+        Application().ExecuteCommand(customCommand, args, returnVal);
+      }
+
+      if(host.maybeGetMember("redrawRequested").getBoolean())
+        in_ctxt.Redraw(true);
+
+      if(host.callMethod("Boolean", "undoRedoCommandsAdded", 0, 0).getBoolean()){
+        // Cache the rtvals in a static variable that the command will then stor in the undo stack.
+        UndoRedoData::s_rtval_commands = host.callMethod("UndoRedoCommand[]", "getUndoRedoCommands", 0, 0);
+
+        CValue returnVal;
+        CValueArray args(0);
+        Application().ExecuteCommand(L"fabricSpliceManipulation", args, returnVal);
+      }
+
+      klevent.invalidate();
+      return result;
     }
     catch(FabricCore::Exception e)    {
       xsiLogFunc(e.getDesc_cstr());
@@ -481,36 +518,6 @@ public:
       xsiLogFunc(e.what());
       return false;
     }
-
-    bool result = klevent.callMethod("Boolean", "isAccepted", 0, 0).getBoolean();
-
-    // The manipulation system has requested that a custom command be invoked. 
-    // Invoke the custom command passing the speficied args. 
-    CString customCommand(host.maybeGetMember("customCommand").getStringCString());
-    if(!customCommand.IsEmpty()){
-      FabricCore::RTVal customCommandArgs = host.maybeGetMember("customCommandArgs");
-      CValue returnVal;
-      CValueArray args(customCommandArgs.getArraySize());
-      for(int i=0; i<customCommandArgs.getArraySize(); i++){
-        args[i] = CString(customCommandArgs.getArrayElement(i).getStringCString());
-      }
-      Application().ExecuteCommand(customCommand, args, returnVal);
-    }
-
-    if(host.maybeGetMember("redrawRequested").getBoolean())
-      in_ctxt.Redraw(true);
-
-    if(host.callMethod("Boolean", "undoRedoCommandsAdded", 0, 0).getBoolean()){
-      // Cache the rtvals in a static variable that the command will then stor in the undo stack.
-      UndoRedoData::s_rtval_commands = host.callMethod("UndoRedoCommand[]", "getUndoRedoCommands", 0, 0);
-
-      CValue returnVal;
-      CValueArray args(0);
-      Application().ExecuteCommand(L"fabricSpliceManipulation", args, returnVal);
-    }
-
-    klevent.invalidate();
-    return result;
   }
 
 
