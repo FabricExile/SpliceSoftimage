@@ -1514,6 +1514,7 @@ CStatus FabricSpliceBaseInterface::evaluate()
   context.setMember("host", FabricSplice::constructStringRTVal("Softimage"));
   context.setMember("graph", FabricSplice::constructStringRTVal(ofRef.GetAsText().GetAsciiString()));
   context.setMember("time", FabricSplice::constructFloat32RTVal(CTime().GetTime( CTime::Seconds )));
+  context.setMember("currentFilePath", FabricSplice::constructStringRTVal(xsiGetLastLoadedScene().GetAsciiString()));
 
   _spliceGraph.evaluate();
   return CStatus::OK;
