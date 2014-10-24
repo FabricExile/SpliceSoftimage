@@ -1661,6 +1661,7 @@ CStatus FabricSpliceBaseInterface::evaluate()
   context.setMember("host", FabricSplice::constructStringRTVal("Softimage"));
   context.setMember("graph", FabricSplice::constructStringRTVal(ofRef.GetAsText().GetAsciiString()));
   context.setMember("time", FabricSplice::constructFloat32RTVal(CTime().GetTime( CTime::Seconds )));
+  context.setMember("currentFilePath", FabricSplice::constructStringRTVal(xsiGetLastLoadedScene().GetAsciiString()));
 
   _spliceGraph.evaluate();
   return CStatus::OK;
@@ -1984,6 +1985,9 @@ CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Va
   bool skipPicking = FabricSplice::Scripting::consumeBooleanArgument(scriptArgs, "skipPicking", false, true);
 
   FabricSplice::PersistenceInfo info;
+  info.hostAppName = FabricCore::Variant::CreateString("Softimage");
+  info.hostAppVersion = FabricCore::Variant::CreateString(Application().GetVersion().GetAsciiString());
+  info.filePath = FabricCore::Variant::CreateString(fileName.GetAsciiString());
 
   if(!_spliceGraph.loadFromFile(fileName.GetAsciiString(), &info))
     return CStatus::Unexpected;
