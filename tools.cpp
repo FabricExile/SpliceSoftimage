@@ -386,7 +386,8 @@ public:
           Camera camera = in_ctxt.GetCamera();
           Primitive cameraPrim = camera.GetActivePrimitive();
           LONG projType = cameraPrim.GetParameterValue(L"proj");
-          inlineCamera.callMethod("", "setOrthographic", 1, &FabricSplice::constructBooleanRTVal(projType == 0));
+          FabricCore::RTVal param = FabricSplice::constructBooleanRTVal(projType == 0);
+          inlineCamera.callMethod("", "setOrthographic", 1, &param);
 
           double xsiViewportAspect = double(width) / double(height);
           double cameraAspect = cameraPrim.GetParameterValue(L"aspect");
@@ -413,13 +414,16 @@ public:
               fovY = atan( tan(fovX * 0.5) / xsiViewportAspect ) * 2.0;
             }
           }
-          inlineCamera.callMethod("", "setFovY", 1, &FabricSplice::constructFloat64RTVal(fovY));
+          param = FabricSplice::constructFloat64RTVal(fovY);
+          inlineCamera.callMethod("", "setFovY", 1, &param);
 
 
           double near = cameraPrim.GetParameterValue(L"near");
           double far = cameraPrim.GetParameterValue(L"far");
-          inlineCamera.callMethod("", "setNearDistance", 1, &FabricSplice::constructFloat64RTVal(near));
-          inlineCamera.callMethod("", "setFarDistance", 1, &FabricSplice::constructFloat64RTVal(far));
+          param = FabricSplice::constructFloat64RTVal(near);
+          inlineCamera.callMethod("", "setNearDistance", 1, &param);
+          param = FabricSplice::constructFloat64RTVal(far);
+          inlineCamera.callMethod("", "setFarDistance", 1, &param);
 
           FabricCore::RTVal cameraMat = FabricSplice::constructRTVal("Mat44");
           FabricCore::RTVal cameraMatData = cameraMat.callMethod("Data", "data", 0, 0);
