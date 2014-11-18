@@ -299,11 +299,9 @@ const char * getSourceCodeForOperator(const char * graphName, const char * opNam
     if(interf)
     {
       CString currentOpName = editorProp.GetParameterValue(L"operatorName");
-      Application().LogMessage("Checking "+currentOpName+" against "+CString(opName)+" and "+interf->getSpliceGraph().getName()+" against "+CString(graphName));
       if(interf->getSpliceGraph().getName() == std::string(graphName) && currentOpName == opName)
       {
         gLastSourceCode = editorProp.GetParameterValue(L"klCode");
-        Application().LogMessage("determined "+gLastSourceCode);
         if(gLastSourceCode.Length() > 0)
         {
           return gLastSourceCode.GetAsciiString();
