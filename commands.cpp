@@ -79,9 +79,6 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
     {
       bool clientCreated = FabricSplice::ConstructClient().isValid();
       ctxt.PutAttribute(L"ReturnValue", clientCreated);
-
-      FabricSplice::setDCCOperatorSourceCodeCallback(&getSourceCodeForOperator);
-      
       return xsiErrorOccured();
     }
     else if(actionStr == "destroyClient")
