@@ -189,17 +189,23 @@ void xsiInitializeSplice()
     return;
 
   gSpliceInitialized = true;
-  CString workgroupFolder = xsiGetWorkgroupPath();
-  CString extFolder = workgroupFolder + "/../../Exts"; // above the 'SpliceIntegrations' folder
-  if(boost::filesystem::exists(extFolder.GetAsciiString()))
-    FabricSplice::addExtFolder(extFolder.GetAsciiString());
-
   FabricSplice::Initialize();
   FabricSplice::Logging::setLogFunc(xsiLogFunc);
   FabricSplice::Logging::setLogErrorFunc(xsiLogErrorFunc);
   FabricSplice::Logging::setKLReportFunc(xsiKLReportFunc);
   FabricSplice::Logging::setKLStatusFunc(xsiKLStatusFunc);
   FabricSplice::Logging::setCompilerErrorFunc(xsiCompilerErrorFunc);
+
+  CString workgroupFolder = xsiGetWorkgroupPath();
+  CString extFolder = workgroupFolder + "/../../Exts"; // above the 'SpliceIntegrations' folder
+  if(boost::filesystem::exists(extFolder.GetAsciiString()))
+  {
+    boost::filesystem::path extFolderAbs = boost::filesystem::canonical(extFolder.GetAsciiString());
+    extFolderAbs.make_preferred();
+    FabricSplice::addExtFolder(extFolderAbs.string().c_str());
+  }
+  else
+    xsiLogErrorFunc("The standard fabric exts folder '"+extFolder+" does not exist.");
 }
 
 SICALLBACK XSIUnloadPlugin( const PluginRegistrar& in_reg )
