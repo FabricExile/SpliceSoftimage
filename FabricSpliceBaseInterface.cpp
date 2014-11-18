@@ -59,6 +59,8 @@ FabricSpliceBaseInterface::FabricSpliceBaseInterface(){
   _instances.push_back(this);
   _nbOutputPorts = 0;
 
+  FabricSplice::setDCCOperatorSourceCodeCallback(&getSourceCodeForOperator);
+
   XSISPLICE_CATCH_END_VOID();
 }
 

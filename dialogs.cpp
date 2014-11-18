@@ -42,6 +42,7 @@ using namespace XSI;
 const LONG gButtonHeight = 25;
 const LONG gButtonWidth = 120;
 #define DIALOGOPSPLITTER " - "
+CString gLastSourceCode;
 
 SICALLBACK SpliceEditor_Define( CRef& in_ctxt )
 {
@@ -286,6 +287,29 @@ void showSpliceEcitor(unsigned int objectID)
   args[3] = siFollow;
   args[4] = false;
   Application().ExecuteCommand(L"InspectObj", args, returnVal);
+}
+
+const char * getSourceCodeForOperator(const char * graphName, const char * opName)
+{
+  CustomProperty editorProp = editorPropGet();
+  if(editorProp.IsValid())
+  {
+    LONG objectID = editorProp.GetParameterValue("objectID");
+    FabricSpliceBaseInterface * interf = FabricSpliceBaseInterface::getInstanceByObjectID(objectID);
+    if(interf)
+    {
+      CString currentOpName = editorProp.GetParameterValue(L"operatorName");
+      if(interf->getSpliceGraph().getName() == std::string(graphName) && currentOpName == opName)
+      {
+        gLastSourceCode = editorProp.GetParameterValue(L"klCode");
+        if(gLastSourceCode.Length() > 0)
+        {
+          return gLastSourceCode.GetAsciiString();
+        }
+      }
+    }
+  }
+  return NULL;
 }
 
 void updateSpliceEditorGrids(CustomProperty & prop)
