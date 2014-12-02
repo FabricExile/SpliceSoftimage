@@ -348,6 +348,45 @@ XSIPLUGINCALLBACK CStatus FabricSpliceImport_OnEvent(CRef & ctxt)
   return true;
 }
 
+
+CRefArray getXSIOperatorsFromModel(Model & model)
+{
+  CRefArray spliceOps;
+  CRefArray x3ds;
+  x3ds.Add(model.GetRef());
+  for(ULONG i=0;i<x3ds.GetCount();i++)
+  {
+    X3DObject x3d(x3ds[i]);
+    if(!x3d.IsValid())
+      continue;
+
+    CStringArray itemStr;
+    itemStr.Add(x3ds[i].GetAsText());
+    itemStr.Add(itemStr[0]+L".kine.local.SpliceOp");
+    itemStr.Add(itemStr[0]+L".kine.global.SpliceOp");
+    itemStr.Add(x3d.GetActivePrimitive().GetFullName()+L".SpliceOp");
+
+    for(LONG j=0;j<itemStr.GetCount();j++)
+    {
+      CRef target;
+      target.Set(itemStr[j]);
+      if(!target.IsValid())
+        continue;
+      CustomOperator op(target);
+      if(op.IsValid() && op.GetType().IsEqualNoCase(L"SpliceOp"))
+      {
+        spliceOps.Add(target);
+      }
+    }
+
+    CRefArray children = x3d.GetChildren();
+    for(ULONG j=0;j<children.GetCount();j++)
+      x3ds.Add(children[j]);
+  }
+  return spliceOps;
+}
+
+
 XSIPLUGINCALLBACK CStatus FabricSpliceBeginExport_OnEvent(CRef & ctxt)
 {
   FabricSplice::Logging::AutoTimer("FabricSpliceBeginExport_OnEvent");
@@ -361,13 +400,22 @@ XSIPLUGINCALLBACK CStatus FabricSpliceBeginExport_OnEvent(CRef & ctxt)
   CString fileName = context.GetAttribute("FileName");
   try
   {
+    CRefArray spliceOps = getXSIOperatorsFromModel(model);
+
     std::vector<opUserData*> instances = getXSIOperatorInstances();
     for(size_t i=0;i<instances.size();i++)
     {
       if(instances[i]->getInterf() == NULL)
         continue;
-      instances[i]->getInterf()->storePersistenceData(fileName);
-      instances[i]->getInterf()->disconnectForExport(fileName, model);
+      for(size_t j=0;j<spliceOps.GetCount();j++)
+      {
+        CustomOperator op(spliceOps[j]);
+        if(instances[i]->getObjectID() == op.GetObjectID())
+        {
+          instances[i]->getInterf()->storePersistenceData(fileName);
+          instances[i]->getInterf()->disconnectForExport(fileName, model);
+        }
+      }
     }
   }
   catch(FabricCore::Exception e)
@@ -389,12 +437,22 @@ XSIPLUGINCALLBACK CStatus FabricSpliceEndExport_OnEvent(CRef & ctxt)
 
   try
   {
+
+    CRefArray spliceOps = getXSIOperatorsFromModel(model);
+
     std::vector<opUserData*> instances = getXSIOperatorInstances();
     for(size_t i=0;i<instances.size();i++)
     {
       if(instances[i]->getInterf() == NULL)
         continue;
-      instances[i]->getInterf()->reconnectForImport(model);
+      for(size_t j=0;j<spliceOps.GetCount();j++)
+      {
+        CustomOperator op(spliceOps[j]);
+        if(instances[i]->getObjectID() == op.GetObjectID())
+        {
+          instances[i]->getInterf()->reconnectForImport(model);
+        }
+      }
     }
 
     FabricSpliceBaseInterface::cleanupForImport(model);
