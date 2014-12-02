@@ -26,7 +26,6 @@
 #include "commands.h"
 #include "FabricSpliceBaseInterface.h"
 #include "renderpass.h"
-#include <FabricCore.h>
 
 using namespace XSI;
 
@@ -78,12 +77,11 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
 
     if(actionStr == "constructClient")
     {
-      FabricCore::Client client = FabricSplice::ConstructClient();
-      bool clientCreated = client.isValid();
+      bool clientCreated = FabricSplice::ConstructClient().isValid();
       ctxt.PutAttribute(L"ReturnValue", clientCreated);
 
-      client.loadExtension("Envelope", "", false);
-
+      FabricSplice::setDCCOperatorSourceCodeCallback(&getSourceCodeForOperator);
+      
       return xsiErrorOccured();
     }
     else if(actionStr == "destroyClient")
@@ -614,7 +612,11 @@ SICALLBACK proceedToNextScene_Execute(CRef & in_ctxt)
   boost::filesystem::path currentSample = sceneFileName.GetAsciiString();
   boost::filesystem::path samplesDir = currentSample.parent_path();
 
+#if BOOST_VERSION == 105500
   while(samplesDir.stem().string() != "Samples" && samplesDir.stem().string() != "Splice") {
+#else
+  while(samplesDir.stem() != "Samples" && samplesDir.stem() != "Splice") {
+#endif
     samplesDir = samplesDir.parent_path();
     if(samplesDir.empty()) {
       Application().LogMessage("You can only use proceedToNextScene on the Fabric Engine sample scenes.", siWarningMsg);
@@ -639,9 +641,15 @@ SICALLBACK proceedToNextScene_Execute(CRef & in_ctxt)
       {
         folders.push_back(dir_iter->path());
       }
-      else if(dir_iter->path().extension().string() == ".scn" ||
+#if BOOST_VERSION == 105500
+      else if(dir_iter->path().extension().string() == ".scn" || 
         dir_iter->path().extension().string() == ".Scn" ||
         dir_iter->path().extension().string() == ".SCN")
+#else
+      else if(dir_iter->path().extension() == ".scn" || 
+        dir_iter->path().extension() == ".Scn" ||
+        dir_iter->path().extension() == ".SCN")
+#endif
       {
         sampleScenes.push_back(dir_iter->path());
       }
