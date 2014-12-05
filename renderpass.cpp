@@ -82,24 +82,60 @@ FabricCore::RTVal & getDrawContext(int viewportWidth, int viewportHeight, XSI::C
     inlineCamera.callMethod("", "setOrthographic", 1, &param);
 
     double xsiViewportAspect = double(viewportWidth) / double(viewportHeight);
-    double cameraAspect = cameraPrim.GetParameterValue(L"aspect");
     
-    if(projType == 0){ // orthographic projection
+    if(projType == 0)
+    {
+      // orthographic projection
       double orthoheight = cameraPrim.GetParameterValue(L"orthoheight");
       param = FabricSplice::constructFloat64RTVal(orthoheight);
       inlineCamera.callMethod("", "setOrthographicFrustumHeight", 1, &param);
     }
-    else{ // Perspective projection.
-      double fovX = MATH::DegreesToRadians(cameraPrim.GetParameterValue(L"fov"));
+    else
+    {
+      // Perspective projection.
+      //
+      // XSI returns always the camera FOV.  We have four cases:
+      // If the camera FOV is horizontal and the viewport is tall then the camera FOV is equal to the rendering FOVX, so to compute FOVY we use the viewport aspect ratio.
+      // If the camera FOV is horizontal and the viewport is wide then the camera FOV is less than the rendering FOVX.  However, using the camera aspect ratio for conversion converts to the rendering FOV
+      // If the camera FOV is vertical and the viewport is tall then the camera FOV is less than the rendering FOVY.  We therefore need to multiply it by cameraAspect / viewportAspect via the tan/atan conversion
+      // If the camera FOV is vertical and the viewport is wide then the camera FOV is equal to the rendering FOVY and we can use it directly.
+
+      double cameraAspect = cameraPrim.GetParameterValue(L"aspect");
+      double fovParam =
+        MATH::DegreesToRadians( cameraPrim.GetParameterValue(L"fov") );
+      LONG fovTypeParam = cameraPrim.GetParameterValue(L"fovtype");
+
+      // char buf[1024];
+      // sprintf( buf, "xsiViewportAspect=%lg cameraAspect=%lg fovParam=%lg fovTypeParam=%ld",
+      //   xsiViewportAspect, cameraAspect, fovParam, fovTypeParam);
+      // xsiLogErrorFunc(buf);
+
       double fovY;
-      if(xsiViewportAspect < cameraAspect){
-        // bars top and bottom
-        fovY = atan( tan(fovX * 0.5) / xsiViewportAspect ) * 2.0;
+      switch ( fovTypeParam )
+      {
+        case 1: // horizontal
+        {
+          if ( cameraAspect < xsiViewportAspect ) // wide
+            fovY = atan2( tan(fovParam * 0.5), cameraAspect ) * 2.0;
+          else // tall
+            fovY = atan2( tan(fovParam * 0.5), xsiViewportAspect ) * 2.0;
+        }
+        break;
+
+        case 0: // vertical
+        {
+          if ( cameraAspect < xsiViewportAspect ) // wide
+            fovY = fovParam;
+          else
+            fovY = atan2( tan(fovParam * 0.5) * cameraAspect, xsiViewportAspect ) * 2.0;
+        }
+        break;
+
+        default:
+          xsiLogErrorFunc("Unexpected camera FOV type");
+          break;
       }
-      else{
-        // bars left and right
-        fovY = atan( tan(fovX * 0.5) / cameraAspect ) * 2.0;
-      }
+
       param = FabricSplice::constructFloat64RTVal(fovY);
       inlineCamera.callMethod("", "setFovY", 1, &param);
     }
