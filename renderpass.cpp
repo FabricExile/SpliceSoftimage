@@ -55,16 +55,17 @@ void destroyDrawContext()
   sDrawContext.invalidate();
 }
 
-FabricCore::RTVal & getDrawContext(int viewportWidth, int viewportHeight, XSI::Camera & camera)
+FabricCore::RTVal & getDrawContext(XSI::Camera & camera)
 {
   FabricSplice::Logging::AutoTimer("getDrawContext");
 
-  // the viewport dimensions returned by the CGraphicSequencer is often corrupt oin certtain scenarios.
+  // A bug in the CGraphicSequencer means that the viewport dimensions returned by 
+  // 'GetViewportSize' are corrupt in certain scenarios. We no longer rely on these values. 
   // OpenGL can always give us the correct viewport values.
   int viewport[4];
   glGetIntegerv(GL_VIEWPORT, viewport);
-  viewportWidth = viewport[2];
-  viewportHeight = viewport[3];
+  int viewportWidth = viewport[2];
+  int viewportHeight = viewport[3];
 
   if(!sDrawContext.isValid())
     sDrawContext = FabricSplice::constructObjectRTVal("DrawContext");
@@ -235,16 +236,12 @@ XSIPLUGINCALLBACK void SpliceRenderPass_Execute(CRef & in_ctxt, void ** in_pUser
   // check if we should render this or not
   GraphicSequencerContext ctxt(in_ctxt);
   CGraphicSequencer sequencer = ctxt.GetGraphicSequencer();
-
-  UINT left, top, width, height;
-  sequencer.GetViewportSize(left, top, width, height);
-
   Camera camera(sequencer.GetCamera());
 
   // draw all gizmos
   try
   {
-    FabricSplice::SceneManagement::drawOpenGL(getDrawContext(width, height, camera));
+    FabricSplice::SceneManagement::drawOpenGL(getDrawContext(camera));
   }
   catch(FabricCore::Exception e)
   {
