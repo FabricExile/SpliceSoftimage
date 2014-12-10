@@ -217,6 +217,10 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
       CRef ofRef = Application().GetObjectFromID((LONG)interf->getObjectID());
       ctxt.PutAttribute(L"ReturnValue", ofRef.GetAsText());
     }   
+    else if(actionStr.IsEqualNoCase("isRendererEnabled"))
+    {
+      ctxt.PutAttribute(L"ReturnValue", isRTRPassEnabled());
+    }
     else if(actionStr.IsEqualNoCase("toggleRenderer"))
     {
       enableRTRPass(!isRTRPassEnabled());
