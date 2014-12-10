@@ -30,8 +30,10 @@
 #include "FabricSpliceBaseInterface.h"
 
 
-// TODO: fix this on other OS.
-#include <windows.h>
+#ifdef _WIN32
+# include <windows.h>
+#endif
+
 #include <GL/gl.h>
 
 using namespace XSI;

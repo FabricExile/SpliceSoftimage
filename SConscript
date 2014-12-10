@@ -38,13 +38,13 @@ elif FABRIC_BUILD_OS == 'Linux':
 env.MergeFlags(softimageFlags)
 env.Append(CPPDEFINES = ["_SPLICE_SOFTIMAGE_VERSION="+str(SOFTIMAGE_VERSION[:4])])
 
-env.Append(LIBS = ['OpenGL32.lib'])
-
 env.MergeFlags(sharedCapiFlags)
 env.MergeFlags(spliceFlags)
 
 if FABRIC_BUILD_OS == 'Linux':
   env.Append(LIBS=['boost_filesystem', 'boost_system'])
+elif FABRIC_BUILD_OS == 'Windows':
+  env.Append(LIBS = ['OpenGL32.lib'])
 
 target = 'FabricSpliceSoftimage'
 
