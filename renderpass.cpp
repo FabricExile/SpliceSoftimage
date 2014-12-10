@@ -29,6 +29,11 @@
 #include "tools.h"
 #include "FabricSpliceBaseInterface.h"
 
+
+// TODO: fix this on other OS.
+#include <windows.h>
+#include <GL/gl.h>
+
 using namespace XSI;
 
 bool gRTRPassEnabled = true;
@@ -53,6 +58,13 @@ void destroyDrawContext()
 FabricCore::RTVal & getDrawContext(int viewportWidth, int viewportHeight, XSI::Camera & camera)
 {
   FabricSplice::Logging::AutoTimer("getDrawContext");
+
+  // the viewport dimensions returned by the CGraphicSequencer is often corrupt oin certtain scenarios.
+  // OpenGL can always give us the correct viewport values.
+  int viewport[4];
+  glGetIntegerv(GL_VIEWPORT, viewport);
+  viewportWidth = viewport[2];
+  viewportHeight = viewport[3];
 
   if(!sDrawContext.isValid())
     sDrawContext = FabricSplice::constructObjectRTVal("DrawContext");
@@ -84,8 +96,8 @@ FabricCore::RTVal & getDrawContext(int viewportWidth, int viewportHeight, XSI::C
     double xsiViewportAspect = double(viewportWidth) / double(viewportHeight);
     
     if(projType == 0)
-    {
-      // orthographic projection
+    {  
+      // Orthographic projection
       double orthoheight = cameraPrim.GetParameterValue(L"orthoheight");
       param = FabricSplice::constructFloat64RTVal(orthoheight);
       inlineCamera.callMethod("", "setOrthographicFrustumHeight", 1, &param);
@@ -141,11 +153,11 @@ FabricCore::RTVal & getDrawContext(int viewportWidth, int viewportHeight, XSI::C
     }
 
 
-    double near = cameraPrim.GetParameterValue(L"near");
-    double far = cameraPrim.GetParameterValue(L"far");
-    param = FabricSplice::constructFloat64RTVal(near);
+    double nearDist = cameraPrim.GetParameterValue(L"near");
+    double farDist = cameraPrim.GetParameterValue(L"far");
+    param = FabricSplice::constructFloat64RTVal(nearDist);
     inlineCamera.callMethod("", "setNearDistance", 1, &param);
-    param = FabricSplice::constructFloat64RTVal(far);
+    param = FabricSplice::constructFloat64RTVal(farDist);
     inlineCamera.callMethod("", "setFarDistance", 1, &param);
 
     FabricCore::RTVal cameraMat = FabricSplice::constructRTVal("Mat44");
@@ -187,7 +199,7 @@ XSIPLUGINCALLBACK void SpliceRenderPass_Init(CRef & in_ctxt, void ** in_pUserDat
 {
   GraphicSequencerContext ctxt = in_ctxt;
   CGraphicSequencer sequencer = ctxt.GetGraphicSequencer();
-  sequencer.RegisterViewportCallback(L"CPRenderCallback", 0, siPass, siOpenGL20, siAll, CStringArray());
+  sequencer.RegisterViewportCallback(L"SpliceRenderPass", 0, siPass, siOpenGL20, siAll, CStringArray());
 }
 
 XSIPLUGINCALLBACK void SpliceRenderPass_Execute(CRef & in_ctxt, void ** in_pUserData)
@@ -226,6 +238,7 @@ XSIPLUGINCALLBACK void SpliceRenderPass_Execute(CRef & in_ctxt, void ** in_pUser
 
   UINT left, top, width, height;
   sequencer.GetViewportSize(left, top, width, height);
+
   Camera camera(sequencer.GetCamera());
 
   // draw all gizmos
