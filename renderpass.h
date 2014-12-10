@@ -8,7 +8,6 @@ bool isRTRPassEnabled();
 void enableRTRPass(bool enable);
 
 void destroyDrawContext();
-FabricCore::RTVal & getDrawContext(int viewportWidth, int viewportHeight, XSI::Camera & camera);
 
 void pushRefToDelete(const XSI::CRef & ref);
 
