@@ -435,6 +435,7 @@ CStatus FabricSpliceBaseInterface::addXSIParameter(const CString &portName, cons
   parameterInfo info;
   info.dataType = dataType;
   _parameters.insert(std::pair<std::string, parameterInfo>(portName.GetAsciiString(), info));
+  _nbParams++;
 
   _spliceGraph.getDGPort(portName.GetAsciiString()).setOption("SoftimagePortType", FabricCore::Variant::CreateSInt32(SoftimagePortType_Parameter));
 
@@ -543,8 +544,10 @@ CStatus FabricSpliceBaseInterface::removeSplicePort(const CString &portName)
     return CStatus::OK;
 
   std::map<std::string, parameterInfo>::iterator parameterIt = _parameters.find(portName.GetAsciiString());
-  if(parameterIt != _parameters.end())
+  if(parameterIt != _parameters.end()){
     _parameters.erase(parameterIt);
+    _nbParams++;
+  }
   std::map<std::string, portInfo>::iterator portIt = _ports.find(portName.GetAsciiString());
   if(portIt != _ports.end())
   {
@@ -715,41 +718,18 @@ CStatus FabricSpliceBaseInterface::transferInputParameters(OperatorContext & con
   FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::transferInputParameters");
   try
   {
-    FabricCore::RTVal evalContext = _spliceGraph.getEvalContext();
-
     FabricCore::RTVal rtVal;
     CValue value;
 
     for(std::map<std::string, parameterInfo>::iterator it = _parameters.begin(); it != _parameters.end(); it++)
     {
       FabricSplice::DGPort port = _spliceGraph.getDGPort(it->first.c_str());
-      // if(port.isManipulatable())
-      // {
-      //   if(it->second.paramNames.GetCount() == 0)
-      //     return CStatus::OK;
-
-      //   std::vector<float> values(it->second.paramNames.GetCount());
-      //   for(ULONG i=0;i<it->second.paramNames.GetCount();i++)
-      //     values[i] = (float)(double)context.GetParameterValue(it->second.paramNames[i]);
-
-      //   port.setAnimationChannelValues(values.size(), &values[0]);
-      // }
-      // else
       {
         value = context.GetParameterValue(it->first.c_str());
         if(!convertBasicInputParameter(it->second.dataType, value, rtVal))
           continue;
         port.setRTVal(rtVal);
       }
-
-      // update the evaluation context about this
-      std::vector<FabricCore::RTVal> args(1);
-      args[0] = FabricSplice::constructStringRTVal(it->first.c_str());
-      if(port.isValid()){
-        if(port.getMode() != FabricSplice::Port_Mode_OUT)
-          evalContext.callMethod("", "_addDirtyInput", args.size(), &args[0]);
-      }
-
     }
   }
   catch(FabricSplice::Exception e)
@@ -769,8 +749,6 @@ CStatus FabricSpliceBaseInterface::transferInputPorts(OperatorContext & context)
 {
   FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::transferInputPorts");
 
-  FabricCore::RTVal evalContext = _spliceGraph.getEvalContext();
-
   OutputPort xsiPort(context.GetOutputPort());
   std::string outPortName = xsiPort.GetGroupName().GetAsciiString();
 
@@ -780,14 +758,6 @@ CStatus FabricSpliceBaseInterface::transferInputPorts(OperatorContext & context)
       continue;
 
     FabricSplice::DGPort splicePort = _spliceGraph.getDGPort(it->first.c_str());
-
-    // update the evaluation context about this
-    std::vector<FabricCore::RTVal> args(1);
-    args[0] = FabricSplice::constructStringRTVal(it->first.c_str());
-    if(splicePort.isValid()){
-      if(splicePort.getMode() != FabricSplice::Port_Mode_OUT)
-        evalContext.callMethod("", "_addDirtyInput", args.size(), &args[0]);
-    }
 
     LONG portIndex = 0;
     CString portIndexStr(portIndex++);
@@ -1522,39 +1492,53 @@ CStatus FabricSpliceBaseInterface::evaluate()
   return CStatus::OK;
 }
 
-bool FabricSpliceBaseInterface::requiresEvaluate(XSI::OperatorContext & context)
+bool FabricSpliceBaseInterface::requiresEvaluate(XSI::CRef opRef, XSI::OperatorContext & context)
 {
   FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::requiresEvaluate");
-  std::string portName = OutputPort(context.GetOutputPort()).GetName().GetAsciiString();
-  if(_processedPorts.size() == 0)
-  {
-    _processedPorts.push_back(portName);
+
+  // If 'AlwaysEvaluate' is on, then we don't check for actual changes.
+  if(bool(context.GetParameterValue("AlwaysEvaluate")))
     return true;
-  }
-  if(_processedPorts[0] == portName)
-  {
-    _processedPorts.resize(1);
-    return true;
-  }
-  if(_processedPorts.size() < _nbOutputPorts)
-  {
-    _processedPorts.push_back(portName);
-    return false;
-  }
-  else
-  {
-    for(size_t i=1;i<_nbOutputPorts;i++)
-    {
-      if(_processedPorts[i] == portName)
-      {
-        _processedPorts.clear();
-        _processedPorts.push_back(portName);
-        return true;
-      }
+
+  bool result = false;
+  FabricCore::RTVal evalContext = _spliceGraph.getEvalContext();
+
+  CustomOperator op(opRef);
+  CRefArray inputPorts = op.GetInputPorts();
+  _inputEvaluationIDs.resize(inputPorts.GetCount());
+  for(LONG i=0;i<inputPorts.GetCount();i++){
+    Port port(inputPorts[i]);
+    LONG evalID = ProjectItem(port.GetTarget()).GetEvaluationID();
+
+    if(_inputEvaluationIDs[i] != evalID){
+      result = true;
+      std::string inPortName = port.GetGroupName().GetAsciiString();
+
+      FabricCore::RTVal portNameRTVal = FabricSplice::constructStringRTVal(inPortName.c_str());
+      evalContext.callMethod("", "_addDirtyInput", 1, &portNameRTVal);
+      _inputEvaluationIDs[i] = evalID;
     }
   }
 
-  return true;
+  int paramId = 0;
+  for(std::map<std::string, parameterInfo>::iterator it = _parameters.begin(); it != _parameters.end(); it++)
+  {
+    std::string paramName = it->first;
+    CValue paramValue = context.GetParameterValue(paramName.c_str());
+
+    if(_parameterValues.size() <= paramId)
+      _parameterValues.resize(paramId+1);
+    if(_parameterValues[paramId] != paramValue) {
+      result = true;
+
+      FabricCore::RTVal portNameRTVal = FabricSplice::constructStringRTVal(paramName.c_str());
+      evalContext.callMethod("", "_addDirtyInput", 1, &portNameRTVal);
+      _parameterValues[paramId] = paramValue;
+    }
+    paramId++;
+  }
+
+  return result;
 }
 
 FabricSplice::DGGraph FabricSpliceBaseInterface::getSpliceGraph()
@@ -1695,6 +1679,7 @@ CStatus FabricSpliceBaseInterface::restoreFromPersistenceData(CString file)
   _parameters.clear();
   _ports.clear();
   _nbOutputPorts = 0;
+  _nbParams=0;
 
   CParameterRefArray params = op.GetParameters();
   for(LONG i=0;i<params.GetCount();i++)
@@ -1707,6 +1692,7 @@ CStatus FabricSpliceBaseInterface::restoreFromPersistenceData(CString file)
     parameterInfo info;
     info.dataType = port.getDataType();
     _parameters.insert(std::pair<std::string, parameterInfo>(portName.GetAsciiString(), info));
+    _nbParams++;
   }
 
   for(unsigned int i=0;i<_spliceGraph.getDGPortCount();i++)
@@ -1745,6 +1731,7 @@ CStatus FabricSpliceBaseInterface::restoreFromPersistenceData(CString file)
     if(info.paramNames.GetCount() == 0)
       continue;
     _parameters.insert(std::pair<std::string, parameterInfo>(port.getName(), info));
+    _nbParams++;
   }
 
   CRefArray portGroups = op.GetPortGroups();
@@ -1836,6 +1823,7 @@ CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Va
   _parameters.clear();
   _ports.clear();
   _nbOutputPorts = 0;
+  _nbParams = 0;
 
   bool skipPicking = FabricSplice::Scripting::consumeBooleanArgument(scriptArgs, "skipPicking", false, true);
 
@@ -1883,6 +1871,7 @@ CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Va
       else if(dataType.IsEqualNoCase(L"String"))
         info.defaultValue = CValue(CString(port.getDefault().getStringData()));
       _parameters.insert(std::pair<std::string, parameterInfo>(portName.GetAsciiString(), info));
+      _nbParams++;
     }
     // else if(port.isManipulatable())
     // {
@@ -1901,6 +1890,7 @@ CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Va
     //       info.paramValues.Add(paramValueVal.getFloat32());
     //     }
     //     _parameters.insert(std::pair<std::string, parameterInfo>(portName.GetAsciiString(), info));
+    //     _nbParams++;
     //   }
     //   catch(FabricCore::Exception e)
     //   {
@@ -2032,8 +2022,10 @@ CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Va
           else
           {
             // remove the parameter if it was connected up
-            if(_parameters.find(portName.GetAsciiString()) != _parameters.end())
+            if(_parameters.find(portName.GetAsciiString()) != _parameters.end()){
               _parameters.erase(_parameters.find(portName.GetAsciiString()));
+              _nbParams--;
+            }
           }
         }
       }

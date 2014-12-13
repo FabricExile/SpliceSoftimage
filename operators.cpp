@@ -17,6 +17,7 @@
 #include <xsi_utils.h>
 #include <xsi_customoperator.h>
 #include <xsi_operatorcontext.h>
+#include <xsi_outputport.h>
 
 // project includes
 #include "plugin.h"
@@ -94,10 +95,12 @@ XSIPLUGINCALLBACK CStatus SpliceOp_Update(CRef & in_ctxt)
   XSISPLICE_CATCH_BEGIN()
 
   FabricSpliceBaseInterface * interf = p->getInterf();
+  CRef opRef = Application().GetObjectFromID(p->getObjectID());
   if(interf != NULL)
   {
-    if(interf->requiresEvaluate(ctxt))
+    if(interf->requiresEvaluate(opRef, ctxt))
     {
+
       interf->transferInputParameters(ctxt);
       interf->transferInputPorts(ctxt);
       interf->evaluate();
@@ -106,7 +109,6 @@ XSIPLUGINCALLBACK CStatus SpliceOp_Update(CRef & in_ctxt)
   }
   else if(!xsiIsLoadingScene())
   {
-    CRef opRef = Application().GetObjectFromID(p->getObjectID());
     xsiLogErrorFunc("Missing FabricSpliceBaseInterface. Probably duplicated object. Please remove operator '"+opRef.GetAsText()+"'.");
     return CStatus::OK;
   }

@@ -56,7 +56,7 @@ public:
   XSI::CStatus transferInputPorts(XSI::OperatorContext & context);
   XSI::CStatus transferOutputPort(XSI::OperatorContext & context);
   XSI::CStatus evaluate();
-  bool requiresEvaluate(XSI::OperatorContext & context);
+  bool requiresEvaluate(XSI::CRef opRef, XSI::OperatorContext & context);
 
   FabricSplice::DGGraph getSpliceGraph();
 
@@ -109,7 +109,10 @@ protected:
   std::map<std::string, parameterInfo> _parameters;
   std::map<std::string, portInfo> _ports;
   unsigned int _nbOutputPorts;
-  std::vector<std::string> _processedPorts;
+  unsigned int _nbParams;
+
+  std::vector<LONG> _inputEvaluationIDs;
+  std::vector<XSI::CValue> _parameterValues;
 };
 
 enum SoftimagePortType {
