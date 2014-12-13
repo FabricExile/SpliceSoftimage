@@ -1497,13 +1497,13 @@ bool FabricSpliceBaseInterface::requiresEvaluate(XSI::CRef opRef, XSI::OperatorC
   FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::requiresEvaluate");
 
   // If 'AlwaysEvaluate' is on, then we don't check for actual changes.
-  if(bool(context.GetParameterValue("AlwaysEvaluate")))
+  CustomOperator op(opRef);
+  if(bool(op.GetParameterValue("AlwaysEvaluate")))
     return true;
 
   bool result = false;
   FabricCore::RTVal evalContext = _spliceGraph.getEvalContext();
 
-  CustomOperator op(opRef);
   CRefArray inputPorts = op.GetInputPorts();
   _inputEvaluationIDs.resize(inputPorts.GetCount());
   for(LONG i=0;i<inputPorts.GetCount();i++){
