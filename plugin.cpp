@@ -87,7 +87,7 @@ void xsiKLReportFunc(const char * message, unsigned int length)
 void xsiCompilerErrorFunc(unsigned int row, unsigned int col, const char * file, const char * level, const char * desc)
 {
   CString line((LONG)row);
-  Application().LogMessage("[KL Compiler "+CString(level)+"]: line "+line+", op '"+CString(file)+"': "+CString(desc), siErrorMsg);
+  Application().LogMessage("[KL Compiler "+CString(level)+"]: line "+line+", op '"+CString(file)+"': "+CString(desc));
   CustomProperty klEditor = editorPropGet();
   if(klEditor.IsValid())
   {
