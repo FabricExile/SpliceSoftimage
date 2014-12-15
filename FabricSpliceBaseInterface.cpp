@@ -776,7 +776,7 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
     {
       if(it->second.portMode == FabricSplice::Port_Mode_OUT)
         continue;
-    nodeHasInputs = true;
+        nodeHasInputs = true;
 
       std::string portName = it->first;
       FabricSplice::DGPort splicePort = _spliceGraph.getDGPort(portName.c_str());
