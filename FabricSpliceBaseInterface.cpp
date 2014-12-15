@@ -715,7 +715,7 @@ bool FabricSpliceBaseInterface::checkIfValueChangedAndDirtyInput(CValue value, s
 bool FabricSpliceBaseInterface::checkEvalIDCache(LONG evalID, int &evalIDCacheIndex, bool alwaysEvaluate){
   if(evalIDsCache.size() <= evalIDCacheIndex)
     evalIDsCache.resize(evalIDCacheIndex+1);
-  bool result = evalIDsCache[evalIDCacheIndex] == evalID || !alwaysEvaluate;
+  bool result = evalIDsCache[evalIDCacheIndex] == evalID && !alwaysEvaluate;
   evalIDsCache[evalIDCacheIndex] = evalID;
   evalIDCacheIndex++;
   return result;
@@ -918,10 +918,7 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
         PolygonMesh mesh = PolygonMesh(prim.GetGeometry().GetRef());
 
         FabricCore::RTVal rtVal = splicePort.getRTVal();
-        if(!rtVal.isValid() || rtVal.isNullObject())
-          rtVal = FabricSplice::constructObjectRTVal("PolygonMesh");
         convertInputPolygonMesh(mesh, rtVal);
-
         splicePort.setRTVal(rtVal);
 
         addDirtyInput(portName, evalContext, -1);
@@ -944,7 +941,7 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
           PolygonMesh mesh = PolygonMesh(prim.GetGeometry().GetRef());
           if(arrayVal.getArraySize() < i)
           {
-            FabricCore::RTVal rtVal = FabricSplice::constructObjectRTVal("PolygonMesh");
+            FabricCore::RTVal rtVal;
             convertInputPolygonMesh(mesh, rtVal);
             arrayVal.callMethod("", "push", 1, &rtVal);
           }
