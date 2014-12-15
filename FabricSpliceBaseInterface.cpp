@@ -73,9 +73,9 @@ FabricSpliceBaseInterface::~FabricSpliceBaseInterface(){
     }
   }
   for(size_t i=0;i<valuesCache.size();i++){
-	for(size_t j=0;j<valuesCache[i].size();j++)
-		valuesCache[i][j].Clear();
-	valuesCache[i].clear();
+  for(size_t j=0;j<valuesCache[i].size();j++)
+    valuesCache[i][j].Clear();
+  valuesCache[i].clear();
   }
   valuesCache.clear();
   evalIDsCache.clear();
@@ -738,6 +738,10 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
     if(alwaysEvaluate)
       result = true;
 
+    // If the splice op has only output ports, then we should force an evaluation.
+    // otherwize w must always provide one input param. (simple testing scenarios might not include input params).
+    bool nodeHasInputs = false;
+
     OutputPort xsiPort(context.GetOutputPort());
     std::string outPortName = xsiPort.GetGroupName().GetAsciiString();
     int valueCacheIndex = 0;
@@ -764,169 +768,145 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
           result = true;
         }
         valueCacheIndex++;
+        nodeHasInputs = true;
       }
     }
 
-  for(std::map<std::string, portInfo>::iterator it = _ports.begin(); it != _ports.end(); it++)
-  {
-    if(it->second.portMode == FabricSplice::Port_Mode_OUT)
-      continue;
-
-    std::string portName = it->first;
-    FabricSplice::DGPort splicePort = _spliceGraph.getDGPort(portName.c_str());
-
-    FabricCore::Variant iceAttrName = splicePort.getOption("ICEAttribute");
-    if(iceAttrName.isString())
+    for(std::map<std::string, portInfo>::iterator it = _ports.begin(); it != _ports.end(); it++)
     {
-      Primitive prim((CRef)context.GetInputValue(it->second.realPortName+CString(CValue(CValue(0)))));
-      
-      // Now check if the input geometry has changed scince our previous evaluation.
-      LONG evalID = ProjectItem(prim).GetEvaluationID();
-      if(checkEvalIDCache( evalID, evalIDCacheIndex, alwaysEvaluate))
+      if(it->second.portMode == FabricSplice::Port_Mode_OUT)
         continue;
-      
-      Geometry xsiGeo = prim.GetGeometry();
-      CString iceAttrStr = iceAttrName.getStringData();
-      ICEAttribute iceAttr = xsiGeo.GetICEAttributeFromName(iceAttrStr);
-      if(iceAttr.IsValid()){
-        convertInputICEAttribute(splicePort, it->second.dataType, iceAttr, xsiGeo);
-        addDirtyInput(portName, evalContext, -1);
-      }
-    }
-    else if(it->second.dataType == "Boolean" || 
-       it->second.dataType == "Integer" || 
-       it->second.dataType == "Scalar" || 
-       it->second.dataType == "String")
-    {
-      CValue value = context.GetInputValue(portName.c_str()+CString(CValue(0)));
-      if(valuesCache.size() <= valueCacheIndex)
-        valuesCache.resize(valueCacheIndex+1);
-      if(checkIfValueChangedAndDirtyInput(value, valuesCache[valueCacheIndex], alwaysEvaluate, portName, evalContext, -1))
-      {
-        FabricCore::RTVal rtVal;
-        if(convertBasicInputParameter(it->second.dataType, value, rtVal))
-          splicePort.setRTVal(rtVal);
-        result = true;
-      }
-      valueCacheIndex++;
-    }
-    else if(it->second.dataType == "Boolean[]" || 
-       it->second.dataType == "Integer[]" || 
-       it->second.dataType == "Scalar[]" || 
-       it->second.dataType == "String[]")
-    {
-      if(valuesCache.size() <= valueCacheIndex)
-        valuesCache.resize(valueCacheIndex+1);
+    nodeHasInputs = true;
 
-      CString singleDataType = it->second.dataType.GetSubString(0, it->second.dataType.Length()-2);
-      FabricCore::RTVal arrayVal = splicePort.getRTVal();
-      uint32_t arraySize = splicePort.getArrayCount();
-      for(int i=0; ; i++)
+      std::string portName = it->first;
+      FabricSplice::DGPort splicePort = _spliceGraph.getDGPort(portName.c_str());
+
+      FabricCore::Variant iceAttrName = splicePort.getOption("ICEAttribute");
+      if(iceAttrName.isString())
       {
-        CValue value = context.GetInputValue(portName.c_str()+CString(i));
-        if(value.IsEmpty())
-          break;
-        if(i >= arraySize){
-          valuesCache[valueCacheIndex].resize(i+1);
+        Primitive prim((CRef)context.GetInputValue(it->second.realPortName+CString(CValue(CValue(0)))));
+        
+        // Now check if the input geometry has changed scince our previous evaluation.
+        LONG evalID = ProjectItem(prim).GetEvaluationID();
+        if(checkEvalIDCache( evalID, evalIDCacheIndex, alwaysEvaluate))
+          continue;
+        
+        Geometry xsiGeo = prim.GetGeometry();
+        CString iceAttrStr = iceAttrName.getStringData();
+        ICEAttribute iceAttr = xsiGeo.GetICEAttributeFromName(iceAttrStr);
+        if(iceAttr.IsValid()){
+          convertInputICEAttribute(splicePort, it->second.dataType, iceAttr, xsiGeo);
+          addDirtyInput(portName, evalContext, -1);
         }
-        if(checkIfValueChangedAndDirtyInput(value, valuesCache[valueCacheIndex], alwaysEvaluate, portName, evalContext, i))
+      }
+      else if(it->second.dataType == "Boolean" || 
+         it->second.dataType == "Integer" || 
+         it->second.dataType == "Scalar" || 
+         it->second.dataType == "String")
+      {
+        CValue value = context.GetInputValue(portName.c_str()+CString(CValue(0)));
+        if(valuesCache.size() <= valueCacheIndex)
+          valuesCache.resize(valueCacheIndex+1);
+        if(checkIfValueChangedAndDirtyInput(value, valuesCache[valueCacheIndex], alwaysEvaluate, portName, evalContext, -1))
         {
           FabricCore::RTVal rtVal;
-          if(convertBasicInputParameter(singleDataType, value, rtVal)){
-            if(i >= arraySize){
-              arrayVal.callMethod("", "push", 1, &rtVal);
-              result = true;
-              arraySize++;
-            }
-            else{
-              arrayVal.callMethod("", "setArrayElement", 1, &rtVal);
-            }
-          }
+          if(convertBasicInputParameter(it->second.dataType, value, rtVal))
+            splicePort.setRTVal(rtVal);
           result = true;
         }
         valueCacheIndex++;
       }
-      splicePort.setRTVal(arrayVal);
-    }
-    else if(it->second.dataType == "Mat44")
-    {
-      LONG i = 0;
-      KinematicState kine((CRef)context.GetInputValue(it->second.realPortName+CString(i)));
-      MATH::CMatrix4 matrix = kine.GetTransform().GetMatrix4();
-      FabricCore::RTVal rtVal;
-      getRTValFromCMatrix4(matrix, rtVal);
-
-      FabricCore::RTVal currVal = splicePort.getRTVal();
-      if(!currVal.callMethod("Boolean", "equal", 1, &rtVal).getBoolean()){
-        splicePort.setRTVal(rtVal);
-        addDirtyInput(portName, evalContext, -1);
-        result = true;
-      }
-    }
-    else if(it->second.dataType == "Mat44[]")
-    {
-      FabricCore::RTVal arrayVal = splicePort.getRTVal();
-      for(int i=0; ; i++)
+      else if(it->second.dataType == "Boolean[]" || 
+         it->second.dataType == "Integer[]" || 
+         it->second.dataType == "Scalar[]" || 
+         it->second.dataType == "String[]")
       {
+        if(valuesCache.size() <= valueCacheIndex)
+          valuesCache.resize(valueCacheIndex+1);
+
+        CString singleDataType = it->second.dataType.GetSubString(0, it->second.dataType.Length()-2);
+        FabricCore::RTVal arrayVal = splicePort.getRTVal();
+        uint32_t arraySize = splicePort.getArrayCount();
+        for(int i=0; ; i++)
+        {
+          CValue value = context.GetInputValue(portName.c_str()+CString(i));
+          if(value.IsEmpty())
+            break;
+          if(i >= arraySize){
+            valuesCache[valueCacheIndex].resize(i+1);
+          }
+          if(checkIfValueChangedAndDirtyInput(value, valuesCache[valueCacheIndex], alwaysEvaluate, portName, evalContext, i))
+          {
+            FabricCore::RTVal rtVal;
+            if(convertBasicInputParameter(singleDataType, value, rtVal)){
+              if(i >= arraySize){
+                arrayVal.callMethod("", "push", 1, &rtVal);
+                result = true;
+                arraySize++;
+              }
+              else{
+                arrayVal.callMethod("", "setArrayElement", 1, &rtVal);
+              }
+            }
+            result = true;
+          }
+          valueCacheIndex++;
+        }
+        splicePort.setRTVal(arrayVal);
+      }
+      else if(it->second.dataType == "Mat44")
+      {
+        LONG i = 0;
         KinematicState kine((CRef)context.GetInputValue(it->second.realPortName+CString(i)));
-        if(!kine.IsValid())
-          break;
         MATH::CMatrix4 matrix = kine.GetTransform().GetMatrix4();
         FabricCore::RTVal rtVal;
         getRTValFromCMatrix4(matrix, rtVal);
 
-
-        if(arrayVal.getArraySize() < i)
-        {
-          arrayVal.callMethod("", "push", 1, &rtVal);
-          addDirtyInput(portName, evalContext, i);
+        FabricCore::RTVal currVal = splicePort.getRTVal();
+        if(!currVal.callMethod("Boolean", "equal", 1, &rtVal).getBoolean()){
+          splicePort.setRTVal(rtVal);
+          addDirtyInput(portName, evalContext, -1);
           result = true;
         }
-        else
+      }
+      else if(it->second.dataType == "Mat44[]")
+      {
+        FabricCore::RTVal arrayVal = splicePort.getRTVal();
+        for(int i=0; ; i++)
         {
-          FabricCore::RTVal currVal = arrayVal.getArrayElement(i);
-          if(!currVal.callMethod("Boolean", "equal", 1, &rtVal).getBoolean()){
-            arrayVal.setArrayElement(i, rtVal);
+          KinematicState kine((CRef)context.GetInputValue(it->second.realPortName+CString(i)));
+          if(!kine.IsValid())
+            break;
+          MATH::CMatrix4 matrix = kine.GetTransform().GetMatrix4();
+          FabricCore::RTVal rtVal;
+          getRTValFromCMatrix4(matrix, rtVal);
+
+
+          if(arrayVal.getArraySize() < i)
+          {
+            arrayVal.callMethod("", "push", 1, &rtVal);
             addDirtyInput(portName, evalContext, i);
             result = true;
           }
+          else
+          {
+            FabricCore::RTVal currVal = arrayVal.getArrayElement(i);
+            if(!currVal.callMethod("Boolean", "equal", 1, &rtVal).getBoolean()){
+              arrayVal.setArrayElement(i, rtVal);
+              addDirtyInput(portName, evalContext, i);
+              result = true;
+            }
+          }
         }
+        splicePort.setRTVal(arrayVal);
       }
-      splicePort.setRTVal(arrayVal);
-    }
-    else if(it->second.dataType == "PolygonMesh")
-    {
-      Primitive prim;
-      if(it->second.portMode == FabricSplice::Port_Mode_IO && portName == outPortName)
-        prim = context.GetOutputTarget();
-      else
-        prim = (CRef)context.GetInputValue(it->second.realPortName+CString(CValue(0)));
-      if(!prim.IsValid())
-        break;
-
-      // Now check if the input geometry has changed scince our previous evaluation.
-      LONG evalID = ProjectItem(prim).GetEvaluationID();
-      if(checkEvalIDCache( evalID, evalIDCacheIndex, alwaysEvaluate))
-        continue;
-      
-      PolygonMesh mesh = PolygonMesh(prim.GetGeometry().GetRef());
-
-      FabricCore::RTVal rtVal = splicePort.getRTVal();
-      if(!rtVal.isValid() || rtVal.isNullObject())
-        rtVal = FabricSplice::constructObjectRTVal("PolygonMesh");
-      convertInputPolygonMesh(mesh, rtVal);
-
-      splicePort.setRTVal(rtVal);
-
-      addDirtyInput(portName, evalContext, -1);
-      result = true;
-    }
-    else if(it->second.dataType == "PolygonMesh[]")
-    {
-      FabricCore::RTVal arrayVal = splicePort.getRTVal();
-      for(int i=0; ; i++)
+      else if(it->second.dataType == "PolygonMesh")
       {
-        Primitive prim((CRef)context.GetInputValue(it->second.realPortName+CString(i)));
+        Primitive prim;
+        if(it->second.portMode == FabricSplice::Port_Mode_IO && portName == outPortName)
+          prim = context.GetOutputTarget();
+        else
+          prim = (CRef)context.GetInputValue(it->second.realPortName+CString(CValue(0)));
         if(!prim.IsValid())
           break;
 
@@ -934,53 +914,58 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
         LONG evalID = ProjectItem(prim).GetEvaluationID();
         if(checkEvalIDCache( evalID, evalIDCacheIndex, alwaysEvaluate))
           continue;
-
+        
         PolygonMesh mesh = PolygonMesh(prim.GetGeometry().GetRef());
-        if(arrayVal.getArraySize() < i)
-        {
-          FabricCore::RTVal rtVal = FabricSplice::constructObjectRTVal("PolygonMesh");
-          convertInputPolygonMesh(mesh, rtVal);
-          arrayVal.callMethod("", "push", 1, &rtVal);
-        }
-        else
-        {
-          FabricCore::RTVal rtVal = arrayVal.getArrayElement(i);
-          convertInputPolygonMesh( mesh, rtVal);
-          arrayVal.setArrayElement(i, rtVal);
-        }
-        addDirtyInput(portName, evalContext, i);
+
+        FabricCore::RTVal rtVal = splicePort.getRTVal();
+        if(!rtVal.isValid() || rtVal.isNullObject())
+          rtVal = FabricSplice::constructObjectRTVal("PolygonMesh");
+        convertInputPolygonMesh(mesh, rtVal);
+
+        splicePort.setRTVal(rtVal);
+
+        addDirtyInput(portName, evalContext, -1);
         result = true;
       }
-      splicePort.setRTVal(arrayVal);
-    }
-    else if(it->second.dataType == "Lines")
-    {
-      Primitive prim;
-      if(it->second.portMode == FabricSplice::Port_Mode_IO && portName == outPortName)
-        prim = context.GetOutputTarget();
-      else
-        prim = (CRef)context.GetInputValue(portName.c_str()+CString(CValue(0)));
-
-      // Now check if the input geometry has changed scince our previous evaluation.
-      LONG evalID = ProjectItem(prim).GetEvaluationID();
-      if(checkEvalIDCache( evalID, evalIDCacheIndex, alwaysEvaluate))
-        continue;
-
-      NurbsCurveList curveList = prim.GetGeometry().GetRef();
-      FabricCore::RTVal rtVal = splicePort.getRTVal();
-      convertInputLines( curveList, rtVal);
-      splicePort.setRTVal(rtVal);
-      addDirtyInput(portName, evalContext, -1);
-      result = true;
-    }
-    else if(it->second.dataType == "Lines[]")
-    {
-      FabricCore::RTVal arrayVal = splicePort.getRTVal();
-      for(int i=0; ; i++)
+      else if(it->second.dataType == "PolygonMesh[]")
       {
-        Primitive prim((CRef)context.GetInputValue(portName.c_str()+CString(i)));
-        if(!prim.IsValid())
-          break;
+        FabricCore::RTVal arrayVal = splicePort.getRTVal();
+        for(int i=0; ; i++)
+        {
+          Primitive prim((CRef)context.GetInputValue(it->second.realPortName+CString(i)));
+          if(!prim.IsValid())
+            break;
+
+          // Now check if the input geometry has changed scince our previous evaluation.
+          LONG evalID = ProjectItem(prim).GetEvaluationID();
+          if(checkEvalIDCache( evalID, evalIDCacheIndex, alwaysEvaluate))
+            continue;
+
+          PolygonMesh mesh = PolygonMesh(prim.GetGeometry().GetRef());
+          if(arrayVal.getArraySize() < i)
+          {
+            FabricCore::RTVal rtVal = FabricSplice::constructObjectRTVal("PolygonMesh");
+            convertInputPolygonMesh(mesh, rtVal);
+            arrayVal.callMethod("", "push", 1, &rtVal);
+          }
+          else
+          {
+            FabricCore::RTVal rtVal = arrayVal.getArrayElement(i);
+            convertInputPolygonMesh( mesh, rtVal);
+            arrayVal.setArrayElement(i, rtVal);
+          }
+          addDirtyInput(portName, evalContext, i);
+          result = true;
+        }
+        splicePort.setRTVal(arrayVal);
+      }
+      else if(it->second.dataType == "Lines")
+      {
+        Primitive prim;
+        if(it->second.portMode == FabricSplice::Port_Mode_IO && portName == outPortName)
+          prim = context.GetOutputTarget();
+        else
+          prim = (CRef)context.GetInputValue(portName.c_str()+CString(CValue(0)));
 
         // Now check if the input geometry has changed scince our previous evaluation.
         LONG evalID = ProjectItem(prim).GetEvaluationID();
@@ -988,28 +973,53 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
           continue;
 
         NurbsCurveList curveList = prim.GetGeometry().GetRef();
-        if(arrayVal.getArraySize() < i)
-        {
-          FabricCore::RTVal rtVal;
-          convertInputLines( curveList, rtVal);
-          arrayVal.callMethod("", "push", 1, &rtVal);
-        }
-        else
-        {
-          FabricCore::RTVal rtVal = arrayVal.getArrayElement(i);
-          convertInputLines( curveList, rtVal);
-          arrayVal.setArrayElement(i, rtVal);
-        }
-        addDirtyInput(portName, evalContext, i);
+        FabricCore::RTVal rtVal = splicePort.getRTVal();
+        convertInputLines( curveList, rtVal);
+        splicePort.setRTVal(rtVal);
+        addDirtyInput(portName, evalContext, -1);
         result = true;
       }
-      splicePort.setRTVal(arrayVal);
+      else if(it->second.dataType == "Lines[]")
+      {
+        FabricCore::RTVal arrayVal = splicePort.getRTVal();
+        for(int i=0; ; i++)
+        {
+          Primitive prim((CRef)context.GetInputValue(portName.c_str()+CString(i)));
+          if(!prim.IsValid())
+            break;
+
+          // Now check if the input geometry has changed scince our previous evaluation.
+          LONG evalID = ProjectItem(prim).GetEvaluationID();
+          if(checkEvalIDCache( evalID, evalIDCacheIndex, alwaysEvaluate))
+            continue;
+
+          NurbsCurveList curveList = prim.GetGeometry().GetRef();
+          if(arrayVal.getArraySize() < i)
+          {
+            FabricCore::RTVal rtVal;
+            convertInputLines( curveList, rtVal);
+            arrayVal.callMethod("", "push", 1, &rtVal);
+          }
+          else
+          {
+            FabricCore::RTVal rtVal = arrayVal.getArrayElement(i);
+            convertInputLines( curveList, rtVal);
+            arrayVal.setArrayElement(i, rtVal);
+          }
+          addDirtyInput(portName, evalContext, i);
+          result = true;
+        }
+        splicePort.setRTVal(arrayVal);
+      }
+      else
+      {
+        xsiLogFunc("Skipping input port of type "+it->second.dataType);
+      }
     }
-    else
-    {
-      xsiLogFunc("Skipping input port of type "+it->second.dataType);
-    }
-  }
+
+    // see declaration of nodeHasInputs
+    if(!nodeHasInputs)
+      result = true;
 
   }
   catch(FabricSplice::Exception e)
