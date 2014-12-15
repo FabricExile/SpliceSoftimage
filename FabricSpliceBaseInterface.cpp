@@ -72,6 +72,13 @@ FabricSpliceBaseInterface::~FabricSpliceBaseInterface(){
       break;
     }
   }
+  for(size_t i=0;i<valuesCache.size();i++){
+	for(size_t j=0;j<valuesCache[i].size();j++)
+		valuesCache[i][j].Clear();
+	valuesCache[i].clear();
+  }
+  valuesCache.clear();
+  evalIDsCache.clear();
 }
 
 unsigned int FabricSpliceBaseInterface::getObjectID() const
@@ -680,9 +687,10 @@ void FabricSpliceBaseInterface::addDirtyInput(std::string portName, FabricCore::
   if(index == -1)
     evalContext.callMethod("", "_addDirtyInput", 1, &FabricSplice::constructStringRTVal(portName.c_str()));
   else{
-    static FabricCore::RTVal args[2];
-    args[0] = FabricSplice::constructStringRTVal(portName.c_str());
-    args[1] = FabricSplice::constructSInt32RTVal(index);
+    FabricCore::RTVal args[2] = { 
+      FabricSplice::constructStringRTVal(portName.c_str()),
+      FabricSplice::constructSInt32RTVal(index)
+    };
     evalContext.callMethod("", "_addDirtyInput", 2, &args[0]);
   }
 }
@@ -695,7 +703,6 @@ bool FabricSpliceBaseInterface::checkIfValueChangedAndDirtyInput(CValue value, s
 
   bool result = false;
   if(cachedValues[index] != value || alwaysEvaluate) {
-    result = true;
     addDirtyInput(portName, evalContext, index);
     cachedValues[index] = value;
     result = true;
