@@ -112,7 +112,7 @@ protected:
 
   std::vector<std::vector<XSI::CValue>> valuesCache;
 
-  bool checkIfValueChangedAndDirtyInput(int index, XSI::CValue value, std::vector<XSI::CValue> &cachedValues, bool alwaysEvaluate, std::string portName, FabricCore::RTVal evalContext);
+  bool checkIfValueChangedAndDirtyInput(XSI::CValue value, std::vector<XSI::CValue> &cachedValues, bool alwaysEvaluate, std::string portName, FabricCore::RTVal evalContext, int index);
 
 };
 

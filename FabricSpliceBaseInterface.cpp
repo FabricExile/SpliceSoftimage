@@ -676,16 +676,24 @@ bool convertBasicOutputParameter(const CString & dataType, CValue & value, Fabri
 }
 
 
-bool FabricSpliceBaseInterface::checkIfValueChangedAndDirtyInput(int index, CValue value, std::vector<XSI::CValue> &cachedValues, bool alwaysEvaluate, std::string portName, FabricCore::RTVal evalContext){
-
-  if(cachedValues.size() <= index)
+bool FabricSpliceBaseInterface::checkIfValueChangedAndDirtyInput(CValue value, std::vector<XSI::CValue> &cachedValues, bool alwaysEvaluate, std::string portName, FabricCore::RTVal evalContext, int index){
+  if(index == -1)
+    cachedValues.resize(1);
+  else if(cachedValues.size() <= index)
     cachedValues.resize(index+1);
 
   bool result = false;
   if(cachedValues[index] != value || alwaysEvaluate) {
     result = true;
 
-    evalContext.callMethod("", "_addDirtyInput", 1, &FabricSplice::constructStringRTVal(portName.c_str()));
+    if(index == -1)
+      evalContext.callMethod("", "_addDirtyInput", 1, &FabricSplice::constructStringRTVal(portName.c_str()));
+    else{
+      static FabricCore::RTVal args[2];
+      args[0] = FabricSplice::constructStringRTVal(portName.c_str());
+      args[1] = FabricSplice::constructSInt32RTVal(index);
+      evalContext.callMethod("", "_addDirtyInput", 2, &args[0]);
+    }
     cachedValues[index] = value;
     result = true;
   }
@@ -723,8 +731,7 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
         std::string portName = it->first;
 
         CValue value = context.GetParameterValue(portName.c_str());
-        valuesCache[valueCacheID].resize(1);
-        if(checkIfValueChangedAndDirtyInput(0, value, valuesCache[valueCacheID], alwaysEvaluate, portName, evalContext))
+        if(checkIfValueChangedAndDirtyInput(value, valuesCache[valueCacheID], alwaysEvaluate, portName, evalContext, -1))
         {
           FabricCore::RTVal rtVal;
           if(!convertBasicInputParameter(it->second.dataType, value, rtVal))
@@ -760,26 +767,57 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
        it->second.dataType == "Scalar" || 
        it->second.dataType == "String")
     {
-      FabricCore::RTVal rtVal;
       CValue value = context.GetInputValue(portName.c_str()+CString(CValue(0)));
-      if(convertBasicInputParameter(it->second.dataType, value, rtVal))
-        splicePort.setRTVal(rtVal);
+      if(valuesCache.size() <= valueCacheID)
+        valuesCache.resize(valueCacheID+1);
+      if(checkIfValueChangedAndDirtyInput(value, valuesCache[valueCacheID], alwaysEvaluate, portName, evalContext, -1))
+      {
+        FabricCore::RTVal rtVal;
+        if(convertBasicInputParameter(it->second.dataType, value, rtVal))
+          splicePort.setRTVal(rtVal);
+        result = true;
+      }
+      valueCacheID++;
     }
     else if(it->second.dataType == "Boolean[]" || 
        it->second.dataType == "Integer[]" || 
        it->second.dataType == "Scalar[]" || 
        it->second.dataType == "String[]")
     {
+      if(valuesCache.size() <= valueCacheID)
+        valuesCache.resize(valueCacheID+1);
+
       CString singleDataType = it->second.dataType.GetSubString(0, it->second.dataType.Length()-2);
-      FabricCore::RTVal arrayVal = FabricSplice::constructVariableArrayRTVal(singleDataType.GetAsciiString());
+      FabricCore::RTVal arrayVal = splicePort.getRTVal();
+      uint32_t arraySize = splicePort.getArrayCount();
       for(int i=0; ; i++)
       {
-        FabricCore::RTVal rtVal;
         CValue value = context.GetInputValue(portName.c_str()+CString(i));
         if(value.IsEmpty())
           break;
-        if(convertBasicInputParameter(singleDataType, value, rtVal))
-          arrayVal.callMethod("", "push", 1, &rtVal);
+        if(i >= arraySize){
+          valuesCache[valueCacheID].resize(i+1);
+        }
+        if(checkIfValueChangedAndDirtyInput(value, valuesCache[valueCacheID], alwaysEvaluate, portName, evalContext, i))
+        {
+          FabricCore::RTVal rtVal;
+          if(convertBasicInputParameter(singleDataType, value, rtVal)){
+            if(i >= arraySize){
+              arrayVal.callMethod("", "push", 1, &rtVal);
+              result = true;
+              arraySize++;
+            }
+            else{
+              FabricCore::RTVal currVal = splicePort.getRTVal();
+              if(!currVal.callMethod("Boolean", "equal", 1, &rtVal).getBoolean()){
+                arrayVal.callMethod("", "setArrayElement", 1, &rtVal);
+                result = true;
+              }
+            }
+            arrayVal.callMethod("", "push", 1, &rtVal);
+          }
+        }
+        valueCacheID++;
       }
       splicePort.setRTVal(arrayVal);
     }
