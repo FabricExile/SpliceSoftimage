@@ -322,34 +322,6 @@ CStatus FabricSpliceBaseInterface::constructXSIParameters(CustomOperator & op, F
       xsiDataType = CValue::siColor4f;
     }
 
-    // else if(port.isManipulatable())
-    // {
-    //   it->second.paramNames.Clear();
-    //   it->second.paramValues.Clear();
-    //   xsiDataType = CValue::siDouble;
-    //   try
-    //   {
-    //     FabricCore::RTVal channels = port.getAnimationChannels();
-    //     FabricCore::RTVal paramNamesVal = channels.maybeGetMember("paramNames");
-    //     FabricCore::RTVal paramValuesVal = channels.maybeGetMember("paramValues");
-    //     for(uint32_t i=0;i<paramNamesVal.getArraySize();i++)
-    //     {
-    //       FabricCore::RTVal paramNameVal = paramNamesVal.getArrayElement(i);
-    //       FabricCore::RTVal paramValueVal = paramValuesVal.getArrayElement(i);
-    //       it->second.paramNames.Add(paramNameVal.getStringCString());
-    //       it->second.paramValues.Add(paramValueVal.getFloat32());
-    //     }
-    //   }
-    //   catch(FabricSplice::Exception e)
-    //   {
-    //     return CStatus::OK;
-    //   }
-    //   catch(FabricCore::Exception e)
-    //   {
-    //     return CStatus::OK;
-    //   }
-    // }
-
     if(xsiDataType == CValue::siEmpty)
     {
       xsiLogErrorFunc("Parameter dataType '"+dataType+"' not supported.");
@@ -376,11 +348,6 @@ CValueArray FabricSpliceBaseInterface::getSpliceParamTypeCombo()
   combo.Add(L"String"); combo.Add(L"String");
   // combo.Add(L"Color"); combo.Add(L"Color");
   // combo.Add(L"Vec3"); combo.Add(L"Vec3");
-  // combo.Add(L"ScalarSliderManipulator"); combo.Add(L"ScalarSliderManipulator");
-  // combo.Add(L"Vec2SliderManipulator"); combo.Add(L"Vec2SliderManipulator");
-  // combo.Add(L"PositionManipulator"); combo.Add(L"PositionManipulator");
-  // combo.Add(L"RotationManipulator"); combo.Add(L"RotationManipulator");
-  // combo.Add(L"TransformManipulator"); combo.Add(L"TransformManipulator");
   return combo;
 }
 
@@ -524,8 +491,6 @@ CStatus FabricSpliceBaseInterface::addSplicePort(const CString &portName, const 
   if(portMode != FabricSplice::Port_Mode_IO)
   {
     FabricSplice::DGPort port = _spliceGraph.getDGPort(portName.GetAsciiString());
-    // if(port.isManipulatable())
-    //   port.setMode(FabricSplice::Port_Mode_IO);
   }
   XSISPLICE_CATCH_END_CSTATUS()
 
@@ -723,18 +688,6 @@ CStatus FabricSpliceBaseInterface::transferInputParameters(OperatorContext & con
     for(std::map<std::string, parameterInfo>::iterator it = _parameters.begin(); it != _parameters.end(); it++)
     {
       FabricSplice::DGPort port = _spliceGraph.getDGPort(it->first.c_str());
-      // if(port.isManipulatable())
-      // {
-      //   if(it->second.paramNames.GetCount() == 0)
-      //     return CStatus::OK;
-
-      //   std::vector<float> values(it->second.paramNames.GetCount());
-      //   for(ULONG i=0;i<it->second.paramNames.GetCount();i++)
-      //     values[i] = (float)(double)context.GetParameterValue(it->second.paramNames[i]);
-
-      //   port.setAnimationChannelValues(values.size(), &values[0]);
-      // }
-      // else
       {
         value = context.GetParameterValue(it->first.c_str());
         if(!convertBasicInputParameter(it->second.dataType, value, rtVal))
@@ -1714,33 +1667,9 @@ CStatus FabricSpliceBaseInterface::restoreFromPersistenceData(CString file)
     FabricSplice::DGPort port = _spliceGraph.getDGPort(i);
     if(!port.isValid())
       continue;
-    // if(!port.isManipulatable())
-    //   continue;
 
     parameterInfo info;
     info.dataType = port.getDataType();
-    // try
-    // {
-    //   FabricCore::RTVal channels = port.getAnimationChannels();
-    //   FabricCore::RTVal paramNamesVal = channels.maybeGetMember("paramNames");
-    //   FabricCore::RTVal paramValuesVal = channels.maybeGetMember("paramValues");
-    //   for(uint32_t i=0;i<paramNamesVal.getArraySize();i++)
-    //   {
-    //     FabricCore::RTVal paramNameVal = paramNamesVal.getArrayElement(i);
-    //     FabricCore::RTVal paramValueVal = paramValuesVal.getArrayElement(i);
-    //     info.paramNames.Add(paramNameVal.getStringCString());
-    //     info.paramValues.Add(paramValueVal.getFloat32());
-    //     if(!Parameter(params.GetItem(info.paramNames[i])).IsValid())
-    //     {
-    //       info.paramNames.Clear();
-    //       break;
-    //     }
-    //   }
-    // }
-    // catch(FabricCore::Exception e)
-    // {
-    //   continue;
-    // }
 
     if(info.paramNames.GetCount() == 0)
       continue;
@@ -1884,33 +1813,6 @@ CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Va
         info.defaultValue = CValue(CString(port.getDefault().getStringData()));
       _parameters.insert(std::pair<std::string, parameterInfo>(portName.GetAsciiString(), info));
     }
-    // else if(port.isManipulatable())
-    // {
-    //   parameterInfo info;
-    //   info.dataType = port.getDataType();
-    //   try
-    //   {
-    //     FabricCore::RTVal channels = port.getAnimationChannels();
-    //     FabricCore::RTVal paramNamesVal = channels.maybeGetMember("paramNames");
-    //     FabricCore::RTVal paramValuesVal = channels.maybeGetMember("paramValues");
-    //     for(uint32_t i=0;i<paramNamesVal.getArraySize();i++)
-    //     {
-    //       FabricCore::RTVal paramNameVal = paramNamesVal.getArrayElement(i);
-    //       FabricCore::RTVal paramValueVal = paramValuesVal.getArrayElement(i);
-    //       info.paramNames.Add(paramNameVal.getStringCString());
-    //       info.paramValues.Add(paramValueVal.getFloat32());
-    //     }
-    //     _parameters.insert(std::pair<std::string, parameterInfo>(portName.GetAsciiString(), info));
-    //   }
-    //   catch(FabricCore::Exception e)
-    //   {
-    //     continue;
-    //   }
-    //   catch(FabricSplice::Exception e)
-    //   {
-    //     continue;
-    //   }
-    // }
     else if(dataType.IsEqualNoCase(L"Mat44") || 
       dataType.IsEqualNoCase(L"PolygonMesh") ||
       port.getOption("ICEAttribute").isString() || 
