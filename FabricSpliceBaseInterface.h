@@ -55,7 +55,6 @@ public:
   bool transferInputPorts(XSI::CRef opRef, XSI::OperatorContext & context);
   XSI::CStatus transferOutputPort(XSI::OperatorContext & context);
   XSI::CStatus evaluate();
-  bool requiresEvaluate(XSI::OperatorContext & context);
 
   FabricSplice::DGGraph getSpliceGraph();
 

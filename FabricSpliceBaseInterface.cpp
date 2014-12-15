@@ -1413,41 +1413,6 @@ CStatus FabricSpliceBaseInterface::evaluate()
   return CStatus::OK;
 }
 
-bool FabricSpliceBaseInterface::requiresEvaluate(XSI::OperatorContext & context)
-{
-  FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::requiresEvaluate");
-  std::string portName = OutputPort(context.GetOutputPort()).GetName().GetAsciiString();
-  if(_processedPorts.size() == 0)
-  {
-    _processedPorts.push_back(portName);
-    return true;
-  }
-  if(_processedPorts[0] == portName)
-  {
-    _processedPorts.resize(1);
-    return true;
-  }
-  if(_processedPorts.size() < _nbOutputPorts)
-  {
-    _processedPorts.push_back(portName);
-    return false;
-  }
-  else
-  {
-    for(size_t i=1;i<_nbOutputPorts;i++)
-    {
-      if(_processedPorts[i] == portName)
-      {
-        _processedPorts.clear();
-        _processedPorts.push_back(portName);
-        return true;
-      }
-    }
-  }
-
-  return true;
-}
-
 FabricSplice::DGGraph FabricSpliceBaseInterface::getSpliceGraph()
 {
   return _spliceGraph;
