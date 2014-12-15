@@ -614,6 +614,9 @@ X3DObject getX3DObjectFromRef(const CRef &ref)
 
 void convertInputPolygonMesh(PolygonMesh mesh, FabricCore::RTVal & rtVal)
 {
+  if(!rtVal.isValid() || rtVal.isNullObject())
+    rtVal = FabricSplice::constructObjectRTVal("PolygonMesh");
+          
   CGeometryAccessor acc = mesh.GetGeometryAccessor();
 
   // determine if we need a topology update
