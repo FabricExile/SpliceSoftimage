@@ -782,15 +782,23 @@ void convertOutputPolygonMesh(PolygonMesh mesh, FabricCore::RTVal & rtVal)
     {
       ClusterProperty prop(uvRefs[0]);
       LONG numComponents = prop.GetValueSize();
-      CFloatArray values(nbSamples * numComponents);
+      if(values.GetCount() > 0 && values.GetCount() == prop.GetElements().GetCount() * numComponents)
 
-      FabricCore::RTVal args[2] = {
-        FabricSplice::constructExternalArrayRTVal("Float32", values.GetCount(), &values[0]),
-        FabricSplice::constructUInt32RTVal(numComponents)
-      };
-      rtVal.callMethod("", "getUVsAsExternalArray", 2, &args[0]);
-      prop.SetValues(&values[0], values.GetCount() / numComponents);
-      values.Clear();
+        CFloatArray values(nbSamples * numComponents);
+
+        FabricCore::RTVal args[2] = {
+          FabricSplice::constructExternalArrayRTVal("Float32", values.GetCount(), &values[0]),
+          FabricSplice::constructUInt32RTVal(numComponents)
+        };
+        rtVal.callMethod("", "getUVsAsExternalArray", 2, &args[0]);
+        prop.SetValues(&values[0], values.GetCount() / numComponents);
+        values.Clear();
+      }
+      else{
+        // [phtaylor] I'm not sure how the user is supposed to fix this problem. Writing to clusters while modifying topology isn't supported by Softimage.
+        // The correct solution is to install an operator on the cluster property. 
+        xsiLogFunc("Unable to write UVs to geometry because the cluster property size does not match.");
+      }
     }
     else{
       xsiLogFunc("Cannot write UVs to geometry that does not aalready have UVs assigned.");
@@ -814,6 +822,11 @@ void convertOutputPolygonMesh(PolygonMesh mesh, FabricCore::RTVal & rtVal)
         rtVal.callMethod("", "getVertexColorsAsExternalArray", 2, &args[0]);
         prop.SetValues(&values[0], values.GetCount() / 4);
         values.Clear();
+      }
+      else{
+        // [phtaylor] I'm not sure how the user is supposed to fix this problem. Writing to clusters while modifying topology isn't supported by Softimage.
+        // The correct solution is to install an operator on the cluster property. 
+        xsiLogFunc("Unable to write Vertex Colors to geometry because the cluster property size does not match.");
       }
     }
     else{
