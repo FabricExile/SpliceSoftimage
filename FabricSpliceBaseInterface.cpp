@@ -715,7 +715,7 @@ bool FabricSpliceBaseInterface::checkIfValueChangedAndDirtyInput(CValue value, s
 bool FabricSpliceBaseInterface::checkEvalIDCache(LONG evalID, int &evalIDCacheIndex, bool alwaysEvaluate){
   if(evalIDsCache.size() <= evalIDCacheIndex)
     evalIDsCache.resize(evalIDCacheIndex+1);
-  bool result = evalIDsCache[evalIDCacheIndex] == evalID || alwaysEvaluate;
+  bool result = evalIDsCache[evalIDCacheIndex] == evalID || !alwaysEvaluate;
   evalIDsCache[evalIDCacheIndex] = evalID;
   evalIDCacheIndex++;
   return result;
