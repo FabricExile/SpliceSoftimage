@@ -696,8 +696,10 @@ void FabricSpliceBaseInterface::addDirtyInput(std::string portName, FabricCore::
 }
 
 bool FabricSpliceBaseInterface::checkIfValueChangedAndDirtyInput(CValue value, std::vector<XSI::CValue> &cachedValues, bool alwaysEvaluate, std::string portName, FabricCore::RTVal evalContext, int index){
-  if(index == -1)
+  if(index == -1){
     cachedValues.resize(1);
+    index = 0;
+  }
   else if(cachedValues.size() <= index)
     cachedValues.resize(index+1);
 
