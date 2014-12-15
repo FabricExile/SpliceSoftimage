@@ -742,23 +742,13 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
     if(it->second.portMode == FabricSplice::Port_Mode_OUT)
       continue;
 
-    FabricSplice::DGPort splicePort = _spliceGraph.getDGPort(it->first.c_str());
-
-    // update the evaluation context about this
-    std::vector<FabricCore::RTVal> args(1);
-    args[0] = FabricSplice::constructStringRTVal(it->first.c_str());
-    if(splicePort.isValid()){
-      if(splicePort.getMode() != FabricSplice::Port_Mode_OUT)
-        evalContext.callMethod("", "_addDirtyInput", args.size(), &args[0]);
-    }
-
-    LONG portIndex = 0;
-    CString portIndexStr(portIndex++);
+    std::string portName = it->first;
+    FabricSplice::DGPort splicePort = _spliceGraph.getDGPort(portName.c_str());
 
     FabricCore::Variant iceAttrName = splicePort.getOption("ICEAttribute");
     if(iceAttrName.isString())
     {
-      Primitive xsiPrim((CRef)context.GetInputValue(it->second.realPortName+portIndexStr));
+      Primitive xsiPrim((CRef)context.GetInputValue(it->second.realPortName+CString(CValue(CValue(0)))));
       Geometry xsiGeo = xsiPrim.GetGeometry();
       CString iceAttrStr = iceAttrName.getStringData();
       ICEAttribute iceAttr = xsiGeo.GetICEAttributeFromName(iceAttrStr);
@@ -771,7 +761,7 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
        it->second.dataType == "String")
     {
       FabricCore::RTVal rtVal;
-      CValue value = context.GetInputValue(it->first.c_str()+portIndexStr);
+      CValue value = context.GetInputValue(portName.c_str()+CString(CValue(0)));
       if(convertBasicInputParameter(it->second.dataType, value, rtVal))
         splicePort.setRTVal(rtVal);
     }
@@ -782,21 +772,21 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
     {
       CString singleDataType = it->second.dataType.GetSubString(0, it->second.dataType.Length()-2);
       FabricCore::RTVal arrayVal = FabricSplice::constructVariableArrayRTVal(singleDataType.GetAsciiString());
-      while(true)
+      for(int i=0; ; i++)
       {
         FabricCore::RTVal rtVal;
-        CValue value = context.GetInputValue(it->first.c_str()+portIndexStr);
+        CValue value = context.GetInputValue(portName.c_str()+CString(i));
         if(value.IsEmpty())
           break;
         if(convertBasicInputParameter(singleDataType, value, rtVal))
           arrayVal.callMethod("", "push", 1, &rtVal);
-        portIndexStr = CString(portIndex++);
       }
       splicePort.setRTVal(arrayVal);
     }
     else if(it->second.dataType == "Mat44")
     {
-      KinematicState kine((CRef)context.GetInputValue(it->second.realPortName+portIndexStr));
+      LONG i = 0;
+      KinematicState kine((CRef)context.GetInputValue(it->second.realPortName+CString(i)));
       MATH::CMatrix4 matrix = kine.GetTransform().GetMatrix4();
       FabricCore::RTVal rtVal;
       getRTValFromCMatrix4(matrix, rtVal);
@@ -805,16 +795,15 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
     else if(it->second.dataType == "Mat44[]")
     {
       FabricCore::RTVal arrayVal = FabricSplice::constructVariableArrayRTVal("Mat44");
-      while(true)
+      for(int i=0; ; i++)
       {
-        KinematicState kine((CRef)context.GetInputValue(it->second.realPortName+portIndexStr));
+        KinematicState kine((CRef)context.GetInputValue(it->second.realPortName+CString(i)));
         if(!kine.IsValid())
           break;
         MATH::CMatrix4 matrix = kine.GetTransform().GetMatrix4();
         FabricCore::RTVal rtVal;
         getRTValFromCMatrix4(matrix, rtVal);
         arrayVal.callMethod("", "push", 1, &rtVal);
-        portIndexStr = CString(portIndex++);
       }
       splicePort.setRTVal(arrayVal);
     }
@@ -827,13 +816,13 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
       CRefArray meshes;
       if(isMeshArray)
       {
-        while(true)
+        for(int i=0; ; i++)
         {
-          Primitive prim((CRef)context.GetInputValue(it->second.realPortName+portIndexStr));
+          Primitive prim((CRef)context.GetInputValue(it->second.realPortName+CString(i)));
           if(!prim.IsValid())
             break;
           meshes.Add(prim.GetGeometry().GetRef());
-          if(mainRTVal.getArraySize() < portIndex)
+          if(mainRTVal.getArraySize() < i)
           {
             FabricCore::RTVal rtVal = FabricSplice::constructObjectRTVal("PolygonMesh");
             mainRTVal.callMethod("", "push", 1, &rtVal);
@@ -841,24 +830,23 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
           }
           else
           {
-            FabricCore::RTVal rtVal = mainRTVal.getArrayElement(portIndex-1);
+            FabricCore::RTVal rtVal = mainRTVal.getArrayElement(i-1);
             if(!rtVal.isValid() || rtVal.isNullObject())
             {
               rtVal = FabricSplice::constructObjectRTVal("PolygonMesh");
-              mainRTVal.setArrayElement(portIndex-1, rtVal);
+              mainRTVal.setArrayElement(i-1, rtVal);
             }
             rtVals.push_back(rtVal);
           }
-          portIndexStr = CString(portIndex++);
         }
       }
       else
       { 
         Primitive prim;
-        if(it->second.portMode == FabricSplice::Port_Mode_IO && it->first == outPortName)
+        if(it->second.portMode == FabricSplice::Port_Mode_IO && portName == outPortName)
           prim = context.GetOutputTarget();
         else
-          prim = (CRef)context.GetInputValue(it->second.realPortName+portIndexStr);
+          prim = (CRef)context.GetInputValue(it->second.realPortName+CString(CValue(0)));
         meshes.Add(prim.GetGeometry().GetRef());
         if(!mainRTVal.isValid() || mainRTVal.isNullObject())
           mainRTVal = FabricSplice::constructObjectRTVal("PolygonMesh");
@@ -984,13 +972,13 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
       CRefArray curveLists;
       if(isLinesArray)
       {
-        while(true)
+        for(int i=0; ; i++)
         {
-          Primitive prim((CRef)context.GetInputValue(it->first.c_str()+portIndexStr));
+          Primitive prim((CRef)context.GetInputValue(portName.c_str()+CString(i)));
           if(!prim.IsValid())
             break;
           curveLists.Add(prim.GetGeometry().GetRef());
-          if(mainRTVal.getArraySize() < portIndex)
+          if(mainRTVal.getArraySize() < i)
           {
             FabricCore::RTVal rtVal = FabricSplice::constructObjectRTVal("Lines");
             mainRTVal.callMethod("", "push", 1, &rtVal);
@@ -998,24 +986,23 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
           }
           else
           {
-            FabricCore::RTVal rtVal = mainRTVal.getArrayElement(portIndex-1);
+            FabricCore::RTVal rtVal = mainRTVal.getArrayElement(i-1);
             if(!rtVal.isValid() || rtVal.isNullObject())
             {
               rtVal = FabricSplice::constructObjectRTVal("Lines");
-              mainRTVal.setArrayElement(portIndex-1, rtVal);
+              mainRTVal.setArrayElement(i-1, rtVal);
             }
             rtVals.push_back(rtVal);
           }
-          portIndexStr = CString(portIndex++);
         }
       }
       else
       { 
         Primitive prim;
-        if(it->second.portMode == FabricSplice::Port_Mode_IO && it->first == outPortName)
+        if(it->second.portMode == FabricSplice::Port_Mode_IO && portName == outPortName)
           prim = context.GetOutputTarget();
         else
-          prim = (CRef)context.GetInputValue(it->first.c_str()+portIndexStr);
+          prim = (CRef)context.GetInputValue(portName.c_str()+CString(CValue(0)));
         curveLists.Add(prim.GetGeometry().GetRef());
         if(!mainRTVal.isValid() || mainRTVal.isNullObject())
           mainRTVal = FabricSplice::constructObjectRTVal("Lines");
