@@ -52,8 +52,7 @@ public:
   void setXSIPortTargets(const XSI::CString &portName, const XSI::CString &targets);
   XSI::CString getParameterString();
 
-  XSI::CStatus transferInputParameters(XSI::OperatorContext & context);
-  XSI::CStatus transferInputPorts(XSI::OperatorContext & context);
+  bool transferInputPorts(XSI::CRef opRef, XSI::OperatorContext & context);
   XSI::CStatus transferOutputPort(XSI::OperatorContext & context);
   XSI::CStatus evaluate();
   bool requiresEvaluate(XSI::OperatorContext & context);
@@ -110,6 +109,11 @@ protected:
   std::map<std::string, portInfo> _ports;
   unsigned int _nbOutputPorts;
   std::vector<std::string> _processedPorts;
+
+  std::vector<std::vector<XSI::CValue>> valuesCache;
+
+  bool checkIfValueChangedAndDirtyInput(int index, XSI::CValue value, std::vector<XSI::CValue> &cachedValues, bool alwaysEvaluate, std::string portName, FabricCore::RTVal evalContext);
+
 };
 
 enum SoftimagePortType {

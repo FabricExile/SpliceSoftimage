@@ -675,57 +675,67 @@ bool convertBasicOutputParameter(const CString & dataType, CValue & value, Fabri
   return true;
 }
 
-CStatus FabricSpliceBaseInterface::transferInputParameters(OperatorContext & context)
-{
-  FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::transferInputParameters");
-  try
-  {
-    FabricCore::RTVal evalContext = _spliceGraph.getEvalContext();
 
-    FabricCore::RTVal rtVal;
-    CValue value;
+bool FabricSpliceBaseInterface::checkIfValueChangedAndDirtyInput(int index, CValue value, std::vector<XSI::CValue> &cachedValues, bool alwaysEvaluate, std::string portName, FabricCore::RTVal evalContext){
 
-    for(std::map<std::string, parameterInfo>::iterator it = _parameters.begin(); it != _parameters.end(); it++)
-    {
-      FabricSplice::DGPort port = _spliceGraph.getDGPort(it->first.c_str());
-      {
-        value = context.GetParameterValue(it->first.c_str());
-        if(!convertBasicInputParameter(it->second.dataType, value, rtVal))
-          continue;
-        port.setRTVal(rtVal);
-      }
+  if(cachedValues.size() <= index)
+    cachedValues.resize(index+1);
 
-      // update the evaluation context about this
-      std::vector<FabricCore::RTVal> args(1);
-      args[0] = FabricSplice::constructStringRTVal(it->first.c_str());
-      if(port.isValid()){
-        if(port.getMode() != FabricSplice::Port_Mode_OUT)
-          evalContext.callMethod("", "_addDirtyInput", args.size(), &args[0]);
-      }
+  bool result = false;
+  if(cachedValues[index] != value || alwaysEvaluate) {
+    result = true;
 
-    }
+    evalContext.callMethod("", "_addDirtyInput", 1, &FabricSplice::constructStringRTVal(portName.c_str()));
+    cachedValues[index] = value;
+    result = true;
   }
-  catch(FabricSplice::Exception e)
-  {
-    xsiLogFunc(e.what());
-    return CStatus::Unexpected;
-  }
-  catch(FabricCore::Exception e)
-  {
-    xsiLogFunc(e.getDesc_cstr());
-    return CStatus::Unexpected;
-  }
-  return CStatus::OK;
+  return result;
 }
 
-CStatus FabricSpliceBaseInterface::transferInputPorts(OperatorContext & context)
+
+bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorContext & context)
 {
   FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::transferInputPorts");
 
-  FabricCore::RTVal evalContext = _spliceGraph.getEvalContext();
+  bool result = false;
+  try
+  {
+    FabricCore::RTVal evalContext = _spliceGraph.getEvalContext();
+    evalContext.callMethod("", "_clear", 0, 0);
 
-  OutputPort xsiPort(context.GetOutputPort());
-  std::string outPortName = xsiPort.GetGroupName().GetAsciiString();
+    // If 'AlwaysEvaluate' is on, then we will evaluate even if no changes have occured.
+    // this can be usefull in debugging, or when an operator simply must evaluate even if none of its inputs are dirty.
+    CustomOperator op(opRef);
+    bool alwaysEvaluate = bool(op.GetParameterValue("AlwaysEvaluate"));
+
+    OutputPort xsiPort(context.GetOutputPort());
+    std::string outPortName = xsiPort.GetGroupName().GetAsciiString();
+    int valueCacheID = 0;
+    {
+      FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::transferInputParameters");
+
+      if(valuesCache.size() < _parameters.size())
+        valuesCache.resize(_parameters.size());
+
+      // First transfer all the basic parameters. 
+      for(std::map<std::string, parameterInfo>::iterator it = _parameters.begin(); it != _parameters.end(); it++)
+      {
+        std::string portName = it->first;
+
+        CValue value = context.GetParameterValue(portName.c_str());
+        valuesCache[valueCacheID].resize(1);
+        if(checkIfValueChangedAndDirtyInput(0, value, valuesCache[valueCacheID], alwaysEvaluate, portName, evalContext))
+        {
+          FabricCore::RTVal rtVal;
+          if(!convertBasicInputParameter(it->second.dataType, value, rtVal))
+            continue;
+          FabricSplice::DGPort port = _spliceGraph.getDGPort(portName.c_str());
+          port.setRTVal(rtVal);
+          result = true;
+        }
+        valueCacheID++;
+      }
+    }
 
   for(std::map<std::string, portInfo>::iterator it = _ports.begin(); it != _ports.end(); it++)
   {
@@ -1069,7 +1079,17 @@ CStatus FabricSpliceBaseInterface::transferInputPorts(OperatorContext & context)
     }
 
   }
-  return CStatus::OK;
+
+  }
+  catch(FabricSplice::Exception e)
+  {
+    xsiLogFunc(e.what());
+  }
+  catch(FabricCore::Exception e)
+  {
+    xsiLogFunc(e.getDesc_cstr());
+  }
+  return result;
 }
 
 CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
