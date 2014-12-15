@@ -782,10 +782,9 @@ void convertOutputPolygonMesh(PolygonMesh mesh, FabricCore::RTVal & rtVal)
     {
       ClusterProperty prop(uvRefs[0]);
       LONG numComponents = prop.GetValueSize();
+      CFloatArray values(nbSamples * numComponents);
       if(values.GetCount() > 0 && values.GetCount() == prop.GetElements().GetCount() * numComponents)
-
-        CFloatArray values(nbSamples * numComponents);
-
+      {
         FabricCore::RTVal args[2] = {
           FabricSplice::constructExternalArrayRTVal("Float32", values.GetCount(), &values[0]),
           FabricSplice::constructUInt32RTVal(numComponents)
