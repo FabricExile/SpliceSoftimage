@@ -616,7 +616,7 @@ void convertInputPolygonMesh(PolygonMesh mesh, FabricCore::RTVal & rtVal)
 {
   if(!rtVal.isValid() || rtVal.isNullObject())
     rtVal = FabricSplice::constructObjectRTVal("PolygonMesh");
-          
+  
   CGeometryAccessor acc = mesh.GetGeometryAccessor();
 
   // determine if we need a topology update
@@ -631,37 +631,18 @@ void convertInputPolygonMesh(PolygonMesh mesh, FabricCore::RTVal & rtVal)
   else
     xsiPoints = mesh.GetPoints().GetPositionArray();
 
-  if(xsiPoints.GetCount() > 0)
-  {
-    try
-    {
-      std::vector<FabricCore::RTVal> args(2);
-      args[0] = FabricSplice::constructExternalArrayRTVal("Float64", xsiPoints.GetCount() * 3, &xsiPoints[0]);
-      args[1] = FabricSplice::constructUInt32RTVal(3); // components
-      rtVal.callMethod("", "setPointsFromExternalArray_d", 2, &args[0]);
-      xsiPoints.Clear();
-    }
-    catch(FabricCore::Exception e)
-    {
-      xsiLogFunc(e.getDesc_cstr());
-      return;
-    }
-  }
+  std::vector<FabricCore::RTVal> args(2);
+  args[0] = FabricSplice::constructExternalArrayRTVal("Float64", xsiPoints.GetCount() * 3, &xsiPoints[0]);
+  args[1] = FabricSplice::constructUInt32RTVal(3); // components
+  rtVal.callMethod("", "setPointsFromExternalArray_d", 2, &args[0]);
+  xsiPoints.Clear();
 
-  if(xsiIndices.GetCount() > 0 && requireTopoUpdate)
+  if(requireTopoUpdate)
   {
-    try
-    {
-      std::vector<FabricCore::RTVal> args(1);
-      args[0] = FabricSplice::constructExternalArrayRTVal("UInt32", xsiIndices.GetCount(), &xsiIndices[0]);
-      rtVal.callMethod("", "setTopologyFromCombinedExternalArray", 1, &args[0]);
-      xsiIndices.Clear();
-    }
-    catch(FabricCore::Exception e)
-    {
-      xsiLogFunc(e.getDesc_cstr());
-      return;
-    }
+    std::vector<FabricCore::RTVal> args(1);
+    args[0] = FabricSplice::constructExternalArrayRTVal("UInt32", xsiIndices.GetCount(), &xsiIndices[0]);
+    rtVal.callMethod("", "setTopologyFromCombinedExternalArray", 1, &args[0]);
+    xsiIndices.Clear();
   }
 
   CRefArray uvRefs = acc.GetUVs();
@@ -671,19 +652,11 @@ void convertInputPolygonMesh(PolygonMesh mesh, FabricCore::RTVal & rtVal)
     CFloatArray values;
     prop.GetValues(values);
 
-    try
-    {
-      std::vector<FabricCore::RTVal> args(2);
-      args[0] = FabricSplice::constructExternalArrayRTVal("Float32", values.GetCount(), &values[0]);
-      args[1] = FabricSplice::constructUInt32RTVal(3); // components
-      rtVal.callMethod("", "setUVsFromExternalArray", 2, &args[0]);
-      values.Clear();
-    }
-    catch(FabricCore::Exception e)
-    {
-      xsiLogFunc(e.getDesc_cstr());
-      return;
-    }
+    std::vector<FabricCore::RTVal> args(2);
+    args[0] = FabricSplice::constructExternalArrayRTVal("Float32", values.GetCount(), &values[0]);
+    args[1] = FabricSplice::constructUInt32RTVal(3); // components
+    rtVal.callMethod("", "setUVsFromExternalArray", 2, &args[0]);
+    values.Clear();
   }
 
   CRefArray vertexColorRefs = acc.GetVertexColors();
@@ -693,19 +666,11 @@ void convertInputPolygonMesh(PolygonMesh mesh, FabricCore::RTVal & rtVal)
     CFloatArray values;
     prop.GetValues(values);
 
-    try
-    {
-      std::vector<FabricCore::RTVal> args(2);
-      args[0] = FabricSplice::constructExternalArrayRTVal("Float32", values.GetCount(), &values[0]);
-      args[1] = FabricSplice::constructUInt32RTVal(4); // components
-      rtVal.callMethod("", "setVertexColorsFromExternalArray", 2, &args[0]);
-      values.Clear();
-    }
-    catch(FabricCore::Exception e)
-    {
-      xsiLogFunc(e.getDesc_cstr());
-      return;
-    }
+    std::vector<FabricCore::RTVal> args(2);
+    args[0] = FabricSplice::constructExternalArrayRTVal("Float32", values.GetCount(), &values[0]);
+    args[1] = FabricSplice::constructUInt32RTVal(4); // components
+    rtVal.callMethod("", "setVertexColorsFromExternalArray", 2, &args[0]);
+    values.Clear();
   }
 }
 
