@@ -61,7 +61,7 @@ XSIPLUGINCALLBACK CStatus SpliceOp_Define(CRef & in_ctxt)
 
   FabricSpliceBaseInterface::constructXSIParameters(oCustomOperator, oFactory);
 
-  oCustomOperator.PutAlwaysEvaluate(true);
+  oCustomOperator.PutAlwaysEvaluate(false);
   oCustomOperator.PutDebug(0);
 
   return CStatus::OK;
