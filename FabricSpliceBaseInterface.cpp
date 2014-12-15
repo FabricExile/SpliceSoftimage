@@ -1034,100 +1034,72 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
 {
   FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::transferOutputPort");
 
-  OutputPort xsiPort(context.GetOutputPort());
-  std::string outPortName = xsiPort.GetGroupName().GetAsciiString();
-
-  std::map<std::string, portInfo>::iterator it = _ports.find(outPortName);
-  if(it == _ports.end())
-    return CStatus::Unexpected;
-  if(it->second.portMode == FabricSplice::Port_Mode_IN)
-    return CStatus::Unexpected;
-
-  FabricSplice::DGPort splicePort = _spliceGraph.getDGPort(it->first.c_str());
-
-  if(it->second.dataType == "Boolean" ||
-     it->second.dataType == "Integer" ||
-     it->second.dataType == "Scalar" ||
-     it->second.dataType == "String" ||
-     it->second.dataType == "Color" || 
-     it->second.dataType == "Vec3")
+  try
   {
-    CValue value;
-    FabricCore::RTVal rtVal = splicePort.getRTVal();
-    if(convertBasicOutputParameter(it->second.dataType, value, rtVal))
-      xsiPort.PutValue(value);
-  }
-  else if(it->second.dataType == "Boolean[]" ||
-     it->second.dataType == "Integer[]" ||
-     it->second.dataType == "Scalar[]" ||
-     it->second.dataType == "String[]")
-  {
-    CString singleDataType = it->second.dataType.GetSubString(0, it->second.dataType.Length()-2);
-    FabricCore::RTVal rtVal = splicePort.getRTVal();
-    uint32_t arraySize = splicePort.getArrayCount();
-    uint32_t portIndex = xsiPort.GetIndex();
-    uint32_t arrayIndex = UINT_MAX;
-    for(LONG i=0;i<it->second.portIndices.GetCount();i++)
-    {
-      if(it->second.portIndices[i] == portIndex)
-      {
-        arrayIndex = i;
-        break;
-      }
-    }
-    if(arrayIndex < arraySize)
+    OutputPort xsiPort(context.GetOutputPort());
+    std::string outPortName = xsiPort.GetGroupName().GetAsciiString();
+
+    std::map<std::string, portInfo>::iterator it = _ports.find(outPortName);
+    if(it == _ports.end())
+      return CStatus::Unexpected;
+    if(it->second.portMode == FabricSplice::Port_Mode_IN)
+      return CStatus::Unexpected;
+
+    FabricSplice::DGPort splicePort = _spliceGraph.getDGPort(it->first.c_str());
+
+    if(it->second.dataType == "Boolean" ||
+       it->second.dataType == "Integer" ||
+       it->second.dataType == "Scalar" ||
+       it->second.dataType == "String" ||
+       it->second.dataType == "Color" || 
+       it->second.dataType == "Vec3")
     {
       CValue value;
-      FabricCore::RTVal rtValElement = rtVal.getArrayElement(arrayIndex);
-      if(convertBasicOutputParameter(singleDataType, value, rtValElement))
+      FabricCore::RTVal rtVal = splicePort.getRTVal();
+      if(convertBasicOutputParameter(it->second.dataType, value, rtVal))
         xsiPort.PutValue(value);
     }
-  }
-  else if(it->second.dataType == "Mat44")
-  {
-    FabricCore::RTVal rtVal = splicePort.getRTVal();
-    MATH::CMatrix4 matrix;
-    getCMatrix4FromRTVal(rtVal, matrix);
-
-    MATH::CTransformation transform;
-    transform.SetMatrix4(matrix);
-    KinematicState kine(context.GetOutputTarget());
-    kine.PutTransform(transform);
-  }
-  else if(it->second.dataType == "Mat44[]")
-  {
-    FabricCore::RTVal rtVal = splicePort.getRTVal();
-    uint32_t arraySize = splicePort.getArrayCount();
-    uint32_t portIndex = xsiPort.GetIndex();
-    uint32_t arrayIndex = UINT_MAX;
-    for(LONG i=0;i<it->second.portIndices.GetCount();i++)
+    else if(it->second.dataType == "Boolean[]" ||
+       it->second.dataType == "Integer[]" ||
+       it->second.dataType == "Scalar[]" ||
+       it->second.dataType == "String[]")
     {
-      if(it->second.portIndices[i] == portIndex)
+      CString singleDataType = it->second.dataType.GetSubString(0, it->second.dataType.Length()-2);
+      FabricCore::RTVal rtVal = splicePort.getRTVal();
+      uint32_t arraySize = splicePort.getArrayCount();
+      uint32_t portIndex = xsiPort.GetIndex();
+      uint32_t arrayIndex = UINT_MAX;
+      for(LONG i=0;i<it->second.portIndices.GetCount();i++)
       {
-        arrayIndex = i;
-        break;
+        if(it->second.portIndices[i] == portIndex)
+        {
+          arrayIndex = i;
+          break;
+        }
+      }
+      if(arrayIndex < arraySize)
+      {
+        CValue value;
+        FabricCore::RTVal rtValElement = rtVal.getArrayElement(arrayIndex);
+        if(convertBasicOutputParameter(singleDataType, value, rtValElement))
+          xsiPort.PutValue(value);
       }
     }
-    if(arrayIndex < arraySize)
+    else if(it->second.dataType == "Mat44")
     {
-      // todo: maybe we should be caching this....
+      FabricCore::RTVal rtVal = splicePort.getRTVal();
       MATH::CMatrix4 matrix;
-      getCMatrix4FromRTVal(rtVal.getArrayElement(arrayIndex), matrix);
+      getCMatrix4FromRTVal(rtVal, matrix);
 
       MATH::CTransformation transform;
       transform.SetMatrix4(matrix);
       KinematicState kine(context.GetOutputTarget());
       kine.PutTransform(transform);
     }
-  }
-  else if(it->second.dataType == "PolygonMesh" || it->second.dataType == "PolygonMesh[]")
-  {
-    bool isArray = it->second.dataType == "PolygonMesh[]";
-
-    FabricCore::RTVal mainRTVal = splicePort.getRTVal();
-    FabricCore::RTVal rtVal;
-    if(isArray)
+    else if(it->second.dataType == "Mat44[]")
     {
+      FabricCore::RTVal rtVal = splicePort.getRTVal();
+      uint32_t arraySize = splicePort.getArrayCount();
       uint32_t portIndex = xsiPort.GetIndex();
       uint32_t arrayIndex = UINT_MAX;
       for(LONG i=0;i<it->second.portIndices.GetCount();i++)
@@ -1138,282 +1110,117 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
           break;
         }
       }
-      if(arrayIndex <  mainRTVal.getArraySize())
+      if(arrayIndex < arraySize)
       {
-        rtVal = mainRTVal.getArrayElement(arrayIndex);
-      }
-      else
-      {
-        xsiLogErrorFunc("Dereferenced PolygonMesh. Please initiate the PolygonMesh array first.");
-        return CStatus::Unexpected;
+        // todo: maybe we should be caching this....
+        MATH::CMatrix4 matrix;
+        getCMatrix4FromRTVal(rtVal.getArrayElement(arrayIndex), matrix);
+
+        MATH::CTransformation transform;
+        transform.SetMatrix4(matrix);
+        KinematicState kine(context.GetOutputTarget());
+        kine.PutTransform(transform);
       }
     }
-    else
+    else if(it->second.dataType == "PolygonMesh" || it->second.dataType == "PolygonMesh[]")
     {
-      rtVal = mainRTVal;
-    }
-
-    if(!rtVal.isValid() || rtVal.isNullObject())
-    {
-      xsiLogErrorFunc("Dereferenced PolygonMesh. Please initiate the PolygonMesh first.");
-      return CStatus::Unexpected;
-    }
-
-    try
-    {
-      Primitive prim(context.GetOutputTarget());
-      PolygonMesh mesh(prim.GetGeometry());
-      CGeometryAccessor acc = mesh.GetGeometryAccessor();
-
-      unsigned int nbPoints = rtVal.callMethod("UInt64", "pointCount", 0, 0).getUInt64();
-      unsigned int nbPolygons = rtVal.callMethod("UInt64", "polygonCount", 0, 0).getUInt64();
-      unsigned int nbSamples = rtVal.callMethod("UInt64", "polygonPointsCount", 0, 0).getUInt64();
-
-      bool requireTopoUpdate = nbPolygons != acc.GetPolygonCount() || nbSamples != acc.GetNodeCount();
-
-      MATH::CVector3Array xsiPoints;
-      CLongArray xsiIndices;
-      xsiPoints.Resize(nbPoints);
-
-      if(xsiPoints.GetCount() > 0)
+      bool isArray = it->second.dataType == "PolygonMesh[]";
+      FabricCore::RTVal rtVal;
+      if(isArray)
       {
-        std::vector<FabricCore::RTVal> args(2);
-        args[0] = FabricSplice::constructExternalArrayRTVal("Float64", xsiPoints.GetCount() * 3, &xsiPoints[0]);
-        args[1] = FabricSplice::constructUInt32RTVal(3); // components
-        rtVal.callMethod("", "getPointsAsExternalArray_d", 2, &args[0]);
-      }
-
-      if(requireTopoUpdate)
-      {
-        xsiIndices.Resize(nbPolygons  + nbSamples);
-        FabricCore::RTVal indices = 
-          FabricSplice::constructExternalArrayRTVal("UInt32", xsiIndices.GetCount(), &xsiIndices[0]);
-        rtVal.callMethod("", "getTopologyAsCombinedExternalArray", 1, &indices);
-      }
-
-      if(requireTopoUpdate)
-      {
-        if(xsiIndices.GetCount() > 0)
-          mesh.Set(xsiPoints, xsiIndices);
+        FabricCore::RTVal arrayVal = splicePort.getRTVal();
+        uint32_t portIndex = xsiPort.GetIndex();
+        uint32_t arrayIndex = UINT_MAX;
+        for(LONG i=0;i<it->second.portIndices.GetCount();i++)
+        {
+          if(it->second.portIndices[i] == portIndex)
+          {
+            arrayIndex = i;
+            break;
+          }
+        }
+        if(arrayIndex <  arrayVal.getArraySize())
+        {
+          rtVal = arrayVal.getArrayElement(arrayIndex);
+        }
         else
         {
-          xsiPoints.Resize(3);
-          xsiIndices.Resize(4);
-          xsiIndices[0] = 3;
-          xsiIndices[1] = 0;
-          xsiIndices[2] = 0;
-          xsiIndices[3] = 0;
-          mesh.Set(xsiPoints, xsiIndices);
+          xsiLogErrorFunc("Dereferenced PolygonMesh. Please initiate the PolygonMesh array first.");
+          return CStatus::Unexpected;
         }
       }
       else
-        mesh.GetPoints().PutPositionArray(xsiPoints);
-
-      if(rtVal.callMethod("Boolean", "hasUVs", 0, 0).getBoolean())
       {
-        CRefArray uvRefs = acc.GetUVs();
-        if(uvRefs.GetCount() > 0)
-        {
-          ClusterProperty prop(uvRefs[0]);
-          CFloatArray values(nbSamples * 3);
-
-          try
-          {
-            std::vector<FabricCore::RTVal> args(2);
-            args[0] = FabricSplice::constructExternalArrayRTVal("Float32", values.GetCount(), &values[0]);
-            args[1] = FabricSplice::constructUInt32RTVal(3); // components
-            rtVal.callMethod("", "getUVsAsExternalArray", 2, &args[0]);
-            prop.SetValues(&values[0], values.GetCount() / 3);
-            values.Clear();
-          }
-          catch(FabricCore::Exception e)
-
-          {
-            try
-            {
-              std::vector<FabricCore::RTVal> args(2);
-              args[0] = FabricSplice::constructExternalArrayRTVal("Float32", values.GetCount(), &values[0]);
-              args[1] = FabricSplice::constructUInt32RTVal(3); // components
-              rtVal.callMethod("", "getUVsAsExternalArray", 2, &args[0]);
-              prop.SetValues(&values[0], values.GetCount() / 3);
-              values.Clear();
-            }
-            catch(FabricCore::Exception e)
-            {
-              xsiLogFunc(e.getDesc_cstr());
-            }
-          }
-        }
+        rtVal = splicePort.getRTVal();
       }
 
-      if(rtVal.callMethod("Boolean", "hasVertexColors", 0, 0).getBoolean())
+      if(!rtVal.isValid() || rtVal.isNullObject())
       {
-        CRefArray vertexColorRefs = acc.GetVertexColors();
-        if(vertexColorRefs.GetCount() > 0)
-        {
-          ClusterProperty prop(vertexColorRefs[0]);
-          CFloatArray values(nbSamples * 4);
-
-          if(values.GetCount() > 0 && values.GetCount() == prop.GetElements().GetCount() * 4)
-          {
-            try
-            {
-              std::vector<FabricCore::RTVal> args(2);
-              args[0] = FabricSplice::constructExternalArrayRTVal("Float32", values.GetCount(), &values[0]);
-              args[1] = FabricSplice::constructUInt32RTVal(4); // components
-              rtVal.callMethod("", "getVertexColorsAsExternalArray", 2, &args[0]);
-              prop.SetValues(&values[0], values.GetCount() / 4);
-              values.Clear();
-            }
-            catch(FabricCore::Exception e)
-            {
-              xsiLogFunc(e.getDesc_cstr());
-            }
-          }
-        }
-      }
-    }
-    catch(FabricCore::Exception e)
-    {
-      xsiLogErrorFunc(e.getDesc_cstr());
-      return CStatus::Unexpected;
-    }
-  }
-  else if(it->second.dataType == "Lines" || it->second.dataType == "Lines[]")
-  {
-    bool isArray = it->second.dataType == "Lines[]";
-
-    FabricCore::RTVal mainRTVal = splicePort.getRTVal();
-    FabricCore::RTVal rtVal;
-    if(isArray)
-    {
-      uint32_t portIndex = xsiPort.GetIndex();
-      uint32_t arrayIndex = UINT_MAX;
-      for(LONG i=0;i<it->second.portIndices.GetCount();i++)
-      {
-        if(it->second.portIndices[i] == portIndex)
-        {
-          arrayIndex = i;
-          break;
-        }
-      }
-      if(arrayIndex <  mainRTVal.getArraySize())
-      {
-        rtVal = mainRTVal.getArrayElement(arrayIndex);
-      }
-      else
-      {
-        xsiLogErrorFunc("Dereferenced Lines. Please initiate the Lines array first.");
+        xsiLogErrorFunc("Dereferenced PolygonMesh. Please initiate the PolygonMesh first.");
         return CStatus::Unexpected;
       }
+
+      Primitive prim(context.GetOutputTarget());
+      PolygonMesh mesh(prim.GetGeometry());
+      convertOutputPolygonMesh( mesh, rtVal);
+    }
+    else if(it->second.dataType == "Lines" || it->second.dataType == "Lines[]")
+    {
+      bool isArray = it->second.dataType == "Lines[]";
+
+      FabricCore::RTVal rtVal;
+      if(isArray)
+      {
+        FabricCore::RTVal arrayVal = splicePort.getRTVal();
+        uint32_t portIndex = xsiPort.GetIndex();
+        uint32_t arrayIndex = UINT_MAX;
+        for(LONG i=0;i<it->second.portIndices.GetCount();i++)
+        {
+          if(it->second.portIndices[i] == portIndex)
+          {
+            arrayIndex = i;
+            break;
+          }
+        }
+        if(arrayIndex <  arrayVal.getArraySize())
+        {
+          rtVal = arrayVal.getArrayElement(arrayIndex);
+        }
+        else
+        {
+          xsiLogErrorFunc("Dereferenced Lines. Please initiate the Lines array first.");
+          return CStatus::Unexpected;
+        }
+      }
+      else
+      {
+        rtVal = splicePort.getRTVal();
+      }
+
+      if(!rtVal.isValid() || rtVal.isNullObject())
+      {
+        xsiLogErrorFunc("Dereferenced Lines. Please initiate the Lines first.");
+        return CStatus::Unexpected;
+      }
+
+      Primitive prim(context.GetOutputTarget());
+      NurbsCurveList curveList(prim.GetGeometry());
+      convertOutputLines( curveList, rtVal);
     }
     else
     {
-      rtVal = mainRTVal;
+      xsiLogFunc("Skipping output port of type "+it->second.dataType);
     }
 
-    if(!rtVal.isValid() || rtVal.isNullObject())
-    {
-      xsiLogErrorFunc("Dereferenced Lines. Please initiate the Lines first.");
-      return CStatus::Unexpected;
-    }
-
-    try
-    {
-      Primitive prim(context.GetOutputTarget());
-      NurbsCurveList curveList(prim.GetGeometry());
-
-      unsigned int nbPoints = rtVal.callMethod("UInt64", "pointCount", 0, 0).getUInt64();
-      unsigned int nbSegments = rtVal.callMethod("UInt64", "lineCount", 0, 0).getUInt64();
-
-      MATH::CVector3Array xsiPoints;
-      std::vector<uint32_t> xsiIndices;
-      xsiPoints.Resize(nbPoints);
-      xsiIndices.resize(nbSegments * 2);
-
-      if(nbPoints > 0)
-      {
-        FabricCore::RTVal xsiPointsVal = FabricSplice::constructExternalArrayRTVal("Float64", xsiPoints.GetCount() * 3, &xsiPoints[0]);
-        rtVal.callMethod("", "_getPositionsAsExternalArray_d", 1, &xsiPointsVal);
-      }
-
-      if(nbSegments > 0)
-      {
-        FabricCore::RTVal indices = FabricSplice::constructExternalArrayRTVal("UInt32", xsiIndices.size(), &xsiIndices[0]);
-        rtVal.callMethod("", "_getTopologyAsExternalArray", 1, &indices);
-      }
-
-      size_t nbCurves = 0;
-      if(nbPoints > 0 && nbSegments > 0)
-      {
-        nbCurves++;
-        for(size_t i=2;i<xsiIndices.size();i+=2)
-        {
-          if(xsiIndices[i] != xsiIndices[i-1])
-            nbCurves++;
-        }
-      }
-
-      CNurbsCurveDataArray curveData(nbCurves);
-
-      if(nbCurves > 0)
-      {
-        size_t coffset = 0;
-        for(size_t i=0;i<nbCurves;i++)
-        {
-          curveData[i].m_siParameterization = (siKnotParameterization)1;//siNonUniformParameterization;
-          curveData[i].m_lDegree = 1;
-
-          size_t voffset = coffset + 2;
-          while(voffset < xsiIndices.size())
-          {
-            if(xsiIndices[voffset] != xsiIndices[voffset-1])
-              break;
-            voffset += 2;
-          }
-
-          size_t nbVertices = (voffset - coffset) / 2 + 1;
-          bool isClosed = xsiIndices[coffset] == xsiIndices[voffset-1];
-          if(isClosed)
-            nbVertices--;
-          curveData[i].m_aControlPoints.Resize(nbVertices);
-          curveData[i].m_aKnots.Resize(nbVertices + (isClosed ? 1 : 0));
-          curveData[i].m_bClosed = isClosed;
-
-          for(size_t j=0;j<nbVertices;j++)
-          {
-            size_t vindex;
-            if(j == 0)
-              vindex = xsiIndices[coffset];
-            else
-              vindex = xsiIndices[coffset + 1 + 2 * (j-1)];
-            curveData[i].m_aControlPoints[j].Set(
-              xsiPoints[vindex].GetX(),
-              xsiPoints[vindex].GetY(),
-              xsiPoints[vindex].GetZ(),
-              1.0);
-            curveData[i].m_aKnots[j] = j;
-          }
-          if(isClosed)
-            curveData[i].m_aKnots[nbVertices] = nbVertices;
-
-          coffset = voffset;
-        }
-      }
-
-      curveList.Set(curveData, siSINurbs);
-    }
-    catch(FabricCore::Exception e)
-    {
-      xsiLogErrorFunc(e.getDesc_cstr());
-      return CStatus::Unexpected;
-    }
   }
-  else
+  catch(FabricSplice::Exception e)
   {
-    xsiLogFunc("Skipping output port of type "+it->second.dataType);
+    xsiLogFunc(e.what());
   }
-
+  catch(FabricCore::Exception e)
+  {
+    xsiLogFunc(e.getDesc_cstr());
+  }
   return CStatus::OK;
 }
 

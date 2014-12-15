@@ -39,6 +39,9 @@ XSI::X3DObject getX3DObjectFromRef(const XSI::CRef &ref);
 void convertInputPolygonMesh(XSI::PolygonMesh mesh, FabricCore::RTVal & rtVal);
 void convertInputLines(XSI::NurbsCurveList curveList, FabricCore::RTVal & rtVal);
 
+void convertOutputPolygonMesh(XSI::PolygonMesh mesh, FabricCore::RTVal & rtVal);
+void convertOutputLines(XSI::NurbsCurveList curveList, FabricCore::RTVal & rtVal);
+
 XSI::CRefArray PickObjectArray(XSI::CString firstTitle, XSI::CString nextTitle, XSI::CString filter = L"global", ULONG maxCount = 0);
 
 XSI::CString processNameCString(XSI::CString name);
