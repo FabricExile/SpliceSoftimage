@@ -788,8 +788,9 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
       Geometry xsiGeo = prim.GetGeometry();
       CString iceAttrStr = iceAttrName.getStringData();
       ICEAttribute iceAttr = xsiGeo.GetICEAttributeFromName(iceAttrStr);
-      if(iceAttr.IsValid())
+      if(iceAttr.IsValid()){
         convertInputICEAttribute(splicePort, it->second.dataType, iceAttr, xsiGeo);
+      addDirtyInput(portName, evalContext, -1);
     }
     else if(it->second.dataType == "Boolean" || 
        it->second.dataType == "Integer" || 
