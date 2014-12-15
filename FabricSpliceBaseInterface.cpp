@@ -886,108 +886,46 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
       }
       splicePort.setRTVal(rtVals);
     }
-    else if(it->second.dataType == "Lines" || it->second.dataType == "Lines[]")
+    else if(it->second.dataType == "Lines")
     {
-      bool isLinesArray = it->second.dataType == "Lines[]";
-
-      FabricCore::RTVal mainRTVal = splicePort.getRTVal();
-      std::vector<FabricCore::RTVal> rtVals;
-      CRefArray curveLists;
-      if(isLinesArray)
-      {
-        for(int i=0; ; i++)
-        {
-          Primitive prim((CRef)context.GetInputValue(portName.c_str()+CString(i)));
-          if(!prim.IsValid())
-            break;
-          curveLists.Add(prim.GetGeometry().GetRef());
-          if(mainRTVal.getArraySize() < i)
-          {
-            FabricCore::RTVal rtVal = FabricSplice::constructObjectRTVal("Lines");
-            mainRTVal.callMethod("", "push", 1, &rtVal);
-            rtVals.push_back(rtVal);
-          }
-          else
-          {
-            FabricCore::RTVal rtVal = mainRTVal.getArrayElement(i-1);
-            if(!rtVal.isValid() || rtVal.isNullObject())
-            {
-              rtVal = FabricSplice::constructObjectRTVal("Lines");
-              mainRTVal.setArrayElement(i-1, rtVal);
-            }
-            rtVals.push_back(rtVal);
-          }
-        }
-      }
+      Primitive prim;
+      if(it->second.portMode == FabricSplice::Port_Mode_IO && portName == outPortName)
+        prim = context.GetOutputTarget();
       else
-      { 
-        Primitive prim;
-        if(it->second.portMode == FabricSplice::Port_Mode_IO && portName == outPortName)
-          prim = context.GetOutputTarget();
-        else
-          prim = (CRef)context.GetInputValue(portName.c_str()+CString(CValue(0)));
-        curveLists.Add(prim.GetGeometry().GetRef());
-        if(!mainRTVal.isValid() || mainRTVal.isNullObject())
-          mainRTVal = FabricSplice::constructObjectRTVal("Lines");
-        rtVals.push_back(mainRTVal);
-      }
-
-      for(size_t i=0;i<rtVals.size();i++)
+        prim = (CRef)context.GetInputValue(portName.c_str()+CString(CValue(0)));
+      NurbsCurveList curveList = prim.GetGeometry().GetRef();
+      FabricCore::RTVal rtVal = splicePort.getRTVal();
+      convertInputLines( curveList, rtVal);
+      splicePort.setRTVal(rtVal);
+    }
+    else if(it->second.dataType == "Lines[]")
+    {
+      FabricCore::RTVal rtVals = splicePort.getRTVal();
+      for(int i=0; ; i++)
       {
-        FabricCore::RTVal rtVal = rtVals[i];
-        NurbsCurveList curveList = curveLists[i];
-
-        MATH::CVector3Array xsiPoints = curveList.GetPoints().GetPositionArray();
-        FabricCore::RTVal xsiPointsVal = FabricSplice::constructExternalArrayRTVal("Float64", xsiPoints.GetCount() * 3, &xsiPoints[0]);
-        rtVal.callMethod("", "_setPositionsFromExternalArray_d", 1, &xsiPointsVal);
-
-        CNurbsCurveRefArray xsiCurves = curveList.GetCurves();
-        size_t nbSegments = 0;
-        for(ULONG j=0;j<xsiCurves.GetCount();j++)
+        Primitive prim((CRef)context.GetInputValue(portName.c_str()+CString(i)));
+        if(!prim.IsValid())
+          break;
+        NurbsCurveList curveList = prim.GetGeometry().GetRef();
+        if(rtVals.getArraySize() < i)
         {
-          NurbsCurve xsiCurve = xsiCurves[j];
-          CControlPointRefArray controls = xsiCurve.GetControlPoints();
-          CKnotArray knots = xsiCurve.GetKnots();
-          nbSegments += controls.GetCount() - 1;
-          bool closed = false;
-          knots.GetClosed(closed);
-          if(closed)
-            nbSegments++;
+          FabricCore::RTVal rtVal;
+          convertInputLines( curveList, rtVal);
+          rtVals.callMethod("", "push", 1, &rtVal);
         }
-
-        size_t voffset = 0;
-        size_t coffset = 0;
-        std::vector<uint32_t> indices(nbSegments*2);
-        for(ULONG j=0;j<xsiCurves.GetCount();j++)
+        else
         {
-          NurbsCurve xsiCurve = xsiCurves[j];
-          CControlPointRefArray controls = xsiCurve.GetControlPoints();
-          for(ULONG k=0;k<controls.GetCount()-1;k++)
-          {
-            indices[voffset++] = coffset++;
-            indices[voffset++] = coffset;
-          }
-          bool closed = false;
-          CKnotArray knots = xsiCurve.GetKnots();
-          knots.GetClosed(closed);
-          if(closed) {
-            indices[voffset++] = coffset;
-            indices[voffset++] = coffset - controls.GetCount() + 1;
-          }
-          coffset++;
+          FabricCore::RTVal rtVal = rtVals.getArrayElement(i-1);
+          convertInputLines( curveList, rtVal);
+          rtVals.setArrayElement(i-1, rtVal);
         }
-
-        FabricCore::RTVal indicesVal = FabricSplice::constructExternalArrayRTVal("UInt32", indices.size(), &indices[0]);
-        rtVal.callMethod("", "_setTopologyFromExternalArray", 1, &indicesVal);
       }
-
-      splicePort.setRTVal(mainRTVal);
+      splicePort.setRTVal(rtVals);
     }
     else
     {
       xsiLogFunc("Skipping input port of type "+it->second.dataType);
     }
-
   }
 
   }

@@ -24,6 +24,11 @@
 #include <xsi_polygonface.h>
 #include <xsi_polygonnode.h>
 #include <xsi_vertex.h>
+#include <xsi_nurbscurve.h>
+#include <xsi_nurbscurvelist.h>
+#include <xsi_nurbsdata.h>
+#include <xsi_knot.h>
+#include <xsi_controlpoint.h>
 #include <xsi_geometryaccessor.h>
 #include <xsi_group.h>
 #include <xsi_iceattributedataarray2D.h>
@@ -700,6 +705,56 @@ void convertInputPolygonMesh(PolygonMesh mesh, FabricCore::RTVal & rtVal)
     }
   }
 }
+
+void convertInputLines(NurbsCurveList curveList, FabricCore::RTVal & rtVal)
+{
+  if(!rtVal.isValid() || rtVal.isNullObject())
+    rtVal = FabricSplice::constructObjectRTVal("Lines");
+
+  MATH::CVector3Array xsiPoints = curveList.GetPoints().GetPositionArray();
+  FabricCore::RTVal xsiPointsVal = FabricSplice::constructExternalArrayRTVal("Float64", xsiPoints.GetCount() * 3, &xsiPoints[0]);
+  rtVal.callMethod("", "_setPositionsFromExternalArray_d", 1, &xsiPointsVal);
+
+  CNurbsCurveRefArray xsiCurves = curveList.GetCurves();
+  size_t nbSegments = 0;
+  for(ULONG j=0;j<xsiCurves.GetCount();j++)
+  {
+    NurbsCurve xsiCurve = xsiCurves[j];
+    CControlPointRefArray controls = xsiCurve.GetControlPoints();
+    CKnotArray knots = xsiCurve.GetKnots();
+    nbSegments += controls.GetCount() - 1;
+    bool closed = false;
+    knots.GetClosed(closed);
+    if(closed)
+      nbSegments++;
+  }
+
+  size_t voffset = 0;
+  size_t coffset = 0;
+  std::vector<uint32_t> indices(nbSegments*2);
+  for(ULONG j=0;j<xsiCurves.GetCount();j++)
+  {
+    NurbsCurve xsiCurve = xsiCurves[j];
+    CControlPointRefArray controls = xsiCurve.GetControlPoints();
+    for(ULONG k=0;k<controls.GetCount()-1;k++)
+    {
+      indices[voffset++] = coffset++;
+      indices[voffset++] = coffset;
+    }
+    bool closed = false;
+    CKnotArray knots = xsiCurve.GetKnots();
+    knots.GetClosed(closed);
+    if(closed) {
+      indices[voffset++] = coffset;
+      indices[voffset++] = coffset - controls.GetCount() + 1;
+    }
+    coffset++;
+  }
+
+  FabricCore::RTVal indicesVal = FabricSplice::constructExternalArrayRTVal("UInt32", indices.size(), &indices[0]);
+  rtVal.callMethod("", "_setTopologyFromExternalArray", 1, &indicesVal);
+}
+
 
 CRef filterX3DObjectPickedRef(CRef ref, CString filter)
 {

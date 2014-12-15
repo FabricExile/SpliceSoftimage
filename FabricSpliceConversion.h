@@ -11,6 +11,8 @@
 #include <xsi_iceattribute.h>
 #include <xsi_geometry.h>
 #include <xsi_polygonmesh.h>
+#include <xsi_nurbscurve.h>
+#include <xsi_nurbscurvelist.h>
 #include <string>
 #include <vector>
 
@@ -35,6 +37,7 @@ void convertInputICEAttribute(FabricSplice::DGPort & port, XSI::CString dataType
 XSI::X3DObject getX3DObjectFromRef(const XSI::CRef &ref);
 
 void convertInputPolygonMesh(XSI::PolygonMesh mesh, FabricCore::RTVal & rtVal);
+void convertInputLines(XSI::NurbsCurveList curveList, FabricCore::RTVal & rtVal);
 
 XSI::CRefArray PickObjectArray(XSI::CString firstTitle, XSI::CString nextTitle, XSI::CString filter = L"global", ULONG maxCount = 0);
 
