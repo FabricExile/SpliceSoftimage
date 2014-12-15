@@ -773,8 +773,14 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
     FabricCore::Variant iceAttrName = splicePort.getOption("ICEAttribute");
     if(iceAttrName.isString())
     {
-      Primitive xsiPrim((CRef)context.GetInputValue(it->second.realPortName+CString(CValue(CValue(0)))));
-      Geometry xsiGeo = xsiPrim.GetGeometry();
+      Primitive prim((CRef)context.GetInputValue(it->second.realPortName+CString(CValue(CValue(0)))));
+      
+      // Now check if the input geometry has changed scince our previous evaluation.
+      LONG evalID = ProjectItem(prim).GetEvaluationID();
+      if(checkEvalIDCache( evalID, evalIDCacheIndex))
+        continue;
+      
+      Geometry xsiGeo = prim.GetGeometry();
       CString iceAttrStr = iceAttrName.getStringData();
       ICEAttribute iceAttr = xsiGeo.GetICEAttributeFromName(iceAttrStr);
       if(iceAttr.IsValid())
