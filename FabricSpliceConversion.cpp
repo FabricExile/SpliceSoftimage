@@ -19,6 +19,12 @@
 #include <xsi_iceattributedataarray.h>
 #include <xsi_comapihandler.h>
 #include <xsi_x3dobject.h>
+#include <xsi_polygonmesh.h>
+#include <xsi_geometryaccessor.h>
+#include <xsi_polygonface.h>
+#include <xsi_polygonnode.h>
+#include <xsi_vertex.h>
+#include <xsi_geometryaccessor.h>
 #include <xsi_group.h>
 #include <xsi_iceattributedataarray2D.h>
 
@@ -599,6 +605,100 @@ X3DObject getX3DObjectFromRef(const CRef &ref)
   if(!obj.IsValid())
     return X3DObject();
   return getX3DObjectFromRef(obj.GetParent());
+}
+
+void convertInputPolygonMesh(PolygonMesh mesh, FabricCore::RTVal & rtVal)
+{
+  CGeometryAccessor acc = mesh.GetGeometryAccessor();
+
+  // determine if we need a topology update
+  unsigned int nbPolygons = rtVal.callMethod("UInt64", "polygonCount", 0, 0).getUInt64();
+  unsigned int nbSamples = rtVal.callMethod("UInt64", "polygonPointsCount", 0, 0).getUInt64();
+  bool requireTopoUpdate = nbPolygons != acc.GetPolygonCount() || nbSamples != acc.GetNodeCount();
+
+  MATH::CVector3Array xsiPoints;
+  CLongArray xsiIndices;
+  if(requireTopoUpdate)
+    mesh.Get(xsiPoints, xsiIndices);
+  else
+    xsiPoints = mesh.GetPoints().GetPositionArray();
+
+  if(xsiPoints.GetCount() > 0)
+  {
+    try
+    {
+      std::vector<FabricCore::RTVal> args(2);
+      args[0] = FabricSplice::constructExternalArrayRTVal("Float64", xsiPoints.GetCount() * 3, &xsiPoints[0]);
+      args[1] = FabricSplice::constructUInt32RTVal(3); // components
+      rtVal.callMethod("", "setPointsFromExternalArray_d", 2, &args[0]);
+      xsiPoints.Clear();
+    }
+    catch(FabricCore::Exception e)
+    {
+      xsiLogFunc(e.getDesc_cstr());
+      return;
+    }
+  }
+
+  if(xsiIndices.GetCount() > 0 && requireTopoUpdate)
+  {
+    try
+    {
+      std::vector<FabricCore::RTVal> args(1);
+      args[0] = FabricSplice::constructExternalArrayRTVal("UInt32", xsiIndices.GetCount(), &xsiIndices[0]);
+      rtVal.callMethod("", "setTopologyFromCombinedExternalArray", 1, &args[0]);
+      xsiIndices.Clear();
+    }
+    catch(FabricCore::Exception e)
+    {
+      xsiLogFunc(e.getDesc_cstr());
+      return;
+    }
+  }
+
+  CRefArray uvRefs = acc.GetUVs();
+  if(uvRefs.GetCount() > 0)
+  {
+    ClusterProperty prop(uvRefs[0]);
+    CFloatArray values;
+    prop.GetValues(values);
+
+    try
+    {
+      std::vector<FabricCore::RTVal> args(2);
+      args[0] = FabricSplice::constructExternalArrayRTVal("Float32", values.GetCount(), &values[0]);
+      args[1] = FabricSplice::constructUInt32RTVal(3); // components
+      rtVal.callMethod("", "setUVsFromExternalArray", 2, &args[0]);
+      values.Clear();
+    }
+    catch(FabricCore::Exception e)
+    {
+      xsiLogFunc(e.getDesc_cstr());
+      return;
+    }
+  }
+
+  CRefArray vertexColorRefs = acc.GetVertexColors();
+  if(vertexColorRefs.GetCount() > 0)
+  {
+    ClusterProperty prop(vertexColorRefs[0]);
+    CFloatArray values;
+    prop.GetValues(values);
+
+    try
+    {
+      std::vector<FabricCore::RTVal> args(2);
+      args[0] = FabricSplice::constructExternalArrayRTVal("Float32", values.GetCount(), &values[0]);
+      args[1] = FabricSplice::constructUInt32RTVal(4); // components
+      rtVal.callMethod("", "setVertexColorsFromExternalArray", 2, &args[0]);
+      values.Clear();
+    }
+    catch(FabricCore::Exception e)
+    {
+      xsiLogFunc(e.getDesc_cstr());
+      return;
+    }
+  }
 }
 
 CRef filterX3DObjectPickedRef(CRef ref, CString filter)
