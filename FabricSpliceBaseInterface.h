@@ -114,7 +114,7 @@ protected:
 
   void addDirtyInput(std::string portName, FabricCore::RTVal evalContext, int index);
   bool checkIfValueChangedAndDirtyInput(XSI::CValue value, std::vector<XSI::CValue> &cachedValues, bool alwaysEvaluate, std::string portName, FabricCore::RTVal evalContext, int index);
-  bool checkEvalIDCache(LONG evalID, int &evalIDCacheIndex);
+  bool checkEvalIDCache(LONG evalID, int &evalIDCacheIndex, bool alwaysEvaluate);
 
 };
 
