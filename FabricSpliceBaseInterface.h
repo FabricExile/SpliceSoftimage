@@ -111,8 +111,10 @@ protected:
   std::vector<std::string> _processedPorts;
 
   std::vector<std::vector<XSI::CValue>> valuesCache;
+  std::vector<LONG> evalIDsCache;
 
   bool checkIfValueChangedAndDirtyInput(XSI::CValue value, std::vector<XSI::CValue> &cachedValues, bool alwaysEvaluate, std::string portName, FabricCore::RTVal evalContext, int index);
+  bool checkEvalIDCache(LONG evalID, int &evalIDCacheIndex);
 
 };
 
