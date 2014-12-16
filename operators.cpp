@@ -100,7 +100,7 @@ XSIPLUGINCALLBACK CStatus SpliceOp_Update(CRef & in_ctxt)
     // When transfering the input values, we check for changes and only evaluate if
     // one of the inputs has actually changed. The Softimage application will evaluate
     // and operator multiple times if connected to multiple outputs(once for each connected outport).
-    // This requires that we manage the clean/dirty state of the operator elise for complex operators
+    // This requires that we manage the clean/dirty state of the operator else for complex operators
     // driving many values in Softimage, the whole system slows to a crawl.
     if(interf->transferInputPorts(opRef, ctxt))
     {

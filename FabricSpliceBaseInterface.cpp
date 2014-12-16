@@ -744,7 +744,14 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
 
     OutputPort xsiPort(context.GetOutputPort());
     std::string outPortName = xsiPort.GetGroupName().GetAsciiString();
+
+    // Simple values are cached in the CValues cache member. we don't know how many cache values we will require
+    // because this depends on the port type. We simply grow the array as we need it, and never shrink it. Every 
+    // time we store a cache value, we should increment this value. 
     int valueCacheIndex = 0;
+    // Complex data such as geometries provides an 'EvaluatoinID' which is similar to the version number we have in 
+    // KL Geometry objects. We can simply cache the evaluation id and compare the current value iwth cached values. 
+    // We als don't know how many evaluation ids we will need, so we simply grow the array as needed. 
     int evalIDCacheIndex = 0;
     {
       FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::transferInputParameters");
