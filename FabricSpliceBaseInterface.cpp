@@ -807,6 +807,7 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
         if(iceAttr.IsValid()){
           convertInputICEAttribute(splicePort, it->second.dataType, iceAttr, xsiGeo);
           addDirtyInput(portName, evalContext, -1);
+          result = true;
         }
       }
       else if(it->second.dataType == "Boolean" || 
