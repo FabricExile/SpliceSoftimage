@@ -82,19 +82,19 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
 
       FabricSplice::setDCCOperatorSourceCodeCallback(&getSourceCodeForOperator);
       
-      return status;//xsiErrorOccured();
+      return xsiErrorOccured();
     }
     else if(actionStr == "destroyClient")
     {
       bool clientDestroyed = FabricSplice::DestroyClient();
       ctxt.PutAttribute(L"ReturnValue", clientDestroyed);
-      return status;//xsiErrorOccured();
+      return xsiErrorOccured();
     }
     else if(actionStr == "getClientContextID")
     {
       CString clientContextID = FabricSplice::GetClientContextID();
       ctxt.PutAttribute(L"ReturnValue", clientContextID);
-      return status;//xsiErrorOccured();
+      return xsiErrorOccured();
     }
     else if(actionStr == "registerKLType")
     {
@@ -103,7 +103,7 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
       if(!extStr.IsEmpty())
         FabricSplice::DGGraph::loadExtension(extStr.GetAsciiString());
       FabricSplice::DGGraph::loadExtension(rtStr.GetAsciiString());
-      return status;//xsiErrorOccured();
+      return xsiErrorOccured();
     }
     else if(actionStr.IsEqualNoCase("startProfiling"))
     {
@@ -112,7 +112,7 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
       {
         FabricSplice::Logging::resetTimer(FabricSplice::Logging::getTimerName(i));
       }    
-      return status;//xsiErrorOccured();
+      return xsiErrorOccured();
     }
     else if(actionStr.IsEqualNoCase("stopProfiling"))
     {
@@ -121,7 +121,7 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
         FabricSplice::Logging::logTimer(FabricSplice::Logging::getTimerName(i));
       }    
       FabricSplice::Logging::disableTimers();
-      return status;//xsiErrorOccured();
+      return xsiErrorOccured();
     }
 
     if(actionStr.IsEqualNoCase(L"newsplice") || actionStr.IsEqualNoCase(L"loadsplice"))
@@ -212,7 +212,7 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
           ImportSpliceDialog dialog(fileNameStr);
           interf->setObjectID(dialog.getProp().GetObjectID());
           dialog.show(L"Define Splice Ports");
-          return status;//xsiErrorOccured();
+          return xsiErrorOccured();
         }
         return CStatus::Unexpected;
       }
@@ -247,27 +247,27 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
       {
         CString dgNodeStr = FabricSplice::Scripting::consumeStringArgument(scriptArgs, "dgNode").c_str();
         interf->getSpliceGraph().constructDGNode(dgNodeStr.GetAsciiString());
-        return status;//xsiErrorOccured();
+        return xsiErrorOccured();
       }
       else if(actionStr.IsEqualNoCase("removeDGNode"))
       {
         CString dgNodeStr = FabricSplice::Scripting::consumeStringArgument(scriptArgs, "dgNode").c_str();
         interf->getSpliceGraph().removeDGNode(dgNodeStr.GetAsciiString());
-        return status;//xsiErrorOccured();
+        return xsiErrorOccured();
       }
       else if(actionStr.IsEqualNoCase("setDGNodeDependency"))
       {
         CString dgNodeStr = FabricSplice::Scripting::consumeStringArgument(scriptArgs, "dgNode", "DGNode", true).c_str();
         CString dependencyStr = FabricSplice::Scripting::consumeStringArgument(scriptArgs, "dependency").c_str();
         interf->getSpliceGraph().setDGNodeDependency(dgNodeStr.GetAsciiString(), dependencyStr.GetAsciiString());
-        return status;//xsiErrorOccured();
+        return xsiErrorOccured();
       }
       else if(actionStr.IsEqualNoCase("removeDGNodeDependency"))
       {
         CString dgNodeStr = FabricSplice::Scripting::consumeStringArgument(scriptArgs, "dgNode", "DGNode", true).c_str();
         CString dependencyStr = FabricSplice::Scripting::consumeStringArgument(scriptArgs, "dependency").c_str();
         interf->getSpliceGraph().removeDGNodeDependency(dgNodeStr.GetAsciiString(), dependencyStr.GetAsciiString());
-        return status;//xsiErrorOccured();
+        return xsiErrorOccured();
       }
       else if(actionStr.IsEqualNoCase("addParameter"))
       {
@@ -609,7 +609,7 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
     return CStatus::Unexpected;
   }
 
-  return status;//xsiErrorOccured();
+  return xsiErrorOccured();
 }
 
 SICALLBACK proceedToNextScene_Init(CRef & in_ctxt)

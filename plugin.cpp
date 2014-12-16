@@ -74,7 +74,7 @@ CStatus xsiErrorOccured()
 {
   CStatus result = CStatus::OK;;
   if(gErrorOccured)
-    result = CStatus::Unexpected;
+    result = CStatus::Fail;
   gErrorOccured = false;
   return result;
 }
