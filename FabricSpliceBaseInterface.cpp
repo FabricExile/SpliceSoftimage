@@ -1157,7 +1157,7 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
         }
         else
         {
-          xsiLogErrorFunc("Dereferenced PolygonMesh. Please initiate the PolygonMesh array first.");
+          xsiLogErrorFunc("Error accessing Port:" + CString(portName.c_str()) + ": The KL array size does not match the number of target connections.");
           return CStatus::Unexpected;
         }
       }
@@ -1168,7 +1168,7 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
 
       if(!rtVal.isValid() || rtVal.isNullObject())
       {
-        xsiLogErrorFunc("Dereferenced PolygonMesh. Please initiate the PolygonMesh first.");
+        xsiLogErrorFunc("Error accessing Port:" + CString(portName.c_str()) + ": PolygonMesh is not valid. Please construct the PolygonMesh in your KL operator.");
         return CStatus::Unexpected;
       }
 
@@ -1200,7 +1200,7 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
         }
         else
         {
-          xsiLogErrorFunc("Dereferenced Lines. Please initiate the Lines array first.");
+          xsiLogErrorFunc("Error accessing Port:" + CString(portName.c_str()) + ": The KL array size does not match the number of target connections.");
           return CStatus::Unexpected;
         }
       }
@@ -1211,7 +1211,7 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
 
       if(!rtVal.isValid() || rtVal.isNullObject())
       {
-        xsiLogErrorFunc("Dereferenced Lines. Please initiate the Lines first.");
+        xsiLogErrorFunc("Error accessing Port:" + CString(portName.c_str()) + ": Lines is not valid. Please construct the Lines in your KL operator.");
         return CStatus::Unexpected;
       }
 
