@@ -699,7 +699,7 @@ SICALLBACK SpliceEditor_PPGEvent( CRef& in_ctxt )
             CString targetDataType = getSpliceDataTypeFromRefArray(items, dataType);
             if(dataType != targetDataType && dataType != targetDataType + "[]")
             {
-              xsiLogErrorFunc("Data types do not match.");
+              xsiLogErrorFunc("Data types do not match. The data type of your port is:" + dataType+ " and the picked element is of type:" + targetDataType);
               return CStatus::Unexpected;
             }
             CValue returnVal;
