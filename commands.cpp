@@ -180,11 +180,14 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
       }
 
       interf = new FabricSpliceBaseInterface();
-      if(!interf->addXSIPort(targetRefs, portNameStr, targetDataType, portMode, dgNodeStr).Succeeded())
-        return CStatus::Unexpected;
 
-      if(!interf->updateXSIOperator().Succeeded())
-        return CStatus::Unexpected;
+      status = interf->addXSIPort(targetRefs, portNameStr, targetDataType, portMode, dgNodeStr);
+      if(!status.Succeeded())
+        return status;
+
+      status = interf->updateXSIOperator();
+      if(!status.Succeeded())
+        return status;
 
       CRef ofRef = Application().GetObjectFromID((LONG)interf->getObjectID());
       ctxt.PutAttribute(L"ReturnValue", ofRef.GetAsText());
@@ -236,8 +239,9 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
       if(actionStr.IsEqualNoCase("saveSplice"))
       {
         CString fileNameStr = FabricSplice::Scripting::consumeStringArgument(scriptArgs, "fileName").c_str();
-        if(!interf->saveToFile(fileNameStr).Succeeded())
-          return CStatus::Unexpected;
+        status = interf->saveToFile(fileNameStr);
+        if(!status.Succeeded())
+          return status;
       }   
       else if(actionStr.IsEqualNoCase("addDGNode"))
       {
@@ -278,8 +282,9 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
         if(auxiliaryStr.Length() > 0)
           defaultValue = FabricCore::Variant::CreateFromJSON(auxiliaryStr.GetAsciiString());
 
-        if(!interf->addXSIParameter(processNameCString(portNameStr), dataTypeStr, portModeStr, processNameCString(dgNodeStr), defaultValue, extStr).Succeeded())
-          return CStatus::Unexpected;
+        status = interf->addXSIParameter(processNameCString(portNameStr), dataTypeStr, portModeStr, processNameCString(dgNodeStr), defaultValue, extStr);
+        if(!status.Succeeded())
+          return status;
 
         // add all additional arguments as flags on the port
         FabricSplice::DGPort port = interf->getSpliceGraph().getDGPort(portNameStr.GetAsciiString());
@@ -295,8 +300,10 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
           }
         }
 
-        if(!interf->updateXSIOperator().Succeeded())
-          return CStatus::Unexpected;
+        
+        status = interf->updateXSIOperator();
+        if(!status.Succeeded())
+          return status;
       }   
       else if(actionStr.IsEqualNoCase("addInputPort") || actionStr.IsEqualNoCase("addOutputPort") || actionStr.IsEqualNoCase("addIOPort"))
       {
@@ -353,13 +360,15 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
 
         if(iceAttrStr.IsEmpty())
         {
-          if(!interf->addXSIPort(targetRefs, processNameCString(portNameStr), targetDataType, portMode, processNameCString(dgNodeStr)).Succeeded())
-            return CStatus::Unexpected;
+          status = interf->addXSIPort(targetRefs, processNameCString(portNameStr), targetDataType, portMode, processNameCString(dgNodeStr));
+          if(!status.Succeeded())
+            return status;
         }
         else
         {
-          if(!interf->addXSIICEPort(targetRefs, processNameCString(portNameStr), targetDataType, iceAttrStr, processNameCString(dgNodeStr)).Succeeded())
-            return CStatus::Unexpected;
+          status = interf->addXSIICEPort(targetRefs, processNameCString(portNameStr), targetDataType, iceAttrStr, processNameCString(dgNodeStr));
+          if(!status.Succeeded())
+            return status;
         }
 
         // add all additional arguments as flags on the port
@@ -375,9 +384,9 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
             port.setOption(key.c_str(), value);
           }
         }
-
-        if(!interf->updateXSIOperator().Succeeded())
-          return CStatus::Unexpected;
+        status = interf->updateXSIOperator();
+        if(!status.Succeeded())
+          return status;
       }   
       else if(actionStr.IsEqualNoCase("addInternalPort"))
       {
@@ -399,8 +408,9 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
         if(auxiliaryStr.Length() > 0)
           defaultValue = FabricCore::Variant::CreateFromJSON(auxiliaryStr.GetAsciiString());
 
-        if(!interf->addSplicePort(processNameCString(portNameStr), dataTypeStr, portMode, processNameCString(dgNodeStr), autoInitObjects, defaultValue, extStr).Succeeded())
-          return CStatus::Unexpected;
+        status = interf->addSplicePort(processNameCString(portNameStr), dataTypeStr, portMode, processNameCString(dgNodeStr), autoInitObjects, defaultValue, extStr);
+        if(!status.Succeeded())
+          return status;
 
         // add all additional arguments as flags on the port
         FabricSplice::DGPort port = interf->getSpliceGraph().getDGPort(portNameStr.GetAsciiString());
@@ -422,21 +432,23 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
       {
         // parse args
         CString portNameStr = FabricSplice::Scripting::consumeStringArgument(scriptArgs, "portName").c_str();
-
-        if(!interf->removeSplicePort(portNameStr).Succeeded())
-          return CStatus::Unexpected;
-        if(!interf->updateXSIOperator().Succeeded())
-          return CStatus::Unexpected;
+        status = interf->removeSplicePort(portNameStr);
+        if(!status.Succeeded())
+          return status;
+        status = interf->updateXSIOperator();
+        if(!status.Succeeded())
+          return status;
       }   
       else if(actionStr.IsEqualNoCase("reroutePort"))
       {
         // parse args
         CString portNameStr = FabricSplice::Scripting::consumeStringArgument(scriptArgs, "portName").c_str();
-
-        if(!interf->rerouteXSIPort(portNameStr, scriptArgs).Succeeded())
-          return CStatus::Unexpected;
-        if(!interf->updateXSIOperator().Succeeded())
-          return CStatus::Unexpected;
+        status = interf->rerouteXSIPort(portNameStr, scriptArgs);
+        if(!status.Succeeded())
+          return status;
+        status = interf->updateXSIOperator();
+        if(!status.Succeeded())
+          return status;
       }   
       else if(actionStr.IsEqualNoCase("addKLOperator"))
       {
@@ -452,8 +464,9 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
         if(klCode.IsEmpty())
           klCode = interf->getSpliceGraph().generateKLOperatorSourceCode(opNameStr.GetAsciiString()).getStringData();
 
-        if(!interf->addKLOperator(opNameStr, klCode, processNameCString(entryStr), processNameCString(dgNodeStr), portMap).Succeeded())
-          return CStatus::Unexpected;
+        status = interf->addKLOperator(opNameStr, klCode, processNameCString(entryStr), processNameCString(dgNodeStr), portMap);
+        if(!status.Succeeded())
+          return status;
 
         xsiUpdateOp(interf->getObjectID());
       }   
@@ -468,9 +481,9 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
           xsiLogErrorFunc("No kl specified.");
           return CStatus::InvalidArgument;
         }
-
-        if(!interf->setKLOperatorCode(processNameCString(opNameStr), klCode, processNameCString(entryStr)).Succeeded())
-          return CStatus::Unexpected;
+        status = interf->setKLOperatorCode(processNameCString(opNameStr), klCode, processNameCString(entryStr));
+        if(!status.Succeeded())
+          return status;
         xsiUpdateOp(interf->getObjectID());
       }   
       else if(actionStr.IsEqualNoCase("getKLOperatorCode"))
@@ -487,8 +500,9 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
         CString fileNameStr = FabricSplice::Scripting::consumeStringArgument(scriptArgs, "fileName").c_str();
         CString entryStr = FabricSplice::Scripting::consumeStringArgument(scriptArgs, "entry", "", true).c_str();
 
-        if(!interf->setKLOperatorFile(processNameCString(opNameStr), fileNameStr, entryStr).Succeeded())
-          return CStatus::Unexpected;
+        status = interf->setKLOperatorFile(processNameCString(opNameStr), fileNameStr, entryStr);
+        if(!status.Succeeded())
+          return status;
         xsiUpdateOp(interf->getObjectID());
       }   
       else if(actionStr.IsEqualNoCase("setKLOperatorEntry"))
@@ -497,8 +511,9 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
         CString opNameStr = FabricSplice::Scripting::consumeStringArgument(scriptArgs, "opName").c_str();
         CString entryStr = FabricSplice::Scripting::consumeStringArgument(scriptArgs, "entry").c_str();
 
-        if(!interf->setKLOperatorEntry(processNameCString(opNameStr), entryStr).Succeeded())
-          return CStatus::Unexpected;
+        status = interf->setKLOperatorEntry(processNameCString(opNameStr), entryStr);
+        if(!status.Succeeded())
+          return status;
         xsiUpdateOp(interf->getObjectID());
       }   
       else if(actionStr.IsEqualNoCase("setKLOperatorIndex"))
@@ -507,8 +522,9 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
         CString opNameStr = FabricSplice::Scripting::consumeStringArgument(scriptArgs, "opName").c_str();
         int opIndex = FabricSplice::Scripting::consumeIntegerArgument(scriptArgs, "index");
 
-        if(!interf->setKLOperatorIndex(processNameCString(opNameStr), opIndex).Succeeded())
-          return CStatus::Unexpected;
+        status = interf->setKLOperatorIndex(processNameCString(opNameStr), opIndex);
+        if(!status.Succeeded())
+          return status;
         xsiUpdateOp(interf->getObjectID());
       }   
       else if(actionStr.IsEqualNoCase("removeKLOperator"))
@@ -517,8 +533,9 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
         CString opNameStr = FabricSplice::Scripting::consumeStringArgument(scriptArgs, "opName").c_str();
         CString dgNodeStr = FabricSplice::Scripting::consumeStringArgument(scriptArgs, "dgNode", "DGNode", true).c_str();
 
-        if(!interf->removeKLOperator(opNameStr, dgNodeStr).Succeeded())
-          return CStatus::Unexpected;
+        status = interf->removeKLOperator(opNameStr, dgNodeStr);
+        if(!status.Succeeded())
+          return status;
         xsiUpdateOp(interf->getObjectID());
       }   
       else if(actionStr.IsEqualNoCase("getPortInfo"))

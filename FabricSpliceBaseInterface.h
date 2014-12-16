@@ -20,7 +20,7 @@
 #define XSISPLICE_CATCH_BEGIN() try{
 #define XSISPLICE_CATCH_END() } catch(FabricSplice::Exception e){}
 #define XSISPLICE_CATCH_END_VOID() } catch(FabricSplice::Exception e){ return; }
-#define XSISPLICE_CATCH_END_CSTATUS() } catch(FabricSplice::Exception e){ return CStatus::Unexpected; }
+#define XSISPLICE_CATCH_END_CSTATUS() } catch(FabricSplice::Exception e){ return CStatus::Fail; }
 
 class FabricSpliceBaseInterface {
 
