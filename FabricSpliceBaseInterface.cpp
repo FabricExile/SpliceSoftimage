@@ -588,22 +588,10 @@ CStatus FabricSpliceBaseInterface::rerouteXSIPort(const CString &portName, Fabri
       return CStatus::Unexpected;
     }
   }
-  if(targetRefs.GetCount() == 0)
-  {
-    CString filter = L"global";
-    if(portIt->second.dataType == L"PolygonMesh")
-      filter = L"polymsh";
-    if(portIt->second.dataType == L"Lines")
-      filter = L"crvlist";
-    else if(isICEAttribute)
-      filter = L"geometry";
-
-    targetRefs = PickObjectArray(
-      L"Pick new target for "+portName, L"Pick next target for "+portName, 
-      filter, (!portIt->second.isArray || isICEAttribute) ? 1 : 0);
-  }
-  if(targetRefs.GetCount() == 0)
+  if(targetRefs.GetCount() == 0){
+    xsiLogErrorFunc("The targets argument must be an array of scene objects.");
     return CStatus::Unexpected;
+  }
 
   if(isICEAttribute)
   {
