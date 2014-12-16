@@ -719,44 +719,43 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
   FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::transferInputPorts");
 
   bool result = false;
-  try
+  FabricCore::RTVal evalContext = _spliceGraph.getEvalContext();
+  evalContext.callMethod("", "_clear", 0, 0);
+
+  // If 'AlwaysEvaluate' is on, then we will evaluate even if no changes have occured.
+  // this can be usefull in debugging, or when an operator simply must evaluate even if none of its inputs are dirty.
+  CustomOperator op(opRef);
+  bool alwaysEvaluate = bool(op.GetParameterValue("AlwaysEvaluate"));
+  if(alwaysEvaluate)
+    result = true;
+
+  // If the splice op has only output ports, then we should force an evaluation.
+  // otherwize w must always provide one input param. (simple testing scenarios might not include input params).
+  bool nodeHasInputs = false;
+
+  OutputPort xsiPort(context.GetOutputPort());
+  std::string outPortName = xsiPort.GetGroupName().GetAsciiString();
+
+  // Simple values are cached in the CValues cache member. we don't know how many cache values we will require
+  // because this depends on the port type. We simply grow the array as we need it, and never shrink it. Every 
+  // time we store a cache value, we should increment this value. 
+  int valueCacheIndex = 0;
+  // Complex data such as geometries provides an 'EvaluatoinID' which is similar to the version number we have in 
+  // KL Geometry objects. We can simply cache the evaluation id and compare the current value iwth cached values. 
+  // We als don't know how many evaluation ids we will need, so we simply grow the array as needed. 
+  int evalIDCacheIndex = 0;
   {
-    FabricCore::RTVal evalContext = _spliceGraph.getEvalContext();
-    evalContext.callMethod("", "_clear", 0, 0);
+    FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::transferInputParameters");
 
-    // If 'AlwaysEvaluate' is on, then we will evaluate even if no changes have occured.
-    // this can be usefull in debugging, or when an operator simply must evaluate even if none of its inputs are dirty.
-    CustomOperator op(opRef);
-    bool alwaysEvaluate = bool(op.GetParameterValue("AlwaysEvaluate"));
-    if(alwaysEvaluate)
-      result = true;
+    if(valuesCache.size() < _parameters.size())
+      valuesCache.resize(_parameters.size());
 
-    // If the splice op has only output ports, then we should force an evaluation.
-    // otherwize w must always provide one input param. (simple testing scenarios might not include input params).
-    bool nodeHasInputs = false;
-
-    OutputPort xsiPort(context.GetOutputPort());
-    std::string outPortName = xsiPort.GetGroupName().GetAsciiString();
-
-    // Simple values are cached in the CValues cache member. we don't know how many cache values we will require
-    // because this depends on the port type. We simply grow the array as we need it, and never shrink it. Every 
-    // time we store a cache value, we should increment this value. 
-    int valueCacheIndex = 0;
-    // Complex data such as geometries provides an 'EvaluatoinID' which is similar to the version number we have in 
-    // KL Geometry objects. We can simply cache the evaluation id and compare the current value iwth cached values. 
-    // We als don't know how many evaluation ids we will need, so we simply grow the array as needed. 
-    int evalIDCacheIndex = 0;
+    // First transfer all the basic parameters. 
+    for(std::map<std::string, parameterInfo>::iterator it = _parameters.begin(); it != _parameters.end(); it++)
     {
-      FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::transferInputParameters");
-
-      if(valuesCache.size() < _parameters.size())
-        valuesCache.resize(_parameters.size());
-
-      // First transfer all the basic parameters. 
-      for(std::map<std::string, parameterInfo>::iterator it = _parameters.begin(); it != _parameters.end(); it++)
+      std::string portName = it->first;
+      try
       {
-        std::string portName = it->first;
-
         CValue value = context.GetParameterValue(portName.c_str());
         if(checkIfValueChangedAndDirtyInput(value, valuesCache[valueCacheIndex], alwaysEvaluate, portName, evalContext, -1))
         {
@@ -770,15 +769,26 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
         valueCacheIndex++;
         nodeHasInputs = true;
       }
+      catch(FabricSplice::Exception e)
+      {
+        xsiLogErrorFunc("Error accessing Parameter:" + CString(portName.c_str()) + ": " + CString(e.what()));
+      }
+      catch(FabricCore::Exception e)
+      {
+        xsiLogErrorFunc("Error accessing Parameter:" + CString(portName.c_str()) + ": " + CString(e.getDesc_cstr()));
+      }
     }
+  }
 
-    for(std::map<std::string, portInfo>::iterator it = _ports.begin(); it != _ports.end(); it++)
+  for(std::map<std::string, portInfo>::iterator it = _ports.begin(); it != _ports.end(); it++)
+  {
+    if(it->second.portMode == FabricSplice::Port_Mode_OUT)
+      continue;
+    nodeHasInputs = true;
+    std::string portName = it->first;
+
+    try
     {
-      if(it->second.portMode == FabricSplice::Port_Mode_OUT)
-        continue;
-        nodeHasInputs = true;
-
-      std::string portName = it->first;
       FabricSplice::DGPort splicePort = _spliceGraph.getDGPort(portName.c_str());
 
       FabricCore::Variant iceAttrName = splicePort.getOption("ICEAttribute");
@@ -882,7 +892,7 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
           getRTValFromCMatrix4(matrix, rtVal);
 
 
-          if(arrayVal.getArraySize() < i)
+          if(arrayVal.getArraySize() <= i)
           {
             arrayVal.callMethod("", "push", 1, &rtVal);
             addDirtyInput(portName, evalContext, i);
@@ -939,7 +949,7 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
             continue;
 
           PolygonMesh mesh = PolygonMesh(prim.GetGeometry().GetRef());
-          if(arrayVal.getArraySize() < i)
+          if(arrayVal.getArraySize() <= i)
           {
             FabricCore::RTVal rtVal;
             convertInputPolygonMesh(mesh, rtVal);
@@ -991,7 +1001,7 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
             continue;
 
           NurbsCurveList curveList = prim.GetGeometry().GetRef();
-          if(arrayVal.getArraySize() < i)
+          if(arrayVal.getArraySize() <= i)
           {
             FabricCore::RTVal rtVal;
             convertInputLines( curveList, rtVal);
@@ -1010,23 +1020,24 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
       }
       else
       {
-        xsiLogFunc("Skipping input port of type "+it->second.dataType);
+        xsiLogErrorFunc("Skipping input port of type "+it->second.dataType);
       }
+
     }
+    catch(FabricSplice::Exception e)
+    {
+      xsiLogErrorFunc("Error accessing Port:" + CString(portName.c_str()) + ": " + CString(e.what()));
+    }
+    catch(FabricCore::Exception e)
+    {
+      xsiLogErrorFunc("Error accessing Port:" + CString(portName.c_str()) + ": " + CString(e.getDesc_cstr()));
+    }
+  }
 
-    // see declaration of nodeHasInputs
-    if(!nodeHasInputs)
-      result = true;
+  // see declaration of nodeHasInputs
+  if(!nodeHasInputs)
+    result = true;
 
-  }
-  catch(FabricSplice::Exception e)
-  {
-    xsiLogFunc(e.what());
-  }
-  catch(FabricCore::Exception e)
-  {
-    xsiLogFunc(e.getDesc_cstr());
-  }
   return result;
 }
 
@@ -1139,7 +1150,7 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
             break;
           }
         }
-        if(arrayIndex <  arrayVal.getArraySize())
+        if(arrayIndex < arrayVal.getArraySize())
         {
           rtVal = arrayVal.getArrayElement(arrayIndex);
         }
@@ -1209,17 +1220,17 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
     }
     else
     {
-      xsiLogFunc("Skipping output port of type "+it->second.dataType);
+      xsiLogErrorFunc("Skipping output port of type "+it->second.dataType);
     }
 
   }
   catch(FabricSplice::Exception e)
   {
-    xsiLogFunc(e.what());
+    xsiLogErrorFunc(e.what());
   }
   catch(FabricCore::Exception e)
   {
-    xsiLogFunc(e.getDesc_cstr());
+    xsiLogErrorFunc(e.getDesc_cstr());
   }
   return CStatus::OK;
 }
