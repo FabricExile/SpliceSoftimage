@@ -72,13 +72,6 @@ FabricSpliceBaseInterface::~FabricSpliceBaseInterface(){
       break;
     }
   }
-  for(size_t i=0;i<valuesCache.size();i++){
-  for(size_t j=0;j<valuesCache[i].size();j++)
-    valuesCache[i][j].Clear();
-  valuesCache[i].clear();
-  }
-  valuesCache.clear();
-  evalIDsCache.clear();
 }
 
 unsigned int FabricSpliceBaseInterface::getObjectID() const
