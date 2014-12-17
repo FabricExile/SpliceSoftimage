@@ -352,7 +352,7 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
         {
           if(dataTypeStr != targetDataType && dataTypeStr != targetDataType + "[]")
           {
-            xsiLogErrorFunc("Data types do not match ('" + dataTypeStr + "', '" + targetDataType + "').");
+            xsiLogErrorFunc("Unable to connect port to targets. The data types do not match. Port Data Type:'" + dataTypeStr + "', Target Data Type:'" + targetDataType + "'.");
             return CStatus::Unexpected;
           }
           targetDataType = dataTypeStr;
