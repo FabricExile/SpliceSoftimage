@@ -666,7 +666,10 @@ bool convertBasicOutputParameter(const CString & dataType, CValue & value, Fabri
 
 void FabricSpliceBaseInterface::addDirtyInput(std::string portName, FabricCore::RTVal evalContext, int index){
   if(index == -1)
-    evalContext.callMethod("", "_addDirtyInput", 1, &FabricSplice::constructStringRTVal(portName.c_str()));
+  {
+    FabricCore::RTVal input = FabricSplice::constructStringRTVal(portName.c_str());
+    evalContext.callMethod("", "_addDirtyInput", 1, &input);
+  }
   else{
     FabricCore::RTVal args[2] = { 
       FabricSplice::constructStringRTVal(portName.c_str()),

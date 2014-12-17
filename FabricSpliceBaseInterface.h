@@ -109,7 +109,7 @@ protected:
   unsigned int _nbOutputPorts;
   std::vector<std::string> _processedPorts;
 
-  std::vector<std::vector<XSI::CValue>> valuesCache;
+  std::vector< std::vector<XSI::CValue> > valuesCache;
   std::vector<LONG> evalIDsCache;
 
   void addDirtyInput(std::string portName, FabricCore::RTVal evalContext, int index);
