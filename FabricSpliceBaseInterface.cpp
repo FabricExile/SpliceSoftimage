@@ -1145,7 +1145,7 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
         }
         else
         {
-          xsiLogErrorFunc("Error accessing Port:" + CString(portName.c_str()) + ": The KL array size does not match the number of target connections.");
+          xsiLogErrorFunc("Error writing to OutPort:" + CString(outPortName.c_str()) + ": The KL array size does not match the number of target connections.");
           return CStatus::Unexpected;
         }
       }
@@ -1156,7 +1156,7 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
 
       if(!rtVal.isValid() || rtVal.isNullObject())
       {
-        xsiLogErrorFunc("Error accessing Port:" + CString(portName.c_str()) + ": PolygonMesh is not valid. Please construct the PolygonMesh in your KL operator.");
+        xsiLogErrorFunc("Error writing to OutPort:" + CString(outPortName.c_str()) + ": PolygonMesh is not valid. Please construct the PolygonMesh in your KL operator.");
         return CStatus::Unexpected;
       }
 
