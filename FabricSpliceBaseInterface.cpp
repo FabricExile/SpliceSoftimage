@@ -1997,7 +1997,7 @@ CStatus FabricSpliceBaseInterface::reconnectForImport(Model & model)
 CStatus FabricSpliceBaseInterface::cleanupForImport(Model & model)
 {
   FabricSplice::Logging::AutoTimer globalTimer("XSI::cleanupForImport");
-  std::string localTimerName = (std::string("XSI::")+_spliceGraph.getName()+"::cleanupForImport()").c_str();
+  std::string localTimerName = (std::string("XSI::")+std::string("FabricSpliceBaseInterface::cleanupForImport()")).c_str();
   FabricSplice::Logging::AutoTimer localTimer(localTimerName);
 
   CRefArray toDelete;
