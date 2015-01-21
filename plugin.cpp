@@ -29,6 +29,7 @@
 
 #include "plugin.h"
 #include "operators.h"
+#include "icenodes.h"
 #include "dialogs.h"
 #include "renderpass.h"
 #include "FabricSpliceBaseInterface.h"
@@ -184,6 +185,9 @@ SICALLBACK XSILoadPlugin( PluginRegistrar& in_reg )
   in_reg.RegisterEvent(L"FabricSpliceImport", siOnEndFileImport);
   in_reg.RegisterEvent(L"FabricSpliceBeginExport", siOnBeginFileExport);
   in_reg.RegisterEvent(L"FabricSpliceEndExport", siOnEndFileExport);
+
+  // ice nodes
+  Register_spliceGetData(in_reg);
 
   return CStatus::OK;
 }

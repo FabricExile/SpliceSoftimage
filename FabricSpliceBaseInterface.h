@@ -78,6 +78,9 @@ public:
   XSI::CStatus reconnectForImport(XSI::Model & model);
   static XSI::CStatus cleanupForImport(XSI::Model & model);
 
+  void setICENodeRTVal(FabricCore::RTVal val) { iceNodeRTVal = val; }
+  FabricCore::RTVal getICENodeRTVal() { return iceNodeRTVal; }
+
 protected:
   // private members and helper methods
   unsigned int _objectID;
@@ -111,6 +114,8 @@ protected:
 
   std::vector< std::vector<XSI::CValue> > valuesCache;
   std::vector<LONG> evalIDsCache;
+
+  FabricCore::RTVal iceNodeRTVal;
 
   void addDirtyInput(std::string portName, FabricCore::RTVal evalContext, int index);
   bool checkIfValueChangedAndDirtyInput(XSI::CValue value, std::vector<XSI::CValue> &cachedValues, bool alwaysEvaluate, std::string portName, FabricCore::RTVal evalContext, int index);
