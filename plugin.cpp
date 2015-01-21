@@ -146,7 +146,10 @@ SICALLBACK XSILoadPlugin( PluginRegistrar& in_reg )
 {
   in_reg.PutAuthor(L"Fabric Engine");
   in_reg.PutName(L"Fabric:Splice Plugin");
-  in_reg.PutVersion(1,0);
+  in_reg.PutVersion(
+    FabricSplice::GetFabricVersionMaj(),
+    FabricSplice::GetFabricVersionMin()
+    );
 
   // rendering
   in_reg.RegisterDisplayCallback(L"SpliceRenderPass");
