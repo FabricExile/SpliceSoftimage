@@ -52,6 +52,7 @@ FabricSpliceBaseInterface::FabricSpliceBaseInterface(){
 
   xsiInitializeSplice();
   _persist = false;
+  _usedInICENode = false;
   _spliceGraph = FabricSplice::DGGraph("softimageGraph");
   _spliceGraph.constructDGNode("DGNode");
   _spliceGraph.setUserPointer(this);
@@ -101,7 +102,9 @@ FabricSpliceBaseInterface * FabricSpliceBaseInterface::getInstanceByObjectID(uns
 
 CStatus FabricSpliceBaseInterface::updateXSIOperator()
 {
-  FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::updateXSIOperator");
+  FabricSplice::Logging::AutoTimer globalTimer("XSI::updateXSIOperator");
+  std::string localTimerName = (std::string("XSI::")+_spliceGraph.getName()+"::updateXSIOperator()").c_str();
+  FabricSplice::Logging::AutoTimer localTimer(localTimerName);
 
   _currentInstance = this;
 
@@ -707,7 +710,9 @@ bool FabricSpliceBaseInterface::checkEvalIDCache(LONG evalID, int &evalIDCacheIn
 
 bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorContext & context)
 {
-  FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::transferInputPorts");
+  FabricSplice::Logging::AutoTimer globalTimer("XSI::transferInputPorts");
+  std::string localTimerName = (std::string("XSI::")+_spliceGraph.getName()+"::transferInputPorts()").c_str();
+  FabricSplice::Logging::AutoTimer localTimer(localTimerName);
 
   bool result = false;
   FabricCore::RTVal evalContext = _spliceGraph.getEvalContext();
@@ -736,7 +741,9 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
   // We als don't know how many evaluation ids we will need, so we simply grow the array as needed. 
   int evalIDCacheIndex = 0;
   {
-    FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::transferInputParameters");
+    FabricSplice::Logging::AutoTimer globalTimer("XSI::transferInputParameters");
+    std::string localTimerName = (std::string("XSI::")+_spliceGraph.getName()+"::transferInputParameters()").c_str();
+    FabricSplice::Logging::AutoTimer localTimer(localTimerName);
 
     if(valuesCache.size() < _parameters.size())
       valuesCache.resize(_parameters.size());
@@ -1035,7 +1042,9 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
 
 CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
 {
-  FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::transferOutputPort");
+  FabricSplice::Logging::AutoTimer globalTimer("XSI::transferOutputPort");
+  std::string localTimerName = (std::string("XSI::")+_spliceGraph.getName()+"::transferOutputPort()").c_str();
+  FabricSplice::Logging::AutoTimer localTimer(localTimerName);
 
   try
   {
@@ -1231,7 +1240,9 @@ CStatus FabricSpliceBaseInterface::evaluate()
 {
   CRef ofRef = Application().GetObjectFromID((LONG)getObjectID());
 
-  FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::evaluate");
+  FabricSplice::Logging::AutoTimer globalTimer("XSI::evaluate");
+  std::string localTimerName = (std::string("XSI::")+_spliceGraph.getName()+"::evaluate()").c_str();
+  FabricSplice::Logging::AutoTimer localTimer(localTimerName);
 
   // setup the context
   FabricCore::RTVal context = _spliceGraph.getEvalContext();
@@ -1251,7 +1262,9 @@ FabricSplice::DGGraph FabricSpliceBaseInterface::getSpliceGraph()
 
 CStatus FabricSpliceBaseInterface::addKLOperator(const CString &operatorName, const CString &operatorCode, const CString &operatorEntry, const XSI::CString & dgNode, const FabricCore::Variant & portMap)
 {
-  FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::addKLOperator");
+  FabricSplice::Logging::AutoTimer globalTimer("XSI::addKLOperator");
+  std::string localTimerName = (std::string("XSI::")+_spliceGraph.getName()+"::addKLOperator()").c_str();
+  FabricSplice::Logging::AutoTimer localTimer(localTimerName);
   XSISPLICE_CATCH_BEGIN()
 
   _spliceGraph.constructKLOperator(operatorName.GetAsciiString(), operatorCode.GetAsciiString(), operatorEntry.GetAsciiString(), dgNode.GetAsciiString(), portMap);
@@ -1262,7 +1275,9 @@ CStatus FabricSpliceBaseInterface::addKLOperator(const CString &operatorName, co
 
 bool FabricSpliceBaseInterface::hasKLOperator(const XSI::CString &operatorName, const XSI::CString & dgNode)
 {
-  FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::hasKLOperator");
+  FabricSplice::Logging::AutoTimer globalTimer("XSI::hasKLOperator");
+  std::string localTimerName = (std::string("XSI::")+_spliceGraph.getName()+"::hasKLOperator()").c_str();
+  FabricSplice::Logging::AutoTimer localTimer(localTimerName);
   XSISPLICE_CATCH_BEGIN()
 
   return _spliceGraph.hasKLOperator(operatorName.GetAsciiString(), dgNode.GetAsciiString());
@@ -1333,7 +1348,10 @@ CStatus FabricSpliceBaseInterface::removeKLOperator(const CString &operatorName,
 
 CStatus FabricSpliceBaseInterface::storePersistenceData(CString file)
 {
-  FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::storePersistenceData");
+  FabricSplice::Logging::AutoTimer globalTimer("XSI::storePersistenceData");
+  std::string localTimerName = (std::string("XSI::")+_spliceGraph.getName()+"::storePersistenceData()").c_str();
+  FabricSplice::Logging::AutoTimer localTimer(localTimerName);
+
   CRef ref = Application().GetObjectFromID(_objectID);
   CustomOperator op(ref);
   if(op.IsValid())
@@ -1357,7 +1375,10 @@ CStatus FabricSpliceBaseInterface::storePersistenceData(CString file)
 
 CStatus FabricSpliceBaseInterface::restoreFromPersistenceData(CString file)
 {
-  FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::restoreFromPersistenceData");
+  FabricSplice::Logging::AutoTimer globalTimer("XSI::restoreFromPersistenceData");
+  std::string localTimerName = (std::string("XSI::")+_spliceGraph.getName()+"::restoreFromPersistenceData()").c_str();
+  FabricSplice::Logging::AutoTimer localTimer(localTimerName);
+
   CRef ref = Application().GetObjectFromID(_objectID);
   CustomOperator op(ref);
   if(op.IsValid())
@@ -1493,7 +1514,10 @@ CStatus FabricSpliceBaseInterface::saveToFile(CString fileName)
 
 CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Variant & scriptArgs, bool hideUI)
 {
-  FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::loadFromFile");
+  FabricSplice::Logging::AutoTimer globalTimer("XSI::loadFromFile");
+  std::string localTimerName = (std::string("XSI::")+_spliceGraph.getName()+"::loadFromFile()").c_str();
+  FabricSplice::Logging::AutoTimer localTimer(localTimerName);
+
   XSISPLICE_CATCH_BEGIN()
 
   _parameters.clear();
@@ -1737,7 +1761,10 @@ CString FabricSpliceBaseInterface::getDGPortInfo()
 
 CStatus FabricSpliceBaseInterface::disconnectForExport(XSI::CString file, Model & model)
 {
-  FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::disconnectForExport");
+  FabricSplice::Logging::AutoTimer globalTimer("XSI::disconnectForExport");
+  std::string localTimerName = (std::string("XSI::")+_spliceGraph.getName()+"::disconnectForExport()").c_str();
+  FabricSplice::Logging::AutoTimer localTimer(localTimerName);
+
   XSISPLICE_CATCH_BEGIN()
 
   CRef ref = Application().GetObjectFromID(_objectID);
@@ -1868,7 +1895,10 @@ CStatus FabricSpliceBaseInterface::disconnectForExport(XSI::CString file, Model 
 
 CStatus FabricSpliceBaseInterface::reconnectForImport(Model & model)
 {
-  FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::reconnectForImport");
+  FabricSplice::Logging::AutoTimer globalTimer("XSI::reconnectForImport");
+  std::string localTimerName = (std::string("XSI::")+_spliceGraph.getName()+"::reconnectForImport()").c_str();
+  FabricSplice::Logging::AutoTimer localTimer(localTimerName);
+
   CRef ref = Application().GetObjectFromID(_objectID);
   CustomOperator op(ref);
   if(!op.IsValid())
@@ -1967,7 +1997,10 @@ CStatus FabricSpliceBaseInterface::reconnectForImport(Model & model)
 
 CStatus FabricSpliceBaseInterface::cleanupForImport(Model & model)
 {
-  FabricSplice::Logging::AutoTimer("FabricSpliceBaseInterface::cleanupForImport");
+  FabricSplice::Logging::AutoTimer globalTimer("XSI::cleanupForImport");
+  std::string localTimerName = (std::string("XSI::")+std::string("FabricSpliceBaseInterface::cleanupForImport()")).c_str();
+  FabricSplice::Logging::AutoTimer localTimer(localTimerName);
+
   CRefArray toDelete;
 
   CRefArray x3ds;

@@ -33,6 +33,8 @@ public:
   virtual void setObjectID(unsigned int objectID);
   virtual bool needsDeletion() { return !_persist; }
   virtual void setNeedsDeletion(bool removeInstance) { _persist = !removeInstance; }
+  virtual bool usedInICENode() { return _usedInICENode; }
+  virtual void setUsedInICENode(bool flag) { _usedInICENode = flag; }
   
   static std::vector<FabricSpliceBaseInterface*> getInstances();
   static FabricSpliceBaseInterface * getInstanceByObjectID(unsigned int objectID);
@@ -78,6 +80,9 @@ public:
   XSI::CStatus reconnectForImport(XSI::Model & model);
   static XSI::CStatus cleanupForImport(XSI::Model & model);
 
+  void setICENodeRTVal(FabricCore::RTVal val) { iceNodeRTVal = val; }
+  FabricCore::RTVal getICENodeRTVal() { return iceNodeRTVal; }
+
 protected:
   // private members and helper methods
   unsigned int _objectID;
@@ -85,6 +90,7 @@ protected:
   static FabricSpliceBaseInterface* _currentInstance;
   FabricSplice::DGGraph _spliceGraph;
   bool _persist;
+  bool _usedInICENode;
 
   struct parameterInfo
   {
@@ -111,6 +117,8 @@ protected:
 
   std::vector< std::vector<XSI::CValue> > valuesCache;
   std::vector<LONG> evalIDsCache;
+
+  FabricCore::RTVal iceNodeRTVal;
 
   void addDirtyInput(std::string portName, FabricCore::RTVal evalContext, int index);
   bool checkIfValueChangedAndDirtyInput(XSI::CValue value, std::vector<XSI::CValue> &cachedValues, bool alwaysEvaluate, std::string portName, FabricCore::RTVal evalContext, int index);

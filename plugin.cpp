@@ -29,6 +29,7 @@
 
 #include "plugin.h"
 #include "operators.h"
+#include "icenodes.h"
 #include "dialogs.h"
 #include "renderpass.h"
 #include "FabricSpliceBaseInterface.h"
@@ -188,6 +189,9 @@ SICALLBACK XSILoadPlugin( PluginRegistrar& in_reg )
   in_reg.RegisterEvent(L"FabricSpliceBeginExport", siOnBeginFileExport);
   in_reg.RegisterEvent(L"FabricSpliceEndExport", siOnEndFileExport);
 
+  // ice nodes
+  Register_spliceGetData(in_reg);
+
   return CStatus::OK;
 }
 
@@ -243,6 +247,12 @@ XSIPLUGINCALLBACK CStatus FabricSpliceCloseScene_OnEvent(CRef & ctxt)
 XSIPLUGINCALLBACK CStatus FabricSpliceTerminate_OnEvent(CRef & ctxt)
 {
   destroyDrawContext();
+  std::vector<FabricSpliceBaseInterface*> instances = FabricSpliceBaseInterface::getInstances();
+  for(int i=instances.size()-1;i>=0;i--)
+  {
+    if(instances[i]->needsDeletion() && instances[i]->usedInICENode())
+      delete(instances[i]);
+  }
   FabricSplice::DestroyClient(true);
   FabricSplice::Finalize();
   return true;
