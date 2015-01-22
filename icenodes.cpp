@@ -33,7 +33,6 @@
 #include <xsi_matrix4f.h>
 #include <xsi_color4f.h>
 #include <xsi_shape.h>
-#include <xsi_icegeometry.h>
 #include <xsi_iceportstate.h>
 #include <xsi_indexset.h>
 #include <xsi_dataarray.h>
@@ -224,12 +223,12 @@ SICALLBACK spliceGetData_BeginEvaluate(ICENodeContext& in_ctxt)
     {
       if(dataStruct == siICENodeStructureSingle && dataContext == siICENodeContextSingleton)
       {
-        Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " refers to a " + CString((long)klArrayDimensions) + " dimensional array, but the connected ICE ports are singleton of single value.", siErrorMsg );
+        Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " refers to a " + CString((LONG)klArrayDimensions) + " dimensional array, but the connected ICE ports are singleton of single value.", siErrorMsg );
         return CStatus::OK;
       }
       else if(dataStruct == siICENodeStructureArray && dataContext != siICENodeContextSingleton)
       {
-        Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " refers to a " + CString((long)klArrayDimensions) + " dimensional array, but the connected ICE ports are a multi of array value.", siErrorMsg );
+        Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " refers to a " + CString((LONG)klArrayDimensions) + " dimensional array, but the connected ICE ports are a multi of array value.", siErrorMsg );
         return CStatus::OK;
       }
     }
@@ -237,13 +236,13 @@ SICALLBACK spliceGetData_BeginEvaluate(ICENodeContext& in_ctxt)
     {
       if(dataContext == siICENodeContextSingleton || dataStruct != siICENodeStructureArray)
       {
-        Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " refers to a " + CString((long)klArrayDimensions) + " dimensional array, but the connected ICE ports are not a multi of array value.", siErrorMsg );
+        Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " refers to a " + CString((LONG)klArrayDimensions) + " dimensional array, but the connected ICE ports are not a multi of array value.", siErrorMsg );
         return CStatus::OK;
       }
     }
     else if(klArrayDimensions > 2)
     {
-      Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " refers to a " + CString((long)klArrayDimensions) + " dimensional array, but only a max of 2 dimensions are supported.", siErrorMsg );
+      Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " refers to a " + CString((LONG)klArrayDimensions) + " dimensional array, but only a max of 2 dimensions are supported.", siErrorMsg );
       return CStatus::OK;
     }
 
@@ -356,7 +355,7 @@ SICALLBACK spliceGetData_Evaluate(ICENodeContext& in_ctxt)
           CDataArray2DLong outData2D(in_ctxt);
           if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
           {
-            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
+            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((LONG)rtVal.getArraySize()) + " values, ICE expects " + CString((LONG)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
             return CStatus::OK;
           }
           CDataArray2DLong::Accessor outData = outData2D.Resize(0, rtVal.getArraySize());
@@ -371,7 +370,7 @@ SICALLBACK spliceGetData_Evaluate(ICENodeContext& in_ctxt)
           CDataArrayLong outData(in_ctxt);
           if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
           {
-            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
+            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((LONG)rtVal.getArraySize()) + " values, ICE expects " + CString((LONG)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
             return CStatus::OK;
           }
           memcpy(&outData[0], data, sizeof(int32_t) * in_ctxt.GetNumberOfElementsToProcess());
@@ -382,7 +381,7 @@ SICALLBACK spliceGetData_Evaluate(ICENodeContext& in_ctxt)
           CDataArray2DLong outData2D(in_ctxt);
           if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
           {
-            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
+            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((LONG)rtVal.getArraySize()) + " values, ICE expects " + CString((LONG)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
             return CStatus::OK;
           }
           for(unsigned int i=0;i<outData2D.GetCount();i++)
@@ -412,7 +411,7 @@ SICALLBACK spliceGetData_Evaluate(ICENodeContext& in_ctxt)
           CDataArray2DFloat outData2D(in_ctxt);
           if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
           {
-            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
+            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((LONG)rtVal.getArraySize()) + " values, ICE expects " + CString((LONG)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
             return CStatus::OK;
           }
           CDataArray2DFloat::Accessor outData = outData2D.Resize(0, rtVal.getArraySize());
@@ -427,7 +426,7 @@ SICALLBACK spliceGetData_Evaluate(ICENodeContext& in_ctxt)
           CDataArrayFloat outData(in_ctxt);
           if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
           {
-            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
+            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((LONG)rtVal.getArraySize()) + " values, ICE expects " + CString((LONG)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
             return CStatus::OK;
           }
           memcpy(&outData[0], data, sizeof(float) * in_ctxt.GetNumberOfElementsToProcess());
@@ -438,7 +437,7 @@ SICALLBACK spliceGetData_Evaluate(ICENodeContext& in_ctxt)
           CDataArray2DFloat outData2D(in_ctxt);
           if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
           {
-            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
+            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((LONG)rtVal.getArraySize()) + " values, ICE expects " + CString((LONG)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
             return CStatus::OK;
           }
           for(unsigned int i=0;i<outData2D.GetCount();i++)
@@ -471,7 +470,7 @@ SICALLBACK spliceGetData_Evaluate(ICENodeContext& in_ctxt)
           CDataArray2DVector3f outData2D(in_ctxt);
           if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
           {
-            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
+            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((LONG)rtVal.getArraySize()) + " values, ICE expects " + CString((LONG)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
             return CStatus::OK;
           }
           CDataArray2DVector3f::Accessor outData = outData2D.Resize(0, rtVal.getArraySize());
@@ -487,7 +486,7 @@ SICALLBACK spliceGetData_Evaluate(ICENodeContext& in_ctxt)
 
           if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
           {
-            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
+            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((LONG)rtVal.getArraySize()) + " values, ICE expects " + CString((LONG)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
             return CStatus::OK;
           }
           memcpy(&outData[0], data, sizeof(float) * 3 * in_ctxt.GetNumberOfElementsToProcess());
@@ -498,7 +497,7 @@ SICALLBACK spliceGetData_Evaluate(ICENodeContext& in_ctxt)
           CDataArray2DVector3f outData2D(in_ctxt);
           if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
           {
-            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
+            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((LONG)rtVal.getArraySize()) + " values, ICE expects " + CString((LONG)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
             return CStatus::OK;
           }
           for(unsigned int i=0;i<outData2D.GetCount();i++)
@@ -532,7 +531,7 @@ SICALLBACK spliceGetData_Evaluate(ICENodeContext& in_ctxt)
           CDataArray2DColor4f outData2D(in_ctxt);
           if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
           {
-            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
+            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((LONG)rtVal.getArraySize()) + " values, ICE expects " + CString((LONG)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
             return CStatus::OK;
           }
           CDataArray2DColor4f::Accessor outData = outData2D.Resize(0, rtVal.getArraySize());
@@ -547,7 +546,7 @@ SICALLBACK spliceGetData_Evaluate(ICENodeContext& in_ctxt)
           CDataArrayColor4f outData(in_ctxt);
           if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
           {
-            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
+            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((LONG)rtVal.getArraySize()) + " values, ICE expects " + CString((LONG)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
             return CStatus::OK;
           }
           memcpy(&outData[0], data, sizeof(float) * 4 * in_ctxt.GetNumberOfElementsToProcess());
@@ -558,7 +557,7 @@ SICALLBACK spliceGetData_Evaluate(ICENodeContext& in_ctxt)
           CDataArray2DColor4f outData2D(in_ctxt);
           if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
           {
-            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
+            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((LONG)rtVal.getArraySize()) + " values, ICE expects " + CString((LONG)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
             return CStatus::OK;
           }
           for(unsigned int i=0;i<outData2D.GetCount();i++)
