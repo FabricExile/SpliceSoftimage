@@ -52,6 +52,7 @@ enum IDs
   spliceGetData_ID_IN_trigger = 0,
   spliceGetData_ID_IN_reference = 1,
   spliceGetData_ID_IN_klType = 2,
+  spliceGetData_ID_IN_element = 3,
   spliceGetData_ID_G_100 = 100,
   spliceGetData_ID_OUT_Result = 200,
   spliceGetData_ID_TYPE_CNS = 400,
@@ -66,65 +67,78 @@ CStatus Register_spliceGetData( PluginRegistrar& in_reg )
 {
   CStatus st;
 
-  for(int i=0;i<2;i++)
-  {
-    ICENodeDef nodeDef;
-    siICENodeContextType context = siICENodeContextAny;
-    switch(i)
-    {
-      case 0:
-      {
-        nodeDef = Application().GetFactory().CreateICENodeDef(L"spliceGetDataSingle",L"spliceGetDataSingle");
-        context = siICENodeContextSingleton;
-        break;
-      }
-      case 1:
-      {
-        nodeDef = Application().GetFactory().CreateICENodeDef(L"spliceGetDataPerPoint",L"spliceGetDataPerPoint");
-        context = siICENodeContextComponent0D;
-        break;
-      }
-    } 
+  ICENodeDef nodeDef;
+  PluginItem nodeItem;
 
-    st = nodeDef.PutColor(39,168,223);
-    st.AssertSucceeded( ) ;
+  int supportedDataTypes = 
+    siICENodeDataLong |
+    siICENodeDataFloat |
+    siICENodeDataVector3 |
+    siICENodeDataColor4;
 
-    st = nodeDef.PutThreadingModel(siICENodeSingleThreading);
-    st.AssertSucceeded( ) ;
+  int supportedTriggerTypes = supportedDataTypes |
+    siICENodeDataQuaternion |
+    siICENodeDataMatrix33 |
+    siICENodeDataMatrix44 |
+    siICENodeDataGeometry |
+    siICENodeDataString;
 
-    int supportedDataTypes = 
-      siICENodeDataLong |
-      siICENodeDataFloat |
-      siICENodeDataVector3 |
-      siICENodeDataColor4;
+  // ---------------------------------------------------------------------------------------------
 
-    int supportedTriggerTypes = supportedDataTypes |
-      siICENodeDataQuaternion |
-      siICENodeDataMatrix33 |
-      siICENodeDataMatrix44 |
-      siICENodeDataGeometry |
-      siICENodeDataString;
+  // nodeDef = Application().GetFactory().CreateICENodeDef(L"spliceGetDataSingle",L"spliceGetDataSingle");
 
-    // Add input ports and groups.
-    st = nodeDef.AddPortGroup(spliceGetData_ID_G_100);
-    st.AssertSucceeded( ) ;
-    st = nodeDef.AddInputPort(spliceGetData_ID_IN_trigger, spliceGetData_ID_G_100, supportedTriggerTypes, siICENodeStructureAny, siICENodeContextAny, L"trigger", L"trigger", L"", CValue(), CValue(), spliceGetData_ID_UNDEF, spliceGetData_ID_UNDEF, spliceGetData_ID_UNDEF);
-    st.AssertSucceeded( ) ;
-    st = nodeDef.AddInputPort(spliceGetData_ID_IN_reference, spliceGetData_ID_G_100, siICENodeDataString, siICENodeStructureSingle, siICENodeContextSingleton, L"reference", L"reference", L"", CString(), CString(), spliceGetData_ID_UNDEF, spliceGetData_ID_UNDEF, spliceGetData_ID_UNDEF);
-    st.AssertSucceeded( ) ;
-    st = nodeDef.AddInputPort(spliceGetData_ID_IN_klType, spliceGetData_ID_G_100, siICENodeDataString, siICENodeStructureSingle, siICENodeContextSingleton, L"klType", L"klType", L"", CString(), CString(), spliceGetData_ID_UNDEF, spliceGetData_ID_UNDEF, spliceGetData_ID_UNDEF);
-    st.AssertSucceeded( ) ;
-    st = nodeDef.AddOutputPort(spliceGetData_ID_OUT_Result, supportedDataTypes, siICENodeStructureAny, context, L"result", L"result", spliceGetData_ID_UNDEF, spliceGetData_ID_UNDEF, spliceGetData_ID_UNDEF);
-    st.AssertSucceeded( ) ;
+  // st = nodeDef.PutColor(39,168,223);
+  // st.AssertSucceeded( ) ;
 
-    PluginItem nodeItem = in_reg.RegisterICENode(nodeDef);
-    nodeItem.PutCategories(L"Fabric Engine");
-  }
+  // st = nodeDef.PutThreadingModel(siICENodeSingleThreading);
+  // st.AssertSucceeded( ) ;
+
+  // // Add input ports and groups.
+  // st = nodeDef.AddPortGroup(spliceGetData_ID_G_100);
+  // st.AssertSucceeded( ) ;
+  // st = nodeDef.AddInputPort(spliceGetData_ID_IN_trigger, spliceGetData_ID_G_100, supportedTriggerTypes, siICENodeStructureAny, siICENodeContextAny, L"trigger", L"trigger", L"", CValue(), CValue(), spliceGetData_ID_UNDEF, spliceGetData_ID_UNDEF, spliceGetData_ID_UNDEF);
+  // st.AssertSucceeded( ) ;
+  // st = nodeDef.AddInputPort(spliceGetData_ID_IN_reference, spliceGetData_ID_G_100, siICENodeDataString, siICENodeStructureSingle, siICENodeContextSingleton, L"reference", L"reference", L"", CString(), CString(), spliceGetData_ID_UNDEF, spliceGetData_ID_UNDEF, spliceGetData_ID_UNDEF);
+  // st.AssertSucceeded( ) ;
+  // st = nodeDef.AddInputPort(spliceGetData_ID_IN_klType, spliceGetData_ID_G_100, siICENodeDataString, siICENodeStructureSingle, siICENodeContextSingleton, L"klType", L"klType", L"", CString(), CString(), spliceGetData_ID_UNDEF, spliceGetData_ID_UNDEF, spliceGetData_ID_UNDEF);
+  // st.AssertSucceeded( ) ;
+  // st = nodeDef.AddOutputPort(spliceGetData_ID_OUT_Result, supportedDataTypes, siICENodeStructureAny, siICENodeContextSingleton, L"result", L"result", spliceGetData_ID_UNDEF, spliceGetData_ID_UNDEF, spliceGetData_ID_UNDEF);
+  // st.AssertSucceeded( ) ;
+
+  // nodeItem = in_reg.RegisterICENode(nodeDef);
+  // nodeItem.PutCategories(L"Fabric Engine");
+
+  // ---------------------------------------------------------------------------------------------
+
+  nodeDef = Application().GetFactory().CreateICENodeDef(L"spliceGetData",L"spliceGetData");
+
+  st = nodeDef.PutColor(39,168,223);
+  st.AssertSucceeded( ) ;
+
+  st = nodeDef.PutThreadingModel(siICENodeSingleThreading);
+  st.AssertSucceeded( ) ;
+
+  // Add input ports and groups.
+  st = nodeDef.AddPortGroup(spliceGetData_ID_G_100);
+  st.AssertSucceeded( ) ;
+  st = nodeDef.AddInputPort(spliceGetData_ID_IN_trigger, spliceGetData_ID_G_100, supportedTriggerTypes, siICENodeStructureAny, siICENodeContextAny, L"trigger", L"trigger", L"", CValue(), CValue(), spliceGetData_ID_UNDEF, spliceGetData_ID_UNDEF, spliceGetData_ID_UNDEF);
+  st.AssertSucceeded( ) ;
+  st = nodeDef.AddInputPort(spliceGetData_ID_IN_reference, spliceGetData_ID_G_100, siICENodeDataString, siICENodeStructureSingle, siICENodeContextSingleton, L"reference", L"reference", L"", CString(), CString(), spliceGetData_ID_UNDEF, spliceGetData_ID_UNDEF, spliceGetData_ID_UNDEF);
+  st.AssertSucceeded( ) ;
+  st = nodeDef.AddInputPort(spliceGetData_ID_IN_klType, spliceGetData_ID_G_100, siICENodeDataString, siICENodeStructureSingle, siICENodeContextSingleton, L"klType", L"klType", L"", CString(), CString(), spliceGetData_ID_UNDEF, spliceGetData_ID_UNDEF, spliceGetData_ID_UNDEF);
+  st.AssertSucceeded( ) ;
+  st = nodeDef.AddInputPort(spliceGetData_ID_IN_element, spliceGetData_ID_G_100, supportedDataTypes, siICENodeStructureAny, siICENodeContextAny, L"element", L"element", L"", CValue(), CValue(), spliceGetData_ID_TYPE_CNS, spliceGetData_ID_STRUCT_CNS, spliceGetData_ID_CTXT_CNS);
+  st.AssertSucceeded( ) ;
+  st = nodeDef.AddOutputPort(spliceGetData_ID_OUT_Result, supportedDataTypes, siICENodeStructureAny, siICENodeContextAny/*siICENodeContextComponent0D*/, L"result", L"result", spliceGetData_ID_TYPE_CNS, spliceGetData_ID_STRUCT_CNS, spliceGetData_ID_CTXT_CNS);
+  st.AssertSucceeded( ) ;
+
+  nodeItem = in_reg.RegisterICENode(nodeDef);
+  nodeItem.PutCategories(L"Fabric Engine");
 
   return CStatus::OK;
 }
 
-SICALLBACK spliceGetDataSingle_BeginEvaluate(ICENodeContext& in_ctxt)
+SICALLBACK spliceGetData_BeginEvaluate(ICENodeContext& in_ctxt)
 {
   XSI::siICENodeDataType dataType;
   XSI::siICENodeStructureType dataStruct;
@@ -199,7 +213,7 @@ SICALLBACK spliceGetDataSingle_BeginEvaluate(ICENodeContext& in_ctxt)
     int klBracketPos = klBrackets.find('[');
     while(klBracketPos != std::string::npos)
     {
-      if(klBrackets[0] != '[')
+      if(klBrackets[0] != ']')
         klBaseDataType = klBrackets.substr(0, klBracketPos);
       klBrackets = klBrackets.substr(klBracketPos+1, klBrackets.length());
       klBracketPos = klBrackets.find('[');
@@ -284,12 +298,10 @@ SICALLBACK spliceGetDataSingle_BeginEvaluate(ICENodeContext& in_ctxt)
     return CStatus::OK;
   }
 
-  in_ctxt.SetAsElementDataVarying();
-
   return CStatus::OK;
 }
 
-SICALLBACK spliceGetDataSingle_Evaluate(ICENodeContext& in_ctxt)
+SICALLBACK spliceGetData_Evaluate(ICENodeContext& in_ctxt)
 {
   XSI::siICENodeDataType dataType;
   XSI::siICENodeStructureType dataStruct;
@@ -308,246 +320,281 @@ SICALLBACK spliceGetDataSingle_Evaluate(ICENodeContext& in_ctxt)
   if(!rtVal.isValid())
     return CStatus::OK;
 
-  CIndexSet indexSet( in_ctxt );
-
-  FabricCore::RTVal dataRtVal = rtVal.callMethod("Data", "data", 0, 0);
-  void * data = dataRtVal.getData();
-
-  if(dataType == siICENodeDataLong)
+  std::string klDataType = rtVal.getTypeName().getStringCString();
+  std::string klBrackets = klDataType;
+  int klArrayDimensions = 0;
+  int klBracketPos = klBrackets.find('[');
+  while(klBracketPos != std::string::npos)
   {
-    if(dataContext == siICENodeContextSingleton)
+    klBrackets = klBrackets.substr(klBracketPos+1, klBrackets.length());
+    klBracketPos = klBrackets.find('[');
+    klArrayDimensions++;
+  }
+
+  try
+  {
+    void * data = NULL;
+    if(klArrayDimensions < 2)
     {
-      if(dataStruct == siICENodeStructureSingle)
+      FabricCore::RTVal dataRtVal = rtVal.callMethod("Data", "data", 0, 0);
+      data = dataRtVal.getData();
+    }
+
+    if(dataType == siICENodeDataLong)
+    {
+      if(dataContext == siICENodeContextSingleton)
       {
-        CDataArrayLong outData(in_ctxt);
-        outData[0] = ((int32_t*)data)[0];
-      }
-      else if(dataStruct == siICENodeStructureArray)
-      {
-        CDataArray2DLong outData2D(in_ctxt);
-        if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
+        if(dataStruct == siICENodeStructureSingle)
         {
-          Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
-          return CStatus::OK;
+          CDataArrayLong inData(in_ctxt, spliceGetData_ID_IN_element);
+          CDataArrayLong outData(in_ctxt);
+          outData[0] = ((int32_t*)data)[0];
         }
-        CDataArray2DLong::Accessor outData = outData2D.Resize(0, rtVal.getArraySize());
-        memcpy(&outData[0], data, sizeof(int32_t) * outData.GetCount());
+        else if(dataStruct == siICENodeStructureArray)
+        {
+          CDataArray2DLong inData(in_ctxt, spliceGetData_ID_IN_element);
+          CDataArray2DLong outData2D(in_ctxt);
+          if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
+          {
+            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
+            return CStatus::OK;
+          }
+          CDataArray2DLong::Accessor outData = outData2D.Resize(0, rtVal.getArraySize());
+          memcpy(&outData[0], data, sizeof(int32_t) * outData.GetCount());
+        }
+      }
+      else
+      {
+        if(dataStruct == siICENodeStructureSingle)
+        {
+          CDataArrayLong inData(in_ctxt, spliceGetData_ID_IN_element);
+          CDataArrayLong outData(in_ctxt);
+          if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
+          {
+            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
+            return CStatus::OK;
+          }
+          memcpy(&outData[0], data, sizeof(int32_t) * in_ctxt.GetNumberOfElementsToProcess());
+        }
+        else if(dataStruct == siICENodeStructureArray)
+        {
+          CDataArray2DLong inData(in_ctxt, spliceGetData_ID_IN_element);
+          CDataArray2DLong outData2D(in_ctxt);
+          if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
+          {
+            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
+            return CStatus::OK;
+          }
+          for(unsigned int i=0;i<outData2D.GetCount();i++)
+          {
+            FabricCore::RTVal subRtVal = rtVal.getArrayElement(i);
+            FabricCore::RTVal subDataRtVal = subRtVal.callMethod("Data", "data", 0, 0);
+            void * subData = subDataRtVal.getData();
+            CDataArray2DLong::Accessor outData = outData2D.Resize(i, subRtVal.getArraySize());
+            memcpy(&outData[0], subData, sizeof(int32_t) * outData.GetCount());
+          }
+        }
       }
     }
-    else
+    else if(dataType == siICENodeDataFloat)
     {
-      if(dataStruct == siICENodeStructureSingle)
+      if(dataContext == siICENodeContextSingleton)
       {
-        CDataArrayLong outData(in_ctxt);
-        if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
+        if(dataStruct == siICENodeStructureSingle)
         {
-          Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
-          return CStatus::OK;
+          CDataArrayFloat inData(in_ctxt, spliceGetData_ID_IN_element);
+          CDataArrayFloat outData(in_ctxt);
+          outData[0] = ((float*)data)[0];
         }
-        memcpy(&outData[0], data, sizeof(int32_t) * in_ctxt.GetNumberOfElementsToProcess());
+        else if(dataStruct == siICENodeStructureArray)
+        {
+          CDataArray2DFloat inData(in_ctxt, spliceGetData_ID_IN_element);
+          CDataArray2DFloat outData2D(in_ctxt);
+          if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
+          {
+            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
+            return CStatus::OK;
+          }
+          CDataArray2DFloat::Accessor outData = outData2D.Resize(0, rtVal.getArraySize());
+          memcpy(&outData[0], data, sizeof(float) * in_ctxt.GetNumberOfElementsToProcess());
+        }
       }
-      else if(dataStruct == siICENodeStructureArray)
+      else
       {
-        CDataArray2DLong outData2D(in_ctxt);
-        if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
+        if(dataStruct == siICENodeStructureSingle)
         {
-          Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
-          return CStatus::OK;
+          CDataArrayFloat inData(in_ctxt, spliceGetData_ID_IN_element);
+          CDataArrayFloat outData(in_ctxt);
+          if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
+          {
+            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
+            return CStatus::OK;
+          }
+          memcpy(&outData[0], data, sizeof(float) * in_ctxt.GetNumberOfElementsToProcess());
         }
-        for(unsigned int i=0;i<outData2D.GetCount();i++)
+        else if(dataStruct == siICENodeStructureArray)
         {
-          FabricCore::RTVal subRtVal = rtVal.getArrayElement(i);
-          FabricCore::RTVal subDataRtVal = subRtVal.callMethod("Data", "data", 0, 0);
-          void * subData = subDataRtVal.getData();
-          CDataArray2DLong::Accessor outData = outData2D.Resize(i, subRtVal.getArraySize());
-          memcpy(&outData[0], subData, sizeof(int32_t) * outData.GetCount());
-          
+          CDataArray2DFloat inData(in_ctxt, spliceGetData_ID_IN_element);
+          CDataArray2DFloat outData2D(in_ctxt);
+          if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
+          {
+            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
+            return CStatus::OK;
+          }
+          for(unsigned int i=0;i<outData2D.GetCount();i++)
+          {
+            FabricCore::RTVal subRtVal = rtVal.getArrayElement(i);
+            FabricCore::RTVal subDataRtVal = subRtVal.callMethod("Data", "data", 0, 0);
+            void * subData = subDataRtVal.getData();
+            CDataArray2DFloat::Accessor outData = outData2D.Resize(i, subRtVal.getArraySize());
+            memcpy(&outData[0], subData, sizeof(float) * outData.GetCount());
+            
+          }
+        }
+      }
+    }
+    else if(dataType == siICENodeDataVector3)
+    {
+      if(dataContext == siICENodeContextSingleton)
+      {
+        if(dataStruct == siICENodeStructureSingle)
+        {
+          CDataArrayVector3f inData(in_ctxt, spliceGetData_ID_IN_element);
+          CDataArrayVector3f outData(in_ctxt);
+          outData[0].PutX(((float*)data)[0]);
+          outData[0].PutY(((float*)data)[1]);
+          outData[0].PutZ(((float*)data)[2]);
+        }
+        else if(dataStruct == siICENodeStructureArray)
+        {
+          CDataArray2DVector3f inData(in_ctxt, spliceGetData_ID_IN_element);
+          CDataArray2DVector3f outData2D(in_ctxt);
+          if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
+          {
+            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
+            return CStatus::OK;
+          }
+          CDataArray2DVector3f::Accessor outData = outData2D.Resize(0, rtVal.getArraySize());
+          memcpy(&outData[0], data, sizeof(float) * 3 * outData.GetCount());
+        }
+      }
+      else
+      {
+        if(dataStruct == siICENodeStructureSingle)
+        {
+          CDataArrayVector3f inData(in_ctxt, spliceGetData_ID_IN_element);
+          CDataArrayVector3f outData(in_ctxt);
+
+          if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
+          {
+            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
+            return CStatus::OK;
+          }
+          memcpy(&outData[0], data, sizeof(float) * 3 * in_ctxt.GetNumberOfElementsToProcess());
+        }
+        else if(dataStruct == siICENodeStructureArray)
+        {
+          CDataArray2DVector3f inData(in_ctxt, spliceGetData_ID_IN_element);
+          CDataArray2DVector3f outData2D(in_ctxt);
+          if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
+          {
+            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
+            return CStatus::OK;
+          }
+          for(unsigned int i=0;i<outData2D.GetCount();i++)
+          {
+            FabricCore::RTVal subRtVal = rtVal.getArrayElement(i);
+            FabricCore::RTVal subDataRtVal = subRtVal.callMethod("Data", "data", 0, 0);
+            void * subData = subDataRtVal.getData();
+            CDataArray2DVector3f::Accessor outData = outData2D.Resize(i, subRtVal.getArraySize());
+            memcpy(&outData[0], subData, sizeof(float) * 3 * outData.GetCount());
+            
+          }
+        }
+      }
+    }
+    else if(dataType == siICENodeDataColor4)
+    {
+      if(dataContext == siICENodeContextSingleton)
+      {
+        if(dataStruct == siICENodeStructureSingle)
+        {
+          CDataArrayColor4f inData(in_ctxt, spliceGetData_ID_IN_element);
+          CDataArrayColor4f outData(in_ctxt);
+          outData[0].PutR(((float*)data)[0]);
+          outData[0].PutG(((float*)data)[1]);
+          outData[0].PutB(((float*)data)[2]);
+          outData[0].PutA(((float*)data)[2]);
+        }
+        else if(dataStruct == siICENodeStructureArray)
+        {
+          CDataArray2DColor4f inData(in_ctxt, spliceGetData_ID_IN_element);
+          CDataArray2DColor4f outData2D(in_ctxt);
+          if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
+          {
+            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
+            return CStatus::OK;
+          }
+          CDataArray2DColor4f::Accessor outData = outData2D.Resize(0, rtVal.getArraySize());
+          memcpy(&outData[0], data, sizeof(float) * 4 * outData.GetCount());
+        }
+      }
+      else
+      {
+        if(dataStruct == siICENodeStructureSingle)
+        {
+          CDataArrayColor4f inData(in_ctxt, spliceGetData_ID_IN_element);
+          CDataArrayColor4f outData(in_ctxt);
+          if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
+          {
+            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
+            return CStatus::OK;
+          }
+          memcpy(&outData[0], data, sizeof(float) * 4 * in_ctxt.GetNumberOfElementsToProcess());
+        }
+        else if(dataStruct == siICENodeStructureArray)
+        {
+          CDataArray2DColor4f inData(in_ctxt, spliceGetData_ID_IN_element);
+          CDataArray2DColor4f outData2D(in_ctxt);
+          if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
+          {
+            Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
+            return CStatus::OK;
+          }
+          for(unsigned int i=0;i<outData2D.GetCount();i++)
+          {
+            FabricCore::RTVal subRtVal = rtVal.getArrayElement(i);
+            FabricCore::RTVal subDataRtVal = subRtVal.callMethod("Data", "data", 0, 0);
+            void * subData = subDataRtVal.getData();
+            CDataArray2DColor4f::Accessor outData = outData2D.Resize(i, subRtVal.getArraySize());
+            memcpy(&outData[0], subData, sizeof(float) * 4 * outData.GetCount());
+            
+          }
         }
       }
     }
   }
-  else if(dataType == siICENodeDataFloat)
+  catch(FabricCore::Exception e)
   {
-    if(dataContext == siICENodeContextSingleton)
-    {
-      if(dataStruct == siICENodeStructureSingle)
-      {
-        CDataArrayFloat outData(in_ctxt);
-        outData[0] = ((float*)data)[0];
-      }
-      else if(dataStruct == siICENodeStructureArray)
-      {
-        CDataArray2DFloat outData2D(in_ctxt);
-        if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
-        {
-          Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
-          return CStatus::OK;
-        }
-        CDataArray2DFloat::Accessor outData = outData2D.Resize(0, rtVal.getArraySize());
-        memcpy(&outData[0], data, sizeof(float) * in_ctxt.GetNumberOfElementsToProcess());
-      }
-    }
-    else
-    {
-      if(dataStruct == siICENodeStructureSingle)
-      {
-        CDataArrayFloat outData(in_ctxt);
-        if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
-        {
-          Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
-          return CStatus::OK;
-        }
-        memcpy(&outData[0], data, sizeof(float) * in_ctxt.GetNumberOfElementsToProcess());
-      }
-      else if(dataStruct == siICENodeStructureArray)
-      {
-        CDataArray2DFloat outData2D(in_ctxt);
-        if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
-        {
-          Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
-          return CStatus::OK;
-        }
-        for(unsigned int i=0;i<outData2D.GetCount();i++)
-        {
-          FabricCore::RTVal subRtVal = rtVal.getArrayElement(i);
-          FabricCore::RTVal subDataRtVal = subRtVal.callMethod("Data", "data", 0, 0);
-          void * subData = subDataRtVal.getData();
-          CDataArray2DFloat::Accessor outData = outData2D.Resize(i, subRtVal.getArraySize());
-          memcpy(&outData[0], subData, sizeof(float) * outData.GetCount());
-          
-        }
-      }
-    }
+    Application().LogMessage(CString("spliceGetData") + " hit exception: " + e.getDesc_cstr(), siErrorMsg );
+    return CStatus::OK;
   }
-  else if(dataType == siICENodeDataVector3)
+  catch(FabricSplice::Exception e)
   {
-    if(dataContext == siICENodeContextSingleton)
-    {
-      if(dataStruct == siICENodeStructureSingle)
-      {
-        CDataArrayVector3f outData(in_ctxt);
-        outData[0].PutX(((float*)data)[0]);
-        outData[0].PutY(((float*)data)[1]);
-        outData[0].PutZ(((float*)data)[2]);
-      }
-      else if(dataStruct == siICENodeStructureArray)
-      {
-        CDataArray2DVector3f outData2D(in_ctxt);
-        if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
-        {
-          Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
-          return CStatus::OK;
-        }
-        CDataArray2DVector3f::Accessor outData = outData2D.Resize(0, rtVal.getArraySize());
-        memcpy(&outData[0], data, sizeof(float) * 3 * outData.GetCount());
-      }
-    }
-    else
-    {
-      if(dataStruct == siICENodeStructureSingle)
-      {
-        CDataArrayVector3f outData(in_ctxt);
-
-        if(outData.IsConstant())
-          Application().LogMessage("out data is constant!");
-
-        if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
-        {
-          Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
-          return CStatus::OK;
-        }
-        MATH::CVector3f * castData = (MATH::CVector3f*)data;
-        unsigned int offset = 0;
-        for(CIndexSet::Iterator it = indexSet.Begin(); it.HasNext(); it.Next())
-          outData[it] = castData[offset++];
-        // memcpy(&outData[0], data, sizeof(float) * 3 * in_ctxt.GetNumberOfElementsToProcess());
-      }
-      else if(dataStruct == siICENodeStructureArray)
-      {
-        CDataArray2DVector3f outData2D(in_ctxt);
-        if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
-        {
-          Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
-          return CStatus::OK;
-        }
-        for(unsigned int i=0;i<outData2D.GetCount();i++)
-        {
-          FabricCore::RTVal subRtVal = rtVal.getArrayElement(i);
-          FabricCore::RTVal subDataRtVal = subRtVal.callMethod("Data", "data", 0, 0);
-          void * subData = subDataRtVal.getData();
-          CDataArray2DVector3f::Accessor outData = outData2D.Resize(i, subRtVal.getArraySize());
-          memcpy(&outData[0], subData, sizeof(float) * 3 * outData.GetCount());
-          
-        }
-      }
-    }
-  }
-  else if(dataType == siICENodeDataColor4)
-  {
-    if(dataContext == siICENodeContextSingleton)
-    {
-      if(dataStruct == siICENodeStructureSingle)
-      {
-        CDataArrayColor4f outData(in_ctxt);
-        outData[0].PutR(((float*)data)[0]);
-        outData[0].PutG(((float*)data)[1]);
-        outData[0].PutB(((float*)data)[2]);
-        outData[0].PutA(((float*)data)[2]);
-      }
-      else if(dataStruct == siICENodeStructureArray)
-      {
-        CDataArray2DColor4f outData2D(in_ctxt);
-        if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
-        {
-          Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
-          return CStatus::OK;
-        }
-        CDataArray2DColor4f::Accessor outData = outData2D.Resize(0, rtVal.getArraySize());
-        memcpy(&outData[0], data, sizeof(float) * 4 * outData.GetCount());
-      }
-    }
-    else
-    {
-      if(dataStruct == siICENodeStructureSingle)
-      {
-        CDataArrayColor4f outData(in_ctxt);
-        if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
-        {
-          Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
-          return CStatus::OK;
-        }
-        memcpy(&outData[0], data, sizeof(float) * 4 * in_ctxt.GetNumberOfElementsToProcess());
-      }
-      else if(dataStruct == siICENodeStructureArray)
-      {
-        CDataArray2DColor4f outData2D(in_ctxt);
-        if(in_ctxt.GetNumberOfElementsToProcess() != rtVal.getArraySize())
-        {
-          Application().LogMessage(CString("spliceGetData") + "'s reference " + reference + " contains " + CString((long)rtVal.getArraySize()) + " values, ICE expects " + CString((long)in_ctxt.GetNumberOfElementsToProcess()) + " values.", siErrorMsg );
-          return CStatus::OK;
-        }
-        for(unsigned int i=0;i<outData2D.GetCount();i++)
-        {
-          FabricCore::RTVal subRtVal = rtVal.getArrayElement(i);
-          FabricCore::RTVal subDataRtVal = subRtVal.callMethod("Data", "data", 0, 0);
-          void * subData = subDataRtVal.getData();
-          CDataArray2DColor4f::Accessor outData = outData2D.Resize(i, subRtVal.getArraySize());
-          memcpy(&outData[0], subData, sizeof(float) * 4 * outData.GetCount());
-          
-        }
-      }
-    }
+    Application().LogMessage(CString("spliceGetData") + " hit exception: " + e.what(), siErrorMsg );
+    return CStatus::OK;
   }
 
   return CStatus::OK;
 }
 
-SICALLBACK spliceGetDataSingle_Init( CRef & in_ctxt )
+SICALLBACK spliceGetData_Init( CRef & in_ctxt )
 {
   Context ctxt(in_ctxt);
   ICENode node(ctxt.GetSource());
 
   FabricSpliceBaseInterface * interf = new FabricSpliceBaseInterface();
+  interf->setUsedInICENode(true);
   iceNodeUD * ud = new iceNodeUD();
   ud->objectID = node.GetObjectID();
   interf->setObjectID(ud->objectID);
@@ -558,7 +605,7 @@ SICALLBACK spliceGetDataSingle_Init( CRef & in_ctxt )
   return CStatus::OK;
 }
 
-SICALLBACK spliceGetDataSingle_Term( CRef & in_ctxt )
+SICALLBACK spliceGetData_Term( CRef & in_ctxt )
 {
   Context ctxt(in_ctxt);
 
@@ -569,7 +616,10 @@ SICALLBACK spliceGetDataSingle_Term( CRef & in_ctxt )
     // look it up by id, so in case in was deleted already....
     FabricSpliceBaseInterface * interf = FabricSpliceBaseInterface::getInstanceByObjectID(ud->objectID);
     if(interf)
-      delete(interf);
+    {
+      if(interf->needsDeletion())
+        delete(interf);
+    }
 
     delete(ud);
   }
@@ -577,22 +627,22 @@ SICALLBACK spliceGetDataSingle_Term( CRef & in_ctxt )
   return CStatus::OK;
 }
 
-SICALLBACK spliceGetDataPerPoint_BeginEvaluate(ICENodeContext& in_ctxt)
-{
-  return spliceGetDataSingle_BeginEvaluate(in_ctxt);
-}
+// SICALLBACK spliceGetDataPerPoint_BeginEvaluate(ICENodeContext& in_ctxt)
+// {
+//   return spliceGetDataSingle_BeginEvaluate(in_ctxt);
+// }
 
-SICALLBACK spliceGetDataPerPoint_Evaluate(ICENodeContext& in_ctxt)
-{
-  return spliceGetDataSingle_Evaluate(in_ctxt);
-}
+// SICALLBACK spliceGetDataPerPoint_Evaluate(ICENodeContext& in_ctxt)
+// {
+//   return spliceGetDataSingle_Evaluate(in_ctxt);
+// }
 
-SICALLBACK spliceGetDataPerPoint_Init( CRef & in_ctxt )
-{
-  return spliceGetDataSingle_Init(in_ctxt);
-}
+// SICALLBACK spliceGetDataPerPoint_Init( CRef & in_ctxt )
+// {
+//   return spliceGetDataSingle_Init(in_ctxt);
+// }
 
-SICALLBACK spliceGetDataPerPoint_Term( CRef & in_ctxt )
-{
-  return spliceGetDataSingle_Term(in_ctxt);
-}
+// SICALLBACK spliceGetDataPerPoint_Term( CRef & in_ctxt )
+// {
+//   return spliceGetDataSingle_Term(in_ctxt);
+// }

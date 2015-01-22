@@ -52,6 +52,7 @@ FabricSpliceBaseInterface::FabricSpliceBaseInterface(){
 
   xsiInitializeSplice();
   _persist = false;
+  _usedInICENode = false;
   _spliceGraph = FabricSplice::DGGraph("softimageGraph");
   _spliceGraph.constructDGNode("DGNode");
   _spliceGraph.setUserPointer(this);

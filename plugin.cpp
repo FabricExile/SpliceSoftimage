@@ -244,6 +244,12 @@ XSIPLUGINCALLBACK CStatus FabricSpliceCloseScene_OnEvent(CRef & ctxt)
 XSIPLUGINCALLBACK CStatus FabricSpliceTerminate_OnEvent(CRef & ctxt)
 {
   destroyDrawContext();
+  std::vector<FabricSpliceBaseInterface*> instances = FabricSpliceBaseInterface::getInstances();
+  for(int i=instances.size()-1;i>=0;i--)
+  {
+    if(instances[i]->needsDeletion() && instances[i]->usedInICENode())
+      delete(instances[i]);
+  }
   FabricSplice::DestroyClient(true);
   FabricSplice::Finalize();
   return true;

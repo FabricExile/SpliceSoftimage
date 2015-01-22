@@ -33,6 +33,8 @@ public:
   virtual void setObjectID(unsigned int objectID);
   virtual bool needsDeletion() { return !_persist; }
   virtual void setNeedsDeletion(bool removeInstance) { _persist = !removeInstance; }
+  virtual bool usedInICENode() { return _usedInICENode; }
+  virtual void setUsedInICENode(bool flag) { _usedInICENode = flag; }
   
   static std::vector<FabricSpliceBaseInterface*> getInstances();
   static FabricSpliceBaseInterface * getInstanceByObjectID(unsigned int objectID);
@@ -88,6 +90,7 @@ protected:
   static FabricSpliceBaseInterface* _currentInstance;
   FabricSplice::DGGraph _spliceGraph;
   bool _persist;
+  bool _usedInICENode;
 
   struct parameterInfo
   {
