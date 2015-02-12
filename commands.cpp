@@ -633,7 +633,7 @@ SICALLBACK proceedToNextScene_Execute(CRef & in_ctxt)
   boost::filesystem::path currentSample = sceneFileName.GetAsciiString();
   boost::filesystem::path samplesDir = currentSample.parent_path();
 
-#if BOOST_VERSION == 105500
+#if BOOST_VERSION >= 105500
   while(samplesDir.stem().string() != "Samples" && samplesDir.stem().string() != "Splice") {
 #else
   while(samplesDir.stem() != "Samples" && samplesDir.stem() != "Splice") {
@@ -662,7 +662,7 @@ SICALLBACK proceedToNextScene_Execute(CRef & in_ctxt)
       {
         folders.push_back(dir_iter->path());
       }
-#if BOOST_VERSION == 105500
+#if BOOST_VERSION >= 105500
       else if(dir_iter->path().extension().string() == ".scn" || 
         dir_iter->path().extension().string() == ".Scn" ||
         dir_iter->path().extension().string() == ".SCN")
