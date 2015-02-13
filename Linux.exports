@@ -1,0 +1,4 @@
+{
+  global: FabricSplice*; fabricSplice*; ImportSpliceDialog*; proceedToNextScene*; Splice*; splice*; XSI*;
+  local: *;
+};

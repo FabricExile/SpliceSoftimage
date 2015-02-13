@@ -43,12 +43,17 @@ env.MergeFlags(spliceFlags)
 
 if FABRIC_BUILD_OS == 'Linux':
   env.Append(LIBS=['boost_filesystem', 'boost_system'])
+  exportsFile = env.File('Linux.exports').srcnode()
+  env.Append(SHLINKFLAGS = ['-Wl,--version-script='+str(exportsFile)])
 elif FABRIC_BUILD_OS == 'Windows':
   env.Append(LIBS = ['OpenGL32.lib'])
 
 target = 'FabricSpliceSoftimage'
 
 softimageModule = env.SharedLibrary(target = target, source = Glob('*.cpp'), SHLIBPREFIX='')
+
+if FABRIC_BUILD_OS == 'Linux':
+  env.Depends(softimageModule, exportsFile)
 
 softimageFiles = []
 
