@@ -2042,3 +2042,33 @@ CStatus FabricSpliceBaseInterface::cleanupForImport(Model & model)
 
   return CStatus::OK;
 }
+
+bool FabricSpliceBaseInterface::processNameChange(CString prevFullPath, CString newFullPath)
+{
+  bool result = false;
+  for(std::map<std::string, portInfo>::iterator it = _ports.begin(); it != _ports.end(); it++)
+  {
+    CString portName = it->first.c_str();
+    FabricSplice::Port_Mode portMode = it->second.portMode;
+    it->second.portIndices.Clear();
+    CString targets = it->second.targets;
+    CString newTargets;
+    CStringArray parts = targets.Split(L",");
+    for(LONG i=0;i<parts.GetCount();i++)
+    {
+      if(parts[i] == prevFullPath)
+        parts[i] = newFullPath;
+      else if(parts[i].GetSubString(0, prevFullPath.Length()+1) == prevFullPath + ".")
+        parts[i] = newFullPath + parts[i].GetSubString(prevFullPath.Length());
+      if(i > 0)
+        newTargets += ",";
+      newTargets += parts[i];
+    }
+    if(it->second.targets != newTargets)
+    {
+      it->second.targets = newTargets;
+      result = true;
+    }
+  }
+  return result;
+}

@@ -9,6 +9,7 @@ XSI::CustomProperty editorPropGetEnsureExists(bool clearErrors = false);
 void editorSetObjectIDFromSelection();
 void showSpliceEcitor(unsigned int objectID);
 const char * getSourceCodeForOperator(const char * graphName, const char * opName);
+void updateSpliceEditorGrids(XSI::CustomProperty & prop);
 
 class AddPortDialog
 {

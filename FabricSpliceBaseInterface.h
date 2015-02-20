@@ -83,6 +83,8 @@ public:
   void setICENodeRTVal(FabricCore::RTVal val) { iceNodeRTVal = val; }
   FabricCore::RTVal getICENodeRTVal() { return iceNodeRTVal; }
 
+  bool processNameChange(XSI::CString prevFullPath, XSI::CString newFullPath);
+
 protected:
   // private members and helper methods
   unsigned int _objectID;
