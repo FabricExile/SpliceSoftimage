@@ -112,6 +112,12 @@ CStatus FabricSpliceBaseInterface::updateXSIOperator()
 
   // delete the previous one
   CRef oldRef = Application().GetObjectFromID(_objectID);
+  CustomOperator oldOp(oldRef);
+
+  // persist some generic settings of the CustomOperator
+  CValue alwaysEvaluate = oldOp.GetParameterValue("alwaysevaluate");
+  CValue mute = oldOp.GetParameterValue("mute");
+  CValue debug = oldOp.GetParameterValue("debug");
 
   // create the operator
   CustomOperator op = Application().GetFactory().CreateObject(L"SpliceOp");
@@ -208,6 +214,11 @@ CStatus FabricSpliceBaseInterface::updateXSIOperator()
       CValue value = it->second.defaultValue;
       op.PutParameterValue(it->first.c_str(), value);
     }
+
+    // restore alwaysEvaluate
+    op.PutParameterValue("alwaysevaluate", alwaysEvaluate);
+    op.PutParameterValue("mute", mute);
+    op.PutParameterValue("debug", debug);
   }
 
   _currentInstance = NULL;
