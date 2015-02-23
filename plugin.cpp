@@ -188,6 +188,7 @@ SICALLBACK XSILoadPlugin( PluginRegistrar& in_reg )
   in_reg.RegisterEvent(L"FabricSpliceImport", siOnEndFileImport);
   in_reg.RegisterEvent(L"FabricSpliceBeginExport", siOnBeginFileExport);
   in_reg.RegisterEvent(L"FabricSpliceEndExport", siOnEndFileExport);
+  in_reg.RegisterEvent(L"FabricSpliceValueChange", siOnValueChange);
 
   // ice nodes
   Register_spliceGetData(in_reg);
@@ -487,6 +488,53 @@ XSIPLUGINCALLBACK CStatus FabricSpliceEndExport_OnEvent(CRef & ctxt)
     xsiLogErrorFunc(e.getDesc_cstr());
   }
   return true;
+}
+
+XSIPLUGINCALLBACK CStatus FabricSpliceValueChange_OnEvent(CRef & ctxt)
+{
+  Context context(ctxt);
+  CString fullName = context.GetAttribute("FullName");
+  CValue previousValue = context.GetAttribute("PreviousValue");
+
+  if(fullName.Length() < 5)
+    return CStatus::OK;
+  if(fullName.GetSubString(fullName.Length()-5, 5) != ".Name")
+    return CStatus::OK;
+  CStringArray parts = fullName.Split(".");
+  if(parts.GetCount() < 2)
+    return CStatus::OK;
+
+  CString prevFullPath, newFullPath;
+  for(unsigned int i=0;i<parts.GetCount()-2;i++)
+  {
+    if(i > 0)
+      prevFullPath += ".";
+    prevFullPath += parts[i];
+  }
+  newFullPath = prevFullPath;
+  if(prevFullPath != "")
+    prevFullPath += ".";
+  prevFullPath += CString(previousValue);
+  if(newFullPath != "")
+    newFullPath += ".";
+  newFullPath += parts[parts.GetCount()-2];
+
+  std::vector<opUserData*> instances = getXSIOperatorInstances();
+  bool result = false;
+  for(size_t i=0;i<instances.size();i++)
+  {
+    if(instances[i]->getInterf() == NULL)
+      continue;
+    result = result || instances[i]->getInterf()->processNameChange(prevFullPath, newFullPath);
+  }
+  if(result)
+  {
+    CustomProperty klEditor = editorPropGet();
+    if(klEditor.IsValid())
+      updateSpliceEditorGrids(klEditor);
+  }
+
+  return CStatus::OK;
 }
 
 CStatus onSaveScene(CRef & ctxt)
