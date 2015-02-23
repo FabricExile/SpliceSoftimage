@@ -58,6 +58,8 @@ XSIPLUGINCALLBACK CStatus SpliceOp_Define(CRef & in_ctxt)
   oCustomOperator.AddParameter(oPDef,oParam);
   oPDef = oFactory.CreateParamDef(L"persistenceData", CValue::siString, siReadOnly, L"persistenceData", L"persistenceData", "", "", "", "", "");
   oCustomOperator.AddParameter(oPDef,oParam);
+  oPDef = oFactory.CreateParamDef(L"alwaysConvertMeshes", CValue::siBool, siPersistable, L"alwaysConvertMeshes", L"alwaysConvertMeshes", false, CValue(), CValue(), CValue(), CValue());
+  oCustomOperator.AddParameter(oPDef,oParam);
 
   FabricSpliceBaseInterface::constructXSIParameters(oCustomOperator, oFactory);
 

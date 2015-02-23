@@ -118,6 +118,7 @@ CStatus FabricSpliceBaseInterface::updateXSIOperator()
   CValue alwaysEvaluate = oldOp.GetParameterValue("alwaysevaluate");
   CValue mute = oldOp.GetParameterValue("mute");
   CValue debug = oldOp.GetParameterValue("debug");
+  CValue alwaysConvertMeshes = oldOp.GetParameterValue("alwaysConvertMeshes");
 
   // create the operator
   CustomOperator op = Application().GetFactory().CreateObject(L"SpliceOp");
@@ -219,6 +220,7 @@ CStatus FabricSpliceBaseInterface::updateXSIOperator()
     op.PutParameterValue("alwaysevaluate", alwaysEvaluate);
     op.PutParameterValue("mute", mute);
     op.PutParameterValue("debug", debug);
+    op.PutParameterValue("alwaysConvertMeshes", alwaysConvertMeshes);
   }
 
   _currentInstance = NULL;
@@ -743,6 +745,9 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
   OutputPort xsiPort(context.GetOutputPort());
   std::string outPortName = xsiPort.GetGroupName().GetAsciiString();
 
+  // setting to determine if we need to always convert meshes
+  bool alwaysConvertMeshes = op.GetParameterValue("alwaysConvertMeshes");
+
   // Simple values are cached in the CValues cache member. we don't know how many cache values we will require
   // because this depends on the port type. We simply grow the array as we need it, and never shrink it. Every 
   // time we store a cache value, we should increment this value. 
@@ -806,9 +811,12 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
         Primitive prim((CRef)context.GetInputValue(it->second.realPortName+CString(CValue(CValue(0)))));
         
         // Now check if the input geometry has changed scince our previous evaluation.
-        LONG evalID = ProjectItem(prim).GetEvaluationID();
-        if(checkEvalIDCache( evalID, evalIDCacheIndex, alwaysEvaluate))
-          continue;
+        if(!alwaysConvertMeshes)
+        {
+          LONG evalID = ProjectItem(prim).GetEvaluationID();
+          if(checkEvalIDCache( evalID, evalIDCacheIndex, alwaysEvaluate))
+            continue;
+        }
         
         Geometry xsiGeo = prim.GetGeometry();
         CString iceAttrStr = iceAttrName.getStringData();
@@ -931,9 +939,12 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
           break;
 
         // Now check if the input geometry has changed scince our previous evaluation.
-        LONG evalID = ProjectItem(prim).GetEvaluationID();
-        if(checkEvalIDCache( evalID, evalIDCacheIndex, alwaysEvaluate))
-          continue;
+        if(!alwaysConvertMeshes)
+        {
+          LONG evalID = ProjectItem(prim).GetEvaluationID();
+          if(checkEvalIDCache( evalID, evalIDCacheIndex, alwaysEvaluate))
+            continue;
+        }
         
         PolygonMesh mesh = PolygonMesh(prim.GetGeometry().GetRef());
 
@@ -954,9 +965,12 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
             break;
 
           // Now check if the input geometry has changed scince our previous evaluation.
-          LONG evalID = ProjectItem(prim).GetEvaluationID();
-          if(checkEvalIDCache( evalID, evalIDCacheIndex, alwaysEvaluate))
-            continue;
+          if(!alwaysConvertMeshes)
+          {
+            LONG evalID = ProjectItem(prim).GetEvaluationID();
+            if(checkEvalIDCache( evalID, evalIDCacheIndex, alwaysEvaluate))
+              continue;
+          }
 
           PolygonMesh mesh = PolygonMesh(prim.GetGeometry().GetRef());
           if(arrayVal.getArraySize() <= i)
@@ -985,9 +999,12 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
           prim = (CRef)context.GetInputValue(portName.c_str()+CString(CValue(0)));
 
         // Now check if the input geometry has changed scince our previous evaluation.
-        LONG evalID = ProjectItem(prim).GetEvaluationID();
-        if(checkEvalIDCache( evalID, evalIDCacheIndex, alwaysEvaluate))
-          continue;
+        if(!alwaysConvertMeshes)
+        {
+          LONG evalID = ProjectItem(prim).GetEvaluationID();
+          if(checkEvalIDCache( evalID, evalIDCacheIndex, alwaysEvaluate))
+            continue;
+        }
 
         NurbsCurveList curveList = prim.GetGeometry().GetRef();
         FabricCore::RTVal rtVal = splicePort.getRTVal();
@@ -1006,9 +1023,12 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
             break;
 
           // Now check if the input geometry has changed scince our previous evaluation.
-          LONG evalID = ProjectItem(prim).GetEvaluationID();
-          if(checkEvalIDCache( evalID, evalIDCacheIndex, alwaysEvaluate))
-            continue;
+          if(!alwaysConvertMeshes)
+          {
+            LONG evalID = ProjectItem(prim).GetEvaluationID();
+            if(checkEvalIDCache( evalID, evalIDCacheIndex, alwaysEvaluate))
+              continue;
+          }
 
           NurbsCurveList curveList = prim.GetGeometry().GetRef();
           if(arrayVal.getArraySize() <= i)
