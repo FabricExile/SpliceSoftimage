@@ -854,7 +854,7 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
 
         CString singleDataType = it->second.dataType.GetSubString(0, it->second.dataType.Length()-2);
         FabricCore::RTVal arrayVal = splicePort.getRTVal();
-        uint32_t arraySize = splicePort.getArrayCount();
+        uint32_t arraySize = arrayVal.getArraySize();
         for(int i=0; ; i++)
         {
           CValue value = context.GetInputValue(portName.c_str()+CString(i));
@@ -891,7 +891,7 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
         getRTValFromCMatrix4(matrix, rtVal);
 
         FabricCore::RTVal currVal = splicePort.getRTVal();
-        if(!currVal.callMethod("Boolean", "equal", 1, &rtVal).getBoolean()){
+        if(!currVal.callMethod("Boolean", "almostEqual", 1, &rtVal).getBoolean()){
           splicePort.setRTVal(rtVal);
           addDirtyInput(portName, evalContext, -1);
           result = true;
@@ -919,7 +919,7 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
           else
           {
             FabricCore::RTVal currVal = arrayVal.getArrayElement(i);
-            if(!currVal.callMethod("Boolean", "equal", 1, &rtVal).getBoolean()){
+            if(!currVal.callMethod("Boolean", "almostEqual", 1, &rtVal).getBoolean()){
               arrayVal.setArrayElement(i, rtVal);
               addDirtyInput(portName, evalContext, i);
               result = true;
@@ -1109,7 +1109,7 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
     {
       CString singleDataType = it->second.dataType.GetSubString(0, it->second.dataType.Length()-2);
       FabricCore::RTVal rtVal = splicePort.getRTVal();
-      uint32_t arraySize = splicePort.getArrayCount();
+      uint32_t arraySize = rtVal.getArraySize();
       uint32_t portIndex = xsiPort.GetIndex();
       uint32_t arrayIndex = UINT_MAX;
       for(LONG i=0;i<it->second.portIndices.GetCount();i++)
@@ -1142,7 +1142,7 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
     else if(it->second.dataType == "Mat44[]")
     {
       FabricCore::RTVal rtVal = splicePort.getRTVal();
-      uint32_t arraySize = splicePort.getArrayCount();
+      uint32_t arraySize = rtVal.getArraySize();
       uint32_t portIndex = xsiPort.GetIndex();
       uint32_t arrayIndex = UINT_MAX;
       for(LONG i=0;i<it->second.portIndices.GetCount();i++)
