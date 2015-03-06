@@ -36,6 +36,7 @@
 #include "renderpass.h"
 #include "FabricSpliceBaseInterface.h"
 #include "FabricSpliceConversion.h"
+#include <FabricSplice.h>
 
 using namespace XSI;
 
@@ -708,7 +709,7 @@ SICALLBACK SpliceEditor_PPGEvent( CRef& in_ctxt )
             CString targetDataType = getSpliceDataTypeFromRefArray(items, dataType);
             if(dataType != targetDataType && dataType != targetDataType + "[]")
             {
-              xsiLogErrorFunc("Data types do not match.");
+              xsiLogErrorFunc("Data types do not match. The data type of your port is:" + dataType+ " and the picked element is of type:" + targetDataType);
               return CStatus::Unexpected;
             }
             CValue returnVal;
@@ -802,11 +803,31 @@ SICALLBACK SpliceEditor_PPGEvent( CRef& in_ctxt )
         FabricSplice::DGGraph graph = interf->getSpliceGraph();
         CString portName = graph.getDGPortName(gridSelection[1]);
 
+        FabricSplice::DGPort port = graph.getDGPort(gridSelection[1]);
+        CString dataType = port.getDataType();
+        bool isArray = port.isArray();
+        bool isICEAttribute = port.getOption("ICEAttribute").isString();
+        CString filter = L"global";
+        if(dataType == L"PolygonMesh")
+          filter = L"polymsh";
+        if(dataType == L"Lines")
+          filter = L"crvlist";
+        else if(isICEAttribute)
+          filter = L"geometry";
+
+        CRefArray targetRefs = PickObjectArray(
+          L"Pick new target for "+portName, L"Pick next target for "+portName, 
+          filter, (!isArray || isICEAttribute) ? 1 : 0);
+
+        // the action was canceled.
+        if(targetRefs.GetCount() == 0)
+          return CStatus::OK;
+
         CValue returnVal;
         CValueArray args(3);
         args[0] = L"reroutePort";
         args[1] = objectStr;
-        args[2] = L"{\"portName\":\""+portName+"\"}";
+        args[2] = L"{\"portName\":\""+portName+"\", \"targets\":\""+targetRefs.GetAsText()+"\" }";
         Application().ExecuteCommand(L"fabricSplice", args, returnVal);
         updateSpliceEditorGrids(prop);
         requiresRefresh = true;

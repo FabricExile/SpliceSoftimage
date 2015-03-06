@@ -22,6 +22,17 @@
 #include <xsi_iceattributedataarray.h>
 #include <xsi_comapihandler.h>
 #include <xsi_x3dobject.h>
+#include <xsi_polygonmesh.h>
+#include <xsi_geometryaccessor.h>
+#include <xsi_polygonface.h>
+#include <xsi_polygonnode.h>
+#include <xsi_vertex.h>
+#include <xsi_nurbscurve.h>
+#include <xsi_nurbscurvelist.h>
+#include <xsi_nurbsdata.h>
+#include <xsi_knot.h>
+#include <xsi_controlpoint.h>
+#include <xsi_geometryaccessor.h>
 #include <xsi_group.h>
 #include <xsi_iceattributedataarray2D.h>
 
@@ -662,6 +673,312 @@ X3DObject getX3DObjectFromRef(const CRef &ref)
   if(!obj.IsValid())
     return X3DObject();
   return getX3DObjectFromRef(obj.GetParent());
+}
+
+void convertInputPolygonMesh(PolygonMesh mesh, FabricCore::RTVal & rtVal)
+{
+  if(!rtVal.isValid() || rtVal.isNullObject())
+    rtVal = FabricSplice::constructObjectRTVal("PolygonMesh");
+  
+  CGeometryAccessor acc = mesh.GetGeometryAccessor();
+
+  // determine if we need a topology update
+  unsigned int nbPolygons = rtVal.callMethod("UInt64", "polygonCount", 0, 0).getUInt64();
+  unsigned int nbSamples = rtVal.callMethod("UInt64", "polygonPointsCount", 0, 0).getUInt64();
+  bool requireTopoUpdate = nbPolygons != acc.GetPolygonCount() || nbSamples != acc.GetNodeCount();
+
+  MATH::CVector3Array xsiPoints;
+  CLongArray xsiIndices;
+  if(requireTopoUpdate)
+    mesh.Get(xsiPoints, xsiIndices);
+  else
+    xsiPoints = mesh.GetPoints().GetPositionArray();
+
+  std::vector<FabricCore::RTVal> args(2);
+  args[0] = FabricSplice::constructExternalArrayRTVal("Float64", xsiPoints.GetCount() * 3, &xsiPoints[0]);
+  args[1] = FabricSplice::constructUInt32RTVal(3); // components
+  rtVal.callMethod("", "setPointsFromExternalArray_d", 2, &args[0]);
+  xsiPoints.Clear();
+
+  if(requireTopoUpdate)
+  {
+    std::vector<FabricCore::RTVal> args(1);
+    args[0] = FabricSplice::constructExternalArrayRTVal("UInt32", xsiIndices.GetCount(), &xsiIndices[0]);
+    rtVal.callMethod("", "setTopologyFromCombinedExternalArray", 1, &args[0]);
+    xsiIndices.Clear();
+  }
+
+  CRefArray uvRefs = acc.GetUVs();
+  if(uvRefs.GetCount() > 0)
+  {
+    ClusterProperty prop(uvRefs[0]);
+    CFloatArray values;
+    prop.GetValues(values);
+
+    std::vector<FabricCore::RTVal> args(2);
+    args[0] = FabricSplice::constructExternalArrayRTVal("Float32", values.GetCount(), &values[0]);
+    args[1] = FabricSplice::constructUInt32RTVal(3); // components
+    rtVal.callMethod("", "setUVsFromExternalArray", 2, &args[0]);
+    values.Clear();
+  }
+
+  CRefArray vertexColorRefs = acc.GetVertexColors();
+  if(vertexColorRefs.GetCount() > 0)
+  {
+    ClusterProperty prop(vertexColorRefs[0]);
+    CFloatArray values;
+    prop.GetValues(values);
+
+    std::vector<FabricCore::RTVal> args(2);
+    args[0] = FabricSplice::constructExternalArrayRTVal("Float32", values.GetCount(), &values[0]);
+    args[1] = FabricSplice::constructUInt32RTVal(4); // components
+    rtVal.callMethod("", "setVertexColorsFromExternalArray", 2, &args[0]);
+    values.Clear();
+  }
+}
+
+void convertInputLines(NurbsCurveList curveList, FabricCore::RTVal & rtVal)
+{
+  if(!rtVal.isValid() || rtVal.isNullObject())
+    rtVal = FabricSplice::constructObjectRTVal("Lines");
+
+  MATH::CVector3Array xsiPoints = curveList.GetPoints().GetPositionArray();
+  FabricCore::RTVal xsiPointsVal = FabricSplice::constructExternalArrayRTVal("Float64", xsiPoints.GetCount() * 3, &xsiPoints[0]);
+  rtVal.callMethod("", "_setPositionsFromExternalArray_d", 1, &xsiPointsVal);
+
+  CNurbsCurveRefArray xsiCurves = curveList.GetCurves();
+  size_t nbSegments = 0;
+  for(ULONG j=0;j<xsiCurves.GetCount();j++)
+  {
+    NurbsCurve xsiCurve = xsiCurves[j];
+    CControlPointRefArray controls = xsiCurve.GetControlPoints();
+    CKnotArray knots = xsiCurve.GetKnots();
+    nbSegments += controls.GetCount() - 1;
+    bool closed = false;
+    knots.GetClosed(closed);
+    if(closed)
+      nbSegments++;
+  }
+
+  size_t voffset = 0;
+  size_t coffset = 0;
+  std::vector<uint32_t> indices(nbSegments*2);
+  for(ULONG j=0;j<xsiCurves.GetCount();j++)
+  {
+    NurbsCurve xsiCurve = xsiCurves[j];
+    CControlPointRefArray controls = xsiCurve.GetControlPoints();
+    for(ULONG k=0;k<controls.GetCount()-1;k++)
+    {
+      indices[voffset++] = coffset++;
+      indices[voffset++] = coffset;
+    }
+    bool closed = false;
+    CKnotArray knots = xsiCurve.GetKnots();
+    knots.GetClosed(closed);
+    if(closed) {
+      indices[voffset++] = coffset;
+      indices[voffset++] = coffset - controls.GetCount() + 1;
+    }
+    coffset++;
+  }
+
+  FabricCore::RTVal indicesVal = FabricSplice::constructExternalArrayRTVal("UInt32", indices.size(), &indices[0]);
+  rtVal.callMethod("", "_setTopologyFromExternalArray", 1, &indicesVal);
+}
+
+void convertOutputPolygonMesh(PolygonMesh mesh, FabricCore::RTVal & rtVal)
+{
+  CGeometryAccessor acc = mesh.GetGeometryAccessor();
+
+  unsigned int nbPoints = rtVal.callMethod("UInt64", "pointCount", 0, 0).getUInt64();
+  unsigned int nbPolygons = rtVal.callMethod("UInt64", "polygonCount", 0, 0).getUInt64();
+  unsigned int nbSamples = rtVal.callMethod("UInt64", "polygonPointsCount", 0, 0).getUInt64();
+
+  bool requireTopoUpdate = nbPolygons != acc.GetPolygonCount() || nbSamples != acc.GetNodeCount();
+
+  MATH::CVector3Array xsiPoints;
+  CLongArray xsiIndices;
+  xsiPoints.Resize(nbPoints);
+
+  if(xsiPoints.GetCount() > 0)
+  {
+    FabricCore::RTVal args[2] = {
+      FabricSplice::constructExternalArrayRTVal("Float64", xsiPoints.GetCount() * 3, &xsiPoints[0]),
+      FabricSplice::constructUInt32RTVal(3)
+    };
+    rtVal.callMethod("", "getPointsAsExternalArray_d", 2, &args[0]);
+  }
+
+  if(requireTopoUpdate)
+  {
+    xsiIndices.Resize(nbPolygons  + nbSamples);
+    FabricCore::RTVal indices = 
+      FabricSplice::constructExternalArrayRTVal("UInt32", xsiIndices.GetCount(), &xsiIndices[0]);
+    rtVal.callMethod("", "getTopologyAsCombinedExternalArray", 1, &indices);
+  }
+
+  if(requireTopoUpdate)
+  {
+    if(xsiIndices.GetCount() > 0)
+      mesh.Set(xsiPoints, xsiIndices);
+    else
+    {
+      xsiPoints.Resize(3);
+      xsiIndices.Resize(4);
+      xsiIndices[0] = 3;
+      xsiIndices[1] = 0;
+      xsiIndices[2] = 0;
+      xsiIndices[3] = 0;
+      mesh.Set(xsiPoints, xsiIndices);
+    }
+  }
+  else
+    mesh.GetPoints().PutPositionArray(xsiPoints);
+
+  if(nbPoints == 0)
+    return;
+
+  if(rtVal.callMethod("Boolean", "hasUVs", 0, 0).getBoolean())
+  {
+    CRefArray uvRefs = acc.GetUVs();
+    if(uvRefs.GetCount() > 0)
+    {
+      ClusterProperty prop(uvRefs[0]);
+      LONG numComponents = prop.GetValueSize();
+      CFloatArray values(nbSamples * numComponents);
+      if(values.GetCount() > 0 && values.GetCount() == prop.GetElements().GetCount() * numComponents)
+      {
+        FabricCore::RTVal args[2] = {
+          FabricSplice::constructExternalArrayRTVal("Float32", values.GetCount(), &values[0]),
+          FabricSplice::constructUInt32RTVal(numComponents)
+        };
+        rtVal.callMethod("", "getUVsAsExternalArray", 2, &args[0]);
+        prop.SetValues(&values[0], values.GetCount() / numComponents);
+        values.Clear();
+      }
+      else{
+        // [phtaylor] I'm not sure how the user is supposed to fix this problem. Writing to clusters while modifying topology isn't supported by Softimage.
+        // The correct solution is to install an operator on the cluster property. 
+        xsiLogFunc("Unable to write UVs to geometry because the cluster property size does not match.");
+      }
+    }
+    else{
+      xsiLogFunc("Cannot write UVs to geometry that does not aalready have UVs assigned.");
+    }
+  }
+
+  if(rtVal.callMethod("Boolean", "hasVertexColors", 0, 0).getBoolean())
+  {
+    CRefArray vertexColorRefs = acc.GetVertexColors();
+    if(vertexColorRefs.GetCount() > 0)
+    {
+      ClusterProperty prop(vertexColorRefs[0]);
+      CFloatArray values(nbSamples * 4);
+
+      if(values.GetCount() > 0 && values.GetCount() == prop.GetElements().GetCount() * 4)
+      {
+        FabricCore::RTVal args[2] = {
+          FabricSplice::constructExternalArrayRTVal("Float32", values.GetCount(), &values[0]),
+          FabricSplice::constructUInt32RTVal(4)
+        };
+        rtVal.callMethod("", "getVertexColorsAsExternalArray", 2, &args[0]);
+        prop.SetValues(&values[0], values.GetCount() / 4);
+        values.Clear();
+      }
+      else{
+        // [phtaylor] I'm not sure how the user is supposed to fix this problem. Writing to clusters while modifying topology isn't supported by Softimage.
+        // The correct solution is to install an operator on the cluster property. 
+        xsiLogFunc("Unable to write Vertex Colors to geometry because the cluster property size does not match.");
+      }
+    }
+    else{
+      xsiLogFunc("Cannot write Vertex Colors to geometry that does not aalready have Vertex Colors assigned.");
+    }
+  }
+}
+
+
+void convertOutputLines(NurbsCurveList curveList, FabricCore::RTVal & rtVal)
+{
+  unsigned int nbPoints = rtVal.callMethod("UInt64", "pointCount", 0, 0).getUInt64();
+  unsigned int nbSegments = rtVal.callMethod("UInt64", "lineCount", 0, 0).getUInt64();
+
+  MATH::CVector3Array xsiPoints;
+  std::vector<uint32_t> xsiIndices;
+  xsiPoints.Resize(nbPoints);
+  xsiIndices.resize(nbSegments * 2);
+
+  if(nbPoints > 0)
+  {
+    FabricCore::RTVal xsiPointsVal = FabricSplice::constructExternalArrayRTVal("Float64", xsiPoints.GetCount() * 3, &xsiPoints[0]);
+    rtVal.callMethod("", "_getPositionsAsExternalArray_d", 1, &xsiPointsVal);
+  }
+
+  if(nbSegments > 0)
+  {
+    FabricCore::RTVal indices = FabricSplice::constructExternalArrayRTVal("UInt32", xsiIndices.size(), &xsiIndices[0]);
+    rtVal.callMethod("", "_getTopologyAsExternalArray", 1, &indices);
+  }
+
+  size_t nbCurves = 0;
+  if(nbPoints > 0 && nbSegments > 0)
+  {
+    nbCurves++;
+    for(size_t i=2;i<xsiIndices.size();i+=2)
+    {
+      if(xsiIndices[i] != xsiIndices[i-1])
+        nbCurves++;
+    }
+  }
+
+  CNurbsCurveDataArray curveData(nbCurves);
+
+  if(nbCurves > 0)
+  {
+    size_t coffset = 0;
+    for(size_t i=0;i<nbCurves;i++)
+    {
+      curveData[i].m_siParameterization = (siKnotParameterization)1;//siNonUniformParameterization;
+      curveData[i].m_lDegree = 1;
+
+      size_t voffset = coffset + 2;
+      while(voffset < xsiIndices.size())
+      {
+        if(xsiIndices[voffset] != xsiIndices[voffset-1])
+          break;
+        voffset += 2;
+      }
+
+      size_t nbVertices = (voffset - coffset) / 2 + 1;
+      bool isClosed = xsiIndices[coffset] == xsiIndices[voffset-1];
+      if(isClosed)
+        nbVertices--;
+      curveData[i].m_aControlPoints.Resize(nbVertices);
+      curveData[i].m_aKnots.Resize(nbVertices + (isClosed ? 1 : 0));
+      curveData[i].m_bClosed = isClosed;
+
+      for(size_t j=0;j<nbVertices;j++)
+      {
+        size_t vindex;
+        if(j == 0)
+          vindex = xsiIndices[coffset];
+        else
+          vindex = xsiIndices[coffset + 1 + 2 * (j-1)];
+        curveData[i].m_aControlPoints[j].Set(
+          xsiPoints[vindex].GetX(),
+          xsiPoints[vindex].GetY(),
+          xsiPoints[vindex].GetZ(),
+          1.0);
+        curveData[i].m_aKnots[j] = j;
+      }
+      if(isClosed)
+        curveData[i].m_aKnots[nbVertices] = nbVertices;
+
+      coffset = voffset;
+    }
+  }
+
+  curveList.Set(curveData, siSINurbs);
 }
 
 CRef filterX3DObjectPickedRef(CRef ref, CString filter)

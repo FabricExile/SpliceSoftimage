@@ -43,6 +43,8 @@ env.MergeFlags(spliceFlags)
 
 if FABRIC_BUILD_OS == 'Linux':
   env.Append(LIBS=['boost_filesystem', 'boost_system'])
+elif FABRIC_BUILD_OS == 'Windows':
+  env.Append(LIBS = ['OpenGL32.lib'])
 
 target = 'FabricSpliceSoftimage'
 
@@ -61,10 +63,17 @@ softimageFiles.append(env.Install(STAGE_DIR, env.File('license.txt')))
 if FABRIC_BUILD_OS == 'Linux':
   env.Append(LINKFLAGS = [Literal('-Wl,-rpath,$ORIGIN/../../../../lib/')])
 if FABRIC_BUILD_OS == 'Windows':
+  FABRIC_CORE_VERSION = FABRIC_SPLICE_VERSION.rpartition('.')[0]
   softimageFiles.append(
     env.Install(
       os.path.join(STAGE_DIR.abspath, 'Application', 'Plugins'),
       env.Glob(os.path.join(FABRIC_DIR, 'bin', '*.dll'))
+      )
+    )
+  softimageFiles.append(
+    env.Install(
+      os.path.join(STAGE_DIR.abspath, 'Application', 'Plugins'),
+      os.path.join(FABRIC_DIR, 'bin', 'FabricCore-' + FABRIC_CORE_VERSION + '.pdb')
       )
     )
 
@@ -75,15 +84,6 @@ softimageFiles.append(
     )
   )
 
-
-# install PDB files on windows
-if FABRIC_BUILD_TYPE == 'Debug' and FABRIC_BUILD_OS == 'Windows':
-  env['CCPDBFLAGS']  = ['${(PDB and "/Fd%s_incremental.pdb /Zi" % File(PDB)) or ""}']
-  pdbSource = softimageModule[0].get_abspath().rpartition('.')[0]+".pdb"
-  pdbTarget = os.path.join(STAGE_DIR.abspath, os.path.split(pdbSource)[1])
-  copyPdb = env.Command( 'copy', None, 'copy "%s" "%s" /Y' % (pdbSource, pdbTarget) )
-  env.Depends( copyPdb, installedModule )
-  env.AlwaysBuild(copyPdb)
 
 # todo: install the python client
 

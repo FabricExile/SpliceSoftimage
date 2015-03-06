@@ -29,6 +29,13 @@
 #include "tools.h"
 #include "FabricSpliceBaseInterface.h"
 
+
+#ifdef _WIN32
+# include <windows.h>
+#endif
+
+#include <GL/gl.h>
+
 using namespace XSI;
 
 bool gRTRPassEnabled = true;
@@ -50,9 +57,17 @@ void destroyDrawContext()
   sDrawContext.invalidate();
 }
 
-FabricCore::RTVal & getDrawContext(int viewportWidth, int viewportHeight, XSI::Camera & camera)
+FabricCore::RTVal & getDrawContext(XSI::Camera & camera)
 {
   FabricSplice::Logging::AutoTimer("getDrawContext");
+
+  // A bug in the CGraphicSequencer means that the viewport dimensions returned by 
+  // 'GetViewportSize' are corrupt in certain scenarios. We no longer rely on these values. 
+  // OpenGL can always give us the correct viewport values.
+  int viewport[4];
+  glGetIntegerv(GL_VIEWPORT, viewport);
+  int viewportWidth = viewport[2];
+  int viewportHeight = viewport[3];
 
   if(!sDrawContext.isValid())
     sDrawContext = FabricSplice::constructObjectRTVal("DrawContext");
@@ -82,34 +97,70 @@ FabricCore::RTVal & getDrawContext(int viewportWidth, int viewportHeight, XSI::C
     inlineCamera.callMethod("", "setOrthographic", 1, &param);
 
     double xsiViewportAspect = double(viewportWidth) / double(viewportHeight);
-    double cameraAspect = cameraPrim.GetParameterValue(L"aspect");
     
-    if(projType == 0){ // orthographic projection
+    if(projType == 0)
+    {  
+      // Orthographic projection
       double orthoheight = cameraPrim.GetParameterValue(L"orthoheight");
       param = FabricSplice::constructFloat64RTVal(orthoheight);
       inlineCamera.callMethod("", "setOrthographicFrustumHeight", 1, &param);
     }
-    else{ // Perspective projection.
-      double fovX = MATH::DegreesToRadians(cameraPrim.GetParameterValue(L"fov"));
+    else
+    {
+      // Perspective projection.
+      //
+      // XSI returns always the camera FOV.  We have four cases:
+      // If the camera FOV is horizontal and the viewport is tall then the camera FOV is equal to the rendering FOVX, so to compute FOVY we use the viewport aspect ratio.
+      // If the camera FOV is horizontal and the viewport is wide then the camera FOV is less than the rendering FOVX.  However, using the camera aspect ratio for conversion converts to the rendering FOV
+      // If the camera FOV is vertical and the viewport is tall then the camera FOV is less than the rendering FOVY.  We therefore need to multiply it by cameraAspect / viewportAspect via the tan/atan conversion
+      // If the camera FOV is vertical and the viewport is wide then the camera FOV is equal to the rendering FOVY and we can use it directly.
+
+      double cameraAspect = cameraPrim.GetParameterValue(L"aspect");
+      double fovParam =
+        MATH::DegreesToRadians( cameraPrim.GetParameterValue(L"fov") );
+      LONG fovTypeParam = cameraPrim.GetParameterValue(L"fovtype");
+
+      // char buf[1024];
+      // sprintf( buf, "xsiViewportAspect=%lg cameraAspect=%lg fovParam=%lg fovTypeParam=%ld",
+      //   xsiViewportAspect, cameraAspect, fovParam, fovTypeParam);
+      // xsiLogErrorFunc(buf);
+
       double fovY;
-      if(xsiViewportAspect < cameraAspect){
-        // bars top and bottom
-        fovY = atan( tan(fovX * 0.5) / xsiViewportAspect ) * 2.0;
+      switch ( fovTypeParam )
+      {
+        case 1: // horizontal
+        {
+          if ( cameraAspect < xsiViewportAspect ) // wide
+            fovY = atan2( tan(fovParam * 0.5), cameraAspect ) * 2.0;
+          else // tall
+            fovY = atan2( tan(fovParam * 0.5), xsiViewportAspect ) * 2.0;
+        }
+        break;
+
+        case 0: // vertical
+        {
+          if ( cameraAspect < xsiViewportAspect ) // wide
+            fovY = fovParam;
+          else
+            fovY = atan2( tan(fovParam * 0.5) * cameraAspect, xsiViewportAspect ) * 2.0;
+        }
+        break;
+
+        default:
+          xsiLogErrorFunc("Unexpected camera FOV type");
+          break;
       }
-      else{
-        // bars left and right
-        fovY = atan( tan(fovX * 0.5) / cameraAspect ) * 2.0;
-      }
+
       param = FabricSplice::constructFloat64RTVal(fovY);
       inlineCamera.callMethod("", "setFovY", 1, &param);
     }
 
 
-    double near = cameraPrim.GetParameterValue(L"near");
-    double far = cameraPrim.GetParameterValue(L"far");
-    param = FabricSplice::constructFloat64RTVal(near);
+    double nearDist = cameraPrim.GetParameterValue(L"near");
+    double farDist = cameraPrim.GetParameterValue(L"far");
+    param = FabricSplice::constructFloat64RTVal(nearDist);
     inlineCamera.callMethod("", "setNearDistance", 1, &param);
-    param = FabricSplice::constructFloat64RTVal(far);
+    param = FabricSplice::constructFloat64RTVal(farDist);
     inlineCamera.callMethod("", "setFarDistance", 1, &param);
 
     FabricCore::RTVal cameraMat = FabricSplice::constructRTVal("Mat44");
@@ -151,7 +202,7 @@ XSIPLUGINCALLBACK void SpliceRenderPass_Init(CRef & in_ctxt, void ** in_pUserDat
 {
   GraphicSequencerContext ctxt = in_ctxt;
   CGraphicSequencer sequencer = ctxt.GetGraphicSequencer();
-  sequencer.RegisterViewportCallback(L"CPRenderCallback", 0, siPass, siOpenGL20, siAll, CStringArray());
+  sequencer.RegisterViewportCallback(L"SpliceRenderPass", 0, siPass, siOpenGL20, siAll, CStringArray());
 }
 
 XSIPLUGINCALLBACK void SpliceRenderPass_Execute(CRef & in_ctxt, void ** in_pUserData)
@@ -187,15 +238,12 @@ XSIPLUGINCALLBACK void SpliceRenderPass_Execute(CRef & in_ctxt, void ** in_pUser
   // check if we should render this or not
   GraphicSequencerContext ctxt(in_ctxt);
   CGraphicSequencer sequencer = ctxt.GetGraphicSequencer();
-
-  UINT left, top, width, height;
-  sequencer.GetViewportSize(left, top, width, height);
   Camera camera(sequencer.GetCamera());
 
   // draw all gizmos
   try
   {
-    FabricSplice::SceneManagement::drawOpenGL(getDrawContext(width, height, camera));
+    FabricSplice::SceneManagement::drawOpenGL(getDrawContext(camera));
   }
   catch(FabricCore::Exception e)
   {
