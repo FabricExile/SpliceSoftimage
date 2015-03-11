@@ -40,6 +40,7 @@ public:
   static FabricSpliceBaseInterface * getInstanceByObjectID(unsigned int objectID);
 
   XSI::CStatus updateXSIOperator();
+  void forceEvaluate();
   static XSI::CStatus constructXSIParameters(XSI::CustomOperator & op, XSI::Factory & factory);
   static XSI::CValueArray getSpliceParamTypeCombo();
   static XSI::CValueArray getSpliceXSIPortTypeCombo();

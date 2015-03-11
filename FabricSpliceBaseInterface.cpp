@@ -273,6 +273,46 @@ CStatus FabricSpliceBaseInterface::updateXSIOperator()
   return CStatus::OK;
 }
 
+void FabricSpliceBaseInterface::forceEvaluate()
+{
+  CRef ref = Application().GetObjectFromID(_objectID);
+  CustomOperator op(ref);
+  bool alwaysEvaluate = op.GetParameterValue("alwaysevaluate");
+  if(!alwaysEvaluate)
+  {
+    op.PutParameterValue("alwaysevaluate", CValue(true));
+    _spliceGraph.requireEvaluate();
+
+    CRefArray ports = op.GetOutputPorts();
+    for(LONG i=0;i<ports.GetCount();i++)
+    {
+      OutputPort port(ports[i]);
+      CRef target = port.GetTarget();
+      KinematicState kineState(target);
+      Primitive primitive(target);
+      Parameter parameter(target);
+
+      if(kineState.IsValid())
+      {
+        kineState.GetTransform();
+        break;
+      }
+      else if(primitive.IsValid())
+      {
+        primitive.GetGeometry().GetPoints();
+        break;
+      }
+      else if(parameter.IsValid())
+      {
+        parameter.GetValue();
+        break;
+      }
+    }
+    
+    op.PutParameterValue("alwaysevaluate", CValue(false));
+  }
+}
+
 CStatus FabricSpliceBaseInterface::constructXSIParameters(CustomOperator & op, Factory & factory)
 {
   if(_currentInstance == NULL)
@@ -1299,6 +1339,7 @@ CStatus FabricSpliceBaseInterface::addKLOperator(const CString &operatorName, co
   XSISPLICE_CATCH_BEGIN()
 
   _spliceGraph.constructKLOperator(operatorName.GetAsciiString(), operatorCode.GetAsciiString(), operatorEntry.GetAsciiString(), dgNode.GetAsciiString(), portMap);
+  forceEvaluate();
 
   XSISPLICE_CATCH_END_CSTATUS()
   return CStatus::OK;
@@ -1332,6 +1373,7 @@ CStatus FabricSpliceBaseInterface::setKLOperatorCode(const CString &operatorName
   XSISPLICE_CATCH_BEGIN()
 
   _spliceGraph.setKLOperatorSourceCode(operatorName.GetAsciiString(), operatorCode.GetAsciiString(), operatorEntry.GetAsciiString());
+  forceEvaluate();
 
   XSISPLICE_CATCH_END_CSTATUS()
   return CStatus::OK;
@@ -1342,6 +1384,7 @@ CStatus FabricSpliceBaseInterface::setKLOperatorFile(const CString &operatorName
   XSISPLICE_CATCH_BEGIN()
 
   _spliceGraph.setKLOperatorFilePath(operatorName.GetAsciiString(), filename.GetAsciiString(), entry.GetAsciiString());
+  forceEvaluate();
 
   XSISPLICE_CATCH_END_CSTATUS()
   return CStatus::OK;
@@ -1352,6 +1395,7 @@ CStatus FabricSpliceBaseInterface::setKLOperatorEntry(const CString &operatorNam
   XSISPLICE_CATCH_BEGIN()
 
   _spliceGraph.setKLOperatorEntry(operatorName.GetAsciiString(), operatorEntry.GetAsciiString());
+  forceEvaluate();
 
   XSISPLICE_CATCH_END_CSTATUS()
   return CStatus::OK;
@@ -1372,6 +1416,7 @@ CStatus FabricSpliceBaseInterface::removeKLOperator(const CString &operatorName,
   XSISPLICE_CATCH_BEGIN()
 
   _spliceGraph.removeKLOperator(operatorName.GetAsciiString(), dgNode.GetAsciiString());
+  forceEvaluate();
 
   XSISPLICE_CATCH_END_CSTATUS()
   return CStatus::OK;
