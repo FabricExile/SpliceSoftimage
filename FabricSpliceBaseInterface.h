@@ -111,6 +111,7 @@ protected:
     FabricSplice::Port_Mode portMode;
     XSI::CString targets;
     XSI::CLongArray portIndices;
+    LONG outPortElementsProcessed;
   };
 
   std::map<std::string, parameterInfo> _parameters;

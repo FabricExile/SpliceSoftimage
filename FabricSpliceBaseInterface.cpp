@@ -768,15 +768,37 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
   FabricSplice::Logging::AutoTimer localTimer(localTimerName);
 
   bool result = false;
-  FabricCore::RTVal evalContext = _spliceGraph.getEvalContext();
-  evalContext.callMethod("", "_clear", 0, 0);
 
   // If 'AlwaysEvaluate' is on, then we will evaluate even if no changes have occured.
   // this can be usefull in debugging, or when an operator simply must evaluate even if none of its inputs are dirty.
   CustomOperator op(opRef);
   bool alwaysEvaluate = bool(op.GetParameterValue("AlwaysEvaluate"));
   if(alwaysEvaluate)
+  {
     result = true;
+  }
+  else
+  {
+    // for output mat44 array ports, we should skip the transfer if another
+    // element of that array has already performed conversion.
+    // transferOutputPort will reset the counter once all outputs
+    // have been transfered.
+    OutputPort xsiPort(context.GetOutputPort());
+    std::string outPortName = xsiPort.GetGroupName().GetAsciiString();
+
+    std::map<std::string, portInfo>::iterator it = _ports.find(outPortName);
+    if(it != _ports.end())
+    {
+      if(it->second.dataType == "Mat44[]")
+      {
+        if(it->second.outPortElementsProcessed > 0)
+          return false;
+      }
+    }
+  }
+
+  FabricCore::RTVal evalContext = _spliceGraph.getEvalContext();
+  evalContext.callMethod("", "_clear", 0, 0);
 
   // If the splice op has only output ports, then we should force an evaluation.
   // otherwize w must always provide one input param. (simple testing scenarios might not include input params).
@@ -931,7 +953,7 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
         getRTValFromCMatrix4(matrix, rtVal);
 
         FabricCore::RTVal currVal = splicePort.getRTVal();
-        if(!currVal.callMethod("Boolean", "equal", 1, &rtVal).getBoolean()){
+        if(!currVal.callMethod("Boolean", "almostEqual", 1, &rtVal).getBoolean()){
           splicePort.setRTVal(rtVal);
           addDirtyInput(portName, evalContext, -1);
           result = true;
@@ -959,7 +981,7 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
           else
           {
             FabricCore::RTVal currVal = arrayVal.getArrayElement(i);
-            if(!currVal.callMethod("Boolean", "equal", 1, &rtVal).getBoolean()){
+            if(!currVal.callMethod("Boolean", "almostEqual", 1, &rtVal).getBoolean()){
               arrayVal.setArrayElement(i, rtVal);
               addDirtyInput(portName, evalContext, i);
               result = true;
@@ -1185,6 +1207,13 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
       uint32_t arraySize = splicePort.getArrayCount();
       uint32_t portIndex = xsiPort.GetIndex();
       uint32_t arrayIndex = UINT_MAX;
+
+      // increment the counter for the processed elements
+      // only at count 0 we will perform transfer input
+      it->second.outPortElementsProcessed++;
+      if(it->second.outPortElementsProcessed == arraySize)
+        it->second.outPortElementsProcessed = 0;
+
       for(LONG i=0;i<it->second.portIndices.GetCount();i++)
       {
         if(it->second.portIndices[i] == portIndex)
@@ -1517,6 +1546,7 @@ CStatus FabricSpliceBaseInterface::restoreFromPersistenceData(CString file)
       continue;
 
     portInfo info;
+    info.outPortElementsProcessed = 0;
     info.realPortName = portName;
     info.dataType = port.getDataType();
     info.isArray = port.isArray();
