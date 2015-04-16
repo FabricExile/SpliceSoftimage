@@ -467,12 +467,20 @@ SICALLBACK SpliceEditor_PPGEvent( CRef& in_ctxt )
           CString portName = "result";
           if(dataType == "PolygonMesh")
             portName = "mesh0";
+          if(dataType == "FLoat64[]")
+            portName = "FLoat64[]";
+          if(dataType == "Vec3[]")
+            portName = "Vec3[]";
           else if(dataType == "Lines")
             portName = "lines";
           else if(dataType == "Mat44")
             portName = "matrix";
           else if(dataType == "Mat44[]")
             portName = "matrices";
+          else if(dataType == "Xfo")
+            portName = "xfo";
+          else if(dataType == "Xfo[]")
+            portName = "xfos";
           else if(dataType == "Boolean")
             portName = "value";
           else if(dataType == "Integer")
@@ -1248,14 +1256,18 @@ void updateImportSpliceDialogGrids(CustomProperty & prop)
         targetsStr += port.getOption("ICEAttribute").getStringData();
       }
       else if(!(
-        portType == L"Boolean" || 
-        portType == L"Integer" || 
-        portType == L"Scalar" || 
-        portType == L"String" || 
-        portType == L"Mat44" || 
-        portType == L"Mat44[]" || 
+        portType == L"Boolean" ||
+        portType == L"Integer" ||
+        portType == L"Scalar" ||
+        portType == L"String" ||
+        portType == L"Mat44" ||
+        portType == L"Mat44[]" ||
+        portType == L"Xfo" ||
+        portType == L"Xfo[]" ||
         portType == L"PolygonMesh" ||
-        portType == L"Lines") || 
+        portType == L"Float64[]" ||
+        portType == L"Vec3[]" ||
+        portType == L"Lines") ||
         xsiPortType != SoftimagePortType_Port)
         continue;
 

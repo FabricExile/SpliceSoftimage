@@ -416,6 +416,10 @@ CValueArray FabricSpliceBaseInterface::getSpliceXSIPortTypeCombo()
   combo.Add(L"Scalar"); combo.Add(L"Scalar");
   combo.Add(L"String"); combo.Add(L"String");
   combo.Add(L"Mat44"); combo.Add(L"Mat44");
+  combo.Add(L"Xfo"); combo.Add(L"Xfo");
+  combo.Add(L"EnvelopeWeight"); combo.Add(L"Float64[]");
+  combo.Add(L"WeightMap"); combo.Add(L"Float64[]");
+  combo.Add(L"ShapeProperty"); combo.Add(L"Vec3[]");
   combo.Add(L"Lines"); combo.Add(L"Lines");
   combo.Add(L"PolygonMesh"); combo.Add(L"PolygonMesh");
   return combo;
@@ -467,18 +471,22 @@ CStatus FabricSpliceBaseInterface::addXSIParameter(const CString &portName, cons
 CStatus FabricSpliceBaseInterface::addXSIPort(const CRefArray & targets, const CString &portName, const CString &dataType, const FabricSplice::Port_Mode &portMode, const XSI::CString & dgNode, bool validateDataType)
 {
   if(validateDataType &&
-     dataType != "Boolean" && 
-     dataType != "Integer" && 
-     dataType != "Scalar" && 
-     dataType != "String" && 
-     dataType != "Boolean[]" && 
-     dataType != "Integer[]" && 
-     dataType != "Scalar[]" && 
-     dataType != "String[]" && 
-     dataType != "Mat44" && 
-     dataType != "Mat44[]" && 
+     dataType != "Boolean" &&
+     dataType != "Integer" &&
+     dataType != "Scalar" &&
+     dataType != "String" &&
+     dataType != "Boolean[]" &&
+     dataType != "Integer[]" &&
+     dataType != "Scalar[]" &&
+     dataType != "String[]" &&
+     dataType != "Mat44" &&
+     dataType != "Mat44[]" &&
+     dataType != "Xfo" &&
+     dataType != "Xfo[]" &&
      dataType != "PolygonMesh" &&
      dataType != "PolygonMesh[]" &&
+     dataType != "Float64[]" &&
+     dataType != "Vec3[]" &&
      dataType != "Lines" &&
      dataType != "Lines[]")
   {
@@ -944,6 +952,20 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
         }
         splicePort.setRTVal(arrayVal);
       }
+      else if(it->second.dataType == "Float64[]" ||
+         it->second.dataType == "Vec3[]")
+      {
+        CString singleDataType = it->second.dataType.GetSubString(0, it->second.dataType.Length()-2);
+        FabricCore::RTVal arrayVal = splicePort.getRTVal();
+        ClusterProperty clsProp((CRef)context.GetInputValue(it->second.realPortName+portIndexStr));
+        CClusterPropertyElementArray clsPropElem(clsProp.GetElements());
+		//TODO check for the shape properties bad values
+        Application().LogMessage("-------");
+        Application().LogMessage(CString(clsPropElem.GetArray().GetAsText()));
+        Application().LogMessage(CString(clsPropElem.GetArray().GetCount()));
+        Application().LogMessage(CString(clsProp.GetValueSize() *  clsPropElem.GetCount()));
+        splicePort.setArrayData(&clsPropElem.GetArray()[0], sizeof(double) * clsProp.GetValueSize() *  clsPropElem.GetCount());
+      }
       else if(it->second.dataType == "Mat44")
       {
         LONG i = 0;
@@ -990,6 +1012,54 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
         }
         splicePort.setRTVal(arrayVal);
       }
+	  ////////
+      else if(it->second.dataType == "Xfo")
+      {
+        LONG i = 0;
+        KinematicState kine((CRef)context.GetInputValue(it->second.realPortName+CString(i)));
+        MATH::CTransformation transform = kine.GetTransform();
+        FabricCore::RTVal rtVal;
+        getRTValFromCTransformation(transform, rtVal);
+
+        FabricCore::RTVal currVal = splicePort.getRTVal();
+        if(!currVal.callMethod("Boolean", "almostEqual", 1, &rtVal).getBoolean()){
+          splicePort.setRTVal(rtVal);
+          addDirtyInput(portName, evalContext, -1);
+          result = true;
+        }
+      }
+      else if(it->second.dataType == "Xfo[]")
+      {
+        FabricCore::RTVal arrayVal = splicePort.getRTVal();
+        for(int i=0; ; i++)
+        {
+          KinematicState kine((CRef)context.GetInputValue(it->second.realPortName+CString(i)));
+          if(!kine.IsValid())
+            break;
+          MATH::CTransformation transform = kine.GetTransform();
+          FabricCore::RTVal rtVal;
+          getRTValFromCTransformation(transform, rtVal);
+
+
+          if(arrayVal.getArraySize() <= i)
+          {
+            arrayVal.callMethod("", "push", 1, &rtVal);
+            addDirtyInput(portName, evalContext, i);
+            result = true;
+          }
+          else
+          {
+            FabricCore::RTVal currVal = arrayVal.getArrayElement(i);
+            if(!currVal.callMethod("Boolean", "almostEqual", 1, &rtVal).getBoolean()){
+              arrayVal.setArrayElement(i, rtVal);
+              addDirtyInput(portName, evalContext, i);
+              result = true;
+            }
+          }
+        }
+        splicePort.setRTVal(arrayVal);
+      }
+	  ////////
       else if(it->second.dataType == "PolygonMesh")
       {
         Primitive prim;
@@ -1190,6 +1260,21 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
           xsiPort.PutValue(value);
       }
     }
+    else if(it->second.dataType == "Float64[]" ||
+       it->second.dataType == "Vec3[]")
+    {
+      FabricCore::RTVal rtVal = splicePort.getRTVal();
+      
+      ClusterProperty clsProp((CRef)context.GetOutputTarget());
+      CClusterPropertyElementArray clsPropElem(clsProp.GetElements());
+      
+      std::vector<double> spliceValues;
+      spliceValues.resize(clsProp.GetValueSize() * clsPropElem.GetCount());
+      splicePort.getArrayData(&spliceValues[0], sizeof(double) * clsProp.GetValueSize() * clsPropElem.GetCount());
+      CDoubleArray XsiValues;
+      XsiValues.Attach(&spliceValues[0], clsProp.GetValueSize() * clsPropElem.GetCount());
+      clsPropElem.PutArray(XsiValues);
+    }
     else if(it->second.dataType == "Mat44")
     {
       FabricCore::RTVal rtVal = splicePort.getRTVal();
@@ -1234,6 +1319,51 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
         kine.PutTransform(transform);
       }
     }
+	///////////////
+    else if(it->second.dataType == "Xfo")
+    {
+      FabricCore::RTVal rtVal = splicePort.getRTVal();
+      MATH::CTransformation transform;
+      getCTransformationFromRTVal(rtVal, transform);
+
+      KinematicState kine(context.GetOutputTarget());
+      kine.PutTransform(transform);
+    }
+    else if(it->second.dataType == "Xfo[]")
+    {
+      FabricCore::RTVal rtVal = splicePort.getRTVal();
+      uint32_t arraySize = splicePort.getArrayCount();
+      uint32_t portIndex = xsiPort.GetIndex();
+      uint32_t arrayIndex = UINT_MAX;
+
+      // increment the counter for the processed elements
+      // only at count 0 we will perform transfer input
+      it->second.outPortElementsProcessed++;
+      if(it->second.outPortElementsProcessed == arraySize)
+        it->second.outPortElementsProcessed = 0;
+
+      for(LONG i=0;i<it->second.portIndices.GetCount();i++)
+      {
+        if(it->second.portIndices[i] == portIndex)
+        {
+          arrayIndex = i;
+          break;
+        }
+      }
+      if(arrayIndex < arraySize)
+      {
+        // todo: maybe we should be caching this....
+        MATH::CMatrix4 matrix;
+        getCMatrix4FromRTVal(rtVal.getArrayElement(arrayIndex), matrix);
+
+        MATH::CTransformation transform;
+        getCTransformationFromRTVal(rtVal.getArrayElement(arrayIndex), transform);
+
+        KinematicState kine(context.GetOutputTarget());
+        kine.PutTransform(transform);
+      }
+    }
+	/////////////////
     else if(it->second.dataType == "PolygonMesh" || it->second.dataType == "PolygonMesh[]")
     {
       bool isArray = it->second.dataType == "PolygonMesh[]";

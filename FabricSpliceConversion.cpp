@@ -115,6 +115,54 @@ void getCMatrix4FromRTVal(const FabricCore::RTVal & rtVal, MATH::CMatrix4 & valu
   value.SetValue(3, 3, getFloat64FromRTVal(row3.maybeGetMember("t")));
 }
 
+void getRTValFromCTransformation(const MATH::CTransformation & value, FabricCore::RTVal & rtVal)
+{
+  rtVal = FabricSplice::constructRTVal("Xfo");
+  FabricCore::RTVal sc = FabricSplice::constructRTVal("Vec3");
+  FabricCore::RTVal ori = FabricSplice::constructRTVal("Quat");
+  FabricCore::RTVal oriAxis = FabricSplice::constructRTVal("Vec3");
+  FabricCore::RTVal tr = FabricSplice::constructRTVal("Vec3");
+
+  MATH::CQuaternion quat = value.GetRotationQuaternion();
+
+  sc.setMember("x", FabricSplice::constructFloat64RTVal(value.GetSclX()));
+  sc.setMember("y", FabricSplice::constructFloat64RTVal(value.GetSclY()));
+  sc.setMember("z", FabricSplice::constructFloat64RTVal(value.GetSclZ()));
+  rtVal.setMember("sc", sc);
+  oriAxis.setMember("x", FabricSplice::constructFloat64RTVal(quat.GetX()));
+  oriAxis.setMember("y", FabricSplice::constructFloat64RTVal(quat.GetY()));
+  oriAxis.setMember("z", FabricSplice::constructFloat64RTVal(quat.GetZ()));
+  ori.setMember("v", oriAxis);
+  ori.setMember("w", FabricSplice::constructFloat64RTVal(quat.GetW()));
+  rtVal.setMember("ori", ori);
+  tr.setMember("x", FabricSplice::constructFloat64RTVal(value.GetPosX()));
+  tr.setMember("y", FabricSplice::constructFloat64RTVal(value.GetPosY()));
+  tr.setMember("z", FabricSplice::constructFloat64RTVal(value.GetPosZ()));
+  rtVal.setMember("tr", tr);
+
+}
+
+void getCTransformationFromRTVal(const FabricCore::RTVal & rtVal, MATH::CTransformation & value)
+{
+  FabricCore::RTVal sc = rtVal.maybeGetMember("sc");
+  FabricCore::RTVal ori = rtVal.maybeGetMember("ori");
+  FabricCore::RTVal oriAxis = ori.maybeGetMember("v");
+  FabricCore::RTVal tr = rtVal.maybeGetMember("tr");
+
+  MATH::CQuaternion quat(  getFloat64FromRTVal(ori.maybeGetMember("w")),
+              getFloat64FromRTVal(oriAxis.maybeGetMember("x")),
+              getFloat64FromRTVal(oriAxis.maybeGetMember("y")),
+              getFloat64FromRTVal(oriAxis.maybeGetMember("z")));
+
+  value.SetSclX(getFloat64FromRTVal(sc.maybeGetMember("x")));
+  value.SetSclY(getFloat64FromRTVal(sc.maybeGetMember("y")));
+  value.SetSclZ(getFloat64FromRTVal(sc.maybeGetMember("z")));
+  value.SetRotationFromQuaternion(quat);
+  value.SetPosX(getFloat64FromRTVal(tr.maybeGetMember("x")));
+  value.SetPosY(getFloat64FromRTVal(tr.maybeGetMember("y")));
+  value.SetPosZ(getFloat64FromRTVal(tr.maybeGetMember("z")));
+}
+
 CRefArray getCRefArrayFromCString(const CString & targets)
 {
   if(targets.IsEmpty())
@@ -164,13 +212,25 @@ CString getSpliceDataTypeFromRefArray(const CRefArray &refs, const CString & por
 
 CString getSpliceDataTypeFromRef(const CRef &ref, const CString & portType)
 {
+//TODO: add a custom picking tool that will give the ability to chose the data type depending of the context
   if(KinematicState(ref).IsValid())
     return "Mat44";
+  //return portType;
   if(Primitive(ref).GetType().IsEqualNoCase("polymsh"))
     return "PolygonMesh";
   if(Primitive(ref).GetType().IsEqualNoCase("crvlist"))
     return "Lines";
-  
+  if(ClusterProperty(ref).GetType().IsEqualNoCase("envweights"))
+    return "Float64[]";
+  if(ClusterProperty(ref).GetType().IsEqualNoCase("wtmap"))
+    return "Float64[]";
+  if(ClusterProperty(ref).GetType().IsEqualNoCase("vertexcolor"))
+    return "Float64[]";
+  if(ClusterProperty(ref).GetType().IsEqualNoCase("uvspace"))
+    return "Float64[]";
+  if(ClusterProperty(ref).GetType().IsEqualNoCase("clskey"))
+    return "Vec3[]";
+
   Parameter param(ref);
   if(param.IsValid())
   {
@@ -672,6 +732,22 @@ void convertInputPolygonMesh(PolygonMesh mesh, FabricCore::RTVal & rtVal)
     rtVal.callMethod("", "setVertexColorsFromExternalArray", 2, &args[0]);
     values.Clear();
   }
+
+  CRefArray envelopeWeightsRefs = acc.GetEnvelopeWeights();
+  if(envelopeWeightsRefs.GetCount() > 0)
+  {
+    ClusterProperty prop(envelopeWeightsRefs[0]);
+    LONG components = EnvelopeWeight(envelopeWeightsRefs[0]).GetDeformers().GetCount();
+    CFloatArray values;
+    prop.GetValues(values);
+  
+    std::vector<FabricCore::RTVal> args(2);
+    args[0] = FabricSplice::constructExternalArrayRTVal("Float32", values.GetCount(), &values[0]);
+    args[1] = FabricSplice::constructUInt32RTVal(components); // components
+    rtVal.callMethod("", "setEnvelopeWeightsFromExternalArray", 2, &args[0]);
+    values.Clear();
+
+  }
 }
 
 void convertInputLines(NurbsCurveList curveList, FabricCore::RTVal & rtVal)
@@ -820,6 +896,36 @@ void convertOutputPolygonMesh(PolygonMesh mesh, FabricCore::RTVal & rtVal)
         };
         rtVal.callMethod("", "getVertexColorsAsExternalArray", 2, &args[0]);
         prop.SetValues(&values[0], values.GetCount() / 4);
+        values.Clear();
+      }
+      else{
+        // [phtaylor] I'm not sure how the user is supposed to fix this problem. Writing to clusters while modifying topology isn't supported by Softimage.
+        // The correct solution is to install an operator on the cluster property. 
+        xsiLogFunc("Unable to write Vertex Colors to geometry because the cluster property size does not match.");
+      }
+    }
+    else{
+      xsiLogFunc("Cannot write Vertex Colors to geometry that does not aalready have Vertex Colors assigned.");
+    }
+  }
+
+  if(rtVal.callMethod("Boolean", "hasSkinningData", 0, 0).getBoolean())
+  {
+    CRefArray envelopeWeightsRefs = acc.GetEnvelopeWeights();
+    if(envelopeWeightsRefs.GetCount() > 0)
+    {
+      ClusterProperty prop(envelopeWeightsRefs[0]);
+      LONG components = EnvelopeWeight(envelopeWeightsRefs[0]).GetDeformers().GetCount();
+      CFloatArray values(nbPoints * components);
+  
+      if(values.GetCount() > 0 && values.GetCount() == prop.GetElements().GetCount() * components)
+      {
+        FabricCore::RTVal args[2] = {
+          FabricSplice::constructExternalArrayRTVal("Float32", values.GetCount(), &values[0]),
+          FabricSplice::constructUInt32RTVal(components)
+		};
+        rtVal.callMethod("", "getEnvelopeWeightsAsExternalArray", 2, &args[0]);
+        prop.SetValues(&values[0], values.GetCount() / components);
         values.Clear();
       }
       else{
