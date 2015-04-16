@@ -10,9 +10,6 @@
 #include <xsi_actionsource.h>
 #include <xsi_iceattribute.h>
 #include <xsi_geometry.h>
-#include <xsi_polygonmesh.h>
-#include <xsi_nurbscurve.h>
-#include <xsi_nurbscurvelist.h>
 #include <string>
 #include <vector>
 
@@ -37,12 +34,6 @@ XSI::CString getSpliceDataTypeFromRef(const XSI::CRef &ref, const XSI::CString &
 XSI::CString getSpliceDataTypeFromICEAttribute(const XSI::CRefArray &refs, const XSI::CString & iceAttrName, XSI::CString & errorMessage);
 void convertInputICEAttribute(FabricSplice::DGPort & port, XSI::CString dataType, XSI::ICEAttribute & attr, XSI::Geometry & geo);
 XSI::X3DObject getX3DObjectFromRef(const XSI::CRef &ref);
-
-void convertInputPolygonMesh(XSI::PolygonMesh mesh, FabricCore::RTVal & rtVal);
-void convertInputLines(XSI::NurbsCurveList curveList, FabricCore::RTVal & rtVal);
-
-void convertOutputPolygonMesh(XSI::PolygonMesh mesh, FabricCore::RTVal & rtVal);
-void convertOutputLines(XSI::NurbsCurveList curveList, FabricCore::RTVal & rtVal);
 
 XSI::CRefArray PickObjectArray(XSI::CString firstTitle, XSI::CString nextTitle, XSI::CString filter = L"global", ULONG maxCount = 0);
 

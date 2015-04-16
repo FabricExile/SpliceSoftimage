@@ -20,7 +20,7 @@
 #define XSISPLICE_CATCH_BEGIN() try{
 #define XSISPLICE_CATCH_END() } catch(FabricSplice::Exception e){}
 #define XSISPLICE_CATCH_END_VOID() } catch(FabricSplice::Exception e){ return; }
-#define XSISPLICE_CATCH_END_CSTATUS() } catch(FabricSplice::Exception e){ return CStatus::Fail; }
+#define XSISPLICE_CATCH_END_CSTATUS() } catch(FabricSplice::Exception e){ return CStatus::Unexpected; }
 
 class FabricSpliceBaseInterface {
 
@@ -52,9 +52,11 @@ public:
   void setXSIPortTargets(const XSI::CString &portName, const XSI::CString &targets);
   XSI::CString getParameterString();
 
-  bool transferInputPorts(XSI::CRef opRef, XSI::OperatorContext & context);
+  XSI::CStatus transferInputParameters(XSI::OperatorContext & context);
+  XSI::CStatus transferInputPorts(XSI::OperatorContext & context);
   XSI::CStatus transferOutputPort(XSI::OperatorContext & context);
   XSI::CStatus evaluate();
+  bool requiresEvaluate(XSI::OperatorContext & context);
 
   FabricSplice::DGGraph getSpliceGraph();
 
@@ -108,14 +110,6 @@ protected:
   std::map<std::string, portInfo> _ports;
   unsigned int _nbOutputPorts;
   std::vector<std::string> _processedPorts;
-
-  std::vector< std::vector<XSI::CValue> > valuesCache;
-  std::vector<LONG> evalIDsCache;
-
-  void addDirtyInput(std::string portName, FabricCore::RTVal evalContext, int index);
-  bool checkIfValueChangedAndDirtyInput(XSI::CValue value, std::vector<XSI::CValue> &cachedValues, bool alwaysEvaluate, std::string portName, FabricCore::RTVal evalContext, int index);
-  bool checkEvalIDCache(LONG evalID, int &evalIDCacheIndex, bool alwaysEvaluate);
-
 };
 
 enum SoftimagePortType {

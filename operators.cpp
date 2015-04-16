@@ -61,7 +61,7 @@ XSIPLUGINCALLBACK CStatus SpliceOp_Define(CRef & in_ctxt)
 
   FabricSpliceBaseInterface::constructXSIParameters(oCustomOperator, oFactory);
 
-  oCustomOperator.PutAlwaysEvaluate(false);
+  oCustomOperator.PutAlwaysEvaluate(true);
   oCustomOperator.PutDebug(0);
 
   return CStatus::OK;
@@ -94,16 +94,12 @@ XSIPLUGINCALLBACK CStatus SpliceOp_Update(CRef & in_ctxt)
   XSISPLICE_CATCH_BEGIN()
 
   FabricSpliceBaseInterface * interf = p->getInterf();
-  CRef opRef = Application().GetObjectFromID(p->getObjectID());
   if(interf != NULL)
   {
-    // When transfering the input values, we check for changes and only evaluate if
-    // one of the inputs has actually changed. The Softimage application will evaluate
-    // and operator multiple times if connected to multiple outputs(once for each connected outport).
-    // This requires that we manage the clean/dirty state of the operator else for complex operators
-    // driving many values in Softimage, the whole system slows to a crawl.
-    if(interf->transferInputPorts(opRef, ctxt))
+    if(interf->requiresEvaluate(ctxt))
     {
+      interf->transferInputParameters(ctxt);
+      interf->transferInputPorts(ctxt);
       interf->evaluate();
     }
     interf->transferOutputPort(ctxt);

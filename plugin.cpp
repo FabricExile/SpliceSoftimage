@@ -74,7 +74,7 @@ CStatus xsiErrorOccured()
 {
   CStatus result = CStatus::OK;;
   if(gErrorOccured)
-    result = CStatus::Fail;
+    result = CStatus::Unexpected;
   gErrorOccured = false;
   return result;
 }
@@ -87,13 +87,7 @@ void xsiKLReportFunc(const char * message, unsigned int length)
 void xsiCompilerErrorFunc(unsigned int row, unsigned int col, const char * file, const char * level, const char * desc)
 {
   CString line((LONG)row);
-  if(CString(level) == CString("error"))
-    Application().LogMessage("[KL Compiler "+CString(level)+"]: line "+line+", op '"+CString(file)+"': "+CString(desc), siErrorMsg);
-  else if(CString(level) == CString("warning"))
-    Application().LogMessage("[KL Compiler "+CString(level)+"]: line "+line+", op '"+CString(file)+"': "+CString(desc), siWarningMsg);
-  else
-    Application().LogMessage("[KL Compiler "+CString(level)+"]: line "+line+", op '"+CString(file)+"': "+CString(desc), siInfoMsg);
-
+  Application().LogMessage("[KL Compiler "+CString(level)+"]: line "+line+", op '"+CString(file)+"': "+CString(desc));
   CustomProperty klEditor = editorPropGet();
   if(klEditor.IsValid())
   {

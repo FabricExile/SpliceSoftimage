@@ -305,11 +305,11 @@ public:
       }
     }
     catch(FabricCore::Exception e)    {
-      xsiLogErrorFunc(e.getDesc_cstr());
+      xsiLogFunc(e.getDesc_cstr());
       return CStatus::OK;
     }
     catch(FabricSplice::Exception e){
-      xsiLogErrorFunc(e.what());
+      xsiLogFunc(e.what());
       return CStatus::OK;
     }
 
@@ -515,11 +515,11 @@ public:
       return result;
     }
     catch(FabricCore::Exception e)    {
-      xsiLogErrorFunc(e.getDesc_cstr());
+      xsiLogFunc(e.getDesc_cstr());
       return false;
     }
     catch(FabricSplice::Exception e){
-      xsiLogErrorFunc(e.what());
+      xsiLogFunc(e.what());
       return false;
     }
   }
