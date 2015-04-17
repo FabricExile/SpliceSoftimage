@@ -45,6 +45,7 @@ if os.path.exists(spliceApiDir.abspath):
       'STAGE_DIR': spliceEnv.Dir('.build').Dir('SpliceAPI').Dir('.stage'),
       'BOOST_DIR': os.environ['BOOST_DIR']
     },
+    duplicate=0,
     variant_dir = spliceEnv.Dir('.build').Dir('SpliceAPI')
   )
   
@@ -70,6 +71,7 @@ else:
     'SOFTIMAGE_LIB_DIR': os.environ['SOFTIMAGE_LIB_DIR'],
     'SOFTIMAGE_VERSION': os.environ['SOFTIMAGE_VERSION']
   },
+  duplicate=0,
   variant_dir = spliceEnv.Dir('.build').Dir(os.environ['SOFTIMAGE_VERSION'])
 )
 
