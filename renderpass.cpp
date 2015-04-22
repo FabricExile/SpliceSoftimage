@@ -57,17 +57,19 @@ void destroyDrawContext()
   sDrawContext.invalidate();
 }
 
-FabricCore::RTVal & getDrawContext(int viewportWidth, int viewportHeight, XSI::Camera & camera)
+FabricCore::RTVal & getDrawContext(XSI::Camera & camera)
 {
   FabricSplice::Logging::AutoTimer("getDrawContext");
 
-  // A bug in the CGraphicSequencer means that the viewport dimensions returned by 
-  // 'GetViewportSize' are corrupt in certain scenarios. We no longer rely on these values. 
+  // A bug in the CGraphicSequencer means that the viewport dimensions returned by
+  // 'GetViewportSize' are corrupt in certain scenarios. We no longer rely on these values.
   // OpenGL can always give us the correct viewport values.
+
   int viewport[4];
   glGetIntegerv(GL_VIEWPORT, viewport);
   int viewportWidth = viewport[2];
   int viewportHeight = viewport[3];
+  Application().LogMessage("viewportSize" +CString(viewportWidth)+"," +CString(viewportHeight));
 
   if(!sDrawContext.isValid())
     sDrawContext = FabricSplice::constructObjectRTVal("DrawContext");
@@ -97,9 +99,9 @@ FabricCore::RTVal & getDrawContext(int viewportWidth, int viewportHeight, XSI::C
     inlineCamera.callMethod("", "setOrthographic", 1, &param);
 
     double xsiViewportAspect = double(viewportWidth) / double(viewportHeight);
-    
+
     if(projType == 0)
-    {  
+    {
       // Orthographic projection
       double orthoheight = cameraPrim.GetParameterValue(L"orthoheight");
       param = FabricSplice::constructFloat64RTVal(orthoheight);
@@ -116,8 +118,7 @@ FabricCore::RTVal & getDrawContext(int viewportWidth, int viewportHeight, XSI::C
       // If the camera FOV is vertical and the viewport is wide then the camera FOV is equal to the rendering FOVY and we can use it directly.
 
       double cameraAspect = cameraPrim.GetParameterValue(L"aspect");
-      double fovParam =
-        MATH::DegreesToRadians( cameraPrim.GetParameterValue(L"fov") );
+      double fovParam = MATH::DegreesToRadians( cameraPrim.GetParameterValue(L"fov") );
       LONG fovTypeParam = cameraPrim.GetParameterValue(L"fovtype");
 
       // char buf[1024];
@@ -155,13 +156,38 @@ FabricCore::RTVal & getDrawContext(int viewportWidth, int viewportHeight, XSI::C
       inlineCamera.callMethod("", "setFovY", 1, &param);
     }
 
-
     double nearDist = cameraPrim.GetParameterValue(L"near");
     double farDist = cameraPrim.GetParameterValue(L"far");
     param = FabricSplice::constructFloat64RTVal(nearDist);
     inlineCamera.callMethod("", "setNearDistance", 1, &param);
     param = FabricSplice::constructFloat64RTVal(farDist);
     inlineCamera.callMethod("", "setFarDistance", 1, &param);
+
+    float m[16];
+    glGetFloatv(GL_PROJECTION_MATRIX, m);
+    param = FabricSplice::constructRTVal("Mat44");
+    FabricCore::RTVal row = FabricSplice::constructRTVal("Vec4");
+    row.setMember("x", FabricSplice::constructFloat64RTVal(m[0]));
+    row.setMember("y", FabricSplice::constructFloat64RTVal(m[4]));
+    row.setMember("z", FabricSplice::constructFloat64RTVal(m[8]));
+    row.setMember("t", FabricSplice::constructFloat64RTVal(m[12]));
+    param.setMember("row0", row);
+    row.setMember("x", FabricSplice::constructFloat64RTVal(m[1]));
+    row.setMember("y", FabricSplice::constructFloat64RTVal(m[5]));
+    row.setMember("z", FabricSplice::constructFloat64RTVal(m[9]));
+    row.setMember("t", FabricSplice::constructFloat64RTVal(m[13]));
+    param.setMember("row1", row);
+    row.setMember("x", FabricSplice::constructFloat64RTVal(m[2]));
+    row.setMember("y", FabricSplice::constructFloat64RTVal(m[6]));
+    row.setMember("z", FabricSplice::constructFloat64RTVal(m[10]));
+    row.setMember("t", FabricSplice::constructFloat64RTVal(m[14]));
+    param.setMember("row2", row);
+    row.setMember("x", FabricSplice::constructFloat64RTVal(m[3]));
+    row.setMember("y", FabricSplice::constructFloat64RTVal(m[7]));
+    row.setMember("z", FabricSplice::constructFloat64RTVal(m[11]));
+    row.setMember("t", FabricSplice::constructFloat64RTVal(m[15]));
+    param.setMember("row3", row);
+    inlineCamera.callMethod("", "setProjection", 1, &param);
 
     FabricCore::RTVal cameraMat = FabricSplice::constructRTVal("Mat44");
     FabricCore::RTVal cameraMatData = cameraMat.callMethod("Data", "data", 0, 0);
@@ -234,19 +260,16 @@ XSIPLUGINCALLBACK void SpliceRenderPass_Execute(CRef & in_ctxt, void ** in_pUser
   }
 
   FabricSplice::Logging::AutoTimer("SpliceRenderPass_Execute");
-  
+
   // check if we should render this or not
   GraphicSequencerContext ctxt(in_ctxt);
   CGraphicSequencer sequencer = ctxt.GetGraphicSequencer();
-
-  UINT left, top, width, height;
-  sequencer.GetViewportSize(left, top, width, height);
   Camera camera(sequencer.GetCamera());
 
   // draw all gizmos
   try
   {
-    FabricSplice::SceneManagement::drawOpenGL(getDrawContext(width, height, camera));
+    FabricSplice::SceneManagement::drawOpenGL(getDrawContext(camera));
   }
   catch(FabricCore::Exception e)
   {
