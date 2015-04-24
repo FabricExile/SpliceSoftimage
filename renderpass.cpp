@@ -69,7 +69,6 @@ FabricCore::RTVal & getDrawContext(XSI::Camera & camera)
   glGetIntegerv(GL_VIEWPORT, viewport);
   int viewportWidth = viewport[2];
   int viewportHeight = viewport[3];
-  Application().LogMessage("viewportSize" +CString(viewportWidth)+"," +CString(viewportHeight));
 
   if(!sDrawContext.isValid())
     sDrawContext = FabricSplice::constructObjectRTVal("DrawContext");
@@ -107,7 +106,7 @@ FabricCore::RTVal & getDrawContext(XSI::Camera & camera)
       param = FabricSplice::constructFloat64RTVal(orthoheight);
       inlineCamera.callMethod("", "setOrthographicFrustumHeight", 1, &param);
     }
-    else
+    /*else
     {
       // Perspective projection.
       //
@@ -154,7 +153,7 @@ FabricCore::RTVal & getDrawContext(XSI::Camera & camera)
 
       param = FabricSplice::constructFloat64RTVal(fovY);
       inlineCamera.callMethod("", "setFovY", 1, &param);
-    }
+    }*/
 
     double nearDist = cameraPrim.GetParameterValue(L"near");
     double farDist = cameraPrim.GetParameterValue(L"far");
@@ -165,29 +164,29 @@ FabricCore::RTVal & getDrawContext(XSI::Camera & camera)
 
     float m[16];
     glGetFloatv(GL_PROJECTION_MATRIX, m);
-    param = FabricSplice::constructRTVal("Mat44");
+    FabricCore::RTVal projectionMatrix = FabricSplice::constructRTVal("Mat44");
     FabricCore::RTVal row = FabricSplice::constructRTVal("Vec4");
     row.setMember("x", FabricSplice::constructFloat64RTVal(m[0]));
     row.setMember("y", FabricSplice::constructFloat64RTVal(m[4]));
     row.setMember("z", FabricSplice::constructFloat64RTVal(m[8]));
     row.setMember("t", FabricSplice::constructFloat64RTVal(m[12]));
-    param.setMember("row0", row);
+    projectionMatrix.setMember("row0", row);
     row.setMember("x", FabricSplice::constructFloat64RTVal(m[1]));
     row.setMember("y", FabricSplice::constructFloat64RTVal(m[5]));
     row.setMember("z", FabricSplice::constructFloat64RTVal(m[9]));
     row.setMember("t", FabricSplice::constructFloat64RTVal(m[13]));
-    param.setMember("row1", row);
+    projectionMatrix.setMember("row1", row);
     row.setMember("x", FabricSplice::constructFloat64RTVal(m[2]));
     row.setMember("y", FabricSplice::constructFloat64RTVal(m[6]));
     row.setMember("z", FabricSplice::constructFloat64RTVal(m[10]));
     row.setMember("t", FabricSplice::constructFloat64RTVal(m[14]));
-    param.setMember("row2", row);
+    projectionMatrix.setMember("row2", row);
     row.setMember("x", FabricSplice::constructFloat64RTVal(m[3]));
     row.setMember("y", FabricSplice::constructFloat64RTVal(m[7]));
     row.setMember("z", FabricSplice::constructFloat64RTVal(m[11]));
     row.setMember("t", FabricSplice::constructFloat64RTVal(m[15]));
-    param.setMember("row3", row);
-    inlineCamera.callMethod("", "setProjection", 1, &param);
+    projectionMatrix.setMember("row3", row);
+    inlineCamera.callMethod("", "setProjection", 1, &projectionMatrix);
 
     FabricCore::RTVal cameraMat = FabricSplice::constructRTVal("Mat44");
     FabricCore::RTVal cameraMatData = cameraMat.callMethod("Data", "data", 0, 0);
