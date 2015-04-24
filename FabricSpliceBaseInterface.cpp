@@ -143,10 +143,10 @@ CStatus FabricSpliceBaseInterface::updateXSIOperator()
     }
     for(LONG i=0;i<targetRefs.GetCount();i++)
     {
-      // for IO ports, softimage changes the order of the 
+      // for IO ports, softimage changes the order of the
       // ports and the port indices.
       // since we need the port indices for figuring out the
-      // output array index for array ports, 
+      // output array index for array ports,
       // we'll have to rebuild all of it. the port layout
       // changes are as follows:
       //
@@ -249,7 +249,7 @@ CStatus FabricSpliceBaseInterface::updateXSIOperator()
       }
       else if(oldExpression.IsValid())
       {
-        // todo: expression copying doesn't work... 
+        // todo: expression copying doesn't work...
         // CString definition = oldExpression.GetParameterValue(L"definition");
         // Expression expression = param.AddExpression(definition);
         // if(expression.IsValid())
@@ -263,7 +263,7 @@ CStatus FabricSpliceBaseInterface::updateXSIOperator()
     CValue returnVal;
     CValueArray args(1);
     args[0] = oldRef.GetAsText();
-    Application().ExecuteCommand("DeleteObj", args, returnVal);    
+    Application().ExecuteCommand("DeleteObj", args, returnVal);
   }
 
   op = CustomOperator();
@@ -308,7 +308,7 @@ void FabricSpliceBaseInterface::forceEvaluate()
         break;
       }
     }
-    
+
     op.PutParameterValue("alwaysevaluate", CValue(false));
   }
 }
@@ -330,13 +330,13 @@ CStatus FabricSpliceBaseInterface::constructXSIParameters(CustomOperator & op, F
 
     float uiMin = port.getScalarOption("uiMin");
     float uiMax = port.getScalarOption("uiMax");
-    if(uiMin < uiMax) 
+    if(uiMin < uiMax)
     {
       minValue = uiMin;
       maxValue = uiMax;
       float uiSoftMin = port.getScalarOption("uiSoftMin");
       float uiSoftMax = port.getScalarOption("uiSoftMax");
-      if(uiSoftMin < uiSoftMax) 
+      if(uiSoftMin < uiSoftMax)
       {
         minSoftValue = uiSoftMin;
         maxSoftValue = uiSoftMax;
@@ -735,7 +735,7 @@ void FabricSpliceBaseInterface::addDirtyInput(std::string portName, FabricCore::
     evalContext.callMethod("", "_addDirtyInput", 1, &input);
   }
   else{
-    FabricCore::RTVal args[2] = { 
+    FabricCore::RTVal args[2] = {
       FabricSplice::constructStringRTVal(portName.c_str()),
       FabricSplice::constructSInt32RTVal(index)
     };
@@ -819,12 +819,12 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
   bool alwaysConvertMeshes = op.GetParameterValue("alwaysConvertMeshes");
 
   // Simple values are cached in the CValues cache member. we don't know how many cache values we will require
-  // because this depends on the port type. We simply grow the array as we need it, and never shrink it. Every 
-  // time we store a cache value, we should increment this value. 
+  // because this depends on the port type. We simply grow the array as we need it, and never shrink it. Every
+  // time we store a cache value, we should increment this value.
   int valueCacheIndex = 0;
-  // Complex data such as geometries provides an 'EvaluatoinID' which is similar to the version number we have in 
-  // KL Geometry objects. We can simply cache the evaluation id and compare the current value iwth cached values. 
-  // We als don't know how many evaluation ids we will need, so we simply grow the array as needed. 
+  // Complex data such as geometries provides an 'EvaluatoinID' which is similar to the version number we have in
+  // KL Geometry objects. We can simply cache the evaluation id and compare the current value iwth cached values.
+  // We als don't know how many evaluation ids we will need, so we simply grow the array as needed.
   int evalIDCacheIndex = 0;
   {
     FabricSplice::Logging::AutoTimer globalTimer("XSI::transferInputParameters");
@@ -834,7 +834,7 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
     if(valuesCache.size() < _parameters.size())
       valuesCache.resize(_parameters.size());
 
-    // First transfer all the basic parameters. 
+    // First transfer all the basic parameters.
     for(std::map<std::string, parameterInfo>::iterator it = _parameters.begin(); it != _parameters.end(); it++)
     {
       std::string portName = it->first;
@@ -879,7 +879,7 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
       if(iceAttrName.isString())
       {
         Primitive prim((CRef)context.GetInputValue(it->second.realPortName+CString(CValue(CValue(0)))));
-        
+
         // Now check if the input geometry has changed scince our previous evaluation.
         if(!alwaysConvertMeshes)
         {
@@ -887,7 +887,7 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
           if(checkEvalIDCache( evalID, evalIDCacheIndex, alwaysEvaluate))
             continue;
         }
-        
+
         Geometry xsiGeo = prim.GetGeometry();
         CString iceAttrStr = iceAttrName.getStringData();
         ICEAttribute iceAttr = xsiGeo.GetICEAttributeFromName(iceAttrStr);
@@ -897,9 +897,9 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
           result = true;
         }
       }
-      else if(it->second.dataType == "Boolean" || 
-         it->second.dataType == "Integer" || 
-         it->second.dataType == "Scalar" || 
+      else if(it->second.dataType == "Boolean" ||
+         it->second.dataType == "Integer" ||
+         it->second.dataType == "Scalar" ||
          it->second.dataType == "String")
       {
         CValue value = context.GetInputValue(portName.c_str()+CString(CValue(0)));
@@ -914,9 +914,9 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
         }
         valueCacheIndex++;
       }
-      else if(it->second.dataType == "Boolean[]" || 
-         it->second.dataType == "Integer[]" || 
-         it->second.dataType == "Scalar[]" || 
+      else if(it->second.dataType == "Boolean[]" ||
+         it->second.dataType == "Integer[]" ||
+         it->second.dataType == "Scalar[]" ||
          it->second.dataType == "String[]")
       {
         if(valuesCache.size() <= valueCacheIndex)
@@ -957,9 +957,18 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
       {
         CString singleDataType = it->second.dataType.GetSubString(0, it->second.dataType.Length()-2);
         FabricCore::RTVal arrayVal = splicePort.getRTVal();
-        ClusterProperty clsProp((CRef)context.GetInputValue(it->second.realPortName+portIndexStr));
+        ClusterProperty clsProp((CRef)context.GetInputValue(portName.c_str()+CString(CValue(0))));
+        if(!clsProp.IsValid())
+          continue;
+        if(!alwaysConvertMeshes)
+        {
+          LONG evalID = ProjectItem(clsProp).GetEvaluationID();
+          if(checkEvalIDCache( evalID, evalIDCacheIndex, alwaysEvaluate))
+            continue;
+        }
+
         CClusterPropertyElementArray clsPropElem(clsProp.GetElements());
-		//TODO check for the shape properties bad values
+		    //TODO check for the blendshape properties bad values
         Application().LogMessage("-------");
         Application().LogMessage(CString(clsPropElem.GetArray().GetAsText()));
         Application().LogMessage(CString(clsPropElem.GetArray().GetCount()));
@@ -1077,7 +1086,7 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
           if(checkEvalIDCache( evalID, evalIDCacheIndex, alwaysEvaluate))
             continue;
         }
-        
+
         PolygonMesh mesh = PolygonMesh(prim.GetGeometry().GetRef());
 
         FabricCore::RTVal rtVal = splicePort.getRTVal();
@@ -1226,7 +1235,7 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
        it->second.dataType == "Integer" ||
        it->second.dataType == "Scalar" ||
        it->second.dataType == "String" ||
-       it->second.dataType == "Color" || 
+       it->second.dataType == "Color" ||
        it->second.dataType == "Vec3")
     {
       CValue value;
@@ -1264,10 +1273,10 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
        it->second.dataType == "Vec3[]")
     {
       FabricCore::RTVal rtVal = splicePort.getRTVal();
-      
+
       ClusterProperty clsProp((CRef)context.GetOutputTarget());
       CClusterPropertyElementArray clsPropElem(clsProp.GetElements());
-      
+
       std::vector<double> spliceValues;
       spliceValues.resize(clsProp.GetValueSize() * clsPropElem.GetCount());
       splicePort.getArrayData(&spliceValues[0], sizeof(double) * clsProp.GetValueSize() * clsPropElem.GetCount());
@@ -1788,7 +1797,7 @@ CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Va
       portType = (SoftimagePortType)portTypeFlag.getSInt32();
 
     CString dataType = port.getDataType();
-    if((dataType.IsEqualNoCase(L"Boolean") || 
+    if((dataType.IsEqualNoCase(L"Boolean") ||
       dataType.IsEqualNoCase(L"Integer") ||
       dataType.IsEqualNoCase(L"Scalar") ||
       dataType.IsEqualNoCase(L"String")) &&
@@ -1807,9 +1816,9 @@ CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Va
         info.defaultValue = CValue(CString(port.getDefault().getStringData()));
       _parameters.insert(std::pair<std::string, parameterInfo>(portName.GetAsciiString(), info));
     }
-    else if(dataType.IsEqualNoCase(L"Mat44") || 
+    else if(dataType.IsEqualNoCase(L"Mat44") ||
       dataType.IsEqualNoCase(L"PolygonMesh") ||
-      port.getOption("ICEAttribute").isString() || 
+      port.getOption("ICEAttribute").isString() ||
       (!isSoftimageFile || portType == SoftimagePortType_Port || portType == SoftimagePortType_ICE))
     {
       portInfo info;
@@ -1846,11 +1855,11 @@ CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Va
       portType = (SoftimagePortType)portTypeFlag.getSInt32();
 
     if(((
-      dataType.IsEqualNoCase(L"Boolean") || 
-      dataType.IsEqualNoCase(L"Integer") || 
-      dataType.IsEqualNoCase(L"Scalar") || 
-      dataType.IsEqualNoCase(L"String") || 
-      dataType.IsEqualNoCase(L"Mat44") || 
+      dataType.IsEqualNoCase(L"Boolean") ||
+      dataType.IsEqualNoCase(L"Integer") ||
+      dataType.IsEqualNoCase(L"Scalar") ||
+      dataType.IsEqualNoCase(L"String") ||
+      dataType.IsEqualNoCase(L"Mat44") ||
       dataType.IsEqualNoCase(L"PolygonMesh"))
       && (!isSoftimageFile || portType == SoftimagePortType_Port)) || isICEAttribute)
     {
@@ -1877,7 +1886,7 @@ CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Va
           filter = L"geometry";
 
         targetRefs = PickObjectArray(
-          L"Pick new target for "+portName, L"Pick next target for "+portName, 
+          L"Pick new target for "+portName, L"Pick next target for "+portName,
           filter, (!info.isArray || isICEAttribute) ? 1 : 0);
 
         if(isICEAttribute)
@@ -1894,9 +1903,9 @@ CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Va
       {
         if(targetRefs.GetCount() == 0)
         {
-          if(dataType.IsEqualNoCase(L"Boolean") || 
-          dataType.IsEqualNoCase(L"Integer") || 
-          dataType.IsEqualNoCase(L"Scalar") || 
+          if(dataType.IsEqualNoCase(L"Boolean") ||
+          dataType.IsEqualNoCase(L"Integer") ||
+          dataType.IsEqualNoCase(L"Scalar") ||
           dataType.IsEqualNoCase(L"String")) {
             continue;
           }
@@ -1953,7 +1962,7 @@ CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Va
 
   if(!allConnected)
     return CStatus::Unexpected;
-    
+
   if(!updateXSIOperator().Succeeded())
     return CStatus::Unexpected;
   else if(Application().IsInteractive() && !hideUI)
@@ -2250,7 +2259,7 @@ CStatus FabricSpliceBaseInterface::cleanupForImport(Model & model)
     CRef propRef;
     propRef.Set(x3d.GetFullName()+".SpliceInfo");
     if(propRef.IsValid())
-      toDelete.Add(propRef);        
+      toDelete.Add(propRef);
 
     CRefArray children = x3d.GetChildren();
     for(ULONG j=0;j<children.GetCount();j++)

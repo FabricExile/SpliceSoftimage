@@ -29,7 +29,7 @@
 #include <xsi_nurbsdata.h>
 #include <xsi_knot.h>
 #include <xsi_controlpoint.h>
-#include <xsi_geometryaccessor.h>
+#include <xsi_envelopeweight.h>
 #include <xsi_group.h>
 #include <xsi_iceattributedataarray2D.h>
 
@@ -676,7 +676,7 @@ void convertInputPolygonMesh(PolygonMesh mesh, FabricCore::RTVal & rtVal)
 {
   if(!rtVal.isValid() || rtVal.isNullObject())
     rtVal = FabricSplice::constructObjectRTVal("PolygonMesh");
-  
+
   CGeometryAccessor acc = mesh.GetGeometryAccessor();
 
   // determine if we need a topology update
@@ -740,7 +740,7 @@ void convertInputPolygonMesh(PolygonMesh mesh, FabricCore::RTVal & rtVal)
     LONG components = EnvelopeWeight(envelopeWeightsRefs[0]).GetDeformers().GetCount();
     CFloatArray values;
     prop.GetValues(values);
-  
+
     std::vector<FabricCore::RTVal> args(2);
     args[0] = FabricSplice::constructExternalArrayRTVal("Float32", values.GetCount(), &values[0]);
     args[1] = FabricSplice::constructUInt32RTVal(components); // components
@@ -825,7 +825,7 @@ void convertOutputPolygonMesh(PolygonMesh mesh, FabricCore::RTVal & rtVal)
   if(requireTopoUpdate)
   {
     xsiIndices.Resize(nbPolygons  + nbSamples);
-    FabricCore::RTVal indices = 
+    FabricCore::RTVal indices =
       FabricSplice::constructExternalArrayRTVal("UInt32", xsiIndices.GetCount(), &xsiIndices[0]);
     rtVal.callMethod("", "getTopologyAsCombinedExternalArray", 1, &indices);
   }
@@ -871,7 +871,7 @@ void convertOutputPolygonMesh(PolygonMesh mesh, FabricCore::RTVal & rtVal)
       }
       else{
         // [phtaylor] I'm not sure how the user is supposed to fix this problem. Writing to clusters while modifying topology isn't supported by Softimage.
-        // The correct solution is to install an operator on the cluster property. 
+        // The correct solution is to install an operator on the cluster property.
         xsiLogFunc("Unable to write UVs to geometry because the cluster property size does not match.");
       }
     }
@@ -900,7 +900,7 @@ void convertOutputPolygonMesh(PolygonMesh mesh, FabricCore::RTVal & rtVal)
       }
       else{
         // [phtaylor] I'm not sure how the user is supposed to fix this problem. Writing to clusters while modifying topology isn't supported by Softimage.
-        // The correct solution is to install an operator on the cluster property. 
+        // The correct solution is to install an operator on the cluster property.
         xsiLogFunc("Unable to write Vertex Colors to geometry because the cluster property size does not match.");
       }
     }
@@ -917,7 +917,7 @@ void convertOutputPolygonMesh(PolygonMesh mesh, FabricCore::RTVal & rtVal)
       ClusterProperty prop(envelopeWeightsRefs[0]);
       LONG components = EnvelopeWeight(envelopeWeightsRefs[0]).GetDeformers().GetCount();
       CFloatArray values(nbPoints * components);
-  
+
       if(values.GetCount() > 0 && values.GetCount() == prop.GetElements().GetCount() * components)
       {
         FabricCore::RTVal args[2] = {
@@ -930,7 +930,7 @@ void convertOutputPolygonMesh(PolygonMesh mesh, FabricCore::RTVal & rtVal)
       }
       else{
         // [phtaylor] I'm not sure how the user is supposed to fix this problem. Writing to clusters while modifying topology isn't supported by Softimage.
-        // The correct solution is to install an operator on the cluster property. 
+        // The correct solution is to install an operator on the cluster property.
         xsiLogFunc("Unable to write Vertex Colors to geometry because the cluster property size does not match.");
       }
     }
