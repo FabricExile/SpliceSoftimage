@@ -213,6 +213,8 @@ CString getSpliceDataTypeFromRefArray(const CRefArray &refs, const CString & por
 CString getSpliceDataTypeFromRef(const CRef &ref, const CString & portType)
 {
 //TODO: add a custom picking tool that will give the ability to chose the data type depending of the context
+  if(portType == "Xfo" && KinematicState(ref).IsValid())
+    return "Xfo";
   if(KinematicState(ref).IsValid())
     return "Mat44";
   //return portType;
@@ -1072,6 +1074,15 @@ CRefArray PickSingleObject(CString title, CString filter)
       if(Primitive(target).GetType().IsEqualNoCase(L"polymsh"))
         targets.Add(target);
       if(Primitive(target).GetType().IsEqualNoCase(L"crvlist"))
+        targets.Add(target);
+    }
+    else if(ClusterProperty(target).IsValid())
+    {
+      if(ClusterProperty(target).GetType().IsEqualNoCase(L"envweights"))
+        targets.Add(target);
+      if(ClusterProperty(target).GetType().IsEqualNoCase(L"clskey"))
+        targets.Add(target);
+      if(ClusterProperty(target).GetType().IsEqualNoCase(L"wtmap"))
         targets.Add(target);
     }
     else if(Parameter(target).IsValid())

@@ -952,28 +952,37 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
         }
         splicePort.setRTVal(arrayVal);
       }
-      else if(it->second.dataType == "Float64[]" ||
-         it->second.dataType == "Vec3[]")
+      else if(it->second.dataType == "Float64[]")
       {
-        CString singleDataType = it->second.dataType.GetSubString(0, it->second.dataType.Length()-2);
-        FabricCore::RTVal arrayVal = splicePort.getRTVal();
-        ClusterProperty clsProp((CRef)context.GetInputValue(portName.c_str()+CString(CValue(0))));
+        ClusterProperty clsProp((CRef)context.GetInputValue(it->second.realPortName+CString(CValue(0))));
         if(!clsProp.IsValid())
           continue;
-        if(!alwaysConvertMeshes)
+        /*if(!alwaysConvertMeshes)
         {
           LONG evalID = ProjectItem(clsProp).GetEvaluationID();
           if(checkEvalIDCache( evalID, evalIDCacheIndex, alwaysEvaluate))
             continue;
-        }
+        }*/
 
         CClusterPropertyElementArray clsPropElem(clsProp.GetElements());
-		    //TODO check for the blendshape properties bad values
-        Application().LogMessage("-------");
-        Application().LogMessage(CString(clsPropElem.GetArray().GetAsText()));
-        Application().LogMessage(CString(clsPropElem.GetArray().GetCount()));
-        Application().LogMessage(CString(clsProp.GetValueSize() *  clsPropElem.GetCount()));
         splicePort.setArrayData(&clsPropElem.GetArray()[0], sizeof(double) * clsProp.GetValueSize() *  clsPropElem.GetCount());
+      }
+      else if(it->second.dataType == "Vec3[]")
+      {
+        ClusterProperty clsProp((CRef)context.GetInputValue(it->second.realPortName+CString(CValue(0))));
+        if(!clsProp.IsValid())
+          continue;
+        /*if(!alwaysConvertMeshes)
+        {
+          LONG evalID = ProjectItem(clsProp).GetEvaluationID();
+          if(checkEvalIDCache( evalID, evalIDCacheIndex, alwaysEvaluate))
+            continue;
+        }*/
+
+        CClusterPropertyElementArray clsPropElem(clsProp.GetElements());
+        CFloatArray values;
+        clsProp.GetValues(values);
+        splicePort.setArrayData(&values[0], sizeof(float) * clsProp.GetValueSize() *  clsPropElem.GetCount());
       }
       else if(it->second.dataType == "Mat44")
       {
@@ -1269,9 +1278,9 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
           xsiPort.PutValue(value);
       }
     }
-    else if(it->second.dataType == "Float64[]" ||
-       it->second.dataType == "Vec3[]")
+    else if(it->second.dataType == "Float64[]")
     {
+      Application().LogMessage("Float64[]");
       FabricCore::RTVal rtVal = splicePort.getRTVal();
 
       ClusterProperty clsProp((CRef)context.GetOutputTarget());
@@ -1283,6 +1292,28 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
       CDoubleArray XsiValues;
       XsiValues.Attach(&spliceValues[0], clsProp.GetValueSize() * clsPropElem.GetCount());
       clsPropElem.PutArray(XsiValues);
+    }
+    else if(it->second.dataType == "Vec3[]")
+    {
+      //We do not write data for shape properties (for now??)
+
+      /*FabricCore::RTVal rtVal = splicePort.getRTVal();
+
+      ClusterProperty clsProp((CRef)context.GetOutputTarget());
+      CClusterPropertyElementArray clsPropElem(clsProp.GetElements());
+
+      std::vector<float> spliceValues;
+      spliceValues.resize(clsProp.GetValueSize() * clsPropElem.GetCount());
+      splicePort.getArrayData(&spliceValues[0], sizeof(float) * clsProp.GetValueSize() * clsPropElem.GetCount());
+      //unfortunatly we need to cast back to doubles manually
+      CDoubleArray XsiValues(spliceValues.size());
+      for (int i = 0; i < XsiValues.GetCount(); ++i)
+      {
+        XsiValues[i] = double(spliceValues[i]);
+      }
+      Application().LogMessage(XsiValues.GetAsText());
+      //XsiValues.Attach(&spliceValues[0], clsProp.GetValueSize() * clsPropElem.GetCount());
+      clsPropElem.PutArray(XsiValues);*/
     }
     else if(it->second.dataType == "Mat44")
     {
@@ -1328,7 +1359,6 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
         kine.PutTransform(transform);
       }
     }
-	///////////////
     else if(it->second.dataType == "Xfo")
     {
       FabricCore::RTVal rtVal = splicePort.getRTVal();
@@ -1372,7 +1402,6 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
         kine.PutTransform(transform);
       }
     }
-	/////////////////
     else if(it->second.dataType == "PolygonMesh" || it->second.dataType == "PolygonMesh[]")
     {
       bool isArray = it->second.dataType == "PolygonMesh[]";
@@ -1967,7 +1996,7 @@ CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Va
     return CStatus::Unexpected;
   else if(Application().IsInteractive() && !hideUI)
   {
-    showSpliceEcitor(getObjectID());
+    showSpliceEditor(getObjectID());
   }
 
   XSISPLICE_CATCH_END_CSTATUS()
