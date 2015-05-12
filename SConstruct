@@ -42,6 +42,7 @@ if os.path.exists(spliceApiDir.abspath):
       'FABRIC_BUILD_TYPE': os.environ['FABRIC_BUILD_TYPE'],
       'FABRIC_BUILD_OS': os.environ['FABRIC_BUILD_OS'],
       'FABRIC_BUILD_ARCH': os.environ['FABRIC_BUILD_ARCH'],
+      'FTL_INCLUDE_DIR': os.path.join(os.environ['FABRIC_DIR'], 'include'),
       'STAGE_DIR': spliceEnv.Dir('.build').Dir('SpliceAPI').Dir('.stage'),
       'BOOST_DIR': os.environ['BOOST_DIR']
     },
