@@ -488,6 +488,8 @@ SICALLBACK SpliceEditor_PPGEvent( CRef& in_ctxt )
             portName = "value";
           else if(dataType == "String")
             portName = "value";
+          else if(dataType == "Path")
+            portName = "path";
 
           args[0] = L"newSplice";
           args[1] = L"{\"targets\":\""+items.GetAsText()+"\", \"portName\":\""+portName+"\", \"portMode\":\""+portMode+"\"}";
@@ -1262,6 +1264,7 @@ void updateImportSpliceDialogGrids(CustomProperty & prop)
         portType == L"Integer" ||
         portType == L"Scalar" ||
         portType == L"String" ||
+        portType == L"Path" ||
         portType == L"Mat44" ||
         portType == L"Mat44[]" ||
         portType == L"Xfo" ||

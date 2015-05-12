@@ -369,6 +369,11 @@ CStatus FabricSpliceBaseInterface::constructXSIParameters(CustomOperator & op, F
       xsiDataType = CValue::siString;
       it->second.paramValues[0] = L"";
     }
+    else if(dataType == "Path")
+    {
+      xsiDataType = CValue::siString;
+      it->second.paramValues[0] = L"";
+    }
     else if(dataType == "Vec3")
     {
       xsiDataType = CValue::siVector3;

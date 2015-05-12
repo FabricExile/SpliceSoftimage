@@ -27,7 +27,7 @@ using namespace XSI;
 
 opUserData::opUserData(unsigned int objectID)
 {
-  _objectID = objectID; 
+  _objectID = objectID;
   _interf = NULL;
 }
 
@@ -60,7 +60,10 @@ XSIPLUGINCALLBACK CStatus SpliceOp_Define(CRef & in_ctxt)
   oCustomOperator.AddParameter(oPDef,oParam);
   oPDef = oFactory.CreateParamDef(L"alwaysConvertMeshes", CValue::siBool, siPersistable, L"alwaysConvertMeshes", L"alwaysConvertMeshes", false, CValue(), CValue(), CValue(), CValue());
   oCustomOperator.AddParameter(oPDef,oParam);
-
+  oPDef = oFactory.CreateParamDef(L"editLayout", CValue::siBool, siPersistable, L"editLayout", L"editLayout", false, CValue(), CValue(), CValue(), CValue());
+  oCustomOperator.AddParameter(oPDef,oParam);
+  oPDef = oFactory.CreateParamDef(L"layout", CValue::siString, siReadOnly, L"layout", L"layout", "", "", "", "", "");
+  oCustomOperator.AddParameter(oPDef,oParam);
   FabricSpliceBaseInterface::constructXSIParameters(oCustomOperator, oFactory);
 
   oCustomOperator.PutAlwaysEvaluate(false);
@@ -75,7 +78,13 @@ XSIPLUGINCALLBACK CStatus SpliceOp_DefineLayout(CRef & in_ctxt)
   PPGLayout oLayout;
   PPGItem oItem;
   oLayout = ctxt.GetSource();
-  // oLayout.Clear();
+  if()
+  oLayout.Clear();
+  oLayout.AddTab("main");
+  oLayout.AddItem("editLayout");
+  oLayout.AddTab("layout");
+  oLayout.AddItem("editLayout");
+  oLayout.AddItem("layout");
   // layout can't be driven for now.
   return CStatus::OK;
 }
@@ -83,7 +92,7 @@ XSIPLUGINCALLBACK CStatus SpliceOp_DefineLayout(CRef & in_ctxt)
 XSIPLUGINCALLBACK CStatus SpliceOp_Update(CRef & in_ctxt)
 {
   FabricSplice::Logging::AutoTimer("SpliceOp_Update");
-  
+
   OperatorContext ctxt( in_ctxt );
   CValue udVal = ctxt.GetUserData();
   opUserData * p = (opUserData*)(CValue::siPtrType)udVal;
