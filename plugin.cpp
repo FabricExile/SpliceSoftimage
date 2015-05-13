@@ -28,10 +28,10 @@
 #include <boost/filesystem.hpp>
 
 #include "plugin.h"
-#include "operators.h"
-#include "icenodes.h"
-#include "dialogs.h"
-#include "renderpass.h"
+#include "FabricSpliceOperators.h"
+#include "FabricSpliceICENodes.h"
+#include "FabricSpliceDialogs.h"
+#include "FabricSpliceRenderPass.h"
 #include "FabricSpliceBaseInterface.h"
 
 using namespace XSI;

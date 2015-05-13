@@ -1,9 +1,9 @@
 
 #include "FabricSpliceBaseInterface.h"
 #include "plugin.h"
-#include "operators.h"
-#include "commands.h"
-#include "dialogs.h"
+#include "FabricSpliceOperators.h"
+#include "FabricSpliceCommands.h"
+#include "FabricSpliceDialogs.h"
 
 #include <string>
 #include <fstream>
