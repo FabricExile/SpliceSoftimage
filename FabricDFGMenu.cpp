@@ -1,15 +1,6 @@
 #include <xsi_application.h>
 #include <xsi_context.h>
-#include <xsi_pluginregistrar.h>
-#include <xsi_plugin.h>
 #include <xsi_menu.h>
-#include <xsi_menuitem.h>
-#include <xsi_desktop.h>
-#include <xsi_layout.h>
-#include <xsi_view.h>
-#include <xsi_comapihandler.h>
-#include <xsi_project.h>
-#include <xsi_uitoolkit.h>
 
 using namespace XSI;
 
