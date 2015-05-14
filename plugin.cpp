@@ -37,38 +37,39 @@ using namespace XSI;
 
 SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
 {
+  // set plugin's name, version and author.
   in_reg.PutAuthor(L"Fabric Engine");
   in_reg.PutName  (L"Fabric Engine Plugin");
   in_reg.PutVersion(FabricSplice::GetFabricVersionMaj(),
                     FabricSplice::GetFabricVersionMin());
 
-  // register the old Fabric Splice things.
+  // register the (old) Fabric Splice things.
   {
-    // rendering
+    // rendering.
     in_reg.RegisterDisplayCallback(L"SpliceRenderPass");
 
-    // properties
+    // properties.
     in_reg.RegisterProperty(L"SpliceInfo");
   
-    // dialogs
+    // dialogs.
     in_reg.RegisterProperty(L"SpliceEditor");
     in_reg.RegisterProperty(L"ImportSpliceDialog");
 
-    // operators
+    // operators.
     in_reg.RegisterOperator(L"SpliceOp");
 
-    // commands
+    // commands.
     in_reg.RegisterCommand(L"fabricSplice",             L"fabricSplice");
     in_reg.RegisterCommand(L"fabricSpliceManipulation", L"fabricSpliceManipulation");
     in_reg.RegisterCommand(L"proceedToNextScene",       L"proceedToNextScene");
 
-    // tools
+    // tools.
     in_reg.RegisterTool(L"fabricSpliceTool");
 
-    // menu
+    // menu.
     in_reg.RegisterMenu(siMenuMainTopLevelID, "Fabric:Splice", true, true);
 
-    // events
+    // events.
     in_reg.RegisterEvent(L"FabricSpliceNewScene",       siOnEndNewScene);
     in_reg.RegisterEvent(L"FabricSpliceCloseScene",     siOnCloseScene);
     in_reg.RegisterEvent(L"FabricSpliceOpenBeginScene", siOnBeginSceneOpen);
@@ -82,14 +83,17 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     in_reg.RegisterEvent(L"FabricSpliceEndExport",      siOnEndFileExport);
     in_reg.RegisterEvent(L"FabricSpliceValueChange",    siOnValueChange);
 
-    // ice nodes
+    // ice nodes.
     Register_spliceGetData(in_reg);
   }
 
-  // register the new Fabric DFG/Canvas things.
+  // register the (new) Fabric DFG/Canvas things.
   {
+    // menu.
+    in_reg.RegisterMenu(siMenuMainTopLevelID, "Fabric:DFG", true, true);
   }
 
+  // done.
   return CStatus::OK;
 }
 
