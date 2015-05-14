@@ -69,10 +69,14 @@ FabricCore::RTVal & getDrawContext(XSI::Camera & camera)
   int viewportWidth = viewport[2];
   int viewportHeight = viewport[3];
 
-  if(!sDrawContext.isValid())
+  if(!sDrawContext.isValid()) {
     sDrawContext = FabricSplice::constructObjectRTVal("DrawContext");
-  else if(sDrawContext.isNullObject())
+    sDrawContext = sDrawContext.callMethod("DrawContext", "getInstance", 0, 0);
+  }
+  else if(sDrawContext.isNullObject()) {
     sDrawContext = FabricSplice::constructObjectRTVal("DrawContext");
+    sDrawContext = sDrawContext.callMethod("DrawContext", "getInstance", 0, 0);
+  }
 
   // sync the time
   sDrawContext.setMember("time", FabricSplice::constructFloat32RTVal(CTime().GetTime( CTime::Seconds )));
