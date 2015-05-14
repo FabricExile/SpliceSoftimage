@@ -14,46 +14,46 @@ void updateSpliceEditorGrids(XSI::CustomProperty & prop);
 class AddPortDialog
 {
 public:
-	AddPortDialog(int portPurpose, XSI::CString defaultPortMode = L"IN");
-	~AddPortDialog();
+  AddPortDialog(int portPurpose, XSI::CString defaultPortMode = L"IN");
+  ~AddPortDialog();
   bool getDataType(XSI::CString & portType, XSI::CString & extension);
-	bool show(XSI::CString title);
-	XSI::CustomProperty getProp() { return _prop; }
+  bool show(XSI::CString title);
+  XSI::CustomProperty getProp() { return _prop; }
 private:
-	XSI::CustomProperty _prop;
+  XSI::CustomProperty _prop;
 };
 
 class AddOperatorDialog
 {
 public:
-	AddOperatorDialog();
-	~AddOperatorDialog();
-	bool show(XSI::CString title);
-	XSI::CustomProperty getProp() { return _prop; }
+  AddOperatorDialog();
+  ~AddOperatorDialog();
+  bool show(XSI::CString title);
+  XSI::CustomProperty getProp() { return _prop; }
 private:
-	XSI::CustomProperty _prop;
+  XSI::CustomProperty _prop;
 };
 
 class ImportSpliceDialog
 {
 public:
-	ImportSpliceDialog(XSI::CString fileName);
-	~ImportSpliceDialog();
-	bool show(XSI::CString title);
-	XSI::CustomProperty getProp() { return _prop; }
+  ImportSpliceDialog(XSI::CString fileName);
+  ~ImportSpliceDialog();
+  bool show(XSI::CString title);
+  XSI::CustomProperty getProp() { return _prop; }
 private:
-	XSI::CustomProperty _prop;
+  XSI::CustomProperty _prop;
 };
 
 class LicenseDialog
 {
 public:
-	LicenseDialog();
-	~LicenseDialog();
-	bool show();
-	XSI::CustomProperty getProp() { return _prop; }
+  LicenseDialog();
+  ~LicenseDialog();
+  bool show();
+  XSI::CustomProperty getProp() { return _prop; }
 private:
-	XSI::CustomProperty _prop;
+  XSI::CustomProperty _prop;
 };
 
 #endif

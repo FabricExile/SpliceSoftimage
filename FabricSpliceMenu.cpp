@@ -11,7 +11,7 @@
 #include <xsi_project.h>
 #include <xsi_uitoolkit.h>
 
-#include "plugin.h"
+#include "FabricSplicePlugin.h"
 #include "FabricSpliceRenderPass.h"
 #include "FabricSpliceDialogs.h"
 #include "FabricSpliceBaseInterface.h"

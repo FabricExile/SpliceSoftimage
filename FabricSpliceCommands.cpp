@@ -21,7 +21,7 @@
 #include <boost/filesystem.hpp>
 
 // project includes
-#include "plugin.h"
+#include "FabricSplicePlugin.h"
 #include "FabricSpliceDialogs.h"
 #include "FabricSpliceCommands.h"
 #include "FabricSpliceBaseInterface.h"

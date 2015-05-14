@@ -1,6 +1,6 @@
 
 #include "FabricSpliceConversion.h"
-#include "plugin.h"
+#include "FabricSplicePlugin.h"
 
 #ifdef _WIN32
   #include <windows.h>

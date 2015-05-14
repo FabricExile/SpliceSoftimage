@@ -24,7 +24,7 @@
 #include <xsi_customproperty.h>
 #include <vector>
 
-#include "plugin.h"
+#include "FabricSplicePlugin.h"
 #include "FabricSpliceRenderPass.h"
 #include "FabricSpliceTools.h"
 #include "FabricSpliceBaseInterface.h"

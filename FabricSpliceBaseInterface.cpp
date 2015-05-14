@@ -1,6 +1,6 @@
 
 #include "FabricSpliceBaseInterface.h"
-#include "plugin.h"
+#include "FabricSplicePlugin.h"
 #include "FabricSpliceOperators.h"
 #include "FabricSpliceCommands.h"
 #include "FabricSpliceDialogs.h"

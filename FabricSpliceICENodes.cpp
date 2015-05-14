@@ -40,7 +40,7 @@
 #include <xsi_icenode.h>
 
 // project includes
-#include "plugin.h"
+#include "FabricSplicePlugin.h"
 #include "FabricSpliceICENodes.h"
 #include "FabricSpliceBaseInterface.h"
 
