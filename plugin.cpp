@@ -2,6 +2,8 @@
 #include <xsi_pluginregistrar.h>
 
 #include "plugin.h"
+#include "FabricDFGBaseInterface.h"
+#include "FabricDFGPlugin.h"
 #include "FabricSpliceICENodes.h"
 
 using namespace XSI;
@@ -60,6 +62,10 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
 
   // register the (new) Fabric DFG/Canvas things.
   {
+    // set log function pointers of the BaseInterface.
+    BaseInterface::setLogFunc(feLog);
+    BaseInterface::setLogErrorFunc(feLogError);
+
     // commands.
     in_reg.RegisterCommand(L"dfgLogVersion", L"dfgLogVersion");
 
