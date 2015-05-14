@@ -26,6 +26,10 @@
 #include <xsi_argument.h>
 
 #include "plugin.h"
+
+#include "FabricDFGPlugin.h"
+#include "FabricDFGBaseInterface.h"
+
 #include "FabricSplicePlugin.h"
 #include "FabricSpliceOperators.h"
 #include "FabricSpliceICENodes.h"
