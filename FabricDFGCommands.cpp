@@ -4,7 +4,6 @@
 #include <xsi_command.h>
 #include <xsi_argument.h>
 
-#include "FabricDFGCommands.h"
 #include "FabricDFGBaseInterface.h"
 
 using namespace XSI;
@@ -23,7 +22,13 @@ SICALLBACK dfgLogVersion_Init(CRef &in_ctxt)
 
 SICALLBACK dfgLogVersion_Execute(CRef & in_ctxt)
 {
-  Application().LogMessage(L"Fabric Engine Plugin, Fabric Core v. " + CString(FabricCore::GetVersionStr()), siVerboseMsg);
+  CString s = L"   Fabric Engine Plugin, Fabric Core v. " + CString(FabricCore::GetVersionStr()) + L"   ";
+  CString t;
+  for (int i=0;i<s.Length();i++)
+    t += L"-";
+  Application().LogMessage(t, siInfoMsg);
+  Application().LogMessage(s, siInfoMsg);
+  Application().LogMessage(t, siInfoMsg);
   
   return CStatus::OK;
 }

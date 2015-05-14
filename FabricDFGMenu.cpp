@@ -10,18 +10,25 @@ XSIPLUGINCALLBACK CStatus FabricDFG_Init( CRef& in_ctxt )
   MenuItem item;
 
   menu.AddCallbackItem("Online Help", "FabricDFG_Menu_OnlineHelp", item);
+  menu.AddCallbackItem("Log Version", "FabricDFG_Menu_LogVersion", item);
 
   return CStatus::OK;
 }
 
 SICALLBACK FabricDFG_Menu_OnlineHelp( XSI::CRef& )
 {
-  CValue returnVal;
-  CValueArray args(3);
-  args[0] = "http://docs.fabric-engine.com/FabricEngine/latest/HTML/";
-  args[1] = true;
-  args[2] = (LONG)1l;
-  Application().ExecuteCommand(L"OpenNetView", args, returnVal);
-  return true;
+  CValueArray args;
+  
+  args.Add(L"http://docs.fabric-engine.com/FabricEngine/latest/HTML/");
+  args.Add(true);
+  args.Add((LONG)1);
+  Application().ExecuteCommand(L"OpenNetView", args, CValue());
+  return CStatus::OK;
+}
+
+SICALLBACK FabricDFG_Menu_LogVersion( XSI::CRef& )
+{
+  Application().ExecuteCommand(L"dfgLogVersion", CValueArray(), CValue());
+  return CStatus::OK;
 }
 
