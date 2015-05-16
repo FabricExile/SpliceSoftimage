@@ -16,7 +16,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
   in_reg.PutVersion(FabricCore::GetVersionMaj(),
                     FabricCore::GetVersionMin());
 
-  // register the (old) Fabric Splice things.
+  // register the (old) Fabric Splice.
   {
     // rendering.
     in_reg.RegisterDisplayCallback(L"SpliceRenderPass");
@@ -60,14 +60,14 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     Register_spliceGetData(in_reg);
   }
 
-  // register the (new) Fabric DFG/Canvas things.
+  // register the (new) Fabric DFG/Canvas.
   {
-    // set log function pointers of the BaseInterface.
-    BaseInterface::setLogFunc(feLog);
-    BaseInterface::setLogErrorFunc(feLogError);
+    // operators.
+    in_reg.RegisterOperator(L"dfgSoftimageOp");
 
     // commands.
-    in_reg.RegisterCommand(L"dfgLogVersion", L"dfgLogVersion");
+    in_reg.RegisterCommand(L"dfgSoftimageOpApply", L"dfgSoftimageOpApply");
+    in_reg.RegisterCommand(L"dfgLogStatus",        L"dfgLogStatus");
 
     // menu.
     in_reg.RegisterMenu(siMenuMainTopLevelID, "Fabric:DFG", true, true);

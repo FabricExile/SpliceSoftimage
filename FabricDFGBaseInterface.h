@@ -17,7 +17,8 @@ class BaseInterface : public FabricServices::DFGWrapper::View
 {
  public:
 
-  BaseInterface();
+  BaseInterface(void (*in_logFunc)     (void *, const char *, unsigned int) = NULL,
+                void (*in_logErrorFunc)(void *, const char *, unsigned int) = NULL);
   ~BaseInterface();
 
   // instance management
@@ -94,6 +95,9 @@ class BaseInterface : public FabricServices::DFGWrapper::View
   bool HasPort(const char *in_portName, const bool testForInput);
 
  public:
+
+  // returns the amount of base interfaces.
+  static int GetNumBaseInterfaces(void)  {  return s_instances.size();  }
 
   // returns true if the binding's executable has an input port called portName.
   bool HasInputPort(const char *portName);

@@ -36,6 +36,6 @@ void feLogError(const std::string &s)
 }
 
 // a global BaseInterface: its only purpose is to ensure
-// that Fabric is "up and running" when Modo is executed.
-BaseInterface gblBaseInterface_dummy;
+// that Fabric is "up and running" when Softimage is executed.
+BaseInterface gblBaseInterface_dummy(feLog, feLogError);
 

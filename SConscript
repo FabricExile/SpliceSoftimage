@@ -59,6 +59,20 @@ if FABRIC_BUILD_OS == 'Linux':
 elif FABRIC_BUILD_OS == 'Windows':
   env.Append(LIBS = ['OpenGL32.lib'])
 
+
+
+
+#env.Append(LIBS = ['FabricSplice-2.0', 'FabricCore-2.0'])
+if platform.system().lower().startswith('win'):
+  env.Append(LIBS = ['FabricServices-MSVC-12.0'])
+else:
+  env.Append(LIBS = ['FabricServices'])
+env.Append(LIBS = ['FabricSplitSearch'])
+
+
+
+
+
 target = 'FabricSpliceSoftimage'
 
 softimageModule = env.SharedLibrary(target = target, source = Glob('*.cpp'), SHLIBPREFIX='')

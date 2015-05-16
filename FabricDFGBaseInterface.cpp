@@ -1,5 +1,3 @@
-#include <xsi_application.h>
-
 #include "FabricDFGBaseInterface.h"
 
 FabricCore::Client BaseInterface::s_client;
@@ -11,9 +9,18 @@ void (*BaseInterface::s_logFunc)(void *, const char *, unsigned int) = NULL;
 void (*BaseInterface::s_logErrorFunc)(void *, const char *, unsigned int) = NULL;
 std::map<unsigned int, BaseInterface*> BaseInterface::s_instances;
 
-BaseInterface::BaseInterface()
+BaseInterface::BaseInterface(void (*in_logFunc)     (void *, const char *, unsigned int),
+                             void (*in_logErrorFunc)(void *, const char *, unsigned int))
 {
+  //
+  if (in_logFunc)       setLogFunc(in_logFunc);
+  if (in_logErrorFunc)  setLogErrorFunc(in_logErrorFunc);
+
+  //
   m_id = s_maxId++;
+  std::string m;
+  m  = "calling BaseInterface(), m_id = " + std::to_string((long long)m_id);
+  logFunc(NULL, m.c_str(), m.length());
 
   // construct the client
   if (s_instances.size() == 0)
@@ -45,7 +52,7 @@ BaseInterface::BaseInterface()
     }
   }
 
-  // instert in map.
+  // insert in map.
   s_instances.insert(std::pair<unsigned int, BaseInterface*>(m_id, this));
 
   //
@@ -66,6 +73,10 @@ BaseInterface::BaseInterface()
 
 BaseInterface::~BaseInterface()
 {
+  std::string m;
+  m  = "calling ~BaseInterface(), m_id = " + std::to_string((long long)m_id);
+  logFunc(NULL, m.c_str(), m.length());
+
   std::map<unsigned int, BaseInterface*>::iterator it = s_instances.find(m_id);
 
   m_binding = FabricServices::DFGWrapper::Binding();
