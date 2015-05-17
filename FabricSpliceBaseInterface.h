@@ -41,45 +41,45 @@ public:
 
   XSI::CStatus updateXSIOperator();
   void forceEvaluate();
-  static XSI::CStatus constructXSIParameters(XSI::CustomOperator & op, XSI::Factory & factory);
+  static XSI::CStatus constructXSIParameters(XSI::CustomOperator &op, XSI::Factory &factory);
   static XSI::CValueArray getSpliceParamTypeCombo();
   static XSI::CValueArray getSpliceXSIPortTypeCombo();
   static XSI::CValueArray getSpliceInternalPortTypeCombo();
-  XSI::CStatus addXSIParameter(const XSI::CString &portName, const XSI::CString &dataType, const XSI::CString &portModeStr, const XSI::CString & dgNode, const FabricCore::Variant & defaultValue = FabricCore::Variant(), const XSI::CString & extStr = "");
-  XSI::CStatus addXSIPort(const XSI::CRefArray & targets, const XSI::CString &portName, const XSI::CString &dataType, const FabricSplice::Port_Mode &portMode, const XSI::CString & dgNode, bool validateDataType = true);
-  XSI::CStatus addXSIICEPort(const XSI::CRefArray & targets, const XSI::CString &portName, const XSI::CString &dataType, const XSI::CString &iceAttrName, const XSI::CString & dgNode);
-  XSI::CStatus addSplicePort(const XSI::CString &portName, const XSI::CString &dataType, const FabricSplice::Port_Mode &portMode, const XSI::CString & dgNode, bool autoInitObjects = true, const FabricCore::Variant & defaultValue = FabricCore::Variant(), const XSI::CString & extStr = "");
+  XSI::CStatus addXSIParameter(const XSI::CString &portName, const XSI::CString &dataType, const XSI::CString &portModeStr, const XSI::CString &dgNode, const FabricCore::Variant &defaultValue = FabricCore::Variant(), const XSI::CString &extStr = "");
+  XSI::CStatus addXSIPort(const XSI::CRefArray &targets, const XSI::CString &portName, const XSI::CString &dataType, const FabricSplice::Port_Mode &portMode, const XSI::CString &dgNode, bool validateDataType = true);
+  XSI::CStatus addXSIICEPort(const XSI::CRefArray &targets, const XSI::CString &portName, const XSI::CString &dataType, const XSI::CString &iceAttrName, const XSI::CString &dgNode);
+  XSI::CStatus addSplicePort(const XSI::CString &portName, const XSI::CString &dataType, const FabricSplice::Port_Mode &portMode, const XSI::CString &dgNode, bool autoInitObjects = true, const FabricCore::Variant &defaultValue = FabricCore::Variant(), const XSI::CString &extStr = "");
   XSI::CStatus removeSplicePort(const XSI::CString &portName);
-  XSI::CStatus rerouteXSIPort(const XSI::CString &portName, FabricCore::Variant & scriptArgs);
+  XSI::CStatus rerouteXSIPort(const XSI::CString &portName, FabricCore::Variant &scriptArgs);
   XSI::CString getXSIPortTargets(const XSI::CString &portName);
   void setXSIPortTargets(const XSI::CString &portName, const XSI::CString &targets);
   XSI::CString getParameterString();
 
-  bool transferInputPorts(XSI::CRef opRef, XSI::OperatorContext & context);
-  XSI::CStatus transferOutputPort(XSI::OperatorContext & context);
+  bool transferInputPorts(XSI::CRef opRef, XSI::OperatorContext &context);
+  XSI::CStatus transferOutputPort(XSI::OperatorContext &context);
   XSI::CStatus evaluate();
 
   FabricSplice::DGGraph getSpliceGraph();
 
-  XSI::CStatus addKLOperator(const XSI::CString &operatorName, const XSI::CString &operatorCode, const XSI::CString &operatorEntry, const XSI::CString & dgNode, const FabricCore::Variant & portMap);
-  bool hasKLOperator(const XSI::CString &operatorName, const XSI::CString & dgNode);
+  XSI::CStatus addKLOperator(const XSI::CString &operatorName, const XSI::CString &operatorCode, const XSI::CString &operatorEntry, const XSI::CString &dgNode, const FabricCore::Variant &portMap);
+  bool hasKLOperator(const XSI::CString &operatorName, const XSI::CString &dgNode);
   XSI::CString getKLOperatorCode(const XSI::CString &operatorName);
   XSI::CStatus setKLOperatorCode(const XSI::CString &operatorName, const XSI::CString &operatorCode, const XSI::CString &operatorEntry);
   XSI::CStatus setKLOperatorFile(const XSI::CString &operatorName, const XSI::CString &filename, const XSI::CString &entry);
   XSI::CStatus setKLOperatorEntry(const XSI::CString &operatorName, const XSI::CString &operatorEntry);
   XSI::CStatus setKLOperatorIndex(const XSI::CString &operatorName, unsigned int operatorIndex);
-  XSI::CStatus removeKLOperator(const XSI::CString &operatorName, const XSI::CString & dgNode);
+  XSI::CStatus removeKLOperator(const XSI::CString &operatorName, const XSI::CString &dgNode);
 
   XSI::CStatus storePersistenceData(XSI::CString fileName);
   XSI::CStatus restoreFromPersistenceData(XSI::CString fileName);
   XSI::CStatus saveToFile(XSI::CString fileName);
-  XSI::CStatus loadFromFile(XSI::CString fileName, FabricCore::Variant & scriptArgs, bool hideUI);
+  XSI::CStatus loadFromFile(XSI::CString fileName, FabricCore::Variant &scriptArgs, bool hideUI);
 
   XSI::CString getDGPortInfo();
 
-  XSI::CStatus disconnectForExport(XSI::CString fileName, XSI::Model & model);
-  XSI::CStatus reconnectForImport(XSI::Model & model);
-  static XSI::CStatus cleanupForImport(XSI::Model & model);
+  XSI::CStatus disconnectForExport(XSI::CString fileName, XSI::Model &model);
+  XSI::CStatus reconnectForImport(XSI::Model &model);
+  static XSI::CStatus cleanupForImport(XSI::Model &model);
 
   void setICENodeRTVal(FabricCore::RTVal val) { iceNodeRTVal = val; }
   FabricCore::RTVal getICENodeRTVal() { return iceNodeRTVal; }

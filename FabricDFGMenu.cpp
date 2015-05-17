@@ -6,7 +6,7 @@
 
 using namespace XSI;
 
-XSIPLUGINCALLBACK CStatus FabricDFG_Init( CRef& in_ctxt )
+XSIPLUGINCALLBACK CStatus FabricDFG_Init( CRef &in_ctxt )
 {
   Menu menu = Context(in_ctxt).GetSource();
   MenuItem item;
@@ -65,6 +65,7 @@ SICALLBACK FabricDFG_Menu_dfgSoftimageOpApply(XSI::CRef&)
     CValue ret;
     CValueArray args;
     args.Add(targetObjects[i]);
+    args.Add(true);
     Application().ExecuteCommand(L"dfgSoftimageOpApply", args, ret);
   }
 

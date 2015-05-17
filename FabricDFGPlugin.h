@@ -1,6 +1,8 @@
 #ifndef __FabricDFGPlugin_H_ 
 #define __FabricDFGPlugin_H_
 
+#define FabricDFGPlugin_BETA  1   // if != 0 then this is a beta.
+
 // disable some annoying VS warnings.
 #pragma warning(disable : 4530)   // C++ exception handler used, but unwind semantics are not enabled. Specify /EHsc.
 #pragma warning(disable : 4800)   // forcing value to bool 'true' or 'false'.

@@ -9,14 +9,14 @@ XSI::CustomProperty editorPropGetEnsureExists(bool clearErrors = false);
 void editorSetObjectIDFromSelection();
 void showSpliceEcitor(unsigned int objectID);
 const char * getSourceCodeForOperator(const char * graphName, const char * opName);
-void updateSpliceEditorGrids(XSI::CustomProperty & prop);
+void updateSpliceEditorGrids(XSI::CustomProperty &prop);
 
 class AddPortDialog
 {
 public:
   AddPortDialog(int portPurpose, XSI::CString defaultPortMode = L"IN");
   ~AddPortDialog();
-  bool getDataType(XSI::CString & portType, XSI::CString & extension);
+  bool getDataType(XSI::CString &portType, XSI::CString &extension);
   bool show(XSI::CString title);
   XSI::CustomProperty getProp() { return _prop; }
 private:

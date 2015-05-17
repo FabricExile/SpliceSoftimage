@@ -35,19 +35,21 @@ SICALLBACK dfgSoftimageOpApply_Init(CRef &in_ctxt)
 
   ArgumentArray oArgs = oCmd.GetArguments();
   oArgs.Add(L"ObjName", CString());
+  oArgs.Add(L"OpenPPG", false);
 
   return CStatus::OK;
 }
 
-SICALLBACK dfgSoftimageOpApply_Execute(CRef & in_ctxt)
+SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
 {
   // init.
   Context ctxt(in_ctxt);
   CValueArray args = ctxt.GetAttribute(L"Arguments");
-  if (args.GetCount() <= 0 || CString(args[0]).IsEmpty())
-  { Application().LogMessage(L"apply dfgSoftimageOp operator failed: empty argument", siErrorMsg);
+  if (args.GetCount() < 2 || CString(args[0]).IsEmpty())
+  { Application().LogMessage(L"apply dfgSoftimageOp operator failed: empty or missing argument(s)", siErrorMsg);
     return CStatus::OK; }
   CString objName(args[0]);
+  bool    openPPG = args[1];
 
   // log.
   Application().LogMessage(L"applying a  \"dfgSoftimageOp\" custom operator to \"" + objName + L"\"", siVerboseMsg);
@@ -88,10 +90,18 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef & in_ctxt)
     }
   }
 
-  // finalize (i.e. connect the operator).
+  // connect the operator.
   if (newOp.Connect() != CStatus::OK)
   { Application().LogMessage(L"newOp.Connect() failed.",siErrorMsg);
     return CStatus::OK; }
+
+  // display operator's property page?
+  if (openPPG)
+  {
+    CValueArray a;
+    a.Add(newOp.GetRef().GetAsText());
+    Application().ExecuteCommand(L"InspectObj", a, CValue());
+  }
 
   // done.
   return CStatus::OK;
@@ -116,7 +126,7 @@ SICALLBACK dfgLogStatus_Init(CRef &in_ctxt)
   return CStatus::OK;
 }
 
-SICALLBACK dfgLogStatus_Execute(CRef & in_ctxt)
+SICALLBACK dfgLogStatus_Execute(CRef &in_ctxt)
 {
   CString s = L"   Fabric Engine Plugin, Fabric Core v. " + CString(FabricCore::GetVersionStr()) + L"   ";
   CString line;

@@ -153,7 +153,7 @@ std::string BaseInterface::getJSON()
   }
 }
 
-void BaseInterface::setFromJSON(const std::string & json)
+void BaseInterface::setFromJSON(const std::string &json)
 {
   try
   {

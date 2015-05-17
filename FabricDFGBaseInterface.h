@@ -37,7 +37,7 @@ class BaseInterface : public FabricServices::DFGWrapper::View
 
   // persistence
   std::string getJSON();
-  void setFromJSON(const std::string & json);
+  void setFromJSON(const std::string &json);
 
   // logging.
   static void setLogFunc(void (*in_logFunc)(void *, const char *, unsigned int));
