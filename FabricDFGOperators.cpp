@@ -29,25 +29,23 @@
 #include "FabricDFGOperators.h"
 #include "FabricDFGBaseInterface.h"
 
+std::map <unsigned int, _opUserData *> _opUserData::s_instances;
+
 using namespace XSI;
 
 XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Init(CRef &in_ctxt)
 {
   // beta log.
   CString functionName = L"dfgSoftimageOp_Init()";
-  if (FabricDFGPlugin_BETA)
-    Application().LogMessage(functionName + L" called", siInfoMsg);
+  if (FabricDFGPlugin_BETA) Application().LogMessage(functionName + L" called", siInfoMsg);
 
   // init.
   Context ctxt(in_ctxt);
+  CustomOperator op(ctxt.GetSource());
 
   // create user data.
-	_userData *pud = new _userData;
-	_userData  &ud = *pud;
-	ctxt.PutUserData((ULLONG)pud);
-
-  // create base interface.
-  ud.baseInterface = new BaseInterface(feLog, feLogError);
+  _opUserData *pud = new _opUserData(op.GetObjectID());
+  ctxt.PutUserData((ULLONG)pud);
 
   // done.
   return CStatus::OK;
@@ -57,12 +55,11 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Term(CRef &in_ctxt)
 {
   // beta log.
   CString functionName = L"dfgSoftimageOp_Term()";
-  if (FabricDFGPlugin_BETA)
-    Application().LogMessage(functionName + L" called", siInfoMsg);
+  if (FabricDFGPlugin_BETA) Application().LogMessage(functionName + L" called", siInfoMsg);
 
   // init.
   Context ctxt(in_ctxt);
-	_userData *pud = (_userData *)((ULLONG)ctxt.GetUserData());
+  _opUserData *pud = (_opUserData *)((ULLONG)ctxt.GetUserData());
 
   // clean up.
   if (pud)
@@ -78,13 +75,12 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
 {
   // beta log.
   CString functionName = L"dfgSoftimageOp_Define()";
-  if (FabricDFGPlugin_BETA)
-    Application().LogMessage(functionName + L" called", siInfoMsg);
+  if (FabricDFGPlugin_BETA) Application().LogMessage(functionName + L" called", siInfoMsg);
 
   // init.
   Context ctxt(in_ctxt);
-  Factory oFactory = Application().GetFactory();
   CustomOperator op = ctxt.GetSource();
+  Factory oFactory = Application().GetFactory();
   CRef oPDef;
 
   // create default parameters.
@@ -107,14 +103,25 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
 
 void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
 {
-  // clear layout.
+  // init.
   oLayout.Clear();
   oLayout.PutAttribute(siUIDictionary, L"None");
+  PPGItem pi;
 
   // Tab "Main"
   {
     oLayout.AddTab(L"Main");
-      oLayout.AddItem(L"FabricActive", L"Execute Fabric Data Flow Graph");
+    {
+      oLayout.AddGroup(L"", false);
+        oLayout.AddRow();
+          oLayout.AddItem(L"FabricActive", L"Execute Fabric DFG");
+          oLayout.AddSpacer(0, 0);
+          pi=oLayout.AddButton(L"BtnOpenCanvas", L"Open Canvas");
+          pi.PutAttribute(siUICY, 28);
+        oLayout.EndRow();
+      oLayout.EndGroup();
+      oLayout.AddSpacer(0, 4);
+
       oLayout.AddGroup(L"Parameters");
         bool hasParams = false;
         {
@@ -127,20 +134,34 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
           oLayout.AddSpacer(0, 8);
         }
       oLayout.EndGroup();
+    }
   }
 
   // Tab "Tools and Ports"
   {
     oLayout.AddTab(L"Tools and Ports");
-      oLayout.AddGroup(L"Import/Export");
-        oLayout.AddButton(L"ImportJSON", L"Import JSON");
-        oLayout.AddButton(L"ExportJSON", L"Export JSON");
+    {
+      oLayout.AddGroup(L"", false);
+        oLayout.AddRow();
+          oLayout.AddItem(L"FabricActive", L"Execute Fabric DFG");
+          oLayout.AddSpacer(0, 0);
+          pi=oLayout.AddButton(L"BtnOpenCanvas", L"Open Canvas");
+          pi.PutAttribute(siUICY, 28);
+        oLayout.EndRow();
       oLayout.EndGroup();
+      oLayout.AddSpacer(0, 4);
+
+      oLayout.AddGroup(L"Tools");
+        pi=oLayout.AddButton(L"BtnLogDFGInfo", L"Log DFG Info");
+      oLayout.EndGroup();
+      oLayout.AddSpacer(0, 4);
+    }
   }
 
   // Tab "Advanced"
   {
     oLayout.AddTab(L"Advanced");
+    {
       oLayout.AddItem(L"evalID",              L"evalID");
       oLayout.AddItem(L"persistenceData",     L"persistenceData");
       oLayout.AddItem(L"alwaysConvertMeshes", L"Always Convert Meshes");
@@ -148,6 +169,7 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
       oLayout.AddItem(L"alwaysevaluate",      L"Always Evaluate");
       oLayout.AddItem(L"debug",               L"Debug");
       oLayout.AddItem(L"Name",                L"Name");
+    }
   }
 }
 
@@ -164,13 +186,13 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
 
   // init.
   PPGEventContext ctxt(in_ctxt);
+  CustomOperator op(ctxt.GetSource());
   PPGEventContext::PPGEvent eventID = ctxt.GetEventID();
-	UIToolkit toolkit = Application().GetUIToolkit();
+  UIToolkit toolkit = Application().GetUIToolkit();
 
   // process event.
   if (eventID == PPGEventContext::siOnInit)
   {
-    CustomOperator op = ctxt.GetSource();
     dfgSoftimageOp_DefineLayout(op.GetPPGLayout(), op);
     ctxt.PutAttribute(L"Refresh", true);
   }
@@ -179,17 +201,44 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     CString btnName = ctxt.GetAttribute(L"Button").GetAsText();
     if (btnName.IsEmpty())
     {
-      // nop.
     }
-    else if (btnName == L"ImportJSON")
+    else if (btnName == L"BtnOpenCanvas")
     {
       LONG ret;
-      toolkit.MsgBox(L"not yet implemented", siMsgOkOnly | siMsgExclamation, "dfgSoftimageOp", ret);
+      toolkit.MsgBox(L"not yet implemented", siMsgOkOnly, "dfgSoftimageOp", ret);
     }
-    else if (btnName == L"ExportJSON")
+    else if (btnName == L"BtnLogDFGInfo")
     {
-      LONG ret;
-      toolkit.MsgBox(L"not yet implemented", siMsgOkOnly | siMsgExclamation, "dfgSoftimageOp", ret);
+      try
+      {
+        // init/check.
+        _opUserData *pud = _opUserData::GetUserData(op.GetObjectID());
+        if (!pud)                                 { Application().LogMessage(L"no user data found!",      siErrorMsg);  return CStatus::OK; }
+        if (!pud->GetBaseInterface())             { Application().LogMessage(L"no base interface found!", siErrorMsg);  return CStatus::OK; }
+        if (!pud->GetBaseInterface()->getGraph()) { Application().LogMessage(L"no graph found!",          siErrorMsg);  return CStatus::OK; }
+
+        // log.
+        FabricServices::DFGWrapper::PortList ports = pud->GetBaseInterface()->getGraph()->getPorts();
+        Application().LogMessage(L"\"" + op.GetRef().GetAsText() + L"\" (ObjectID = " + CString(op.GetObjectID()) + L") has a graph with " + CString((LONG)ports.size()) + L" port(s)" + (ports.size() > 0 ? L":" : L"."), siInfoMsg);
+        for (int i=0;i<ports.size();i++)
+        {
+          FabricServices::DFGWrapper::Port &port = *ports[i];
+          char s[16];
+          sprintf(s, "% 3ld", i);
+          CString t;
+          t  = L"  " + CString(s) + L". ";
+          if      (port.getPortType() == FabricCore::DFGPortType_In)  t += L"type = \"In\",  ";
+          else if (port.getPortType() == FabricCore::DFGPortType_Out) t += L"type = \"Out\", ";
+          else                                                        t += L"type = \"IO\",  ";
+          t += L"name = \"" + CString(port.getName()) + L"\", ";
+          t += L"resolved data type = \"" + CString(port.getResolvedType()) + L"\"";
+          Application().LogMessage(t, siInfoMsg);
+        }
+      }
+      catch (FabricCore::Exception e)
+      {
+        feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+      }
     }
   }
   else if (eventID == PPGEventContext::siTabChange)
@@ -200,34 +249,25 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
   }
 
   // done.
-  return CStatus::OK ;
+  return CStatus::OK;
 }
 
 XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
 {
   // beta log.
   CString functionName = L"dfgSoftimageOp_Update()";
-  if (FabricDFGPlugin_BETA)
-    Application().LogMessage(functionName + L" called", siInfoMsg);
+  if (FabricDFGPlugin_BETA) Application().LogMessage(functionName + L" called", siInfoMsg);
 
   // init.
   OperatorContext ctxt(in_ctxt);
   CustomOperator op(ctxt.GetSource());
-  if (!op.IsValid())
-  { Application().LogMessage(functionName + L": failed to get custom operator from context", siErrorMsg);
-    return CStatus::OK; }
-	_userData *pud = (_userData *)((ULLONG)ctxt.GetUserData());
-	_userData  &ud = *pud;
-  if (!pud) { Application().LogMessage(functionName + L": no user data found!", siErrorMsg);
-              return CStatus::OK; }
 
   // get the output port that is currently being evaluated.
   OutputPort outputPort(ctxt.GetOutputPort());
-  if (FabricDFGPlugin_BETA)
-    Application().LogMessage(functionName + L": evaluating output port \"" + outputPort.GetName() + L"\"");
+  if (FabricDFGPlugin_BETA) Application().LogMessage(functionName + L": evaluating output port \"" + outputPort.GetName() + L"\"");
 
   // get default input.
-  KinematicState kineIn((CRef)ctxt.GetInputValue(L"internalMatrixIn"));
+  KinematicState kineIn((CRef)ctxt.GetInputValue(L"reservedMatrixIn"));
   MATH::CMatrix4 matrixIn = kineIn.GetTransform().GetMatrix4();
   MATH::CTransformation gt;
   gt.SetMatrix4(matrixIn);

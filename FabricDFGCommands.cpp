@@ -15,7 +15,10 @@
 #include <xsi_kinematics.h>
 
 #include "FabricDFGPlugin.h"
-#include "FabricDFGBaseInterface.h"
+#include "FabricDFGOperators.h"
+
+#include <fstream>
+#include <streambuf>
 
 using namespace XSI;
 
@@ -49,7 +52,7 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
   { Application().LogMessage(L"apply dfgSoftimageOp operator failed: empty or missing argument(s)", siErrorMsg);
     return CStatus::OK; }
   CString objName(args[0]);
-  bool    openPPG = args[1];
+  bool openPPG = args[1];
 
   // log.
   Application().LogMessage(L"applying a  \"dfgSoftimageOp\" custom operator to \"" + objName + L"\"", siVerboseMsg);
@@ -74,8 +77,8 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
 
     // output ports.
     {
-      // create the default output port "internalMatrixOut" and connect the object's global kinematics to it.
-      newOp.AddOutputPort(obj.GetKinematics().GetGlobal().GetRef(), L"internalMatrixOut", -1, -1,  siDefaultPort, &returnStatus);
+      // create the default output port "reservedMatrixOut" and connect the object's global kinematics to it.
+      newOp.AddOutputPort(obj.GetKinematics().GetGlobal().GetRef(), L"reservedMatrixOut", -1, -1,  siDefaultPort, &returnStatus);
       if (returnStatus != CStatus::OK)
       { Application().LogMessage(L"failed to create default output port for the global kinematics", siErrorMsg);
         return CStatus::OK; }
@@ -83,7 +86,7 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
 
     // input ports.
     {
-      newOp.AddInputPort(obj.GetKinematics().GetGlobal().GetRef(), L"internalMatrixIn", -1, -1,  siDefaultPort, &returnStatus);
+      newOp.AddInputPort(obj.GetKinematics().GetGlobal().GetRef(), L"reservedMatrixIn", -1, -1,  siDefaultPort, &returnStatus);
       if (returnStatus != CStatus::OK)
       { Application().LogMessage(L"failed to create default input port for the global kinematics", siErrorMsg);
         return CStatus::OK; }
@@ -101,6 +104,93 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
     CValueArray a;
     a.Add(newOp.GetRef().GetAsText());
     Application().ExecuteCommand(L"InspectObj", a, CValue());
+  }
+
+  // done.
+  return CStatus::OK;
+}
+
+// ---
+// command "dfgImportJSON".
+// ---
+
+SICALLBACK dfgImportJSON_Init(CRef &in_ctxt)
+{
+  Context ctxt(in_ctxt);
+  Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.PutDescription(L"imports a dfg.json file.");
+  oCmd.SetFlag(siNoLogging, false);
+  oCmd.EnableReturnValue(false) ;
+
+  ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"ObjName", CString());
+  oArgs.Add(L"JSONFilePath", CString());
+
+  return CStatus::OK;
+}
+
+SICALLBACK dfgImportJSON_Execute(CRef &in_ctxt)
+{
+  // init.
+  Context ctxt(in_ctxt);
+  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  if (args.GetCount() < 2 || CString(args[0]).IsEmpty())
+  { Application().LogMessage(L"import json failed: empty or missing argument(s)", siErrorMsg);
+    return CStatus::OK; }
+  CString objName(args[0]);
+  CString filePath = args[1];
+
+  // log.
+  Application().LogMessage(L"importing JSON file \"" + filePath + L"\" into \"" + objName + L"\"", siVerboseMsg);
+
+  // set ref at operator.
+  CRef ref;
+  ref.Set(objName);
+  if (!ref.IsValid())
+  { Application().LogMessage(L"failed to find an object called \"" + objName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+  if (ref.GetClassID() != siCustomOperatorID)
+  { Application().LogMessage(L"not a custom operator: \"" + objName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+
+  // get operator.
+  CustomOperator op(ref);
+  if (!op.IsValid())
+  { Application().LogMessage(L"failed to set custom operator from \"" + objName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+
+  // get op's _opUserData.
+  _opUserData *pud = _opUserData::GetUserData(op.GetObjectID());
+  if (!pud)
+  { Application().LogMessage(L"found no valid user data in custom operator \"" + objName + L"\"", siErrorMsg);
+    Application().LogMessage(L"... operator perhaps not dfgSoftimageOp?", siErrorMsg);
+    return CStatus::OK; }
+
+  // read JSON file.
+  std::ifstream t(filePath.GetAsciiString(), std::ios::binary);
+  if (!t.good())
+  { Application().LogMessage(L"unable to open \"" + filePath + "\"", siErrorMsg);
+    return CStatus::OK; }
+  t.seekg(0, std::ios::end);
+  std::string json;
+  json.reserve(t.tellg());
+  t.seekg(0, std::ios::beg);
+  json.assign((std::istreambuf_iterator<char>(t)),
+               std::istreambuf_iterator<char>());
+
+  // do it.
+  try
+  {
+    if (!pud->GetBaseInterface())
+    { Application().LogMessage(L"no base interface found!", siErrorMsg);
+      return CStatus::OK; }
+    pud->GetBaseInterface()->setFromJSON(json.c_str());
+  }
+  catch (FabricCore::Exception e)
+  {
+    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
   }
 
   // done.
@@ -132,15 +222,20 @@ SICALLBACK dfgLogStatus_Execute(CRef &in_ctxt)
   CString line;
   for (int i=0;i<s.Length();i++)
     line += L"-";
+
   Application().LogMessage(line, siInfoMsg);
+  {
+    Application().LogMessage(s, siInfoMsg);
 
-  Application().LogMessage(s, siInfoMsg);
+    int num = BaseInterface::GetNumBaseInterfaces();
+    if (num <= 0) s = L"       #BaseInterface: 0";
+    else          s = L"       #BaseInterface: " + CString(num - 1) + L" + 1 = " + CString(num);
+    Application().LogMessage(s, siInfoMsg);
 
-  int num = BaseInterface::GetNumBaseInterfaces();
-  if (num <= 0) s = L"       #BaseInterface: 0";
-  else          s = L"       #BaseInterface: " + CString(num - 1) + L" + 1 = " + CString(num);
-  Application().LogMessage(s, siInfoMsg);
-
+    num = _opUserData::GetNumOpUserData();
+    s = L"       #_opUserData:   " + CString(num);
+    Application().LogMessage(s, siInfoMsg);
+  }
   Application().LogMessage(line, siInfoMsg);
   
   return CStatus::OK;
