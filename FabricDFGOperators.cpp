@@ -183,7 +183,11 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
 
   // button size (tools).
   const LONG btnTx = 112;
-  const LONG btnTy = 22;
+  const LONG btnTy = 24;
+
+  // button size (tools - select connected).
+  const LONG btnTSCx = 90;
+  const LONG btnTSCy = 22;
 
   // update the grid data.
   const int dfgPortsNumRows = dfgSoftimageOp_UpdateGridData_dfgPorts(op);
@@ -250,7 +254,6 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
         }
         else
         {
-          oLayout.AddSpacer(0, 8);
           oLayout.AddStaticText(L"   ... no Ports available.");
           oLayout.AddSpacer(0, 8);
         }
@@ -259,6 +262,12 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
 
       oLayout.AddGroup(L"Tools");
         oLayout.AddRow();
+          pi = oLayout.AddButton(L"BtnLogDFGInfo", L"Log DFG Info");
+          pi.PutAttribute(siUICX, btnTx);
+          pi.PutAttribute(siUICY, btnTy);
+        oLayout.EndRow();
+        oLayout.AddSpacer(0, 4);
+        oLayout.AddRow();
           pi = oLayout.AddButton(L"BtnImportJSON", L"Import JSON");
           pi.PutAttribute(siUICX, btnTx);
           pi.PutAttribute(siUICY, btnTy);
@@ -266,11 +275,20 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
           pi.PutAttribute(siUICX, btnTx);
           pi.PutAttribute(siUICY, btnTy);
         oLayout.EndRow();
-        oLayout.AddRow();
-          pi = oLayout.AddButton(L"BtnLogDFGInfo", L"Log DFG Info");
-          pi.PutAttribute(siUICX, btnTx);
-          pi.PutAttribute(siUICY, btnTy);
-        oLayout.EndRow();
+        oLayout.AddSpacer(0, 8);
+        oLayout.AddGroup(L"Select connected Objects");
+          oLayout.AddRow();
+            pi = oLayout.AddButton(L"BtnSelConnectAll", L"All");
+            pi.PutAttribute(siUICX, btnTSCx);
+            pi.PutAttribute(siUICY, btnTSCy);
+            pi = oLayout.AddButton(L"BtnSelConnectIn",  L"Input only");
+            pi.PutAttribute(siUICX, btnTSCx);
+            pi.PutAttribute(siUICY, btnTSCy);
+            pi = oLayout.AddButton(L"BtnSelConnectOut", L"Output only");
+            pi.PutAttribute(siUICX, btnTSCx);
+            pi.PutAttribute(siUICY, btnTSCy);
+          oLayout.EndRow();
+        oLayout.EndGroup();
       oLayout.EndGroup();
       oLayout.AddSpacer(0, 4);
     }
@@ -321,6 +339,31 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     {
     }
     else if (btnName == L"BtnOpenCanvas")
+    {
+      LONG ret;
+      toolkit.MsgBox(L"not yet implemented", siMsgOkOnly, "dfgSoftimageOp", ret);
+    }
+    else if (btnName == L"BtnImportJSON")
+    {
+      LONG ret;
+      toolkit.MsgBox(L"not yet implemented", siMsgOkOnly, "dfgSoftimageOp", ret);
+    }
+    else if (btnName == L"BtnExportJSON")
+    {
+      LONG ret;
+      toolkit.MsgBox(L"not yet implemented", siMsgOkOnly, "dfgSoftimageOp", ret);
+    }
+    else if (btnName == L"BtnSelConnectAll")
+    {
+      LONG ret;
+      toolkit.MsgBox(L"not yet implemented", siMsgOkOnly, "dfgSoftimageOp", ret);
+    }
+    else if (btnName == L"BtnSelConnectIn")
+    {
+      LONG ret;
+      toolkit.MsgBox(L"not yet implemented", siMsgOkOnly, "dfgSoftimageOp", ret);
+    }
+    else if (btnName == L"BtnSelConnectOut")
     {
       LONG ret;
       toolkit.MsgBox(L"not yet implemented", siMsgOkOnly, "dfgSoftimageOp", ret);
