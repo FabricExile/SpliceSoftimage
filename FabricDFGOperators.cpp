@@ -13,6 +13,7 @@
 #include <xsi_ppglayout.h>
 #include <xsi_ppgeventcontext.h>
 #include <xsi_menu.h>
+#include <xsi_griddata.h>
 #include <xsi_selection.h>
 #include <xsi_project.h>
 #include <xsi_port.h>
@@ -83,7 +84,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
   Factory oFactory = Application().GetFactory();
   CRef oPDef;
 
-  // create default parameters.
+  // create default parameter(s).
   oPDef = oFactory.CreateParamDef(L"FabricActive",        CValue::siBool,   siPersistable | siAnimatable | siKeyable, L"", L"", true, CValue(), CValue(), CValue(), CValue());
   op.AddParameter(oPDef, Parameter());
   oPDef = oFactory.CreateParamDef(L"evalID",              CValue::siInt4,   siReadOnly,                               L"", L"", 0, 0, 1000, 0, 1000);
@@ -93,12 +94,76 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
   oPDef = oFactory.CreateParamDef(L"alwaysConvertMeshes", CValue::siBool,   siPersistable,                            L"", L"", false, CValue(), CValue(), CValue(), CValue());
   op.AddParameter(oPDef, Parameter());
 
+  // create grid parameter(s).
+  op.AddParameter(oFactory.CreateGridParamDef("dfgPorts"), Parameter());
+
   // set default values.
   op.PutAlwaysEvaluate(false);
   op.PutDebug(0);
 
   // done.
   return CStatus::OK;
+}
+
+int dfgSoftimageOp_UpdateGridData_dfgPorts(CustomOperator &op)
+{
+  // get grid object.
+  GridData grid((CRef)op.GetParameter("dfgPorts").GetValue());
+
+  // get operator's user data and check if there are any DFG ports.
+  _opUserData *pud = _opUserData::GetUserData(op.GetObjectID());
+  if (   !pud
+      || !pud->GetBaseInterface()
+      || !pud->GetBaseInterface()->getGraph()
+      || !pud->GetBaseInterface()->getGraph()->getPorts().size())
+  {
+    // clear grid data.
+    grid = GridData();
+    return 0;
+  }
+
+  // set amount, name and type of the grid columns.
+  grid.PutColumnCount(4);
+  grid.PutColumnLabel(0, " Name ");   grid.PutColumnType(0, siColumnStandard);
+  grid.PutColumnLabel(1, " Type ");   grid.PutColumnType(1, siColumnStandard);
+  grid.PutColumnLabel(2, " Mode ");   grid.PutColumnType(2, siColumnStandard);
+  grid.PutColumnLabel(3, " Target "); grid.PutColumnType(3, siColumnStandard);
+
+  // get all DFG ports.
+  FabricServices::DFGWrapper::PortList ports = pud->GetBaseInterface()->getGraph()->getPorts();
+
+  // set data.
+  grid.PutRowCount(ports.size());
+  for (int i=0;i<ports.size();i++)
+  {
+    // ref at current port.
+    FabricServices::DFGWrapper::Port &port = *ports[i];
+
+    // name.
+    CString name(port.getName());
+
+    // type (= resolved data type).
+    CString type(port.getResolvedType());
+
+    // mode (= DFGPortType).
+    CString mode;
+    if      (port.getPortType() == FabricCore::DFGPortType_In)  mode = L"In";
+    else if (port.getPortType() == FabricCore::DFGPortType_Out) mode = L"Out";
+    else                                                        mode = L"IO";
+
+    // target.
+    CString target = L"<internal>";
+    
+    // set grid data.
+    grid.PutRowLabel( i, L"  " + CString(i) + L"  ");
+    grid.PutCell(0,   i, L"  " + name       + L"  ");
+    grid.PutCell(1,   i, L"  " + type       + L"  ");
+    grid.PutCell(2,   i, L"  " + mode       + L"  ");
+    grid.PutCell(3,   i, L"  " + target     + L"  ");
+  }
+
+  // return amount of rows.
+  return ports.size();
 }
 
 void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
@@ -108,6 +173,21 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
   oLayout.PutAttribute(siUIDictionary, L"None");
   PPGItem pi;
 
+  // button size (Open Canvas).
+  const LONG btnCx = 100;
+  const LONG btnCy = 28;
+
+  // button size (Refresh).
+  const LONG btnRx = 93;
+  const LONG btnRy = 28;
+
+  // button size (tools).
+  const LONG btnTx = 112;
+  const LONG btnTy = 22;
+
+  // update the grid data.
+  const int dfgPortsNumRows = dfgSoftimageOp_UpdateGridData_dfgPorts(op);
+
   // Tab "Main"
   {
     oLayout.AddTab(L"Main");
@@ -116,11 +196,12 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
         oLayout.AddRow();
           oLayout.AddItem(L"FabricActive", L"Execute Fabric DFG");
           oLayout.AddSpacer(0, 0);
-          pi=oLayout.AddButton(L"BtnOpenCanvas", L"Open Canvas");
-          pi.PutAttribute(siUICY, 28);
+          pi = oLayout.AddButton(L"BtnOpenCanvas", L"Open Canvas");
+          pi.PutAttribute(siUICX, btnCx);
+          pi.PutAttribute(siUICY, btnCy);
         oLayout.EndRow();
       oLayout.EndGroup();
-      oLayout.AddSpacer(0, 4);
+      oLayout.AddSpacer(0, 12);
 
       oLayout.AddGroup(L"Parameters");
         bool hasParams = false;
@@ -137,22 +218,59 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
     }
   }
 
-  // Tab "Tools and Ports"
+  // Tab "Ports and Tools"
   {
-    oLayout.AddTab(L"Tools and Ports");
+    oLayout.AddTab(L"Ports and Tools");
     {
       oLayout.AddGroup(L"", false);
         oLayout.AddRow();
           oLayout.AddItem(L"FabricActive", L"Execute Fabric DFG");
           oLayout.AddSpacer(0, 0);
-          pi=oLayout.AddButton(L"BtnOpenCanvas", L"Open Canvas");
-          pi.PutAttribute(siUICY, 28);
+          pi = oLayout.AddButton(L"BtnOpenCanvas", L"Open Canvas");
+          pi.PutAttribute(siUICX, btnCx);
+          pi.PutAttribute(siUICY, btnCy);
         oLayout.EndRow();
+      oLayout.EndGroup();
+      oLayout.AddSpacer(0, 12);
+
+      oLayout.AddGroup(L"DFG Ports");
+        oLayout.AddRow();
+          oLayout.AddSpacer(0, 0);
+          pi = oLayout.AddButton(L"BtnRefreshPPG", L"Refresh");
+          pi.PutAttribute(siUICX, btnRx);
+          pi.PutAttribute(siUICY, btnRy);
+        oLayout.EndRow();
+        oLayout.AddSpacer(0, 6);
+        if (dfgPortsNumRows)
+        {
+          pi = oLayout.AddItem("dfgPorts", "dfgPorts", siControlGrid);
+          pi.PutAttribute(siUINoLabel,             true);
+          pi.PutAttribute(siUIWidthPercentage,     100);
+          pi.PutAttribute(siUIGridReadOnlyColumns, "1:1:1:1:1");
+        }
+        else
+        {
+          oLayout.AddSpacer(0, 8);
+          oLayout.AddStaticText(L"   ... no Ports available.");
+          oLayout.AddSpacer(0, 8);
+        }
       oLayout.EndGroup();
       oLayout.AddSpacer(0, 4);
 
       oLayout.AddGroup(L"Tools");
-        pi=oLayout.AddButton(L"BtnLogDFGInfo", L"Log DFG Info");
+        oLayout.AddRow();
+          pi = oLayout.AddButton(L"BtnImportJSON", L"Import JSON");
+          pi.PutAttribute(siUICX, btnTx);
+          pi.PutAttribute(siUICY, btnTy);
+          pi = oLayout.AddButton(L"BtnExportJSON", L"Export JSON");
+          pi.PutAttribute(siUICX, btnTx);
+          pi.PutAttribute(siUICY, btnTy);
+        oLayout.EndRow();
+        oLayout.AddRow();
+          pi = oLayout.AddButton(L"BtnLogDFGInfo", L"Log DFG Info");
+          pi.PutAttribute(siUICX, btnTx);
+          pi.PutAttribute(siUICY, btnTy);
+        oLayout.EndRow();
       oLayout.EndGroup();
       oLayout.AddSpacer(0, 4);
     }
@@ -206,6 +324,11 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     {
       LONG ret;
       toolkit.MsgBox(L"not yet implemented", siMsgOkOnly, "dfgSoftimageOp", ret);
+    }
+    else if (btnName == L"BtnRefreshPPG")
+    {
+      dfgSoftimageOp_DefineLayout(op.GetPPGLayout(), op);
+      ctxt.PutAttribute(L"Refresh", true);
     }
     else if (btnName == L"BtnLogDFGInfo")
     {
