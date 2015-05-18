@@ -1,5 +1,9 @@
 #include "FabricDFGBaseInterface.h"
 
+#ifdef USE_FABRICSPLICE__CLIENT
+  #include "FabricSplice.h"
+#endif
+
 FabricCore::Client BaseInterface::s_client;
 FabricServices::DFGWrapper::Host * BaseInterface::s_host = NULL;
 FabricServices::ASTWrapper::KLASTManager * BaseInterface::s_manager = NULL;
@@ -28,11 +32,20 @@ BaseInterface::BaseInterface(void (*in_logFunc)     (void *, const char *, unsig
     try
     {
       // create a client
-      FabricCore::Client::CreateOptions options;
-      memset(&options, 0, sizeof(options));
-      options.guarded = 1;
-      options.optimizationType = FabricCore::ClientOptimizationType_Background;
-      s_client = FabricCore::Client(&logFunc, NULL, &options);
+      #ifdef USE_FABRICSPLICE__CLIENT
+      {
+        const int guarded = 1;
+        s_client = FabricSplice::ConstructClient(guarded);
+      }
+      #else
+      {
+        FabricCore::Client::CreateOptions options;
+        memset(&options, 0, sizeof(options));
+        options.guarded = 1;
+        options.optimizationType = FabricCore::ClientOptimizationType_Background;
+        s_client = FabricCore::Client(&logFunc, NULL, &options);
+      }
+      #endif
 
       // load basic extensions
       s_client.loadExtension("Math",     "", false);
@@ -92,7 +105,16 @@ BaseInterface::~BaseInterface()
         s_stack.clear();
         delete(s_manager);
         delete(s_host);
-        s_client = FabricCore::Client();
+        #ifdef USE_FABRICSPLICE__CLIENT
+        {
+          FabricSplice::DestroyClient();
+          s_client.invalidate();
+        }
+        #else
+        {
+          s_client = FabricCore::Client();
+        }
+        #endif
       }
       catch (FabricCore::Exception e)
       {

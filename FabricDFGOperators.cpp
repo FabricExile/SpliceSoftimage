@@ -201,6 +201,7 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
           oLayout.AddItem(L"FabricActive", L"Execute Fabric DFG");
           oLayout.AddSpacer(0, 0);
           pi = oLayout.AddButton(L"BtnOpenCanvas", L"Open Canvas");
+          pi.PutAttribute(siUIButtonDisable, true);
           pi.PutAttribute(siUICX, btnCx);
           pi.PutAttribute(siUICY, btnCy);
         oLayout.EndRow();
@@ -231,6 +232,7 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
           oLayout.AddItem(L"FabricActive", L"Execute Fabric DFG");
           oLayout.AddSpacer(0, 0);
           pi = oLayout.AddButton(L"BtnOpenCanvas", L"Open Canvas");
+          pi.PutAttribute(siUIButtonDisable, true);
           pi.PutAttribute(siUICX, btnCx);
           pi.PutAttribute(siUICY, btnCy);
         oLayout.EndRow();
@@ -269,9 +271,11 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
         oLayout.AddSpacer(0, 4);
         oLayout.AddRow();
           pi = oLayout.AddButton(L"BtnImportJSON", L"Import JSON");
+          pi.PutAttribute(siUIButtonDisable, true);
           pi.PutAttribute(siUICX, btnTx);
           pi.PutAttribute(siUICY, btnTy);
           pi = oLayout.AddButton(L"BtnExportJSON", L"Export JSON");
+          pi.PutAttribute(siUIButtonDisable, true);
           pi.PutAttribute(siUICX, btnTx);
           pi.PutAttribute(siUICY, btnTy);
         oLayout.EndRow();
@@ -279,12 +283,15 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
         oLayout.AddGroup(L"Select connected Objects");
           oLayout.AddRow();
             pi = oLayout.AddButton(L"BtnSelConnectAll", L"All");
+            pi.PutAttribute(siUIButtonDisable, true);
             pi.PutAttribute(siUICX, btnTSCx);
             pi.PutAttribute(siUICY, btnTSCy);
             pi = oLayout.AddButton(L"BtnSelConnectIn",  L"Input only");
+            pi.PutAttribute(siUIButtonDisable, true);
             pi.PutAttribute(siUICX, btnTSCx);
             pi.PutAttribute(siUICY, btnTSCy);
             pi = oLayout.AddButton(L"BtnSelConnectOut", L"Output only");
+            pi.PutAttribute(siUIButtonDisable, true);
             pi.PutAttribute(siUICX, btnTSCx);
             pi.PutAttribute(siUICY, btnTSCy);
           oLayout.EndRow();
@@ -450,17 +457,22 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
 
 XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
 {
-  // beta log.
-  CString functionName = L"dfgSoftimageOp_Update()";
-  if (FabricDFGPlugin_BETA) Application().LogMessage(functionName + L" called", siInfoMsg);
-
   // init.
   OperatorContext ctxt(in_ctxt);
   CustomOperator op(ctxt.GetSource());
 
+  // init log.
+  CString functionName = L"dfgSoftimageOp_Update()";
+  const bool debugLog = ((LONG)ctxt.GetParameterValue(L"debug") != 0);
+  if (debugLog) Application().LogMessage(functionName + L" called", siInfoMsg);
+
+  // check the FabricActive parameter.
+  if (!(bool)ctxt.GetParameterValue(L"FabricActive"))
+    return CStatus::OK;
+
   // get the output port that is currently being evaluated.
   OutputPort outputPort(ctxt.GetOutputPort());
-  if (FabricDFGPlugin_BETA) Application().LogMessage(functionName + L": evaluating output port \"" + outputPort.GetName() + L"\"");
+  if (debugLog) Application().LogMessage(functionName + L": evaluating output port \"" + outputPort.GetName() + L"\"");
 
   // get default input.
   KinematicState kineIn((CRef)ctxt.GetInputValue(L"reservedMatrixIn"));
