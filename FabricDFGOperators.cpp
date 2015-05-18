@@ -156,10 +156,10 @@ int dfgSoftimageOp_UpdateGridData_dfgPorts(CustomOperator &op)
     
     // set grid data.
     grid.PutRowLabel( i, L"  " + CString(i) + L"  ");
-    grid.PutCell(0,   i, L"  " + name       + L"  ");
-    grid.PutCell(1,   i, L"  " + type       + L"  ");
-    grid.PutCell(2,   i, L"  " + mode       + L"  ");
-    grid.PutCell(3,   i, L"  " + target     + L"  ");
+    grid.PutCell(0,   i, name);
+    grid.PutCell(1,   i, type);
+    grid.PutCell(2,   i, mode);
+    grid.PutCell(3,   i, target);
   }
 
   // return amount of rows.
@@ -383,9 +383,9 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
         if (!pud->GetBaseInterface())             { Application().LogMessage(L"no base interface found!", siErrorMsg);  return CStatus::OK; }
         if (!pud->GetBaseInterface()->getGraph()) { Application().LogMessage(L"no graph found!",          siErrorMsg);  return CStatus::OK; }
 
-        // log.
+        // log (DFG ports).
         FabricServices::DFGWrapper::PortList ports = pud->GetBaseInterface()->getGraph()->getPorts();
-        Application().LogMessage(L"\"" + op.GetRef().GetAsText() + L"\" (ObjectID = " + CString(op.GetObjectID()) + L") has a graph with " + CString((LONG)ports.size()) + L" port(s)" + (ports.size() > 0 ? L":" : L"."), siInfoMsg);
+        Application().LogMessage(L"\"" + op.GetRef().GetAsText() + L"\" (ObjectID = " + CString(op.GetObjectID()) + L") has a DFG with " + CString((LONG)ports.size()) + L" port(s)" + (ports.size() > 0 ? L":" : L"."), siInfoMsg);
         for (int i=0;i<ports.size();i++)
         {
           FabricServices::DFGWrapper::Port &port = *ports[i];
@@ -398,6 +398,36 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
           else                                                        t += L"type = \"IO\",  ";
           t += L"name = \"" + CString(port.getName()) + L"\", ";
           t += L"resolved data type = \"" + CString(port.getResolvedType()) + L"\"";
+          Application().LogMessage(t, siInfoMsg);
+        }
+
+        // log (XSI ports).
+        CRefArray inPorts  = op.GetInputPorts();
+        CRefArray outPorts = op.GetOutputPorts();
+        LONG numPorts = inPorts.GetCount() + outPorts.GetCount();
+        Application().LogMessage(L"as well as " + CString((LONG)ports.size()) + L" XSI port(s)" + (numPorts > 0 ? L":" : L"."), siInfoMsg);
+        for (int i=0;i<inPorts.GetCount();i++)
+        {
+          InputPort port(inPorts[i]);
+          char s[16];
+          sprintf(s, "% 3ld", i);
+          CString t;
+          t  = L"  " + CString(s) + L". ";
+          t += L"type = \"In\",  ";
+          t += L"name = \"" + port.GetName() + L"\", ";
+          t += L"target = \"" + port.GetTargetPath() + L"\"";
+          Application().LogMessage(t, siInfoMsg);
+        }
+        for (int i=0;i<outPorts.GetCount();i++)
+        {
+          OutputPort port(outPorts[i]);
+          char s[16];
+          sprintf(s, "% 3ld", i + inPorts.GetCount());
+          CString t;
+          t  = L"  " + CString(s) + L". ";
+          t += L"type = \"Out\", ";
+          t += L"name = \"" + port.GetName() + L"\", ";
+          t += L"target = \"" + port.GetTargetPath() + L"\"";
           Application().LogMessage(t, siInfoMsg);
         }
       }

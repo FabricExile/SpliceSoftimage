@@ -193,6 +193,23 @@ SICALLBACK dfgImportJSON_Execute(CRef &in_ctxt)
     feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
   }
 
+
+
+
+  static int i = 0;
+  CRef oPDef;
+  Factory oFactory = Application().GetFactory();
+  oPDef = oFactory.CreateParamDef(L"test" + CString(i++), CValue::siBool, siPersistable | siAnimatable | siKeyable, L"", L"", true, CValue(), CValue(), CValue(), CValue());
+  if (op.AddParameter(oPDef, Parameter()) == CStatus::OK)
+    Application().LogMessage(L"Yay!", siErrorMsg);
+  else
+    Application().LogMessage(L"aw... :(", siErrorMsg);
+
+
+
+
+
+
   // done.
   return CStatus::OK;
 }
