@@ -7,6 +7,9 @@
 #include <xsi_selection.h>
 #include <xsi_customoperator.h>
 #include <xsi_operatorcontext.h>
+#include <xsi_port.h>
+#include <xsi_inputport.h>
+#include <xsi_outputport.h>
 #include <xsi_portgroup.h>
 #include <xsi_inputport.h>
 #include <xsi_factory.h>
@@ -283,6 +286,85 @@ SICALLBACK dfgExportJSON_Execute(CRef &in_ctxt)
   catch (FabricCore::Exception e)
   {
     feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+  }
+
+  // done.
+  return CStatus::OK;
+}
+
+// ---
+// command "dfgSelectConnected".
+// ---
+
+SICALLBACK dfgSelectConnected_Init(CRef &in_ctxt)
+{
+  Context ctxt(in_ctxt);
+  Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.PutDescription(L"select connected objects.");
+  oCmd.SetFlag(siNoLogging, false);
+  oCmd.EnableReturnValue(false) ;
+
+  ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"ObjName", CString());
+  oArgs.Add(L"selWhat", (LONG)0); // < 0: In only, == 0: All, > 0: Out only.
+
+  return CStatus::OK;
+}
+
+SICALLBACK dfgSelectConnected_Execute(CRef &in_ctxt)
+{
+  // init.
+  Context ctxt(in_ctxt);
+  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  if (args.GetCount() < 2 || CString(args[0]).IsEmpty())
+  { Application().LogMessage(L"empty or missing argument(s)", siErrorMsg);
+    return CStatus::OK; }
+  CString objName(args[0]);
+  LONG selWhat = args[1];
+
+  // log.
+  Application().LogMessage(L"select objects connected to \"" + objName + L"\"", siVerboseMsg);
+
+  // set ref at operator.
+  CRef ref;
+  ref.Set(objName);
+  if (!ref.IsValid())
+  { Application().LogMessage(L"failed to find an object called \"" + objName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+  if (ref.GetClassID() != siCustomOperatorID)
+  { Application().LogMessage(L"not a custom operator: \"" + objName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+
+  // get operator.
+  CustomOperator op(ref);
+  if (!op.IsValid())
+  { Application().LogMessage(L"failed to set custom operator from \"" + objName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+
+  // get current selection object.
+  Selection sel = Application().GetSelection();
+
+  // go.
+  sel.Clear();
+  CRefArray inPorts  = op.GetInputPorts();
+  CRefArray outPorts = op.GetOutputPorts();
+  if (selWhat <= 0)
+  {
+    for (int i=0;i<inPorts.GetCount();i++)
+    {
+      CRef tRef = InputPort(inPorts[i]).GetTarget();
+      sel.Add(tRef);
+    }
+  }
+  if (selWhat >= 0)
+  {
+    for (int i=0;i<outPorts.GetCount();i++)
+    {
+      CRef tRef = OutputPort(outPorts[i]).GetTarget();
+      sel.Add(tRef);
+    }
   }
 
   // done.

@@ -282,15 +282,12 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
         oLayout.AddGroup(L"Select connected Objects");
           oLayout.AddRow();
             pi = oLayout.AddButton(L"BtnSelConnectAll", L"All");
-            pi.PutAttribute(siUIButtonDisable, true);
             pi.PutAttribute(siUICX, btnTSCx);
             pi.PutAttribute(siUICY, btnTSCy);
             pi = oLayout.AddButton(L"BtnSelConnectIn",  L"Input only");
-            pi.PutAttribute(siUIButtonDisable, true);
             pi.PutAttribute(siUICX, btnTSCx);
             pi.PutAttribute(siUICY, btnTSCy);
             pi = oLayout.AddButton(L"BtnSelConnectOut", L"Output only");
-            pi.PutAttribute(siUIButtonDisable, true);
             pi.PutAttribute(siUICX, btnTSCx);
             pi.PutAttribute(siUICY, btnTSCy);
           oLayout.EndRow();
@@ -400,18 +397,24 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     }
     else if (btnName == L"BtnSelConnectAll")
     {
-      LONG ret;
-      toolkit.MsgBox(L"not yet implemented", siMsgOkOnly, "dfgSoftimageOp", ret);
+      CValueArray args;
+      args.Add(op.GetUniqueName());
+      args.Add((LONG)0);  // In + Out.
+      Application().ExecuteCommand(L"dfgSelectConnected", args, CValue());
     }
     else if (btnName == L"BtnSelConnectIn")
     {
-      LONG ret;
-      toolkit.MsgBox(L"not yet implemented", siMsgOkOnly, "dfgSoftimageOp", ret);
+      CValueArray args;
+      args.Add(op.GetUniqueName());
+      args.Add((LONG)-1);  // In.
+      Application().ExecuteCommand(L"dfgSelectConnected", args, CValue());
     }
     else if (btnName == L"BtnSelConnectOut")
     {
-      LONG ret;
-      toolkit.MsgBox(L"not yet implemented", siMsgOkOnly, "dfgSoftimageOp", ret);
+      CValueArray args;
+      args.Add(op.GetUniqueName());
+      args.Add((LONG)+1);  // Out.
+      Application().ExecuteCommand(L"dfgSelectConnected", args, CValue());
     }
     else if (btnName == L"BtnRefreshPPG")
     {
