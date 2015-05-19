@@ -3,6 +3,7 @@
 #include <xsi_status.h>
 
 #include <xsi_command.h>
+#include <xsi_comapihandler.h>
 #include <xsi_argument.h>
 #include <xsi_factory.h>
 #include <xsi_uitoolkit.h>
@@ -275,7 +276,6 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
           pi.PutAttribute(siUICX, btnTx);
           pi.PutAttribute(siUICY, btnTy);
           pi = oLayout.AddButton(L"BtnExportJSON", L"Export JSON");
-          pi.PutAttribute(siUIButtonDisable, true);
           pi.PutAttribute(siUICX, btnTx);
           pi.PutAttribute(siUICY, btnTy);
         oLayout.EndRow();
@@ -357,8 +357,49 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     }
     else if (btnName == L"BtnExportJSON")
     {
-      LONG ret;
-      toolkit.MsgBox(L"not yet implemented", siMsgOkOnly, "dfgSoftimageOp", ret);
+      CComAPIHandler toolkit;
+      toolkit.CreateInstance(L"XSI.UIToolkit");
+      CString ext = ".dfg.json";
+
+      CComAPIHandler filebrowser(toolkit.GetProperty(L"FileBrowser"));
+      filebrowser.PutProperty(L"InitialDirectory", Application().GetActiveProject().GetPath());
+      filebrowser.PutProperty(L"Filter", L"DFG Preset (*" + ext + L")|*" + ext + L"||");
+
+      CValue returnVal;
+      filebrowser.Call(L"ShowSave", returnVal);
+      CString uiFileName = filebrowser.GetProperty(L"FilePathName").GetAsText();
+      if(uiFileName.IsEmpty())
+      { Application().LogMessage(L"aborted by user.", siWarningMsg);
+        return CStatus::OK; }
+
+      // convert backslashes to slashes.
+      CString fileName;
+      for(ULONG i=0;i<uiFileName.Length();i++)
+      {
+        if(uiFileName.GetSubString(i, 1).IsEqualNoCase(L"\\"))
+          fileName += L"/";
+        else
+          fileName += uiFileName[i];
+      }
+
+      // take care of possible double extension (e.g. "myProfile.gfd.json.gfd.json").
+      ULONG dfg1 = fileName.ReverseFindString(ext, UINT_MAX);
+      if (dfg1 != UINT_MAX)
+      {
+        ULONG dfg2 = fileName.ReverseFindString(ext, dfg1 - 1);
+        if (dfg2 != UINT_MAX && dfg2 + ext.Length() == dfg1)
+        {
+          fileName = fileName.GetSubString(0, fileName.Length() - ext.Length());
+        }
+      }
+        
+      Application().LogMessage(L"\"" + fileName + L"\"", siErrorMsg);
+      Application().LogMessage(L"export JSON not yet implemented", siErrorMsg);
+      //CValueArray args(3);
+      //args[0] = L"saveSplice";
+      //args[1] = objectStr;
+      //args[2] = L"{\"fileName\":\"" + fileName + L"\"}";
+      //Application().ExecuteCommand(L"fabricSplice", args, returnVal);
     }
     else if (btnName == L"BtnSelConnectAll")
     {
