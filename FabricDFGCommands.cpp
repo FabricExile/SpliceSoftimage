@@ -102,7 +102,7 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
   if (openPPG)
   {
     CValueArray a;
-    a.Add(newOp.GetRef().GetAsText());
+    a.Add(newOp.GetUniqueName());
     Application().ExecuteCommand(L"InspectObj", a, CValue());
   }
 
@@ -193,22 +193,97 @@ SICALLBACK dfgImportJSON_Execute(CRef &in_ctxt)
     feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
   }
 
+  // done.
+  return CStatus::OK;
+}
 
+// ---
+// command "dfgExportJSON".
+// ---
 
+SICALLBACK dfgExportJSON_Init(CRef &in_ctxt)
+{
+  Context ctxt(in_ctxt);
+  Command oCmd;
 
-  static int i = 0;
-  CRef oPDef;
-  Factory oFactory = Application().GetFactory();
-  oPDef = oFactory.CreateParamDef(L"test" + CString(i++), CValue::siBool, siPersistable | siAnimatable | siKeyable, L"", L"", true, CValue(), CValue(), CValue(), CValue());
-  if (op.AddParameter(oPDef, Parameter()) == CStatus::OK)
-    Application().LogMessage(L"Yay!", siErrorMsg);
-  else
-    Application().LogMessage(L"aw... :(", siErrorMsg);
+  oCmd = ctxt.GetSource();
+  oCmd.PutDescription(L"exports a dfg.json file.");
+  oCmd.SetFlag(siNoLogging, false);
+  oCmd.EnableReturnValue(false) ;
 
+  ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"ObjName", CString());
+  oArgs.Add(L"JSONFilePath", CString());
 
+  return CStatus::OK;
+}
 
+SICALLBACK dfgExportJSON_Execute(CRef &in_ctxt)
+{
+  // init.
+  Context ctxt(in_ctxt);
+  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  if (args.GetCount() < 2 || CString(args[0]).IsEmpty())
+  { Application().LogMessage(L"export json failed: empty or missing argument(s)", siErrorMsg);
+    return CStatus::OK; }
+  CString objName(args[0]);
+  CString filePath = args[1];
 
+  // log.
+  Application().LogMessage(L"exporting \"" + objName + L"\" as JSON file \"" + filePath + L"\"", siVerboseMsg);
 
+  // set ref at operator.
+  CRef ref;
+  ref.Set(objName);
+  if (!ref.IsValid())
+  { Application().LogMessage(L"failed to find an object called \"" + objName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+  if (ref.GetClassID() != siCustomOperatorID)
+  { Application().LogMessage(L"not a custom operator: \"" + objName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+
+  // get operator.
+  CustomOperator op(ref);
+  if (!op.IsValid())
+  { Application().LogMessage(L"failed to set custom operator from \"" + objName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+
+  // get op's _opUserData.
+  _opUserData *pud = _opUserData::GetUserData(op.GetObjectID());
+  if (!pud)
+  { Application().LogMessage(L"found no valid user data in custom operator \"" + objName + L"\"", siErrorMsg);
+    Application().LogMessage(L"... operator perhaps not dfgSoftimageOp?", siErrorMsg);
+    return CStatus::OK; }
+
+  // export JSON file.
+  try
+  {
+    if (!pud->GetBaseInterface())
+    { Application().LogMessage(L"no base interface found!", siErrorMsg);
+      return CStatus::OK; }
+    std::ofstream t(filePath.GetAsciiString(), std::ios::binary);
+    if (!t.good())
+    { Application().LogMessage(L"unable to open file", siErrorMsg);
+      return CStatus::OK; }
+    std::string json = pud->GetBaseInterface()->getJSON();
+    try
+    {
+      if (json.c_str())   t.write(json.c_str(), json.length());
+      else                t.write("", 0);
+    }
+    catch (std::exception &e)
+    {
+      CString err = "write error: ";
+      if (e.what())   err += e.what();
+      else            err += "";
+      feLogError(err.GetAsciiString());
+      return CStatus::OK;
+    }
+  }
+  catch (FabricCore::Exception e)
+  {
+    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+  }
 
   // done.
   return CStatus::OK;

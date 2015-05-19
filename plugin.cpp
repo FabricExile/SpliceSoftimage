@@ -68,6 +68,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     // commands.
     in_reg.RegisterCommand(L"dfgSoftimageOpApply", L"dfgSoftimageOpApply");
     in_reg.RegisterCommand(L"dfgImportJSON",       L"dfgImportJSON");
+    in_reg.RegisterCommand(L"dfgExportJSON",       L"dfgExportJSON");
     in_reg.RegisterCommand(L"dfgLogStatus",        L"dfgLogStatus");
 
     // menu.

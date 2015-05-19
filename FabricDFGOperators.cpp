@@ -392,14 +392,12 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
           fileName = fileName.GetSubString(0, fileName.Length() - ext.Length());
         }
       }
-        
-      Application().LogMessage(L"\"" + fileName + L"\"", siErrorMsg);
-      Application().LogMessage(L"export JSON not yet implemented", siErrorMsg);
-      //CValueArray args(3);
-      //args[0] = L"saveSplice";
-      //args[1] = objectStr;
-      //args[2] = L"{\"fileName\":\"" + fileName + L"\"}";
-      //Application().ExecuteCommand(L"fabricSplice", args, returnVal);
+
+      // call command.
+      CValueArray args;
+      args.Add(op.GetUniqueName());
+      args.Add(fileName);
+      Application().ExecuteCommand(L"dfgExportJSON", args, CValue());
     }
     else if (btnName == L"BtnSelConnectAll")
     {
