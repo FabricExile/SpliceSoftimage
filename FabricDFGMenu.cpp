@@ -1,6 +1,10 @@
 #include <xsi_application.h>
 #include <xsi_context.h>
 #include <xsi_menu.h>
+#include <xsi_model.h>
+#include <xsi_x3dobject.h>
+#include <xsi_null.h>
+#include <xsi_vector3.h>
 #include <xsi_selection.h>
 #include <xsi_string.h>
 
@@ -11,15 +15,18 @@ XSIPLUGINCALLBACK CStatus FabricDFG_Init( CRef &in_ctxt )
   Menu menu = Context(in_ctxt).GetSource();
   MenuItem item;
 
-  menu.AddCallbackItem("Create DFG Operator", "FabricDFG_Menu_dfgSoftimageOpApply", item);
+  menu.AddCallbackItem("Create DFG Operator",                 "FabricDFG_Menu_CreateDFGOp",           item);
   menu.AddSeparatorItem();
-  menu.AddCallbackItem("Online Help",         "FabricDFG_Menu_OnlineHelp",          item);
-  menu.AddCallbackItem("Log Status",          "FabricDFG_Menu_LogStatus",           item);
+  menu.AddCallbackItem("Create Null with DFG Operator",       "FabricDFG_Menu_CreateNullWithOp",      item);
+  menu.AddCallbackItem("Create Polymesh with DFG Operator",   "FabricDFG_Menu_CreatePolymeshWithOp",  item);
+  menu.AddSeparatorItem();
+  menu.AddCallbackItem("Online Help",                         "FabricDFG_Menu_OnlineHelp",            item);
+  menu.AddCallbackItem("Log Status",                          "FabricDFG_Menu_LogStatus",             item);
 
   return CStatus::OK;
 }
 
-SICALLBACK FabricDFG_Menu_dfgSoftimageOpApply(XSI::CRef&)
+SICALLBACK FabricDFG_Menu_CreateDFGOp(XSI::CRef&)
 {
   // init and fill array of target objects.
   CStringArray targetObjects;
@@ -37,8 +44,7 @@ SICALLBACK FabricDFG_Menu_dfgSoftimageOpApply(XSI::CRef&)
       while (true)
       {
         // pick session failed?
-        CValue ret;
-        if (Application().ExecuteCommand(L"PickElement", args, ret) == CStatus::Fail)
+        if (Application().ExecuteCommand(L"PickElement", args, CValue()) == CStatus::Fail)
           break;
 
         // right button?
@@ -62,12 +68,57 @@ SICALLBACK FabricDFG_Menu_dfgSoftimageOpApply(XSI::CRef&)
   // call the command dfgSoftimageOpApply for all elements in targetObjects.
   for (int i=0;i<targetObjects.GetCount();i++)
   {
-    CValue ret;
     CValueArray args;
     args.Add(targetObjects[i]);
     args.Add(true);
-    Application().ExecuteCommand(L"dfgSoftimageOpApply", args, ret);
+    Application().ExecuteCommand(L"dfgSoftimageOpApply", args, CValue());
   }
+
+  // done.
+  return CStatus::OK;
+}
+
+SICALLBACK FabricDFG_Menu_CreateNullWithOp(XSI::CRef&)
+{
+  // create a null.
+  Null obj;
+  if (Application().GetActiveSceneRoot().AddNull(L"null", obj) != CStatus::OK)
+  { Application().LogMessage(L"failed to create a null", siErrorMsg);
+  return CStatus::OK; }
+
+  // select it.
+  Selection sel = Application().GetSelection();
+  sel.Clear();
+  sel.Add(obj.GetRef());
+
+  // call the command dfgSoftimageOpApply..
+  CValueArray args;
+  args.Add(obj.GetFullName());
+  args.Add(true);
+  Application().ExecuteCommand(L"dfgSoftimageOpApply", args, CValue());
+
+  // done.
+  return CStatus::OK;
+}
+
+SICALLBACK FabricDFG_Menu_CreatePolymeshWithOp(XSI::CRef&)
+{
+  // create an empty polygon mesh.
+  X3DObject obj;
+  if (Application().GetActiveSceneRoot().AddPolygonMesh(MATH::CVector3Array(), CLongArray(), L"polymsh", obj) != CStatus::OK)
+  { Application().LogMessage(L"failed to create an empty polygon mesh", siErrorMsg);
+  return CStatus::OK; }
+
+  // select it.
+  Selection sel = Application().GetSelection();
+  sel.Clear();
+  sel.Add(obj.GetRef());
+
+  // call the command dfgSoftimageOpApply..
+  CValueArray args;
+  args.Add(obj.GetFullName());
+  args.Add(true);
+  Application().ExecuteCommand(L"dfgSoftimageOpApply", args, CValue());
 
   // done.
   return CStatus::OK;

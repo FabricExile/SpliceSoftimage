@@ -352,7 +352,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     else if (btnName == L"BtnImportJSON")
     {
       LONG ret;
-      toolkit.MsgBox(L"Importing DFG Presets is not possible via the property page.\n\nPlease use the menu \"Fabric:DFG -> Import JSON\" or the custom command \"dfgImportJSON\" instead.", siMsgOkOnly | siMsgInformation, "dfgSoftimageOp", ret);
+      toolkit.MsgBox(L"Importing DFG Presets is not possible via the property page.\n\nPlease use the menu \"Fabric:DFG -> Import JSON\"\nor the custom command \"dfgImportJSON\" instead.", siMsgOkOnly | siMsgInformation, "dfgSoftimageOp", ret);
     }
     else if (btnName == L"BtnExportJSON")
     {
