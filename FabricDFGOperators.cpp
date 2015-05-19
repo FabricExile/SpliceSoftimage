@@ -272,7 +272,6 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
         oLayout.AddSpacer(0, 4);
         oLayout.AddRow();
           pi = oLayout.AddButton(L"BtnImportJSON", L"Import JSON");
-          pi.PutAttribute(siUIButtonDisable, true);
           pi.PutAttribute(siUICX, btnTx);
           pi.PutAttribute(siUICY, btnTy);
           pi = oLayout.AddButton(L"BtnExportJSON", L"Export JSON");
@@ -353,7 +352,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     else if (btnName == L"BtnImportJSON")
     {
       LONG ret;
-      toolkit.MsgBox(L"not yet implemented", siMsgOkOnly, "dfgSoftimageOp", ret);
+      toolkit.MsgBox(L"Importing DFG Presets is not possible via the property page.\n\nPlease use the menu \"Fabric:DFG -> Import JSON\" or the custom command \"dfgImportJSON\" instead.", siMsgOkOnly | siMsgInformation, "dfgSoftimageOp", ret);
     }
     else if (btnName == L"BtnExportJSON")
     {
