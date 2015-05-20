@@ -26,10 +26,10 @@
 #include <xsi_customoperator.h>
 #include <xsi_operatorcontext.h>
 
-// project includes
 #include "FabricDFGPlugin.h"
 #include "FabricDFGOperators.h"
 #include "FabricDFGBaseInterface.h"
+#include "FabricDFGTools.h"
 
 std::map <unsigned int, _opUserData *> _opUserData::s_instances;
 
@@ -353,41 +353,11 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     }
     else if (btnName == L"BtnExportJSON")
     {
-      CComAPIHandler toolkit;
-      toolkit.CreateInstance(L"XSI.UIToolkit");
-      CString ext = ".dfg.json";
-
-      CComAPIHandler filebrowser(toolkit.GetProperty(L"FileBrowser"));
-      filebrowser.PutProperty(L"InitialDirectory", Application().GetActiveProject().GetPath());
-      filebrowser.PutProperty(L"Filter", L"DFG Preset (*" + ext + L")|*" + ext + L"||");
-
-      CValue returnVal;
-      filebrowser.Call(L"ShowSave", returnVal);
-      CString uiFileName = filebrowser.GetProperty(L"FilePathName").GetAsText();
-      if(uiFileName.IsEmpty())
+      // open file browser.
+      CString fileName;
+      if (!dfgTool_FileBrowserJSON(true, fileName))
       { Application().LogMessage(L"aborted by user.", siWarningMsg);
         return CStatus::OK; }
-
-      // convert backslashes to slashes.
-      CString fileName;
-      for(ULONG i=0;i<uiFileName.Length();i++)
-      {
-        if(uiFileName.GetSubString(i, 1).IsEqualNoCase(L"\\"))
-          fileName += L"/";
-        else
-          fileName += uiFileName[i];
-      }
-
-      // take care of possible double extension (e.g. "myProfile.gfd.json.gfd.json").
-      ULONG dfg1 = fileName.ReverseFindString(ext, UINT_MAX);
-      if (dfg1 != UINT_MAX)
-      {
-        ULONG dfg2 = fileName.ReverseFindString(ext, dfg1 - 1);
-        if (dfg2 != UINT_MAX && dfg2 + ext.Length() == dfg1)
-        {
-          fileName = fileName.GetSubString(0, fileName.Length() - ext.Length());
-        }
-      }
 
       // call command.
       CValueArray args;

@@ -2,11 +2,15 @@
 #include <xsi_context.h>
 #include <xsi_menu.h>
 #include <xsi_model.h>
+#include <xsi_customoperator.h>
 #include <xsi_x3dobject.h>
+#include <xsi_uitoolkit.h>
 #include <xsi_null.h>
 #include <xsi_vector3.h>
 #include <xsi_selection.h>
 #include <xsi_string.h>
+
+#include "FabricDFGTools.h"
 
 using namespace XSI;
 
@@ -19,6 +23,9 @@ XSIPLUGINCALLBACK CStatus FabricDFG_Init( CRef &in_ctxt )
   menu.AddSeparatorItem();
   menu.AddCallbackItem("Create Null with DFG Operator",       "FabricDFG_Menu_CreateNullWithOp",      item);
   menu.AddCallbackItem("Create Polymesh with DFG Operator",   "FabricDFG_Menu_CreatePolymeshWithOp",  item);
+  menu.AddSeparatorItem();
+  menu.AddCallbackItem("Import JSON",                         "FabricDFG_Menu_ImportJSON",            item);
+  menu.AddCallbackItem("Export JSON",                         "FabricDFG_Menu_ExportJSON",            item);
   menu.AddSeparatorItem();
   menu.AddCallbackItem("Online Help",                         "FabricDFG_Menu_OnlineHelp",            item);
   menu.AddCallbackItem("Log Status",                          "FabricDFG_Menu_LogStatus",             item);
@@ -132,6 +139,136 @@ SICALLBACK FabricDFG_Menu_OnlineHelp(XSI::CRef&)
   args.Add(true);
   args.Add((LONG)1);
   Application().ExecuteCommand(L"OpenNetView", args, CValue());
+  return CStatus::OK;
+}
+
+SICALLBACK FabricDFG_Menu_ImportJSON(XSI::CRef&)
+{
+  LONG ret;
+  UIToolkit toolkit = Application().GetUIToolkit();
+  CString msgBoxtitle = L"Import JSON";
+
+  // get/check current selection.
+  CRef selRef;
+  {
+    Selection sel = Application().GetSelection();
+    if (sel.GetCount() < 1)
+    { toolkit.MsgBox(L"Nothing selected.\nPlease select an object or operator and try again.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
+      return CStatus::OK; }
+    if (sel.GetCount() > 1)
+    { toolkit.MsgBox(L"More than one object selected.\nPlease select a single object or operator and try again.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
+      return CStatus::OK; }
+    selRef = sel.GetArray()[0];
+  }
+
+  // get operator from selection.
+  CustomOperator op;
+  if (selRef.GetClassID() == siCustomOperatorID)
+  {
+    op.SetObject(selRef);
+    if (!op.IsValid())
+    { toolkit.MsgBox(L"The selection cannot be used for this operation.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
+      return CStatus::OK; }
+  }
+  else
+  {
+    X3DObject obj(selRef);
+    if (!obj.IsValid())
+    { toolkit.MsgBox(L"The selection cannot be used for this operation.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
+      return CStatus::OK; }
+    CRefArray opRefs;
+    int numOps = dfgTool_GetRefsAtOps(obj, opRefs);
+    if (numOps < 1)
+    { toolkit.MsgBox(L"No valid custom operator found to perform this operation.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
+      return CStatus::OK; }
+    if (numOps > 1)
+    { toolkit.MsgBox(L"The selection contains more than one custom operator.\nPlease select a single operator and try again.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
+      return CStatus::OK; }
+    op.SetObject(opRefs[0]);
+    if (!op.IsValid())
+    { toolkit.MsgBox(L"Failed to get custom operator.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
+      return CStatus::OK; }
+  }
+
+  // open file browser.
+  CString fileName;
+  if (!dfgTool_FileBrowserJSON(false, fileName))
+  { Application().LogMessage(L"aborted by user.", siWarningMsg);
+    return CStatus::OK; }
+
+
+
+  // call command.
+  CValueArray args;
+  args.Add(op.GetUniqueName());
+  args.Add(fileName);
+  Application().ExecuteCommand(L"dfgImportJSON", args, CValue());
+
+  // done.
+  return CStatus::OK;
+}
+
+SICALLBACK FabricDFG_Menu_ExportJSON(XSI::CRef&)
+{
+  LONG ret;
+  UIToolkit toolkit = Application().GetUIToolkit();
+  CString msgBoxtitle = L"Export JSON";
+
+  // get/check current selection.
+  CRef selRef;
+  {
+    Selection sel = Application().GetSelection();
+    if (sel.GetCount() < 1)
+    { toolkit.MsgBox(L"Nothing selected.\nPlease select an object or operator and try again.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
+      return CStatus::OK; }
+    if (sel.GetCount() > 1)
+    { toolkit.MsgBox(L"More than one object selected.\nPlease select a single object or operator and try again.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
+      return CStatus::OK; }
+    selRef = sel.GetArray()[0];
+  }
+
+  // get operator from selection.
+  CustomOperator op;
+  if (selRef.GetClassID() == siCustomOperatorID)
+  {
+    op.SetObject(selRef);
+    if (!op.IsValid())
+    { toolkit.MsgBox(L"The selection cannot be used for this operation.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
+      return CStatus::OK; }
+  }
+  else
+  {
+    X3DObject obj(selRef);
+    if (!obj.IsValid())
+    { toolkit.MsgBox(L"The selection cannot be used for this operation.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
+      return CStatus::OK; }
+    CRefArray opRefs;
+    int numOps = dfgTool_GetRefsAtOps(obj, opRefs);
+    if (numOps < 1)
+    { toolkit.MsgBox(L"No valid custom operator found to perform this operation.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
+      return CStatus::OK; }
+    if (numOps > 1)
+    { toolkit.MsgBox(L"The selection contains more than one custom operator.\nPlease select a single operator and try again.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
+      return CStatus::OK; }
+    op.SetObject(opRefs[0]);
+    if (!op.IsValid())
+    { toolkit.MsgBox(L"Failed to get custom operator.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
+      return CStatus::OK; }
+  }
+
+  // open file browser.
+  CString fileName;
+  if (!dfgTool_FileBrowserJSON(true, fileName))
+  { Application().LogMessage(L"aborted by user.", siWarningMsg);
+    return CStatus::OK; }
+
+  // call command.
+  CValueArray args;
+  args.Add(op.GetUniqueName());
+  args.Add(fileName);
+  Application().ExecuteCommand(L"dfgExportJSON", args, CValue());
+
+  // done.
   return CStatus::OK;
 }
 
