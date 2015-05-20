@@ -1,8 +1,25 @@
 #ifndef __FabricDFGOperators_H_
 #define __FabricDFGOperators_H_
 
+#include <xsi_string.h>
+
 #include "FabricDFGBaseInterface.h"
 
+// ___________________________
+// structure for port mapping.
+struct _portMapping
+{
+  // DFG port.
+  XSI::CString portName;      // name.
+  XSI::CString portType;      // type ("In" or "Out").
+  XSI::CString portDataType;  // data type ("SInt32", "Vec3", "PolygonMesh", etc.).
+
+  // mapping.
+  XSI::CString mapType;       // specifies how the DFG port is to be mapped/exposed: "Internal", "XSIParameter", "XSIPort" or "XSIICEPort".
+  XSI::CString mapTarget;     // if mapType == "XSIPort" then the full name of the target (or L"" for no target).
+};
+
+// _____________________________________
 // dfgSoftimageOp's user data structure.
 struct _opUserData
 {

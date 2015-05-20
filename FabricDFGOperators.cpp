@@ -95,6 +95,18 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
   oPDef = oFactory.CreateParamDef(L"alwaysConvertMeshes", CValue::siBool,   siPersistable,                            L"", L"", false, CValue(), CValue(), CValue(), CValue());
   op.AddParameter(oPDef, Parameter());
 
+  oPDef = oFactory.CreateParamDef(L"test1",        CValue::siVector3,   siPersistable | siAnimatable | siKeyable, L"", L"", true, CValue(), CValue(), CValue(), CValue());
+  if (op.AddParameter(oPDef, Parameter()) != CStatus::OK) Application().LogMessage(L"test1 failed", siErrorMsg);
+
+  oPDef = oFactory.CreateParamDef(L"test2",        CValue::siColor4f,   siPersistable | siAnimatable | siKeyable, L"", L"", true, CValue(), CValue(), CValue(), CValue());
+  if (op.AddParameter(oPDef, Parameter()) != CStatus::OK) Application().LogMessage(L"test2 failed", siErrorMsg);
+
+  oPDef = oFactory.CreateParamDef(L"test3",        CValue::siQuaternionf,   siPersistable | siAnimatable | siKeyable, L"", L"", true, CValue(), CValue(), CValue(), CValue());
+  if (op.AddParameter(oPDef, Parameter()) != CStatus::OK) Application().LogMessage(L"test3 failed", siErrorMsg);
+
+  oPDef = oFactory.CreateParamDef(L"test4",        CValue::siMatrix4f,   siPersistable | siAnimatable | siKeyable, L"", L"", true, CValue(), CValue(), CValue(), CValue());
+  if (op.AddParameter(oPDef, Parameter()) != CStatus::OK) Application().LogMessage(L"test4 failed", siErrorMsg);
+
   // create grid parameter(s).
   op.AddParameter(oFactory.CreateGridParamDef("dfgPorts"), Parameter());
 
