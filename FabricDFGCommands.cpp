@@ -19,6 +19,7 @@
 
 #include "FabricDFGPlugin.h"
 #include "FabricDFGOperators.h"
+#include "FabricDFGTools.h"
 
 #include <fstream>
 #include <streambuf>
@@ -40,7 +41,7 @@ SICALLBACK dfgSoftimageOpApply_Init(CRef &in_ctxt)
   oCmd.EnableReturnValue(false) ;
 
   ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"ObjName", CString());
+  oArgs.Add(L"ObjectName", CString());
   oArgs.Add(L"OpenPPG", false);
 
   return CStatus::OK;
@@ -54,20 +55,20 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
   if (args.GetCount() < 2 || CString(args[0]).IsEmpty())
   { Application().LogMessage(L"apply dfgSoftimageOp operator failed: empty or missing argument(s)", siErrorMsg);
     return CStatus::OK; }
-  CString objName(args[0]);
+  CString objectName(args[0]);
   bool openPPG = args[1];
 
   // log.
-  Application().LogMessage(L"applying a  \"dfgSoftimageOp\" custom operator to \"" + objName + L"\"", siVerboseMsg);
+  Application().LogMessage(L"applying a  \"dfgSoftimageOp\" custom operator to \"" + objectName + L"\"", siVerboseMsg);
 
   // get target X3DObject.
-  CRefArray objRefArray = Application().GetActiveSceneRoot().FindChildren2(objName, L"", CStringArray());
+  CRefArray objRefArray = Application().GetActiveSceneRoot().FindChildren2(objectName, L"", CStringArray());
   if (objRefArray.GetCount() <= 0)
-  { Application().LogMessage(L"failed to find an object called \"" + objName + L"\" in the scene", siErrorMsg);
+  { Application().LogMessage(L"failed to find an object called \"" + objectName + L"\" in the scene", siErrorMsg);
     return CStatus::OK; }
   X3DObject obj(objRefArray[0]);
   if (!obj.IsValid())
-  { Application().LogMessage(L"failed to create X3DObject for \"" + objName + L"\"", siErrorMsg);
+  { Application().LogMessage(L"failed to create X3DObject for \"" + objectName + L"\"", siErrorMsg);
     return CStatus::OK; }
 
   // create the operator
@@ -128,7 +129,7 @@ SICALLBACK dfgImportJSON_Init(CRef &in_ctxt)
   oCmd.EnableReturnValue(false) ;
 
   ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"ObjName", CString());
+  oArgs.Add(L"OperatorName", CString());
   oArgs.Add(L"JSONFilePath", CString());
 
   return CStatus::OK;
@@ -142,32 +143,32 @@ SICALLBACK dfgImportJSON_Execute(CRef &in_ctxt)
   if (args.GetCount() < 2 || CString(args[0]).IsEmpty())
   { Application().LogMessage(L"import json failed: empty or missing argument(s)", siErrorMsg);
     return CStatus::OK; }
-  CString objName(args[0]);
+  CString operatorName(args[0]);
   CString filePath = args[1];
 
   // log.
-  Application().LogMessage(L"importing JSON file \"" + filePath + L"\" into \"" + objName + L"\"", siVerboseMsg);
+  Application().LogMessage(L"importing JSON file \"" + filePath + L"\" into \"" + operatorName + L"\"", siVerboseMsg);
 
   // set ref at operator.
   CRef ref;
-  ref.Set(objName);
+  ref.Set(operatorName);
   if (!ref.IsValid())
-  { Application().LogMessage(L"failed to find an object called \"" + objName + L"\"", siErrorMsg);
+  { Application().LogMessage(L"failed to find an object called \"" + operatorName + L"\"", siErrorMsg);
     return CStatus::OK; }
   if (ref.GetClassID() != siCustomOperatorID)
-  { Application().LogMessage(L"not a custom operator: \"" + objName + L"\"", siErrorMsg);
+  { Application().LogMessage(L"not a custom operator: \"" + operatorName + L"\"", siErrorMsg);
     return CStatus::OK; }
 
   // get operator.
   CustomOperator op(ref);
   if (!op.IsValid())
-  { Application().LogMessage(L"failed to set custom operator from \"" + objName + L"\"", siErrorMsg);
+  { Application().LogMessage(L"failed to set custom operator from \"" + operatorName + L"\"", siErrorMsg);
     return CStatus::OK; }
 
   // get op's _opUserData.
   _opUserData *pud = _opUserData::GetUserData(op.GetObjectID());
   if (!pud)
-  { Application().LogMessage(L"found no valid user data in custom operator \"" + objName + L"\"", siErrorMsg);
+  { Application().LogMessage(L"found no valid user data in custom operator \"" + operatorName + L"\"", siErrorMsg);
     Application().LogMessage(L"... operator perhaps not dfgSoftimageOp?", siErrorMsg);
     return CStatus::OK; }
 
@@ -215,7 +216,7 @@ SICALLBACK dfgExportJSON_Init(CRef &in_ctxt)
   oCmd.EnableReturnValue(false) ;
 
   ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"ObjName", CString());
+  oArgs.Add(L"OperatorName", CString());
   oArgs.Add(L"JSONFilePath", CString());
 
   return CStatus::OK;
@@ -229,32 +230,32 @@ SICALLBACK dfgExportJSON_Execute(CRef &in_ctxt)
   if (args.GetCount() < 2 || CString(args[0]).IsEmpty())
   { Application().LogMessage(L"export json failed: empty or missing argument(s)", siErrorMsg);
     return CStatus::OK; }
-  CString objName(args[0]);
+  CString operatorName(args[0]);
   CString filePath = args[1];
 
   // log.
-  Application().LogMessage(L"exporting \"" + objName + L"\" as JSON file \"" + filePath + L"\"", siVerboseMsg);
+  Application().LogMessage(L"exporting \"" + operatorName + L"\" as JSON file \"" + filePath + L"\"", siVerboseMsg);
 
   // set ref at operator.
   CRef ref;
-  ref.Set(objName);
+  ref.Set(operatorName);
   if (!ref.IsValid())
-  { Application().LogMessage(L"failed to find an object called \"" + objName + L"\"", siErrorMsg);
+  { Application().LogMessage(L"failed to find an object called \"" + operatorName + L"\"", siErrorMsg);
     return CStatus::OK; }
   if (ref.GetClassID() != siCustomOperatorID)
-  { Application().LogMessage(L"not a custom operator: \"" + objName + L"\"", siErrorMsg);
+  { Application().LogMessage(L"not a custom operator: \"" + operatorName + L"\"", siErrorMsg);
     return CStatus::OK; }
 
   // get operator.
   CustomOperator op(ref);
   if (!op.IsValid())
-  { Application().LogMessage(L"failed to set custom operator from \"" + objName + L"\"", siErrorMsg);
+  { Application().LogMessage(L"failed to set custom operator from \"" + operatorName + L"\"", siErrorMsg);
     return CStatus::OK; }
 
   // get op's _opUserData.
   _opUserData *pud = _opUserData::GetUserData(op.GetObjectID());
   if (!pud)
-  { Application().LogMessage(L"found no valid user data in custom operator \"" + objName + L"\"", siErrorMsg);
+  { Application().LogMessage(L"found no valid user data in custom operator \"" + operatorName + L"\"", siErrorMsg);
     Application().LogMessage(L"... operator perhaps not dfgSoftimageOp?", siErrorMsg);
     return CStatus::OK; }
 
@@ -307,8 +308,10 @@ SICALLBACK dfgSelectConnected_Init(CRef &in_ctxt)
   oCmd.EnableReturnValue(false) ;
 
   ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"ObjName", CString());
-  oArgs.Add(L"selWhat", (LONG)0); // < 0: In only, == 0: All, > 0: Out only.
+  oArgs.Add(L"OperatorName", CString());
+  oArgs.Add(L"selWhat", (LONG)0);   // < 0: In only, == 0: All, > 0: Out only.
+  oArgs.Add(L"preClearSel", true);  // clear selection prior to selecting connected objects.
+  oArgs.Add(L"skipReservedPorts", true);  // skip reserved ports.
 
   return CStatus::OK;
 }
@@ -318,52 +321,64 @@ SICALLBACK dfgSelectConnected_Execute(CRef &in_ctxt)
   // init.
   Context ctxt(in_ctxt);
   CValueArray args = ctxt.GetAttribute(L"Arguments");
-  if (args.GetCount() < 2 || CString(args[0]).IsEmpty())
+  if (args.GetCount() < 4 || CString(args[0]).IsEmpty())
   { Application().LogMessage(L"empty or missing argument(s)", siErrorMsg);
     return CStatus::OK; }
-  CString objName(args[0]);
+  CString operatorName(args[0]);
   LONG selWhat = args[1];
+  bool preClearSel = args[2];
+  bool skipReservedPorts = args[3];
 
   // log.
-  Application().LogMessage(L"select objects connected to \"" + objName + L"\"", siVerboseMsg);
+  Application().LogMessage(L"select objects connected to \"" + operatorName + L"\"", siVerboseMsg);
 
   // set ref at operator.
   CRef ref;
-  ref.Set(objName);
+  ref.Set(operatorName);
   if (!ref.IsValid())
-  { Application().LogMessage(L"failed to find an object called \"" + objName + L"\"", siErrorMsg);
+  { Application().LogMessage(L"failed to find an object called \"" + operatorName + L"\"", siErrorMsg);
     return CStatus::OK; }
   if (ref.GetClassID() != siCustomOperatorID)
-  { Application().LogMessage(L"not a custom operator: \"" + objName + L"\"", siErrorMsg);
+  { Application().LogMessage(L"not a custom operator: \"" + operatorName + L"\"", siErrorMsg);
     return CStatus::OK; }
 
   // get operator.
   CustomOperator op(ref);
   if (!op.IsValid())
-  { Application().LogMessage(L"failed to set custom operator from \"" + objName + L"\"", siErrorMsg);
+  { Application().LogMessage(L"failed to set custom operator from \"" + operatorName + L"\"", siErrorMsg);
     return CStatus::OK; }
 
-  // get current selection object.
+  // get current selection and possibly clear it.
   Selection sel = Application().GetSelection();
+  if (preClearSel)
+    sel.Clear();
 
-  // go.
-  sel.Clear();
+  // select connected.
+  CString r = L"reserved";
   CRefArray inPorts  = op.GetInputPorts();
   CRefArray outPorts = op.GetOutputPorts();
   if (selWhat <= 0)
   {
     for (int i=0;i<inPorts.GetCount();i++)
     {
-      CRef tRef = InputPort(inPorts[i]).GetTarget();
-      sel.Add(tRef);
+      InputPort port(inPorts[i]);
+      if (!port.IsConnected())
+        continue;
+      if (skipReservedPorts && port.GetName().FindString(r) == 0)
+        continue;
+      sel.Add(port.GetTarget());
     }
   }
   if (selWhat >= 0)
   {
     for (int i=0;i<outPorts.GetCount();i++)
     {
-      CRef tRef = OutputPort(outPorts[i]).GetTarget();
-      sel.Add(tRef);
+      OutputPort port(outPorts[i]);
+      if (!port.IsConnected())
+        continue;
+      if (skipReservedPorts && port.GetName().FindString(r) == 0)
+        continue;
+      sel.Add(port.GetTarget());
     }
   }
 
