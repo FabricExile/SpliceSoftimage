@@ -275,11 +275,12 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
           pi.PutAttribute(siUICY, btnTy);
         oLayout.EndRow();
         oLayout.AddSpacer(0, 8);
-        oLayout.AddRow();
-          pi = oLayout.AddButton(L"BtnLogDFGInfo", L"Log DFG Info");
-          pi.PutAttribute(siUICX, btnTx);
-          pi.PutAttribute(siUICY, btnTy);
-        oLayout.EndRow();
+        pi = oLayout.AddButton(L"BtnLogDFGInfo", L"Log DFG Info");
+        pi.PutAttribute(siUICX, btnTx);
+        pi.PutAttribute(siUICY, btnTy);
+        pi = oLayout.AddButton(L"BtnLogDFGJSON", L"Log DFG JSON");
+        pi.PutAttribute(siUICX, btnTx);
+        pi.PutAttribute(siUICY, btnTy);
         oLayout.AddSpacer(0, 8);
         oLayout.AddGroup(L"Select connected Objects");
           oLayout.AddRow();
@@ -361,7 +362,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
       { Application().LogMessage(L"aborted by user.", siWarningMsg);
         return CStatus::OK; }
 
-      // call command.
+      // export.
       CValueArray args;
       args.Add(op.GetUniqueName());
       args.Add(fileName);
@@ -455,6 +456,13 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
       {
         feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
       }
+    }
+    else if (btnName == L"BtnLogDFGJSON")
+    {
+      CValueArray args;
+      args.Add(op.GetUniqueName());
+      args.Add(L"console");
+      Application().ExecuteCommand(L"dfgExportJSON", args, CValue());
     }
   }
   else if (eventID == PPGEventContext::siTabChange)
