@@ -95,20 +95,10 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
   oPDef = oFactory.CreateParamDef(L"alwaysConvertMeshes", CValue::siBool,   siPersistable,                            L"", L"", false, CValue(), CValue(), CValue(), CValue());
   op.AddParameter(oPDef, Parameter());
 
-  oPDef = oFactory.CreateParamDef(L"test1",        CValue::siVector3,   siPersistable | siAnimatable | siKeyable, L"", L"", true, CValue(), CValue(), CValue(), CValue());
-  if (op.AddParameter(oPDef, Parameter()) != CStatus::OK) Application().LogMessage(L"test1 failed", siErrorMsg);
-
-  oPDef = oFactory.CreateParamDef(L"test2",        CValue::siColor4f,   siPersistable | siAnimatable | siKeyable, L"", L"", true, CValue(), CValue(), CValue(), CValue());
-  if (op.AddParameter(oPDef, Parameter()) != CStatus::OK) Application().LogMessage(L"test2 failed", siErrorMsg);
-
-  oPDef = oFactory.CreateParamDef(L"test3",        CValue::siQuaternionf,   siPersistable | siAnimatable | siKeyable, L"", L"", true, CValue(), CValue(), CValue(), CValue());
-  if (op.AddParameter(oPDef, Parameter()) != CStatus::OK) Application().LogMessage(L"test3 failed", siErrorMsg);
-
-  oPDef = oFactory.CreateParamDef(L"test4",        CValue::siMatrix4f,   siPersistable | siAnimatable | siKeyable, L"", L"", true, CValue(), CValue(), CValue(), CValue());
-  if (op.AddParameter(oPDef, Parameter()) != CStatus::OK) Application().LogMessage(L"test4 failed", siErrorMsg);
-
-  // create grid parameter(s).
+  // create grid parameter for the list of DFG ports.
   op.AddParameter(oFactory.CreateGridParamDef("dfgPorts"), Parameter());
+
+  // create exposed DFG parameters.
 
   // set default values.
   op.PutAlwaysEvaluate(false);
@@ -277,16 +267,16 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
 
       oLayout.AddGroup(L"Tools");
         oLayout.AddRow();
-          pi = oLayout.AddButton(L"BtnLogDFGInfo", L"Log DFG Info");
-          pi.PutAttribute(siUICX, btnTx);
-          pi.PutAttribute(siUICY, btnTy);
-        oLayout.EndRow();
-        oLayout.AddSpacer(0, 4);
-        oLayout.AddRow();
           pi = oLayout.AddButton(L"BtnImportJSON", L"Import JSON");
           pi.PutAttribute(siUICX, btnTx);
           pi.PutAttribute(siUICY, btnTy);
           pi = oLayout.AddButton(L"BtnExportJSON", L"Export JSON");
+          pi.PutAttribute(siUICX, btnTx);
+          pi.PutAttribute(siUICY, btnTy);
+        oLayout.EndRow();
+        oLayout.AddSpacer(0, 8);
+        oLayout.AddRow();
+          pi = oLayout.AddButton(L"BtnLogDFGInfo", L"Log DFG Info");
           pi.PutAttribute(siUICX, btnTx);
           pi.PutAttribute(siUICY, btnTy);
         oLayout.EndRow();

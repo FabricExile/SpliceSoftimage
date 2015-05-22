@@ -217,7 +217,7 @@ SICALLBACK dfgExportJSON_Init(CRef &in_ctxt)
 
   ArgumentArray oArgs = oCmd.GetArguments();
   oArgs.Add(L"OperatorName", CString());
-  oArgs.Add(L"JSONFilePath", CString());
+  oArgs.Add(L"JSONFilePath", CString());  // the filepath of the dfg.json file or L"console" to log the content in the history log (without writing anything to disk).
 
   return CStatus::OK;
 }
@@ -232,9 +232,11 @@ SICALLBACK dfgExportJSON_Execute(CRef &in_ctxt)
     return CStatus::OK; }
   CString operatorName(args[0]);
   CString filePath = args[1];
+  const bool onlyLog = filePath.IsEqualNoCase(L"console");
 
   // log.
-  Application().LogMessage(L"exporting \"" + operatorName + L"\" as JSON file \"" + filePath + L"\"", siVerboseMsg);
+  if (onlyLog)  Application().LogMessage(L"logging JSON of \"" + operatorName + L"\".", siVerboseMsg);
+  else          Application().LogMessage(L"exporting \"" + operatorName + L"\" as JSON file \"" + filePath + L"\"", siVerboseMsg);
 
   // set ref at operator.
   CRef ref;
@@ -259,34 +261,54 @@ SICALLBACK dfgExportJSON_Execute(CRef &in_ctxt)
     Application().LogMessage(L"... operator perhaps not dfgSoftimageOp?", siErrorMsg);
     return CStatus::OK; }
 
-  // export JSON file.
-  try
+  // log JSON.
+  if (onlyLog)
   {
-    if (!pud->GetBaseInterface())
-    { Application().LogMessage(L"no base interface found!", siErrorMsg);
-      return CStatus::OK; }
-    std::ofstream t(filePath.GetAsciiString(), std::ios::binary);
-    if (!t.good())
-    { Application().LogMessage(L"unable to open file", siErrorMsg);
-      return CStatus::OK; }
-    std::string json = pud->GetBaseInterface()->getJSON();
     try
     {
-      if (json.c_str())   t.write(json.c_str(), json.length());
-      else                t.write("", 0);
+      if (!pud->GetBaseInterface())
+      { Application().LogMessage(L"no base interface found!", siErrorMsg);
+        return CStatus::OK; }
+      std::string json = pud->GetBaseInterface()->getJSON();
+      Application().LogMessage(L"\n" + CString(json.c_str()), siInfoMsg);
     }
-    catch (std::exception &e)
+    catch (FabricCore::Exception e)
     {
-      CString err = "write error: ";
-      if (e.what())   err += e.what();
-      else            err += "";
-      feLogError(err.GetAsciiString());
-      return CStatus::OK;
+      feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
     }
   }
-  catch (FabricCore::Exception e)
+
+  // export JSON file.
+  else
   {
-    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+    try
+    {
+      if (!pud->GetBaseInterface())
+      { Application().LogMessage(L"no base interface found!", siErrorMsg);
+        return CStatus::OK; }
+      std::ofstream t(filePath.GetAsciiString(), std::ios::binary);
+      if (!t.good())
+      { Application().LogMessage(L"unable to open file", siErrorMsg);
+        return CStatus::OK; }
+      std::string json = pud->GetBaseInterface()->getJSON();
+      try
+      {
+        if (json.c_str())   t.write(json.c_str(), json.length());
+        else                t.write("", 0);
+      }
+      catch (std::exception &e)
+      {
+        CString err = "write error: ";
+        if (e.what())   err += e.what();
+        else            err += "";
+        feLogError(err.GetAsciiString());
+        return CStatus::OK;
+      }
+    }
+    catch (FabricCore::Exception e)
+    {
+      feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+    }
   }
 
   // done.
@@ -429,3 +451,5 @@ SICALLBACK dfgLogStatus_Execute(CRef &in_ctxt)
   
   return CStatus::OK;
 }
+
+
