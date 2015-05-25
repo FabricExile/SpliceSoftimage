@@ -72,14 +72,9 @@ SICALLBACK FabricDFG_Menu_CreateDFGOp(XSI::CRef&)
     }
   }
 
-  // call the command dfgSoftimageOpApply for all elements in targetObjects.
+  // execute command for all elements in targetObjects.
   for (int i=0;i<targetObjects.GetCount();i++)
-  {
-    CValueArray args;
-    args.Add(targetObjects[i]);
-    args.Add(true);
-    Application().ExecuteCommand(L"dfgSoftimageOpApply", args, CValue());
-  }
+    dfgTool_ExecuteCommand(L"dfgSoftimageOpApply", targetObjects[i], true);
 
   // done.
   return CStatus::OK;
@@ -98,11 +93,8 @@ SICALLBACK FabricDFG_Menu_CreateNullWithOp(XSI::CRef&)
   sel.Clear();
   sel.Add(obj.GetRef());
 
-  // call the command dfgSoftimageOpApply..
-  CValueArray args;
-  args.Add(obj.GetFullName());
-  args.Add(true);
-  Application().ExecuteCommand(L"dfgSoftimageOpApply", args, CValue());
+  // execute command.
+  dfgTool_ExecuteCommand(L"dfgSoftimageOpApply", obj.GetFullName(), true);
 
   // done.
   return CStatus::OK;
@@ -121,11 +113,8 @@ SICALLBACK FabricDFG_Menu_CreatePolymeshWithOp(XSI::CRef&)
   sel.Clear();
   sel.Add(obj.GetRef());
 
-  // call the command dfgSoftimageOpApply..
-  CValueArray args;
-  args.Add(obj.GetFullName());
-  args.Add(true);
-  Application().ExecuteCommand(L"dfgSoftimageOpApply", args, CValue());
+  // execute command.
+  dfgTool_ExecuteCommand(L"dfgSoftimageOpApply", obj.GetFullName(), true);
 
   // done.
   return CStatus::OK;
@@ -133,12 +122,7 @@ SICALLBACK FabricDFG_Menu_CreatePolymeshWithOp(XSI::CRef&)
 
 SICALLBACK FabricDFG_Menu_OnlineHelp(XSI::CRef&)
 {
-  CValueArray args;
-  
-  args.Add(L"http://docs.fabric-engine.com/FabricEngine/latest/HTML/");
-  args.Add(true);
-  args.Add((LONG)1);
-  Application().ExecuteCommand(L"OpenNetView", args, CValue());
+  dfgTool_ExecuteCommand(L"OpenNetView",L"http://docs.fabric-engine.com/FabricEngine/latest/HTML/" ,true ,(LONG)1);
   return CStatus::OK;
 }
 
@@ -196,13 +180,8 @@ SICALLBACK FabricDFG_Menu_ImportJSON(XSI::CRef&)
   { Application().LogMessage(L"aborted by user.", siWarningMsg);
     return CStatus::OK; }
 
-
-
-  // call command.
-  CValueArray args;
-  args.Add(op.GetUniqueName());
-  args.Add(fileName);
-  Application().ExecuteCommand(L"dfgImportJSON", args, CValue());
+  // execute command.
+  dfgTool_ExecuteCommand(L"dfgImportJSON", op.GetUniqueName(), fileName);
 
   // done.
   return CStatus::OK;
@@ -262,11 +241,8 @@ SICALLBACK FabricDFG_Menu_ExportJSON(XSI::CRef&)
   { Application().LogMessage(L"aborted by user.", siWarningMsg);
     return CStatus::OK; }
 
-  // call command.
-  CValueArray args;
-  args.Add(op.GetUniqueName());
-  args.Add(fileName);
-  Application().ExecuteCommand(L"dfgExportJSON", args, CValue());
+  // execute command.
+  dfgTool_ExecuteCommand(L"dfgExportJSON", op.GetUniqueName(), fileName);
 
   // done.
   return CStatus::OK;
@@ -274,7 +250,7 @@ SICALLBACK FabricDFG_Menu_ExportJSON(XSI::CRef&)
 
 SICALLBACK FabricDFG_Menu_LogStatus(XSI::CRef&)
 {
-  Application().ExecuteCommand(L"dfgLogStatus", CValueArray(), CValue());
+  dfgTool_ExecuteCommand(L"dfgLogStatus");
   return CStatus::OK;
 }
 

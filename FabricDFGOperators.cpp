@@ -14,7 +14,9 @@
 #include <xsi_ppglayout.h>
 #include <xsi_ppgeventcontext.h>
 #include <xsi_menu.h>
+#include <xsi_model.h>
 #include <xsi_griddata.h>
+#include <xsi_gridwidget.h>
 #include <xsi_selection.h>
 #include <xsi_project.h>
 #include <xsi_port.h>
@@ -25,6 +27,7 @@
 #include <xsi_kinematics.h>
 #include <xsi_customoperator.h>
 #include <xsi_operatorcontext.h>
+#include <xsi_parameter.h>
 
 #include "FabricDFGPlugin.h"
 #include "FabricDFGOperators.h"
@@ -114,48 +117,55 @@ int dfgSoftimageOp_UpdateGridData_dfgPorts(CustomOperator &op)
   GridData grid((CRef)op.GetParameter("dfgPorts").GetValue());
 
   // get operator's user data and check if there are any DFG ports.
-  _opUserData *pud = _opUserData::GetUserData(op.GetObjectID());
-  if (   !pud
-      || !pud->GetBaseInterface()
-      || !pud->GetBaseInterface()->getGraph()
-      || !pud->GetBaseInterface()->getGraph()->getPorts().size())
-  {
+  _portMapping *pm    = NULL;
+  int           numPm = 0;
+  CString       err;
+  if (!GetOperatorPortMapping(op, pm, numPm, err))
+  { 
     // clear grid data.
     grid = GridData();
     return 0;
   }
 
   // set amount, name and type of the grid columns.
+  grid.PutRowCount(numPm);
   grid.PutColumnCount(4);
-  grid.PutColumnLabel(0, " Name ");   grid.PutColumnType(0, siColumnStandard);
-  grid.PutColumnLabel(1, " Type ");   grid.PutColumnType(1, siColumnStandard);
-  grid.PutColumnLabel(2, " Mode ");   grid.PutColumnType(2, siColumnStandard);
-  grid.PutColumnLabel(3, " Target "); grid.PutColumnType(3, siColumnStandard);
-
-  // get all DFG ports.
-  FabricServices::DFGWrapper::PortList ports = pud->GetBaseInterface()->getGraph()->getPorts();
+  grid.PutColumnLabel(0, "Name");         grid.PutColumnType(0, siColumnStandard);
+  grid.PutColumnLabel(1, "Type");         grid.PutColumnType(1, siColumnStandard);
+  grid.PutColumnLabel(2, "Mode");         grid.PutColumnType(2, siColumnStandard);
+  grid.PutColumnLabel(3, "Type/Target");  grid.PutColumnType(3, siColumnStandard);
 
   // set data.
-  grid.PutRowCount(ports.size());
-  for (int i=0;i<ports.size();i++)
+  for (int i=0;i<numPm;i++)
   {
-    // ref at current port.
-    FabricServices::DFGWrapper::Port &port = *ports[i];
-
     // name.
-    CString name(port.getName());
+    CString name = pm[i].dfgPortName;
 
     // type (= resolved data type).
-    CString type(port.getResolvedType());
+    CString type = pm[i].dfgPortDataType;
 
     // mode (= DFGPortType).
     CString mode;
-    if      (port.getPortType() == FabricCore::DFGPortType_In)  mode = L"In";
-    else if (port.getPortType() == FabricCore::DFGPortType_Out) mode = L"Out";
-    else                                                        mode = L"IO";
+    switch (pm[i].dfgPortType)
+    {
+      case DFG_PORT_TYPE::IN:   mode = L"In";         break;
+      case DFG_PORT_TYPE::OUT:  mode = L"Out";        break;
+      default:                  mode = L"undefined";  break;
+    }
 
     // target.
-    CString target = L"<internal>";
+    CString target;
+    switch (pm[i].mapType)
+    {
+      case DFG_PORT_MAPTYPE::INTERNAL:        target = L"Internal";       break;
+      case DFG_PORT_MAPTYPE::XSI_PARAMETER:   target = L"XSI Parameter";  break;
+      case DFG_PORT_MAPTYPE::XSI_PORT:      { target = L"XSI Port";
+                                              if (!pm[i].mapTarget.IsEmpty())
+                                                target += L" / " + pm[i].mapTarget;
+                                            }                             break;
+      case DFG_PORT_MAPTYPE::XSI_ICE_PORT:    target = L"XSI ICE Port";   break;
+      default:                                target = L"unknown";        break;
+    }
     
     // set grid data.
     grid.PutRowLabel( i, L"  " + CString(i) + L"  ");
@@ -165,8 +175,9 @@ int dfgSoftimageOp_UpdateGridData_dfgPorts(CustomOperator &op)
     grid.PutCell(3,   i, target);
   }
 
-  // return amount of rows.
-  return ports.size();
+  // clean up and return amount of rows.
+  delete[] pm;
+  return numPm;
 }
 
 void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
@@ -220,7 +231,7 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
         {
           oLayout.AddSpacer(0, 8);
           oLayout.AddStaticText(L"   ... no Parameters available.");
-          oLayout.AddSpacer(0, 8);
+          oLayout.AddSpacer(0, 16);
         }
       oLayout.EndGroup();
     }
@@ -245,7 +256,7 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
       oLayout.AddGroup(L"DFG Ports");
         oLayout.AddRow();
           oLayout.AddSpacer(0, 0);
-          pi = oLayout.AddButton(L"BtnRefreshPPG", L"Refresh");
+          pi = oLayout.AddButton(L"BtnUpdatePPG", L"Update UI");
           pi.PutAttribute(siUICX, btnRx);
           pi.PutAttribute(siUICY, btnRy);
         oLayout.EndRow();
@@ -253,9 +264,11 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
         if (dfgPortsNumRows)
         {
           pi = oLayout.AddItem("dfgPorts", "dfgPorts", siControlGrid);
-          pi.PutAttribute(siUINoLabel,             true);
-          pi.PutAttribute(siUIWidthPercentage,     100);
-          pi.PutAttribute(siUIGridReadOnlyColumns, "1:1:1:1:1");
+          pi.PutAttribute(siUINoLabel,              true);
+          pi.PutAttribute(siUIWidthPercentage,      100);
+          pi.PutAttribute(siUIGridLockRowHeader,    false);
+          pi.PutAttribute(siUIGridSelectionMode,    siSelectionCell);
+          pi.PutAttribute(siUIGridReadOnlyColumns,  "1:1:1:1:1");
         }
         else
         {
@@ -265,36 +278,70 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
       oLayout.EndGroup();
       oLayout.AddSpacer(0, 4);
 
-      oLayout.AddGroup(L"Tools");
-        oLayout.AddRow();
-          pi = oLayout.AddButton(L"BtnImportJSON", L"Import JSON");
-          pi.PutAttribute(siUICX, btnTx);
-          pi.PutAttribute(siUICY, btnTy);
-          pi = oLayout.AddButton(L"BtnExportJSON", L"Export JSON");
-          pi.PutAttribute(siUICX, btnTx);
-          pi.PutAttribute(siUICY, btnTy);
-        oLayout.EndRow();
+      oLayout.AddGroup(L" ");
+
+        oLayout.AddGroup(L"Port Definitions and Connections");
+          oLayout.AddRow();
+            oLayout.AddGroup(L"", false);
+              pi = oLayout.AddButton(L"BtnPortsDefineTT", L"Define Type/Target");
+              pi.PutAttribute(siUICX, btnTx);
+              pi.PutAttribute(siUICY, btnTy);
+            oLayout.EndGroup();
+            oLayout.AddGroup(L"", false);
+              pi = oLayout.AddButton(L"BtnPortConnect", L"Connect");
+              pi.PutAttribute(siUIButtonDisable, dfgPortsNumRows == 0);
+              pi.PutAttribute(siUICX, btnTx);
+              pi.PutAttribute(siUICY, btnTy);
+              pi = oLayout.AddButton(L"BtnPortDisconnect", L"Disconnect");
+              pi.PutAttribute(siUIButtonDisable, dfgPortsNumRows == 0);
+              pi.PutAttribute(siUICX, btnTx);
+              pi.PutAttribute(siUICY, btnTy);
+            oLayout.EndGroup();
+          oLayout.EndRow();
+        oLayout.EndGroup();
         oLayout.AddSpacer(0, 8);
-        pi = oLayout.AddButton(L"BtnLogDFGInfo", L"Log DFG Info");
-        pi.PutAttribute(siUICX, btnTx);
-        pi.PutAttribute(siUICY, btnTy);
-        pi = oLayout.AddButton(L"BtnLogDFGJSON", L"Log DFG JSON");
-        pi.PutAttribute(siUICX, btnTx);
-        pi.PutAttribute(siUICY, btnTy);
-        oLayout.AddSpacer(0, 8);
+
         oLayout.AddGroup(L"Select connected Objects");
           oLayout.AddRow();
             pi = oLayout.AddButton(L"BtnSelConnectAll", L"All");
+            pi.PutAttribute(siUIButtonDisable, dfgPortsNumRows == 0);
             pi.PutAttribute(siUICX, btnTSCx);
             pi.PutAttribute(siUICY, btnTSCy);
-            pi = oLayout.AddButton(L"BtnSelConnectIn",  L"Input only");
+            pi = oLayout.AddButton(L"BtnSelConnectIn",  L"Inputs");
+            pi.PutAttribute(siUIButtonDisable, dfgPortsNumRows == 0);
             pi.PutAttribute(siUICX, btnTSCx);
             pi.PutAttribute(siUICY, btnTSCy);
-            pi = oLayout.AddButton(L"BtnSelConnectOut", L"Output only");
+            pi = oLayout.AddButton(L"BtnSelConnectOut", L"Outputs");
+            pi.PutAttribute(siUIButtonDisable, dfgPortsNumRows == 0);
             pi.PutAttribute(siUICX, btnTSCx);
             pi.PutAttribute(siUICY, btnTSCy);
           oLayout.EndRow();
         oLayout.EndGroup();
+        oLayout.AddSpacer(0, 8);
+
+        oLayout.AddGroup(L"File");
+          oLayout.AddRow();
+            pi = oLayout.AddButton(L"BtnImportJSON", L"Import JSON");
+            pi.PutAttribute(siUICX, btnTx);
+            pi.PutAttribute(siUICY, btnTy);
+            pi = oLayout.AddButton(L"BtnExportJSON", L"Export JSON");
+            pi.PutAttribute(siUICX, btnTx);
+            pi.PutAttribute(siUICY, btnTy);
+          oLayout.EndRow();
+        oLayout.EndGroup();
+        oLayout.AddSpacer(0, 8);
+
+        oLayout.AddGroup(L"Miscellaneous");
+          oLayout.AddRow();
+            pi = oLayout.AddButton(L"BtnLogDFGInfo", L"Log DFG Info");
+            pi.PutAttribute(siUICX, btnTx);
+            pi.PutAttribute(siUICY, btnTy);
+            pi = oLayout.AddButton(L"BtnLogDFGJSON", L"Log DFG JSON");
+            pi.PutAttribute(siUICX, btnTx);
+            pi.PutAttribute(siUICY, btnTy);
+          oLayout.EndRow();
+        oLayout.EndGroup();
+
       oLayout.EndGroup();
       oLayout.AddSpacer(0, 4);
     }
@@ -317,13 +364,11 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
 
 XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
 {
-  /*
-      note:
+  /*  note:
 
       if the value of a parameter changes but the UI is not shown then this
       code will not execute. Also this code is not re-entrant, so any changes
       to parameters inside this code will not result in further calls to this function.
-
   */
 
   // init.
@@ -349,6 +394,80 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
       LONG ret;
       toolkit.MsgBox(L"not yet implemented", siMsgOkOnly, "dfgSoftimageOp", ret);
     }
+    else if (btnName == L"BtnPortsDefineTT")
+    {
+      _portMapping *pm    = NULL;
+      int           numPm = 0;
+      CString       err;
+      if (!GetOperatorPortMapping(op, pm, numPm, err))
+      { Application().LogMessage(L"GetOperatorPortMapping() failed, err = \"" + err + L"\"", siErrorMsg);
+        return CStatus::OK; }
+      if (numPm)
+      {
+        DefinePortMapping(pm, numPm);
+
+
+//dfgTool_ExecuteCommand(L"dfgSoftimageOpApply", op.GetParent3DObject().GetFullName(), true);
+//dfgTool_ExecuteCommand(L"DeleteObj", op.GetFullName());
+
+
+
+
+      }
+    }
+    else if (btnName == L"BtnPortConnect")
+    {
+      LONG ret;
+
+      // get grid and its widget.
+      GridData   g((CRef)op.GetParameter("dfgPorts").GetValue());
+      if (!g.IsValid())
+      { Application().LogMessage(L"failed to get grid data.", siWarningMsg);
+        return CStatus::OK; }
+      GridWidget w = g.GetGridWidget();
+      if (!w.IsValid())
+      { Application().LogMessage(L"failed to get grid widget.", siWarningMsg);
+        return CStatus::OK; }
+
+      // get selected row.
+      int selRow = -1;
+      for (int j=0;j<g.GetRowCount();j++)
+        for (int i=0;i<g.GetColumnCount();i++)
+          if (w.IsCellSelected(i, j))
+          {
+            if (selRow < 0) { selRow = j;
+                              break; }
+            else            { toolkit.MsgBox(L"More than one DFG port selected.\n\nPlease select a single port and try again.", siMsgOkOnly | siMsgExclamation, "dfgSoftimageOp", ret);
+                              return CStatus::OK; }
+          }
+      if (selRow < 0)
+      { toolkit.MsgBox(L"No DFG port selected.\n\nPlease select a single port and try again.", siMsgOkOnly | siMsgExclamation, "dfgSoftimageOp", ret);
+        return CStatus::OK; }
+
+      //
+
+      // refresh layout.
+      toolkit.MsgBox(L"not yet implemented", siMsgOkOnly, "dfgSoftimageOp", ret);
+      //dfgSoftimageOp_DefineLayout(op.GetPPGLayout(), op);
+      //ctxt.PutAttribute(L"Refresh", true);
+    }
+    else if (btnName == L"BtnPortDisconnect")
+    {
+      LONG ret;
+      toolkit.MsgBox(L"not yet implemented", siMsgOkOnly, "dfgSoftimageOp", ret);
+    }
+    else if (btnName == L"BtnSelConnectAll")
+    {
+      dfgTool_ExecuteCommand(L"dfgSelectConnected", op.GetUniqueName(), (LONG)0);
+    }
+    else if (btnName == L"BtnSelConnectIn")
+    {
+      dfgTool_ExecuteCommand(L"dfgSelectConnected", op.GetUniqueName(), (LONG)-1);
+    }
+    else if (btnName == L"BtnSelConnectOut")
+    {
+      dfgTool_ExecuteCommand(L"dfgSelectConnected", op.GetUniqueName(), (LONG)+1);
+    }
     else if (btnName == L"BtnImportJSON")
     {
       LONG ret;
@@ -363,33 +482,9 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
         return CStatus::OK; }
 
       // export.
-      CValueArray args;
-      args.Add(op.GetUniqueName());
-      args.Add(fileName);
-      Application().ExecuteCommand(L"dfgExportJSON", args, CValue());
+      dfgTool_ExecuteCommand(L"dfgExportJSON", op.GetUniqueName(), fileName);
     }
-    else if (btnName == L"BtnSelConnectAll")
-    {
-      CValueArray args;
-      args.Add(op.GetUniqueName());
-      args.Add((LONG)0);  // In + Out.
-      Application().ExecuteCommand(L"dfgSelectConnected", args, CValue());
-    }
-    else if (btnName == L"BtnSelConnectIn")
-    {
-      CValueArray args;
-      args.Add(op.GetUniqueName());
-      args.Add((LONG)-1);  // In.
-      Application().ExecuteCommand(L"dfgSelectConnected", args, CValue());
-    }
-    else if (btnName == L"BtnSelConnectOut")
-    {
-      CValueArray args;
-      args.Add(op.GetUniqueName());
-      args.Add((LONG)+1);  // Out.
-      Application().ExecuteCommand(L"dfgSelectConnected", args, CValue());
-    }
-    else if (btnName == L"BtnRefreshPPG")
+    else if (btnName == L"BtnUpdatePPG")
     {
       dfgSoftimageOp_DefineLayout(op.GetPPGLayout(), op);
       ctxt.PutAttribute(L"Refresh", true);
@@ -459,10 +554,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     }
     else if (btnName == L"BtnLogDFGJSON")
     {
-      CValueArray args;
-      args.Add(op.GetUniqueName());
-      args.Add(L"console");
-      Application().ExecuteCommand(L"dfgExportJSON", args, CValue());
+      dfgTool_ExecuteCommand(L"dfgExportJSON", op.GetUniqueName(), L"console");
     }
   }
   else if (eventID == PPGEventContext::siTabChange)
@@ -519,3 +611,134 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
   return CStatus::OK;
 }
 
+// returns: true on success, false otherwise.
+bool DefinePortMapping(_portMapping *&io_pm, int &in_numPm)
+{
+  // check inputs.
+  if (in_numPm > 0 && !io_pm)
+  { Application().LogMessage(L"io_pm == NULL", siErrorMsg);
+    return false; }
+  if (in_numPm <= 0 || !io_pm)
+    return false;
+
+  // create the temporary custom property.
+  CustomProperty cp = Application().GetActiveSceneRoot().AddProperty(L"CustomProperty", false, L"dfgDefinePortMapping");
+  if (!cp.IsValid())
+  { Application().LogMessage(L"failed to create custom property!", siErrorMsg);
+    return false; }
+  
+  // declare/init return value.
+  bool ret = true;
+
+  //
+  CValueArray cvaMapType;
+  cvaMapType.Add( L"Internal" );
+  cvaMapType.Add( DFG_PORT_MAPTYPE::INTERNAL );
+  cvaMapType.Add( L"XSI Parameter" );
+  cvaMapType.Add( DFG_PORT_MAPTYPE::XSI_PARAMETER );
+  cvaMapType.Add( L"XSI Port" );
+  cvaMapType.Add( DFG_PORT_MAPTYPE::XSI_PORT );
+  cvaMapType.Add( L"XSI ICE Port" );
+  cvaMapType.Add( DFG_PORT_MAPTYPE::XSI_ICE_PORT );
+
+  // add parameters.
+  if (ret)
+  {
+    for (int i=0;i<in_numPm;i++)
+    {
+      _portMapping &pm = io_pm[i];
+
+      // read only params.
+      {
+        // name.
+        cp.AddParameter(L"Name" + CString(i), CValue::siString, siReadOnly, L"Name", L"", pm.dfgPortName, Parameter());
+
+        // type (resolved data type).
+        cp.AddParameter(L"Type" + CString(i), CValue::siString, siReadOnly, L"Type", L"", pm.dfgPortDataType, Parameter());
+
+        // mode (In/Out).
+        CString mode;
+        switch (pm.dfgPortType)
+        {
+          case DFG_PORT_TYPE::IN:   mode = L"In";         break;
+          case DFG_PORT_TYPE::OUT:  mode = L"Out";        break;
+          default:                  mode = L"undefined";  break;
+        }
+        cp.AddParameter(L"Mode" + CString(i), CValue::siString, siReadOnly, L"Mode", L"", mode, Parameter());
+      }
+
+      // other params.
+      {
+        // map type.
+        cp.AddParameter(L"MapType" + CString(i), CValue::siInt4, 0, L"Type/Target", L"", pm.mapType, Parameter());
+      }
+    }
+  }
+
+  // define layout.
+  if (ret)
+  {
+    PPGLayout oLayout = cp.GetPPGLayout();
+    oLayout.Clear();
+    for (int i=0;i<in_numPm;i++)
+    {
+      _portMapping &pm = io_pm[i];
+
+      oLayout.AddGroup(pm.dfgPortName);
+        oLayout.AddRow();
+          oLayout.AddGroup(L"", false, 20);
+            oLayout.AddItem(L"Name" + CString(i));
+            oLayout.AddItem(L"Type" + CString(i));
+            oLayout.AddItem(L"Mode" + CString(i));
+          oLayout.EndGroup();
+          oLayout.AddGroup(L"", false, 5);
+            oLayout.AddStaticText(L" ");
+          oLayout.EndGroup();
+          oLayout.AddGroup(L"", false);
+            oLayout.AddEnumControl(L"MapType" + CString(i), cvaMapType);
+          oLayout.EndGroup();
+        oLayout.EndRow();
+      oLayout.EndGroup();
+    }
+  }
+
+  // inspect the custom property as a modal dialog.
+  if (ret)
+  {
+    CValue r;
+    CValueArray args;
+    args.Add(cp.GetRef().GetAsText());
+    args.Add(L"");
+    args.Add(L"Define Port Mapping");
+    args.Add(siModal);
+    args.Add(false);
+    if (Application().ExecuteCommand(L"InspectObj", args, r) != CStatus::OK)
+    { Application().LogMessage(L"InspectObj failed", siErrorMsg);
+      ret = false; }
+    if (r == true)  // canceled by user.
+      ret = false;
+  }
+
+  // update io_pm from the custom property.
+  if (ret)
+  {
+    for (int i=0;i<in_numPm;i++)
+    {
+      _portMapping &pm = io_pm[i];
+
+      pm.mapType = (DFG_PORT_MAPTYPE)(int)cp.GetParameterValue(L"MapType" + CString(i));
+    }
+  }
+
+  // clean up.
+  {
+    // delete the custom property.
+    CValueArray args;
+    args.Add(cp.GetRef().GetAsText());
+    if (Application().ExecuteCommand(L"DeleteObj", args, CValue()) != CStatus::OK)
+      Application().LogMessage(L"DeleteObj failed", siWarningMsg);
+  }
+
+  // done.
+  return ret;
+}

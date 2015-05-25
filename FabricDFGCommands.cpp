@@ -104,11 +104,7 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
 
   // display operator's property page?
   if (openPPG)
-  {
-    CValueArray a;
-    a.Add(newOp.GetUniqueName());
-    Application().ExecuteCommand(L"InspectObj", a, CValue());
-  }
+    dfgTool_ExecuteCommand(L"InspectObj", newOp.GetUniqueName());
 
   // done.
   return CStatus::OK;

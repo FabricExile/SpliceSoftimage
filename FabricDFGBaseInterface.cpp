@@ -5,8 +5,8 @@
 #endif
 
 FabricCore::Client BaseInterface::s_client;
-FabricServices::DFGWrapper::Host * BaseInterface::s_host = NULL;
-FabricServices::ASTWrapper::KLASTManager * BaseInterface::s_manager = NULL;
+FabricServices::DFGWrapper::Host *BaseInterface::s_host = NULL;
+FabricServices::ASTWrapper::KLASTManager *BaseInterface::s_manager = NULL;
 FabricServices::Commands::CommandStack BaseInterface::s_stack;
 unsigned int BaseInterface::s_maxId = 0;
 void (*BaseInterface::s_logFunc)(void *, const char *, unsigned int) = NULL;
