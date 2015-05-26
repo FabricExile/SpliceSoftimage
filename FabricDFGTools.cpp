@@ -141,15 +141,12 @@ int dfgTool_GetRefsAtOps(XSI::X3DObject &in_obj, XSI::CRefArray &out_refs)
   return out_refs.GetCount();
 }
 
-// for a given custom operator: allocates and fills the out_* array
-// based on the op's DFG, ports, etc.
+// for a given custom operator: allocates and fills out_pmap based on the op's DFG, ports, etc.
 // returns: true on success, otherwise false plus an error description in out_err.
-// note: this function allocates the array out_pm and it is up to the caller to free it.
-bool GetOperatorPortMapping(XSI::CRef &in_op, _portMapping *&out_pm, int &out_numPm, XSI::CString &out_err)
+bool GetOperatorPortMapping(XSI::CRef &in_op, std::vector<_portMapping> &out_pmap, XSI::CString &out_err)
 {
   // init output.
-  out_pm    = NULL;
-  out_numPm = 0;
+  out_pmap.clear();
   out_err   = L"";
 
   // get the operator and its user data.
@@ -179,41 +176,39 @@ bool GetOperatorPortMapping(XSI::CRef &in_op, _portMapping *&out_pm, int &out_nu
   // get the op's port groups.
   CRefArray opPortGroups = op.GetPortGroups();
 
-  // allocate and fill out_*.
-  out_pm = new _portMapping[ports.size()];
+  // fill out_pmap.
   for (int i=0;i<ports.size();i++)
   {
     // ref at current DFG port.
     FabricServices::DFGWrapper::Port &port = *ports[i];
 
-    // ref at current port mapping.
-    _portMapping &pm = out_pm[out_numPm];
-    pm.clear();
+    // init port mapping.
+    _portMapping pmap;
 
     // dfg port name.
-    pm.dfgPortName = port.getName();
+    pmap.dfgPortName = port.getName();
 
     // dfg port type (in/out)
-    if      (port.getPortType() == FabricCore::DFGPortType_In)  pm.dfgPortType = DFG_PORT_TYPE::IN;
-    else if (port.getPortType() == FabricCore::DFGPortType_Out) pm.dfgPortType = DFG_PORT_TYPE::OUT;
+    if      (port.getPortType() == FabricCore::DFGPortType_In)  pmap.dfgPortType = DFG_PORT_TYPE::IN;
+    else if (port.getPortType() == FabricCore::DFGPortType_Out) pmap.dfgPortType = DFG_PORT_TYPE::OUT;
     else                                                        continue;
 
     // dfg port data type (resolved type).
-    pm.dfgPortDataType = port.getResolvedType();
+    pmap.dfgPortDataType = port.getResolvedType();
 
     // mapping type.
     {
       // init the type with 'internal'.
-      pm.mapType = DFG_PORT_MAPTYPE::INTERNAL;
+      pmap.mapType = DFG_PORT_MAPTYPE::INTERNAL;
 
       // process input port.
-      if (pm.dfgPortType == DFG_PORT_TYPE::IN)
+      if (pmap.dfgPortType == DFG_PORT_TYPE::IN)
       {
         // check if the operator has a parameter with the same name as the port.
-        Parameter p = op.GetParameter(pm.dfgPortName);
+        Parameter p = op.GetParameter(pmap.dfgPortName);
         if (p.IsValid())
         {
-          pm.mapType = DFG_PORT_MAPTYPE::XSI_PARAMETER;
+          pmap.mapType = DFG_PORT_MAPTYPE::XSI_PARAMETER;
         }
 
         // check if the operator has a XSI input port group with the same name as the port.
@@ -223,15 +218,15 @@ bool GetOperatorPortMapping(XSI::CRef &in_op, _portMapping *&out_pm, int &out_nu
           {
             PortGroup pg(opPortGroups[j]);
             if (   pg.IsValid()
-                && pg.GetName() == L"gIn" + pm.dfgPortName)
+                && pg.GetName() == L"gIn_" + pmap.dfgPortName)
             {
-              pm.mapType = DFG_PORT_MAPTYPE::XSI_PORT;
+              pmap.mapType = DFG_PORT_MAPTYPE::XSI_PORT;
               CRefArray pRefs = pg.GetPorts();
               if (pRefs.GetCount() == 1)
               {
                 Port p(pRefs[0]);
                 if (p.IsValid() && p.IsConnected())
-                  pm.mapTarget = p.GetTargetPath();
+                  pmap.mapTarget = p.GetTargetPath();
               }
             }
           }
@@ -239,12 +234,34 @@ bool GetOperatorPortMapping(XSI::CRef &in_op, _portMapping *&out_pm, int &out_nu
       }
 
       // process output port.
-      else
+      else if (pmap.dfgPortType == DFG_PORT_TYPE::OUT)
       {
+        for (int j=0;j<opPortGroups.GetCount();j++)
+        {
+          PortGroup pg(opPortGroups[j]);
+          if (   pg.IsValid()
+              && pg.GetName() == L"gOut_" + pmap.dfgPortName)
+          {
+            pmap.mapType = DFG_PORT_MAPTYPE::XSI_PORT;
+            CRefArray pRefs = pg.GetPorts();
+            if (pRefs.GetCount() == 1)
+            {
+              Port p(pRefs[0]);
+              if (p.IsValid() && p.IsConnected())
+                pmap.mapTarget = p.GetTargetPath();
+            }
+          }
+        }
       }
 
-      // inc.
-      out_numPm++;
+      // unsupported port.
+      else
+      {
+        continue;
+      }
+
+      // add it to out_pmap.
+      out_pmap.push_back(pmap);
     }
   }
 

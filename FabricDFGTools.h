@@ -7,6 +7,8 @@
 #include <xsi_value.h>
 #include <xsi_string.h>
 
+#include <vector>
+
 struct _portMapping;
 
 XSI::CStatus dfgTool_ExecuteCommand(XSI::CString commandName);
@@ -16,6 +18,6 @@ XSI::CStatus dfgTool_ExecuteCommand(XSI::CString commandName, XSI::CValue arg1, 
 XSI::CStatus dfgTool_ExecuteCommand(XSI::CString commandName, XSI::CValue arg1, XSI::CValue arg2, XSI::CValue arg3, XSI::CValue arg4);
 bool dfgTool_FileBrowserJSON(bool isSave, XSI::CString &out_filepath);
 int dfgTool_GetRefsAtOps(XSI::X3DObject &in_obj, XSI::CRefArray &out_refs);
-bool GetOperatorPortMapping(XSI::CRef &in_op, _portMapping *&out_pm, int &out_numPm, XSI::CString &out_err);
+bool GetOperatorPortMapping(XSI::CRef &in_op, std::vector<_portMapping> &out_pmap, XSI::CString &out_err);
 
 #endif

@@ -34,6 +34,13 @@ struct _portMapping
   DFG_PORT_MAPTYPE mapType;       // specifies how the DFG port is to be mapped/exposed.
   XSI::CString mapTarget;         // if mapType == "XSIPort" then the full name of the target (or L"" for no target).
 
+  _portMapping(void)
+  {
+    clear();
+  }
+  ~_portMapping()
+  {
+  }
   void clear(void)
   {
     dfgPortName     . Clear();
@@ -54,6 +61,9 @@ struct _opUserData
   static std::map <unsigned int, _opUserData *> s_instances;
 
  public:
+
+  // this is used by the functions that create new operators.
+  static std::vector<_portMapping> _opUserData::s_pmap_newOp;
 
   // constructor.
   _opUserData(unsigned int operatorObjectID)
@@ -118,6 +128,6 @@ struct _opUserData
 };
 
 // forward declarations.
-bool DefinePortMapping(_portMapping *&io_pm, int &in_numPm);
+bool DefinePortMapping(std::vector<_portMapping> &io_pmap);
 
 #endif

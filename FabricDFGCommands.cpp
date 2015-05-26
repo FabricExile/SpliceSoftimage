@@ -42,6 +42,7 @@ SICALLBACK dfgSoftimageOpApply_Init(CRef &in_ctxt)
 
   ArgumentArray oArgs = oCmd.GetArguments();
   oArgs.Add(L"ObjectName", CString());
+  oArgs.Add(L"dfgJSON", CString());
   oArgs.Add(L"OpenPPG", false);
 
   return CStatus::OK;
@@ -56,7 +57,8 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
   { Application().LogMessage(L"apply dfgSoftimageOp operator failed: empty or missing argument(s)", siErrorMsg);
     return CStatus::OK; }
   CString objectName(args[0]);
-  bool openPPG = args[1];
+  CString dfgJSON(args[1]);
+  bool openPPG = args[2];
 
   // log.
   Application().LogMessage(L"applying a  \"dfgSoftimageOp\" custom operator to \"" + objectName + L"\"", siVerboseMsg);
@@ -75,26 +77,94 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
   CString opName = L"dfgSoftimageOp";
   CustomOperator newOp = Application().GetFactory().CreateObject(opName);
 
-  // create ports.
+  // set from JSON.
+  if (!dfgJSON.IsEmpty())
+  {
+    _opUserData *pud = _opUserData::GetUserData(newOp.GetObjectID());
+    if (  pud
+        && pud->GetBaseInterface())
+    {
+      try
+      {
+        pud->GetBaseInterface()->setFromJSON(dfgJSON.GetAsciiString());
+      }
+      catch (FabricCore::Exception e)
+      {
+        feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+      }
+    }
+  }
+
+  // create the default output port "reservedMatrixOut" and connect the object's global kinematics to it.
   {
     CStatus returnStatus;
+    newOp.AddOutputPort(obj.GetKinematics().GetGlobal().GetRef(), L"reservedMatrixOut", -1, -1,  siDefaultPort, &returnStatus);
+    if (returnStatus != CStatus::OK)
+    { Application().LogMessage(L"failed to create default output port for the global kinematics", siErrorMsg);
+      return CStatus::OK; }
+  }
 
-    // output ports.
-    {
-      // create the default output port "reservedMatrixOut" and connect the object's global kinematics to it.
-      newOp.AddOutputPort(obj.GetKinematics().GetGlobal().GetRef(), L"reservedMatrixOut", -1, -1,  siDefaultPort, &returnStatus);
-      if (returnStatus != CStatus::OK)
-      { Application().LogMessage(L"failed to create default output port for the global kinematics", siErrorMsg);
-        return CStatus::OK; }
-    }
+  // create exposed DFG output ports.
+  for (int i=0;i<_opUserData::s_pmap_newOp.size();i++)
+  {
+    _portMapping &pmap = _opUserData::s_pmap_newOp[i];
 
-    // input ports.
+    //
+    if (   pmap.mapType != DFG_PORT_TYPE::OUT
+        || pmap.mapType != DFG_PORT_MAPTYPE::XSI_PORT)
+      continue;
+
+    //
+    siClassID classID = siUnknownClassID;
+    if (   pmap.dfgPortDataType == L"Boolean"
+
+        || pmap.dfgPortDataType == L"Float32"
+        || pmap.dfgPortDataType == L"Float64"
+
+        || pmap.dfgPortDataType == L"SInt8"
+        || pmap.dfgPortDataType == L"SInt16"
+        || pmap.dfgPortDataType == L"SInt32"
+        || pmap.dfgPortDataType == L"SInt64"
+
+        || pmap.dfgPortDataType == L"UInt8"
+        || pmap.dfgPortDataType == L"UInt16"
+        || pmap.dfgPortDataType == L"UInt32"
+        || pmap.dfgPortDataType == L"UInt64")
     {
-      newOp.AddInputPort(obj.GetKinematics().GetGlobal().GetRef(), L"reservedMatrixIn", -1, -1,  siDefaultPort, &returnStatus);
-      if (returnStatus != CStatus::OK)
-      { Application().LogMessage(L"failed to create default input port for the global kinematics", siErrorMsg);
-        return CStatus::OK; }
+      classID = siParameterID;
     }
+    if (pmap.dfgPortDataType == L"Mat44")
+    {
+      classID = siKinematicStateID;
+    }
+    if (pmap.dfgPortDataType == L"PolygonMesh")
+    {
+      classID = siPolygonMeshID;
+    }
+    if (classID == siUnknownClassID)
+    { Application().LogMessage(L"The DFG port \"" + pmap.dfgPortName + "\" cannot be exposed as a XSI Port (data type \"" + pmap.dfgPortDataType + "\" not yet supported)" , siWarningMsg);
+      continue; }
+
+    //
+    CRef pgRef = newOp.AddPortGroup(L"gOut_" + pmap.dfgPortName, 0, 1, L"", L"", siOptionalInputPort);
+    if (!pgRef.IsValid())
+    { Application().LogMessage(L"failed to create port group for \"" + pmap.dfgPortName + "\"", siErrorMsg);
+      continue; }
+
+    //
+    CRef pRef = newOp.AddOutputPortByClassID(classID, pmap.dfgPortName, PortGroup(pgRef).GetIndex(), 0, siOptionalInputPort);
+    if (!pRef.IsValid())
+    { Application().LogMessage(L"failed to create port \"" + pmap.dfgPortName + "\"", siErrorMsg);
+      continue; }
+  }
+
+  // create the default input port "reservedMatrixIn" and connect the object's global kinematics to it.
+  {
+    CStatus returnStatus;
+    newOp.AddInputPort(obj.GetKinematics().GetGlobal().GetRef(), L"reservedMatrixIn", -1, -1,  siDefaultPort, &returnStatus);
+    if (returnStatus != CStatus::OK)
+    { Application().LogMessage(L"failed to create default input port for the global kinematics", siErrorMsg);
+      return CStatus::OK; }
   }
 
   // connect the operator.

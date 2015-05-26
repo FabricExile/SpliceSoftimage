@@ -74,7 +74,7 @@ SICALLBACK FabricDFG_Menu_CreateDFGOp(XSI::CRef&)
 
   // execute command for all elements in targetObjects.
   for (int i=0;i<targetObjects.GetCount();i++)
-    dfgTool_ExecuteCommand(L"dfgSoftimageOpApply", targetObjects[i], true);
+    dfgTool_ExecuteCommand(L"dfgSoftimageOpApply", targetObjects[i], L"", true);
 
   // done.
   return CStatus::OK;
@@ -94,7 +94,7 @@ SICALLBACK FabricDFG_Menu_CreateNullWithOp(XSI::CRef&)
   sel.Add(obj.GetRef());
 
   // execute command.
-  dfgTool_ExecuteCommand(L"dfgSoftimageOpApply", obj.GetFullName(), true);
+  dfgTool_ExecuteCommand(L"dfgSoftimageOpApply", obj.GetFullName(), L"", true);
 
   // done.
   return CStatus::OK;
@@ -114,7 +114,7 @@ SICALLBACK FabricDFG_Menu_CreatePolymeshWithOp(XSI::CRef&)
   sel.Add(obj.GetRef());
 
   // execute command.
-  dfgTool_ExecuteCommand(L"dfgSoftimageOpApply", obj.GetFullName(), true);
+  dfgTool_ExecuteCommand(L"dfgSoftimageOpApply", obj.GetFullName(), L"", true);
 
   // done.
   return CStatus::OK;

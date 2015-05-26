@@ -34,7 +34,8 @@
 #include "FabricDFGBaseInterface.h"
 #include "FabricDFGTools.h"
 
-std::map <unsigned int, _opUserData *> _opUserData::s_instances;
+std::map <unsigned int, _opUserData *>  _opUserData::s_instances;
+std::vector<_portMapping>               _opUserData::s_pmap_newOp;
 
 using namespace XSI;
 
@@ -102,6 +103,46 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
   op.AddParameter(oFactory.CreateGridParamDef("dfgPorts"), Parameter());
 
   // create exposed DFG parameters.
+  CString exposedDFGParams = L"";
+  {
+    for (int i=0;i<_opUserData::s_pmap_newOp.size();i++)
+    {
+      _portMapping &pmap = _opUserData::s_pmap_newOp[i];
+
+      if (pmap.mapType != DFG_PORT_MAPTYPE::XSI_PARAMETER)
+        continue;
+
+      CValue::DataType dt = CValue::siIUnknown;
+      if      (pmap.dfgPortDataType == L"Boolean")  dt = CValue::siBool;
+
+      else if (pmap.dfgPortDataType == L"Float32")  dt = CValue::siFloat;
+      else if (pmap.dfgPortDataType == L"Float64")  dt = CValue::siDouble;
+
+      else if (pmap.dfgPortDataType == L"SInt8")    dt = CValue::siInt1;
+      else if (pmap.dfgPortDataType == L"SInt16")   dt = CValue::siInt2;
+      else if (pmap.dfgPortDataType == L"SInt32")   dt = CValue::siInt4;
+      else if (pmap.dfgPortDataType == L"SInt64")   dt = CValue::siInt8;
+
+      else if (pmap.dfgPortDataType == L"UInt8")    dt = CValue::siUInt1;
+      else if (pmap.dfgPortDataType == L"UInt16")   dt = CValue::siUInt2;
+      else if (pmap.dfgPortDataType == L"UInt32")   dt = CValue::siUInt4;
+      else if (pmap.dfgPortDataType == L"UInt64")   dt = CValue::siUInt8;
+
+      if (dt == CValue::siIUnknown)
+      { Application().LogMessage(L"The DFG port \"" + pmap.dfgPortName + "\" cannot be exposed as a XSI Parameter (data type \"" + pmap.dfgPortDataType + "\" not yet supported)" , siWarningMsg);
+        continue; }
+
+      Application().LogMessage(L"adding parameter \"" + pmap.dfgPortName + "\"" , siInfoMsg);
+      oPDef = oFactory.CreateParamDef(pmap.dfgPortName, dt, siPersistable | siAnimatable | siKeyable, L"", L"", CValue(), CValue(), CValue(), CValue(), CValue());
+      op.AddParameter(oPDef, Parameter());
+      exposedDFGParams += pmap.dfgPortName + L";";
+    }
+  }
+
+  // add internal string parameter with all the exposed DFG port names.
+  // (this is used in the layout function).
+  oPDef = oFactory.CreateParamDef(L"exposedDFGParams", CValue::siString, siReadOnly + siPersistable, L"", L"", exposedDFGParams, "", "", "", "");
+  op.AddParameter(oPDef, Parameter());
 
   // set default values.
   op.PutAlwaysEvaluate(false);
@@ -117,10 +158,9 @@ int dfgSoftimageOp_UpdateGridData_dfgPorts(CustomOperator &op)
   GridData grid((CRef)op.GetParameter("dfgPorts").GetValue());
 
   // get operator's user data and check if there are any DFG ports.
-  _portMapping *pm    = NULL;
-  int           numPm = 0;
+  std::vector<_portMapping> pmap;
   CString       err;
-  if (!GetOperatorPortMapping(op, pm, numPm, err))
+  if (!GetOperatorPortMapping(op, pmap, err))
   { 
     // clear grid data.
     grid = GridData();
@@ -128,7 +168,7 @@ int dfgSoftimageOp_UpdateGridData_dfgPorts(CustomOperator &op)
   }
 
   // set amount, name and type of the grid columns.
-  grid.PutRowCount(numPm);
+  grid.PutRowCount(pmap.size());
   grid.PutColumnCount(4);
   grid.PutColumnLabel(0, "Name");         grid.PutColumnType(0, siColumnStandard);
   grid.PutColumnLabel(1, "Type");         grid.PutColumnType(1, siColumnStandard);
@@ -136,17 +176,17 @@ int dfgSoftimageOp_UpdateGridData_dfgPorts(CustomOperator &op)
   grid.PutColumnLabel(3, "Type/Target");  grid.PutColumnType(3, siColumnStandard);
 
   // set data.
-  for (int i=0;i<numPm;i++)
+  for (int i=0;i<pmap.size();i++)
   {
     // name.
-    CString name = pm[i].dfgPortName;
+    CString name = pmap[i].dfgPortName;
 
     // type (= resolved data type).
-    CString type = pm[i].dfgPortDataType;
+    CString type = pmap[i].dfgPortDataType;
 
     // mode (= DFGPortType).
     CString mode;
-    switch (pm[i].dfgPortType)
+    switch (pmap[i].dfgPortType)
     {
       case DFG_PORT_TYPE::IN:   mode = L"In";         break;
       case DFG_PORT_TYPE::OUT:  mode = L"Out";        break;
@@ -155,13 +195,13 @@ int dfgSoftimageOp_UpdateGridData_dfgPorts(CustomOperator &op)
 
     // target.
     CString target;
-    switch (pm[i].mapType)
+    switch (pmap[i].mapType)
     {
       case DFG_PORT_MAPTYPE::INTERNAL:        target = L"Internal";       break;
       case DFG_PORT_MAPTYPE::XSI_PARAMETER:   target = L"XSI Parameter";  break;
       case DFG_PORT_MAPTYPE::XSI_PORT:      { target = L"XSI Port";
-                                              if (!pm[i].mapTarget.IsEmpty())
-                                                target += L" / " + pm[i].mapTarget;
+                                              if (!pmap[i].mapTarget.IsEmpty())
+                                                target += L" / " + pmap[i].mapTarget;
                                             }                             break;
       case DFG_PORT_MAPTYPE::XSI_ICE_PORT:    target = L"XSI ICE Port";   break;
       default:                                target = L"unknown";        break;
@@ -175,9 +215,8 @@ int dfgSoftimageOp_UpdateGridData_dfgPorts(CustomOperator &op)
     grid.PutCell(3,   i, target);
   }
 
-  // clean up and return amount of rows.
-  delete[] pm;
-  return numPm;
+  // return amount of rows.
+  return pmap.size();
 }
 
 void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
@@ -206,6 +245,9 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
   // update the grid data.
   const int dfgPortsNumRows = dfgSoftimageOp_UpdateGridData_dfgPorts(op);
 
+  // get the names of all DFG ports that are available as XSI parameters.
+  CStringArray exposedDFGParams = CString(op.GetParameterValue(L"exposedDFGParams")).Split(L";");
+
   // Tab "Main"
   {
     oLayout.AddTab(L"Main");
@@ -223,11 +265,12 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
       oLayout.AddSpacer(0, 12);
 
       oLayout.AddGroup(L"Parameters");
-        bool hasParams = false;
+        bool hasParams = (exposedDFGParams.GetCount() > 0);
+        for (int i=0;i<exposedDFGParams.GetCount();i++)
         {
-          // todo: add input parameters from graph.
+          oLayout.AddItem(exposedDFGParams[i]);
         }
-        if (!hasParams)
+        if (exposedDFGParams.GetCount() <= 0)
         {
           oLayout.AddSpacer(0, 8);
           oLayout.AddStaticText(L"   ... no Parameters available.");
@@ -284,6 +327,7 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
           oLayout.AddRow();
             oLayout.AddGroup(L"", false);
               pi = oLayout.AddButton(L"BtnPortsDefineTT", L"Define Type/Target");
+              pi.PutAttribute(siUIButtonDisable, dfgPortsNumRows == 0);
               pi.PutAttribute(siUICX, btnTx);
               pi.PutAttribute(siUICY, btnTy);
             oLayout.EndGroup();
@@ -396,23 +440,35 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     }
     else if (btnName == L"BtnPortsDefineTT")
     {
-      _portMapping *pm    = NULL;
-      int           numPm = 0;
       CString       err;
-      if (!GetOperatorPortMapping(op, pm, numPm, err))
+      if (!GetOperatorPortMapping(op, _opUserData::s_pmap_newOp, err))
       { Application().LogMessage(L"GetOperatorPortMapping() failed, err = \"" + err + L"\"", siErrorMsg);
         return CStatus::OK; }
-      if (numPm)
+      if (_opUserData::s_pmap_newOp.size())
       {
-        DefinePortMapping(pm, numPm);
+        //
+        DefinePortMapping(_opUserData::s_pmap_newOp);
 
+        //
+        CString dfgJSON;
+        _opUserData *pud = _opUserData::GetUserData(op.GetObjectID());
+        if (   pud
+            && pud->GetBaseInterface())
+        {
+          try
+          {
+            std::string json = pud->GetBaseInterface()->getJSON();
+            dfgJSON = json.c_str();
+          }
+          catch (FabricCore::Exception e)
+          {
+            feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+          }
+        }
 
-//dfgTool_ExecuteCommand(L"dfgSoftimageOpApply", op.GetParent3DObject().GetFullName(), true);
-//dfgTool_ExecuteCommand(L"DeleteObj", op.GetFullName());
+        dfgTool_ExecuteCommand(L"dfgSoftimageOpApply", op.GetParent3DObject().GetFullName(), dfgJSON, true);
 
-
-
-
+        dfgTool_ExecuteCommand(L"DeleteObj", op.GetFullName());
       }
     }
     else if (btnName == L"BtnPortConnect")
@@ -445,11 +501,11 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
         return CStatus::OK; }
 
       //
+      op.ConnectToGroup(
 
       // refresh layout.
-      toolkit.MsgBox(L"not yet implemented", siMsgOkOnly, "dfgSoftimageOp", ret);
-      //dfgSoftimageOp_DefineLayout(op.GetPPGLayout(), op);
-      //ctxt.PutAttribute(L"Refresh", true);
+      dfgSoftimageOp_DefineLayout(op.GetPPGLayout(), op);
+      ctxt.PutAttribute(L"Refresh", true);
     }
     else if (btnName == L"BtnPortDisconnect")
     {
@@ -470,8 +526,21 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     }
     else if (btnName == L"BtnImportJSON")
     {
-      LONG ret;
-      toolkit.MsgBox(L"Importing DFG Presets is not possible via the property page.\n\nPlease use the menu \"Fabric:DFG -> Import JSON\"\nor the custom command \"dfgImportJSON\" instead.", siMsgOkOnly | siMsgInformation, "dfgSoftimageOp", ret);
+      //LONG ret;
+      //toolkit.MsgBox(L"Importing DFG Presets is not possible via the property page.\n\nPlease use the menu \"Fabric:DFG -> Import JSON\"\nor the custom command \"dfgImportJSON\" instead.", siMsgOkOnly | siMsgInformation, "dfgSoftimageOp", ret);
+
+      // open file browser.
+      CString fileName;
+      if (!dfgTool_FileBrowserJSON(false, fileName))
+      { Application().LogMessage(L"aborted by user.", siWarningMsg);
+        return CStatus::OK; }
+
+      // execute command.
+      dfgTool_ExecuteCommand(L"dfgImportJSON", op.GetUniqueName(), fileName);
+
+      //
+      dfgSoftimageOp_DefineLayout(op.GetPPGLayout(), op);
+      ctxt.PutAttribute(L"Refresh", true);
     }
     else if (btnName == L"BtnExportJSON")
     {
@@ -612,13 +681,10 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
 }
 
 // returns: true on success, false otherwise.
-bool DefinePortMapping(_portMapping *&io_pm, int &in_numPm)
+bool DefinePortMapping(std::vector<_portMapping> &io_pmap)
 {
-  // check inputs.
-  if (in_numPm > 0 && !io_pm)
-  { Application().LogMessage(L"io_pm == NULL", siErrorMsg);
-    return false; }
-  if (in_numPm <= 0 || !io_pm)
+  // nothing to do?
+  if (io_pmap.size() == 0)
     return false;
 
   // create the temporary custom property.
@@ -630,35 +696,24 @@ bool DefinePortMapping(_portMapping *&io_pm, int &in_numPm)
   // declare/init return value.
   bool ret = true;
 
-  //
-  CValueArray cvaMapType;
-  cvaMapType.Add( L"Internal" );
-  cvaMapType.Add( DFG_PORT_MAPTYPE::INTERNAL );
-  cvaMapType.Add( L"XSI Parameter" );
-  cvaMapType.Add( DFG_PORT_MAPTYPE::XSI_PARAMETER );
-  cvaMapType.Add( L"XSI Port" );
-  cvaMapType.Add( DFG_PORT_MAPTYPE::XSI_PORT );
-  cvaMapType.Add( L"XSI ICE Port" );
-  cvaMapType.Add( DFG_PORT_MAPTYPE::XSI_ICE_PORT );
-
   // add parameters.
   if (ret)
   {
-    for (int i=0;i<in_numPm;i++)
+    for (int i=0;i<io_pmap.size();i++)
     {
-      _portMapping &pm = io_pm[i];
+      _portMapping &pmap = io_pmap[i];
 
       // read only params.
       {
         // name.
-        cp.AddParameter(L"Name" + CString(i), CValue::siString, siReadOnly, L"Name", L"", pm.dfgPortName, Parameter());
+        cp.AddParameter(L"Name" + CString(i), CValue::siString, siReadOnly, L"Name", L"", pmap.dfgPortName, Parameter());
 
         // type (resolved data type).
-        cp.AddParameter(L"Type" + CString(i), CValue::siString, siReadOnly, L"Type", L"", pm.dfgPortDataType, Parameter());
+        cp.AddParameter(L"Type" + CString(i), CValue::siString, siReadOnly, L"Type", L"", pmap.dfgPortDataType, Parameter());
 
         // mode (In/Out).
         CString mode;
-        switch (pm.dfgPortType)
+        switch (pmap.dfgPortType)
         {
           case DFG_PORT_TYPE::IN:   mode = L"In";         break;
           case DFG_PORT_TYPE::OUT:  mode = L"Out";        break;
@@ -670,7 +725,7 @@ bool DefinePortMapping(_portMapping *&io_pm, int &in_numPm)
       // other params.
       {
         // map type.
-        cp.AddParameter(L"MapType" + CString(i), CValue::siInt4, 0, L"Type/Target", L"", pm.mapType, Parameter());
+        cp.AddParameter(L"MapType" + CString(i), CValue::siInt4, 0, L"Type/Target", L"", pmap.mapType, Parameter());
       }
     }
   }
@@ -680,11 +735,11 @@ bool DefinePortMapping(_portMapping *&io_pm, int &in_numPm)
   {
     PPGLayout oLayout = cp.GetPPGLayout();
     oLayout.Clear();
-    for (int i=0;i<in_numPm;i++)
+    for (int i=0;i<io_pmap.size();i++)
     {
-      _portMapping &pm = io_pm[i];
+      _portMapping &pmap = io_pmap[i];
 
-      oLayout.AddGroup(pm.dfgPortName);
+      oLayout.AddGroup(pmap.dfgPortName);
         oLayout.AddRow();
           oLayout.AddGroup(L"", false, 20);
             oLayout.AddItem(L"Name" + CString(i));
@@ -695,7 +750,79 @@ bool DefinePortMapping(_portMapping *&io_pm, int &in_numPm)
             oLayout.AddStaticText(L" ");
           oLayout.EndGroup();
           oLayout.AddGroup(L"", false);
-            oLayout.AddEnumControl(L"MapType" + CString(i), cvaMapType);
+          {
+            CValueArray cvaMapType;
+            cvaMapType.Add( L"Internal" );
+            cvaMapType.Add( DFG_PORT_MAPTYPE::INTERNAL );
+            if (pmap.dfgPortType == DFG_PORT_TYPE::IN)
+            {
+              if (   pmap.dfgPortDataType == L"Boolean"
+
+                  || pmap.dfgPortDataType == L"Float32"
+                  || pmap.dfgPortDataType == L"Float64"
+
+                  || pmap.dfgPortDataType == L"SInt8"
+                  || pmap.dfgPortDataType == L"SInt16"
+                  || pmap.dfgPortDataType == L"SInt32"
+                  || pmap.dfgPortDataType == L"SInt64"
+
+                  || pmap.dfgPortDataType == L"UInt8"
+                  || pmap.dfgPortDataType == L"UInt16"
+                  || pmap.dfgPortDataType == L"UInt32"
+                  || pmap.dfgPortDataType == L"UInt64")
+              {
+                cvaMapType.Add( L"XSI Parameter" );
+                cvaMapType.Add( DFG_PORT_MAPTYPE::XSI_PARAMETER );
+              }
+              if (   pmap.dfgPortDataType == L"Boolean"
+
+                  || pmap.dfgPortDataType == L"Float32"
+                  || pmap.dfgPortDataType == L"Float64"
+
+                  || pmap.dfgPortDataType == L"SInt8"
+                  || pmap.dfgPortDataType == L"SInt16"
+                  || pmap.dfgPortDataType == L"SInt32"
+                  || pmap.dfgPortDataType == L"SInt64"
+
+                  || pmap.dfgPortDataType == L"UInt8"
+                  || pmap.dfgPortDataType == L"UInt16"
+                  || pmap.dfgPortDataType == L"UInt32"
+                  || pmap.dfgPortDataType == L"UInt64"
+
+                  || pmap.dfgPortDataType == L"Mat44")
+              {
+                cvaMapType.Add( L"XSI Port" );
+                cvaMapType.Add( DFG_PORT_MAPTYPE::XSI_PORT );
+              }
+            }
+            else if (pmap.dfgPortType == DFG_PORT_TYPE::OUT)
+            {
+              if (   pmap.dfgPortDataType == L"Boolean"
+
+                  || pmap.dfgPortDataType == L"Float32"
+                  || pmap.dfgPortDataType == L"Float64"
+
+                  || pmap.dfgPortDataType == L"SInt8"
+                  || pmap.dfgPortDataType == L"SInt16"
+                  || pmap.dfgPortDataType == L"SInt32"
+                  || pmap.dfgPortDataType == L"SInt64"
+
+                  || pmap.dfgPortDataType == L"UInt8"
+                  || pmap.dfgPortDataType == L"UInt16"
+                  || pmap.dfgPortDataType == L"UInt32"
+                  || pmap.dfgPortDataType == L"UInt64"
+
+                  || pmap.dfgPortDataType == L"Mat44"
+
+                  || pmap.dfgPortDataType == L"PolygonMesh")
+              {
+                cvaMapType.Add( L"XSI Port" );
+                cvaMapType.Add( DFG_PORT_MAPTYPE::XSI_PORT );
+              }
+            }
+
+            oLayout.AddEnumControl(L"MapType" + CString(i), cvaMapType, CString(), siControlRadio);
+          }
           oLayout.EndGroup();
         oLayout.EndRow();
       oLayout.EndGroup();
@@ -722,11 +849,11 @@ bool DefinePortMapping(_portMapping *&io_pm, int &in_numPm)
   // update io_pm from the custom property.
   if (ret)
   {
-    for (int i=0;i<in_numPm;i++)
+    for (int i=0;i<io_pmap.size();i++)
     {
-      _portMapping &pm = io_pm[i];
+      _portMapping &pmap = io_pmap[i];
 
-      pm.mapType = (DFG_PORT_MAPTYPE)(int)cp.GetParameterValue(L"MapType" + CString(i));
+      pmap.mapType = (DFG_PORT_MAPTYPE)(int)cp.GetParameterValue(L"MapType" + CString(i));
     }
   }
 
