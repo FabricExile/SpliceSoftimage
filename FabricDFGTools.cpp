@@ -173,8 +173,10 @@ bool GetOperatorPortMapping(XSI::CRef &in_op, std::vector<_portMapping> &out_pma
   if (ports.size() == 0)
     return true;
 
-  // get the op's port groups.
-  CRefArray opPortGroups = op.GetPortGroups();
+  // get the op's port groups and ports.
+  CRefArray opPortGroups  = op.GetPortGroups();
+  CRefArray opPortsInput  = op.GetInputPorts();
+  CRefArray opPortsOutput = op.GetOutputPorts();
 
   // fill out_pmap.
   for (int i=0;i<ports.size();i++)
@@ -220,14 +222,21 @@ bool GetOperatorPortMapping(XSI::CRef &in_op, std::vector<_portMapping> &out_pma
             if (   pg.IsValid()
                 && pg.GetName() == pmap.dfgPortName)
             {
+              // found one.
               pmap.mapType = DFG_PORT_MAPTYPE::XSI_PORT;
-              CRefArray pRefs = pg.GetPorts();
-              if (pRefs.GetCount() == 1)
+
+              // now look if there also is a connected input port of the same name.
+              for (int k=0;k<opPortsInput.GetCount();k++)
               {
-                Port p(pRefs[0]);
-                if (p.IsValid() && p.IsConnected())
-                  pmap.mapTarget = p.GetTargetPath();
+                InputPort port(opPortsInput[k]);
+                if (   port.IsValid()
+                    && port.GetName() == pmap.dfgPortName
+                    && port.IsConnected())
+                    pmap.mapTarget = port.GetTarget().GetAsText();
               }
+
+              // done.
+              break;
             }
           }
         }
@@ -242,14 +251,21 @@ bool GetOperatorPortMapping(XSI::CRef &in_op, std::vector<_portMapping> &out_pma
           if (   pg.IsValid()
               && pg.GetName() == pmap.dfgPortName)
           {
+            // found one.
             pmap.mapType = DFG_PORT_MAPTYPE::XSI_PORT;
-            CRefArray pRefs = pg.GetPorts();
-            if (pRefs.GetCount() == 1)
+
+            // now look if there also is a connected output port of the same name.
+            for (int k=0;k<opPortsOutput.GetCount();k++)
             {
-              Port p(pRefs[0]);
-              if (p.IsValid() && p.IsConnected())
-                pmap.mapTarget = p.GetTargetPath();
+              OutputPort port(opPortsOutput[k]);
+              if (   port.IsValid()
+                  && port.GetName() == pmap.dfgPortName
+                  && port.IsConnected())
+                  pmap.mapTarget = port.GetTarget().GetAsText();
             }
+
+            // done.
+            break;
           }
         }
       }

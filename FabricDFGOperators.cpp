@@ -676,23 +676,13 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
 
           sumNumPortsInGroups += numPorts;
         }
-        
-
-
-
-        // log (XSI ports).
-        Application().LogMessage(L" ", siInfoMsg);
-        Application().LogMessage(L"    amount of XSI ports: " + CString(sumNumPortsInGroups), siInfoMsg);
-
-
-
 
         // log (XSI ports).
         CRefArray inPorts  = op.GetInputPorts();
         CRefArray outPorts = op.GetOutputPorts();
         LONG numPorts = inPorts.GetCount() + outPorts.GetCount();
         Application().LogMessage(L" ", siInfoMsg);
-        Application().LogMessage(L"    amount of XSI ports: " + CString(numPorts), siInfoMsg);
+        Application().LogMessage(L"    amount of XSI ports: " + CString(numPorts) + L"(" + CString(inPorts.GetCount()) + L" In and " + CString(outPorts.GetCount()) + L" Out)", siInfoMsg);
         for (int i=0;i<inPorts.GetCount();i++)
         {
           InputPort port(inPorts[i]);
@@ -702,7 +692,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
           t  = L"  " + CString(s) + L". ";
           t += L"type = \"In\",  ";
           t += L"name = \"" + port.GetName() + L"\", ";
-          t += L"target = \"" + port.GetTargetPath() + L"\"";
+          t += L"target = \"" + port.GetTarget().GetAsText() + L"\"";
           Application().LogMessage(t, siInfoMsg);
         }
         for (int i=0;i<outPorts.GetCount();i++)
@@ -714,7 +704,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
           t  = L"  " + CString(s) + L". ";
           t += L"type = \"Out\", ";
           t += L"name = \"" + port.GetName() + L"\", ";
-          t += L"target = \"" + port.GetTargetPath() + L"\"";
+          t += L"target = \"" + port.GetTarget().GetAsText() + L"\"";
           Application().LogMessage(t, siInfoMsg);
         }
       }
