@@ -218,7 +218,7 @@ bool GetOperatorPortMapping(XSI::CRef &in_op, std::vector<_portMapping> &out_pma
           {
             PortGroup pg(opPortGroups[j]);
             if (   pg.IsValid()
-                && pg.GetName() == L"gIn_" + pmap.dfgPortName)
+                && pg.GetName() == pmap.dfgPortName)
             {
               pmap.mapType = DFG_PORT_MAPTYPE::XSI_PORT;
               CRefArray pRefs = pg.GetPorts();
@@ -240,7 +240,7 @@ bool GetOperatorPortMapping(XSI::CRef &in_op, std::vector<_portMapping> &out_pma
         {
           PortGroup pg(opPortGroups[j]);
           if (   pg.IsValid()
-              && pg.GetName() == L"gOut_" + pmap.dfgPortName)
+              && pg.GetName() == pmap.dfgPortName)
           {
             pmap.mapType = DFG_PORT_MAPTYPE::XSI_PORT;
             CRefArray pRefs = pg.GetPorts();
@@ -267,4 +267,29 @@ bool GetOperatorPortMapping(XSI::CRef &in_op, std::vector<_portMapping> &out_pma
 
   // done.
   return true;
+}
+
+// returns the matching siClassID for a given DFG resolved data type.
+XSI::siClassID GetSiClassIDfromResolvedDataType(const XSI::CString &resDataType)
+{
+  if (   resDataType == L"Boolean"
+
+      || resDataType == L"Float32"
+      || resDataType == L"Float64"
+
+      || resDataType == L"SInt8"
+      || resDataType == L"SInt16"
+      || resDataType == L"SInt32"
+      || resDataType == L"SInt64"
+
+      || resDataType == L"UInt8"
+      || resDataType == L"UInt16"
+      || resDataType == L"UInt32"
+      || resDataType == L"UInt64")    return siParameterID;
+
+  if (resDataType == L"Mat44")        return siKinematicStateID;
+
+  if (resDataType == L"PolygonMesh")  return siPolygonMeshID;
+  
+  return siUnknownClassID;  // no match.
 }

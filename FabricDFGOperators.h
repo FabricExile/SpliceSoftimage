@@ -63,7 +63,7 @@ struct _opUserData
  public:
 
   // this is used by the functions that create new operators.
-  static std::vector<_portMapping> _opUserData::s_pmap_newOp;
+  static std::vector<_portMapping> _opUserData::s_portmap_newOp;
 
   // constructor.
   _opUserData(unsigned int operatorObjectID)

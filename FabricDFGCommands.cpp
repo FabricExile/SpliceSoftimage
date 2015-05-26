@@ -55,6 +55,7 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
   CValueArray args = ctxt.GetAttribute(L"Arguments");
   if (args.GetCount() < 2 || CString(args[0]).IsEmpty())
   { Application().LogMessage(L"apply dfgSoftimageOp operator failed: empty or missing argument(s)", siErrorMsg);
+    _opUserData::s_portmap_newOp.clear();
     return CStatus::OK; }
   CString objectName(args[0]);
   CString dfgJSON(args[1]);
@@ -67,10 +68,12 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
   CRefArray objRefArray = Application().GetActiveSceneRoot().FindChildren2(objectName, L"", CStringArray());
   if (objRefArray.GetCount() <= 0)
   { Application().LogMessage(L"failed to find an object called \"" + objectName + L"\" in the scene", siErrorMsg);
+    _opUserData::s_portmap_newOp.clear();
     return CStatus::OK; }
   X3DObject obj(objRefArray[0]);
   if (!obj.IsValid())
   { Application().LogMessage(L"failed to create X3DObject for \"" + objectName + L"\"", siErrorMsg);
+    _opUserData::s_portmap_newOp.clear();
     return CStatus::OK; }
 
   // create the operator
@@ -95,19 +98,26 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
     }
   }
 
+  // create port group for the reserved ports.
+  CRef pgReservedRef = newOp.AddPortGroup(L"reservedGroup", 1, 1, L"", L"", siDefaultPort);
+  if (!pgReservedRef.IsValid())
+  { Application().LogMessage(L"failed to create reserved port group.", siErrorMsg);
+    return CStatus::OK; }
+
   // create the default output port "reservedMatrixOut" and connect the object's global kinematics to it.
   {
     CStatus returnStatus;
-    newOp.AddOutputPort(obj.GetKinematics().GetGlobal().GetRef(), L"reservedMatrixOut", -1, -1,  siDefaultPort, &returnStatus);
+    newOp.AddOutputPort(obj.GetKinematics().GetGlobal().GetRef(), L"reservedMatrixOut", PortGroup(pgReservedRef).GetIndex(), -1,  siDefaultPort, &returnStatus);
     if (returnStatus != CStatus::OK)
     { Application().LogMessage(L"failed to create default output port for the global kinematics", siErrorMsg);
+      _opUserData::s_portmap_newOp.clear();
       return CStatus::OK; }
   }
 
   // create exposed DFG output ports.
-  for (int i=0;i<_opUserData::s_pmap_newOp.size();i++)
+  for (int i=0;i<_opUserData::s_portmap_newOp.size();i++)
   {
-    _portMapping &pmap = _opUserData::s_pmap_newOp[i];
+    _portMapping &pmap = _opUserData::s_portmap_newOp[i];
 
     //
     if (   pmap.mapType != DFG_PORT_TYPE::OUT
@@ -115,38 +125,13 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
       continue;
 
     //
-    siClassID classID = siUnknownClassID;
-    if (   pmap.dfgPortDataType == L"Boolean"
-
-        || pmap.dfgPortDataType == L"Float32"
-        || pmap.dfgPortDataType == L"Float64"
-
-        || pmap.dfgPortDataType == L"SInt8"
-        || pmap.dfgPortDataType == L"SInt16"
-        || pmap.dfgPortDataType == L"SInt32"
-        || pmap.dfgPortDataType == L"SInt64"
-
-        || pmap.dfgPortDataType == L"UInt8"
-        || pmap.dfgPortDataType == L"UInt16"
-        || pmap.dfgPortDataType == L"UInt32"
-        || pmap.dfgPortDataType == L"UInt64")
-    {
-      classID = siParameterID;
-    }
-    if (pmap.dfgPortDataType == L"Mat44")
-    {
-      classID = siKinematicStateID;
-    }
-    if (pmap.dfgPortDataType == L"PolygonMesh")
-    {
-      classID = siPolygonMeshID;
-    }
+    siClassID classID = GetSiClassIDfromResolvedDataType(pmap.dfgPortDataType);
     if (classID == siUnknownClassID)
     { Application().LogMessage(L"The DFG port \"" + pmap.dfgPortName + "\" cannot be exposed as a XSI Port (data type \"" + pmap.dfgPortDataType + "\" not yet supported)" , siWarningMsg);
       continue; }
 
     //
-    CRef pgRef = newOp.AddPortGroup(L"gOut_" + pmap.dfgPortName, 0, 1, L"", L"", siOptionalInputPort);
+    CRef pgRef = newOp.AddPortGroup(pmap.dfgPortName, 0, 1, L"", L"", siOptionalInputPort);
     if (!pgRef.IsValid())
     { Application().LogMessage(L"failed to create port group for \"" + pmap.dfgPortName + "\"", siErrorMsg);
       continue; }
@@ -161,15 +146,46 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
   // create the default input port "reservedMatrixIn" and connect the object's global kinematics to it.
   {
     CStatus returnStatus;
-    newOp.AddInputPort(obj.GetKinematics().GetGlobal().GetRef(), L"reservedMatrixIn", -1, -1,  siDefaultPort, &returnStatus);
+    newOp.AddInputPort(obj.GetKinematics().GetGlobal().GetRef(), L"reservedMatrixIn", PortGroup(pgReservedRef).GetIndex(), -1,  siDefaultPort, &returnStatus);
     if (returnStatus != CStatus::OK)
     { Application().LogMessage(L"failed to create default input port for the global kinematics", siErrorMsg);
+      _opUserData::s_portmap_newOp.clear();
       return CStatus::OK; }
+  }
+
+  // create exposed DFG input ports.
+  for (int i=0;i<_opUserData::s_portmap_newOp.size();i++)
+  {
+    _portMapping &pmap = _opUserData::s_portmap_newOp[i];
+
+    //
+    if (   pmap.mapType != DFG_PORT_TYPE::IN
+        || pmap.mapType != DFG_PORT_MAPTYPE::XSI_PORT)
+      continue;
+
+    //
+    siClassID classID = GetSiClassIDfromResolvedDataType(pmap.dfgPortDataType);
+    if (classID == siUnknownClassID)
+    { Application().LogMessage(L"The DFG port \"" + pmap.dfgPortName + "\" cannot be exposed as a XSI Port (data type \"" + pmap.dfgPortDataType + "\" not yet supported)" , siWarningMsg);
+      continue; }
+
+    //
+    CRef pgRef = newOp.AddPortGroup(pmap.dfgPortName, 0, 1, L"", L"", siOptionalInputPort);
+    if (!pgRef.IsValid())
+    { Application().LogMessage(L"failed to create port group for \"" + pmap.dfgPortName + "\"", siErrorMsg);
+      continue; }
+
+    //
+    CRef pRef = newOp.AddInputPortByClassID(classID, pmap.dfgPortName, PortGroup(pgRef).GetIndex(), 0, siOptionalInputPort);
+    if (!pRef.IsValid())
+    { Application().LogMessage(L"failed to create port \"" + pmap.dfgPortName + "\"", siErrorMsg);
+      continue; }
   }
 
   // connect the operator.
   if (newOp.Connect() != CStatus::OK)
   { Application().LogMessage(L"newOp.Connect() failed.",siErrorMsg);
+    _opUserData::s_portmap_newOp.clear();
     return CStatus::OK; }
 
   // display operator's property page?
@@ -177,6 +193,7 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
     dfgTool_ExecuteCommand(L"InspectObj", newOp.GetUniqueName());
 
   // done.
+  _opUserData::s_portmap_newOp.clear();
   return CStatus::OK;
 }
 

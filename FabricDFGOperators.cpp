@@ -20,6 +20,7 @@
 #include <xsi_selection.h>
 #include <xsi_project.h>
 #include <xsi_port.h>
+#include <xsi_portgroup.h>
 #include <xsi_inputport.h>
 #include <xsi_outputport.h>
 #include <xsi_utils.h>
@@ -35,7 +36,7 @@
 #include "FabricDFGTools.h"
 
 std::map <unsigned int, _opUserData *>  _opUserData::s_instances;
-std::vector<_portMapping>               _opUserData::s_pmap_newOp;
+std::vector<_portMapping>               _opUserData::s_portmap_newOp;
 
 using namespace XSI;
 
@@ -105,9 +106,9 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
   // create exposed DFG parameters.
   CString exposedDFGParams = L"";
   {
-    for (int i=0;i<_opUserData::s_pmap_newOp.size();i++)
+    for (int i=0;i<_opUserData::s_portmap_newOp.size();i++)
     {
-      _portMapping &pmap = _opUserData::s_pmap_newOp[i];
+      _portMapping &pmap = _opUserData::s_portmap_newOp[i];
 
       if (pmap.mapType != DFG_PORT_MAPTYPE::XSI_PARAMETER)
         continue;
@@ -440,14 +441,17 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     }
     else if (btnName == L"BtnPortsDefineTT")
     {
-      CString       err;
-      if (!GetOperatorPortMapping(op, _opUserData::s_pmap_newOp, err))
+      CString err;
+      if (!GetOperatorPortMapping(op, _opUserData::s_portmap_newOp, err))
       { Application().LogMessage(L"GetOperatorPortMapping() failed, err = \"" + err + L"\"", siErrorMsg);
+        _opUserData::s_portmap_newOp.clear();
         return CStatus::OK; }
-      if (_opUserData::s_pmap_newOp.size())
+      if (_opUserData::s_portmap_newOp.size())
       {
         //
-        DefinePortMapping(_opUserData::s_pmap_newOp);
+        if (!DefinePortMapping(_opUserData::s_portmap_newOp))
+        { _opUserData::s_portmap_newOp.clear();
+          return CStatus::OK; }
 
         //
         CString dfgJSON;
@@ -493,15 +497,75 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
           {
             if (selRow < 0) { selRow = j;
                               break; }
-            else            { toolkit.MsgBox(L"More than one DFG port selected.\n\nPlease select a single port and try again.", siMsgOkOnly | siMsgExclamation, "dfgSoftimageOp", ret);
+            else            { toolkit.MsgBox(L"More than one DFG port selected.\n\nPlease select a single port and try again.", siMsgOkOnly, "dfgSoftimageOp", ret);
                               return CStatus::OK; }
           }
       if (selRow < 0)
-      { toolkit.MsgBox(L"No DFG port selected.\n\nPlease select a single port and try again.", siMsgOkOnly | siMsgExclamation, "dfgSoftimageOp", ret);
+      { toolkit.MsgBox(L"No DFG port selected.\n\nPlease select a single port and try again.", siMsgOkOnly, "dfgSoftimageOp", ret);
         return CStatus::OK; }
 
-      //
-      op.ConnectToGroup(
+      // get the name of the selected port as well as its port mapping.
+      CString selPortName = g.GetCell(0, selRow);
+      _portMapping pmap;
+      {
+        std::vector<_portMapping> tmp;
+        CString err;
+        GetOperatorPortMapping(op, tmp, err);
+        for (int i=0;i<tmp.size();i++)
+          if (selPortName == tmp[i].dfgPortName)
+          {
+            pmap = tmp[i];
+            break;
+          }
+      }
+      if (pmap.dfgPortName != selPortName)
+      { toolkit.MsgBox(L"Failed to find selected port.", siMsgOkOnly | siMsgExclamation, "dfgSoftimageOp", ret);
+        return CStatus::OK; }
+      if (   pmap.dfgPortType != DFG_PORT_TYPE::IN
+          && pmap.dfgPortType != DFG_PORT_TYPE::OUT)
+      { toolkit.MsgBox(L"Selected port has unsupported type (neither \"In\" nor \"Out\").", siMsgOkOnly | siMsgExclamation, "dfgSoftimageOp", ret);
+        return CStatus::OK; }
+      if (pmap.mapType != DFG_PORT_MAPTYPE::XSI_PORT)
+      { toolkit.MsgBox(L"Selected port Type/Target is not \"XSI Port\".", siMsgOkOnly, "dfgSoftimageOp", ret);
+        return CStatus::OK; }
+
+      // find the port group.
+      LONG groupIndex = -1;
+      CRefArray pgRef = op.GetPortGroups();
+      for (int i=0;i<pgRef.GetCount();i++)
+      {
+        PortGroup pg(pgRef[i]);
+        if (   pg.IsValid()
+            && pg.GetName() == pmap.dfgPortName)
+          {
+            groupIndex = i;
+            break;
+          }
+      }
+      if (groupIndex == -1)
+      { toolkit.MsgBox(L"Unable to find matching port group.", siMsgOkOnly | siMsgExclamation, "dfgSoftimageOp", ret);
+        return CStatus::OK; }
+
+      // pick target.
+      CRef targetRef;
+      CValueArray args(7);
+      args[0] = siGenericObjectFilter;
+      args[1] = L"Pick";
+      args[2] = L"Pick";
+      args[5] = 0;
+      if (Application().ExecuteCommand(L"PickElement", args, CValue()) == CStatus::Fail)
+      { Application().LogMessage(L"PickElement failed.", siWarningMsg);
+        return CStatus::OK; }
+      if ((LONG)args[4] == 0)
+      { Application().LogMessage(L"canceled by user.", siWarningMsg);
+        return CStatus::OK; }
+      targetRef = args[3];
+
+      // connect.
+      LONG instance;
+      if (op.ConnectToGroup(groupIndex, targetRef, instance) != CStatus::OK)
+      { Application().LogMessage(L"failed to connect \"" + targetRef.GetAsText() + "\"", siErrorMsg);
+        return CStatus::OK; }
 
       // refresh layout.
       dfgSoftimageOp_DefineLayout(op.GetPPGLayout(), op);
@@ -568,16 +632,20 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
         if (!pud->GetBaseInterface())             { Application().LogMessage(L"no base interface found!", siErrorMsg);  return CStatus::OK; }
         if (!pud->GetBaseInterface()->getGraph()) { Application().LogMessage(L"no graph found!",          siErrorMsg);  return CStatus::OK; }
 
+        // log intro.
+        Application().LogMessage(L"\"" + op.GetRef().GetAsText() + L"\" (ObjectID = " + CString(op.GetObjectID()) + L")", siInfoMsg);
+        Application().LogMessage(L"{", siInfoMsg);
+
         // log (DFG ports).
         FabricServices::DFGWrapper::PortList ports = pud->GetBaseInterface()->getGraph()->getPorts();
-        Application().LogMessage(L"\"" + op.GetRef().GetAsText() + L"\" (ObjectID = " + CString(op.GetObjectID()) + L") has a DFG with " + CString((LONG)ports.size()) + L" port(s)" + (ports.size() > 0 ? L":" : L"."), siInfoMsg);
+        Application().LogMessage(L"    amount of DFG ports: " + CString((LONG)ports.size()), siInfoMsg);
         for (int i=0;i<ports.size();i++)
         {
           FabricServices::DFGWrapper::Port &port = *ports[i];
           char s[16];
-          sprintf(s, "% 3ld", i);
+          sprintf(s, "%03ld", i);
           CString t;
-          t  = L"  " + CString(s) + L". ";
+          t  = L"        " + CString(s) + L". ";
           if      (port.getPortType() == FabricCore::DFGPortType_In)  t += L"type = \"In\",  ";
           else if (port.getPortType() == FabricCore::DFGPortType_Out) t += L"type = \"Out\", ";
           else                                                        t += L"type = \"IO\",  ";
@@ -586,11 +654,45 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
           Application().LogMessage(t, siInfoMsg);
         }
 
+        // log (XSI port groups).
+        LONG sumNumPortsInGroups = 0;
+        CRefArray pGroups = op.GetPortGroups();
+        Application().LogMessage(L" ", siInfoMsg);
+        Application().LogMessage(L"    amount of XSI port groups: " + CString(pGroups.GetCount()), siInfoMsg);
+        for (int i=0;i<pGroups.GetCount();i++)
+        {
+          PortGroup pg(pGroups[i]);
+
+          char s[16];
+          sprintf(s, "%03ld", i);
+          CString t;
+          t  = L"        " + CString(s) + L". ";
+          t += L"name = \"" + pg.GetName() + L"\",  ";
+          t += L"index = " + CString(pg.GetIndex()) + L",  ";
+          t += L"num instances = " + CString(pg.GetInstanceCount()) + L",  ";
+          LONG numPorts = pg.GetPorts().GetCount();
+          t += L"num ports = " + CString(numPorts) + L",  ";
+          Application().LogMessage(t, siInfoMsg);
+
+          sumNumPortsInGroups += numPorts;
+        }
+        
+
+
+
+        // log (XSI ports).
+        Application().LogMessage(L" ", siInfoMsg);
+        Application().LogMessage(L"    amount of XSI ports: " + CString(sumNumPortsInGroups), siInfoMsg);
+
+
+
+
         // log (XSI ports).
         CRefArray inPorts  = op.GetInputPorts();
         CRefArray outPorts = op.GetOutputPorts();
         LONG numPorts = inPorts.GetCount() + outPorts.GetCount();
-        Application().LogMessage(L"as well as " + CString((LONG)ports.size()) + L" XSI port(s)" + (numPorts > 0 ? L":" : L"."), siInfoMsg);
+        Application().LogMessage(L" ", siInfoMsg);
+        Application().LogMessage(L"    amount of XSI ports: " + CString(numPorts), siInfoMsg);
         for (int i=0;i<inPorts.GetCount();i++)
         {
           InputPort port(inPorts[i]);
