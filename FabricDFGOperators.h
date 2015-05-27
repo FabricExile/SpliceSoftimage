@@ -62,19 +62,21 @@ struct _opUserData
 
  public:
 
+  long int updateCounter;
+
   // this is used by the functions that create new operators.
   static std::vector<_portMapping> _opUserData::s_portmap_newOp;
 
   // constructor.
   _opUserData(unsigned int operatorObjectID)
   {
-    // clear everything.
-    memset(this, NULL, sizeof(*this));
+    // init
+    updateCounter = 0;
 
     // create base interface.
     m_baseInterface = new BaseInterface(feLog, feLogError);
 
-    // insert this in map.
+    // insert this user data into the s_instances map.
     s_instances.insert(std::pair<unsigned int, _opUserData *>(operatorObjectID, this));
 
   }

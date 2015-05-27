@@ -29,6 +29,8 @@
 #include <xsi_customoperator.h>
 #include <xsi_operatorcontext.h>
 #include <xsi_parameter.h>
+#include <xsi_value.h>
+#include <xsi_matrix4f.h>
 
 #include "FabricDFGPlugin.h"
 #include "FabricDFGOperators.h"
@@ -98,6 +100,8 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
   oPDef = oFactory.CreateParamDef(L"persistenceData",     CValue::siString, siReadOnly,                               L"", L"", "", "", "", "", "");
   op.AddParameter(oPDef, Parameter());
   oPDef = oFactory.CreateParamDef(L"alwaysConvertMeshes", CValue::siBool,   siPersistable,                            L"", L"", false, CValue(), CValue(), CValue(), CValue());
+  op.AddParameter(oPDef, Parameter());
+  oPDef = oFactory.CreateParamDef(L"verbose",             CValue::siBool,   siPersistable,                            L"", L"", true, CValue(), CValue(), CValue(), CValue());
   op.AddParameter(oPDef, Parameter());
 
   // create grid parameter for the list of DFG ports.
@@ -396,6 +400,7 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
   {
     oLayout.AddTab(L"Advanced");
     {
+      oLayout.AddItem(L"verbose",             L"Verbose");
       oLayout.AddItem(L"evalID",              L"evalID");
       oLayout.AddItem(L"persistenceData",     L"persistenceData");
       oLayout.AddItem(L"alwaysConvertMeshes", L"Always Convert Meshes");
@@ -758,11 +763,20 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
   // init.
   OperatorContext ctxt(in_ctxt);
   CustomOperator op(ctxt.GetSource());
-
+  _opUserData *pud = _opUserData::GetUserData(op.GetObjectID());
+  if (!pud)                                     { Application().LogMessage(L"no user data found!", siErrorMsg);
+                                                  return CStatus::OK; }
+  if (!pud->GetBaseInterface())                 { Application().LogMessage(L"no base interface found!", siErrorMsg);
+                                                  return CStatus::OK; }
+  if (!pud->GetBaseInterface()->getBinding())   { Application().LogMessage(L"no binding found!", siErrorMsg);
+                                                  return CStatus::OK; }
+  if (!pud->GetBaseInterface()->getGraph())     { Application().LogMessage(L"no graph found!", siErrorMsg);
+                                                  return CStatus::OK; }
   // init log.
-  CString functionName = L"dfgSoftimageOp_Update()";
-  const bool debugLog = ((LONG)ctxt.GetParameterValue(L"debug") != 0);
-  if (debugLog) Application().LogMessage(functionName + L" called", siInfoMsg);
+  CString functionName = L"dfgSoftimageOp_Update(opObjID = " + CString(op.GetObjectID()) + L")";
+  const bool verbose = (bool)ctxt.GetParameterValue(L"verbose");
+  if (verbose)  Application().LogMessage(functionName + L" called #" + CString(pud->updateCounter), siInfoMsg);
+  pud->updateCounter++;
 
   // check the FabricActive parameter.
   if (!(bool)ctxt.GetParameterValue(L"FabricActive"))
@@ -770,7 +784,88 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
 
   // get the output port that is currently being evaluated.
   OutputPort outputPort(ctxt.GetOutputPort());
-  if (debugLog) Application().LogMessage(functionName + L": evaluating output port \"" + outputPort.GetName() + L"\"");
+  if (verbose) Application().LogMessage(functionName + L": evaluating output port \"" + outputPort.GetName() + L"\"");
+
+  // get pointers/refs at binding, graph & co.
+  FabricServices::DFGWrapper::Binding             *binding = pud->GetBaseInterface()->getBinding();
+  FabricServices::DFGWrapper::GraphExecutablePtr   graph   = pud->GetBaseInterface()->getGraph();
+
+  // Fabric Engine (step 1): loop through all the DFG's input ports and set
+  //                         their values from the matching XSI ports / parameters.
+  {
+    try
+    {
+      FabricServices::DFGWrapper::PortList ports = graph->getPorts();
+      for (int i=0;i<ports.size();i++)
+      {
+        // get/check DFG port.
+        FabricServices::DFGWrapper::Port &port = *ports[i];
+        if (port.getPortType() != FabricCore::DFGPortType_In)
+          continue;
+
+        // find a matching XSI port.
+        CValue xsiPortValue = op.GetInputValue(CString(port.getName()), CString(port.getName()));
+        if (!xsiPortValue.IsEmpty())
+        {
+          if (   CString(port.getResolvedType()) == L"Mat44"
+              && xsiPortValue.m_t == CValue::siMatrix4f)
+          {
+            MATH::CMatrix4f m = xsiPortValue;
+
+          }
+        }
+      }
+    }
+    catch (FabricCore::Exception e)
+    {
+      std::string s = functionName.GetAsciiString() + std::string("(step 1): ") + (e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+      feLogError(s);
+    }
+  }
+
+  // Fabric Engine (step 2): execute the DFG.
+  {
+    try
+    {
+      binding->execute();
+    }
+    catch (FabricCore::Exception e)
+    {
+      std::string s = functionName.GetAsciiString() + std::string("(step 2): ") + (e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+      feLogError(s);
+    }
+  }
+
+  // Fabric Engine (step 3): loop through all the DFG's output ports and set
+  //                         the value of the matching XSI output port.
+  {
+    try
+    {
+    }
+    catch (FabricCore::Exception e)
+    {
+      std::string s = functionName.GetAsciiString() + std::string("(step 3): ") + (e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+      feLogError(s);
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   // get default input.
   KinematicState kineIn((CRef)ctxt.GetInputValue(L"reservedMatrixIn"));
