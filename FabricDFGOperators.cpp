@@ -882,11 +882,50 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
     }
   }
 
-  // Fabric Engine (step 3): loop through all the DFG's output ports and set
-  //                         the value of the matching XSI output port.
+  // Fabric Engine (step 3): set the current XSI output port from the matching DFG output port.
   {
     try
     {
+      if (baseInterface->HasOutputPort(outputPort.GetName().GetAsciiString()))
+      {
+        if (verbose) Application().LogMessage(functionName + L": transfer dfg port data to xsi port \"" + outputPort.GetName() + L"\"");
+        FabricServices::DFGWrapper::PortPtr port = graph->getPort(outputPort.GetName().GetAsciiString());
+        if (port.isNull())
+          Application().LogMessage(functionName + L": graph->getPort() == NULL", siWarningMsg);
+        else
+        {
+          if (outputPort.GetTarget().GetClassID() == siKinematicStateID)
+          {
+            std::vector <double> val;
+            if (BaseInterface::GetPortValueMat44(port, val) != 0)
+              Application().LogMessage(functionName + L": BaseInterface::GetPortValueMat44(port) failed.", siWarningMsg);
+            else
+            {
+              KinematicState kineOut(ctxt.GetOutputTarget());
+              MATH::CTransformation t;
+              MATH::CMatrix4 m;
+              m.SetValue(0, 0, val[ 0]); // row 0.
+              m.SetValue(1, 0, val[ 1]);
+              m.SetValue(2, 0, val[ 2]);
+              m.SetValue(3, 0, val[ 3]);
+              m.SetValue(0, 1, val[ 4]); // row 1.
+              m.SetValue(1, 1, val[ 5]);
+              m.SetValue(2, 1, val[ 6]);
+              m.SetValue(3, 1, val[ 7]);
+              m.SetValue(0, 2, val[ 8]); // row 2.
+              m.SetValue(1, 2, val[ 9]);
+              m.SetValue(2, 2, val[10]);
+              m.SetValue(3, 2, val[11]);
+              m.SetValue(0, 3, val[12]); // row 3.
+              m.SetValue(1, 3, val[13]);
+              m.SetValue(2, 3, val[14]);
+              m.SetValue(3, 3, val[15]);
+              t.SetMatrix4(m);
+              kineOut.PutTransform(t);
+            }
+          }
+        }
+      }
     }
     catch (FabricCore::Exception e)
     {
@@ -894,44 +933,28 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
       feLogError(s);
     }
   }
+  
+  #ifdef OLD_RnR_STUFF___
+    // get default input.
+    KinematicState kineIn((CRef)ctxt.GetInputValue(L"reservedMatrixIn"));
+    MATH::CMatrix4 matrixIn = kineIn.GetTransform().GetMatrix4();
+    MATH::CTransformation gt;
+    gt.SetMatrix4(matrixIn);
 
+    // test (do something with gt).
+    {
+      double x, y, z;
+      gt.GetTranslationValues(x, y, z);
+      x = __max(-1, __min(1, x));
+      y = __max(-2, __min(2, y));
+      z = __max(-3, __min(3, z));
+      gt.SetTranslationFromValues(x, y, z);
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  // get default input.
-  KinematicState kineIn((CRef)ctxt.GetInputValue(L"reservedMatrixIn"));
-  MATH::CMatrix4 matrixIn = kineIn.GetTransform().GetMatrix4();
-  MATH::CTransformation gt;
-  gt.SetMatrix4(matrixIn);
-
-  // test (do something with gt).
-  {
-    double x, y, z;
-    gt.GetTranslationValues(x, y, z);
-    x = __max(-1, __min(1, x));
-    y = __max(-2, __min(2, y));
-    z = __max(-3, __min(3, z));
-    gt.SetTranslationFromValues(x, y, z);
-  }
-
-  // set output.
-  KinematicState kineOut(ctxt.GetOutputTarget());
-  kineOut.PutTransform(gt);
+    // set output.
+    KinematicState kineOut(ctxt.GetOutputTarget());
+    kineOut.PutTransform(gt);
+  #endif
 
   // done.
   return CStatus::OK;
