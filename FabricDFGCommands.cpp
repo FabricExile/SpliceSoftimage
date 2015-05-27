@@ -98,54 +98,24 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
     }
   }
 
-  // create port group for the reserved ports.
-  CRef pgReservedRef = newOp.AddPortGroup(L"reservedGroup", 1, 1, L"", L"", siDefaultPort);
-  if (!pgReservedRef.IsValid())
-  { Application().LogMessage(L"failed to create reserved port group.", siErrorMsg);
-    return CStatus::OK; }
-
-  // create the default output port "reservedMatrixOut" and connect the object's global kinematics to it.
+  // the reserved ports.
   {
     CStatus returnStatus;
+
+    // create port group.
+    CRef pgReservedRef = newOp.AddPortGroup(L"reservedGroup", 1, 1);
+    if (!pgReservedRef.IsValid())
+    { Application().LogMessage(L"failed to create reserved port group.", siErrorMsg);
+      return CStatus::OK; }
+
+    // create the default output port "reservedMatrixOut" and connect the object's global kinematics to it.
     newOp.AddOutputPort(obj.GetKinematics().GetGlobal().GetRef(), L"reservedMatrixOut", PortGroup(pgReservedRef).GetIndex(), -1,  siDefaultPort, &returnStatus);
     if (returnStatus != CStatus::OK)
     { Application().LogMessage(L"failed to create default output port for the global kinematics", siErrorMsg);
       _opUserData::s_portmap_newOp.clear();
       return CStatus::OK; }
-  }
 
-  // create exposed DFG output ports.
-  for (int i=0;i<_opUserData::s_portmap_newOp.size();i++)
-  {
-    _portMapping &pmap = _opUserData::s_portmap_newOp[i];
-
-    //
-    if (   pmap.mapType != DFG_PORT_TYPE::OUT
-        || pmap.mapType != DFG_PORT_MAPTYPE::XSI_PORT)
-      continue;
-
-    //
-    siClassID classID = GetSiClassIDfromResolvedDataType(pmap.dfgPortDataType);
-    if (classID == siUnknownClassID)
-    { Application().LogMessage(L"The DFG port \"" + pmap.dfgPortName + "\" cannot be exposed as a XSI Port (data type \"" + pmap.dfgPortDataType + "\" not yet supported)" , siWarningMsg);
-      continue; }
-
-    //
-    CRef pgRef = newOp.AddPortGroup(pmap.dfgPortName, 0, 1, L"", L"", siOptionalInputPort);
-    if (!pgRef.IsValid())
-    { Application().LogMessage(L"failed to create port group for \"" + pmap.dfgPortName + "\"", siErrorMsg);
-      continue; }
-
-    //
-    CRef pRef = newOp.AddOutputPortByClassID(classID, pmap.dfgPortName, PortGroup(pgRef).GetIndex(), 0, siOptionalInputPort);
-    if (!pRef.IsValid())
-    { Application().LogMessage(L"failed to create port \"" + pmap.dfgPortName + "\"", siErrorMsg);
-      continue; }
-  }
-
-  // create the default input port "reservedMatrixIn" and connect the object's global kinematics to it.
-  {
-    CStatus returnStatus;
+    // create the default input port "reservedMatrixIn" and connect the object's global kinematics to it.
     newOp.AddInputPort(obj.GetKinematics().GetGlobal().GetRef(), L"reservedMatrixIn", PortGroup(pgReservedRef).GetIndex(), -1,  siDefaultPort, &returnStatus);
     if (returnStatus != CStatus::OK)
     { Application().LogMessage(L"failed to create default input port for the global kinematics", siErrorMsg);
@@ -153,29 +123,58 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
       return CStatus::OK; }
   }
 
-  // create exposed DFG input ports.
+
+
+  // create exposed DFG output ports.
   for (int i=0;i<_opUserData::s_portmap_newOp.size();i++)
   {
     _portMapping &pmap = _opUserData::s_portmap_newOp[i];
-
-    //
-    if (   pmap.mapType != DFG_PORT_TYPE::IN
-        || pmap.mapType != DFG_PORT_MAPTYPE::XSI_PORT)
+    if (   pmap.dfgPortType != DFG_PORT_TYPE::OUT
+        || pmap.mapType     != DFG_PORT_MAPTYPE::XSI_PORT)
       continue;
+    Application().LogMessage(L"create port group and port for output port \"" + pmap.dfgPortName + L"\"", siInfoMsg);
 
-    //
-    siClassID classID = GetSiClassIDfromResolvedDataType(pmap.dfgPortDataType);
+    // get classID for the port.
+    siClassID classID = GetSiClassIdFromResolvedDataType(pmap.dfgPortDataType);
     if (classID == siUnknownClassID)
     { Application().LogMessage(L"The DFG port \"" + pmap.dfgPortName + "\" cannot be exposed as a XSI Port (data type \"" + pmap.dfgPortDataType + "\" not yet supported)" , siWarningMsg);
       continue; }
 
-    //
-    CRef pgRef = newOp.AddPortGroup(pmap.dfgPortName, 0, 1, L"", L"", siOptionalInputPort);
+    // create port group.
+    CRef pgRef = newOp.AddPortGroup(pmap.dfgPortName, 0, 1);
     if (!pgRef.IsValid())
     { Application().LogMessage(L"failed to create port group for \"" + pmap.dfgPortName + "\"", siErrorMsg);
       continue; }
 
-    //
+    // create port.
+    CRef pRef = newOp.AddOutputPortByClassID(classID, pmap.dfgPortName, PortGroup(pgRef).GetIndex(), 0, siOptionalInputPort);
+    if (!pRef.IsValid())
+    { Application().LogMessage(L"failed to create port \"" + pmap.dfgPortName + "\"", siErrorMsg);
+      continue; }
+  }
+
+  // create exposed DFG input ports.
+  for (int i=0;i<_opUserData::s_portmap_newOp.size();i++)
+  {
+    _portMapping &pmap = _opUserData::s_portmap_newOp[i];
+    if (   pmap.dfgPortType != DFG_PORT_TYPE::IN
+        || pmap.mapType     != DFG_PORT_MAPTYPE::XSI_PORT)
+      continue;
+    Application().LogMessage(L"create port group and port for input port \"" + pmap.dfgPortName + L"\"", siInfoMsg);
+
+    // get classID for the port.
+    siClassID classID = GetSiClassIdFromResolvedDataType(pmap.dfgPortDataType);
+    if (classID == siUnknownClassID)
+    { Application().LogMessage(L"The DFG port \"" + pmap.dfgPortName + "\" cannot be exposed as a XSI Port (data type \"" + pmap.dfgPortDataType + "\" not yet supported)" , siWarningMsg);
+      continue; }
+
+    // create port group.
+    CRef pgRef = newOp.AddPortGroup(pmap.dfgPortName, 0, 1);
+    if (!pgRef.IsValid())
+    { Application().LogMessage(L"failed to create port group for \"" + pmap.dfgPortName + "\"", siErrorMsg);
+      continue; }
+
+    // create port.
     CRef pRef = newOp.AddInputPortByClassID(classID, pmap.dfgPortName, PortGroup(pgRef).GetIndex(), 0, siOptionalInputPort);
     if (!pRef.IsValid())
     { Application().LogMessage(L"failed to create port \"" + pmap.dfgPortName + "\"", siErrorMsg);

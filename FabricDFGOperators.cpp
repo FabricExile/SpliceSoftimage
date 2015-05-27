@@ -475,7 +475,8 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
         dfgTool_ExecuteCommand(L"DeleteObj", op.GetFullName());
       }
     }
-    else if (btnName == L"BtnPortConnect")
+    else if (   btnName == L"BtnPortConnect"
+             || btnName == L"BtnPortDisconnect")
     {
       LONG ret;
 
@@ -530,7 +531,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
         return CStatus::OK; }
 
       // find the port group.
-      LONG groupIndex = -1;
+      PortGroup portgroup;
       CRefArray pgRef = op.GetPortGroups();
       for (int i=0;i<pgRef.GetCount();i++)
       {
@@ -538,43 +539,64 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
         if (   pg.IsValid()
             && pg.GetName() == pmap.dfgPortName)
           {
-            groupIndex = i;
+            portgroup.SetObject(pgRef[i]);
             break;
           }
       }
-      if (groupIndex == -1)
+      if (!portgroup.IsValid())
       { toolkit.MsgBox(L"Unable to find matching port group.", siMsgOkOnly | siMsgExclamation, "dfgSoftimageOp", ret);
         return CStatus::OK; }
 
       // pick target.
       CRef targetRef;
-      CValueArray args(7);
-      args[0] = siGenericObjectFilter;
-      args[1] = L"Pick";
-      args[2] = L"Pick";
-      args[5] = 0;
-      if (Application().ExecuteCommand(L"PickElement", args, CValue()) == CStatus::Fail)
-      { Application().LogMessage(L"PickElement failed.", siWarningMsg);
-        return CStatus::OK; }
-      if ((LONG)args[4] == 0)
-      { Application().LogMessage(L"canceled by user.", siWarningMsg);
-        return CStatus::OK; }
-      targetRef = args[3];
+      if (btnName == L"BtnPortConnect")
+      {
+        CValueArray args(7);
+        args[0] = L"";//siGenericObjectFilter;
+        args[1] = L"Pick";
+        args[2] = L"Pick";
+        args[5] = 0;
+        if (Application().ExecuteCommand(L"PickElement", args, CValue()) == CStatus::Fail)
+        { Application().LogMessage(L"PickElement failed.", siWarningMsg);
+          return CStatus::OK; }
+        if ((LONG)args[4] == 0)
+        { Application().LogMessage(L"canceled by user.", siWarningMsg);
+          return CStatus::OK; }
+        targetRef = args[3];
+      }
+
+      // check/correct target's siClassID and CRef.
+      if (btnName == L"BtnPortConnect")
+      {
+        siClassID portClassID = GetSiClassIdFromResolvedDataType(pmap.dfgPortDataType);
+        if (targetRef.GetClassID() != portClassID)
+        {
+          Application().LogMessage(L"the picked element has the type \"" + targetRef.GetClassIDName() + L"\", but the port needs the type \"" + GetSiClassIdDescription(portClassID, CString()) + L"\".", siErrorMsg);
+          return CStatus::OK;
+        }
+      }
+
+      // disconnect any existing connection.
+      while (portgroup.GetInstanceCount() > 0)
+      {
+        if (op.DisconnectGroup(portgroup.GetIndex(), 0, true) != CStatus::OK)
+        { Application().LogMessage(L"op.DisconnectGroup() failed.", siWarningMsg);
+          break; }
+      }
 
       // connect.
-      LONG instance;
-      if (op.ConnectToGroup(groupIndex, targetRef, instance) != CStatus::OK)
-      { Application().LogMessage(L"failed to connect \"" + targetRef.GetAsText() + "\"", siErrorMsg);
-        return CStatus::OK; }
+      if (btnName == L"BtnPortConnect")
+      {
+        Application().LogMessage(L"connecting \"" + targetRef.GetAsText() + L"\".", siInfoMsg);
+        LONG instance;
+        if (op.ConnectToGroup(portgroup.GetIndex(), targetRef, instance) != CStatus::OK)
+        { Application().LogMessage(L"failed to connect \"" + targetRef.GetAsText() + "\"", siErrorMsg);
+          return CStatus::OK; }
+      }
 
       // refresh layout.
       dfgSoftimageOp_DefineLayout(op.GetPPGLayout(), op);
       ctxt.PutAttribute(L"Refresh", true);
-    }
-    else if (btnName == L"BtnPortDisconnect")
-    {
-      LONG ret;
-      toolkit.MsgBox(L"not yet implemented", siMsgOkOnly, "dfgSoftimageOp", ret);
     }
     else if (btnName == L"BtnSelConnectAll")
     {
@@ -692,7 +714,8 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
           t  = L"  " + CString(s) + L". ";
           t += L"type = \"In\",  ";
           t += L"name = \"" + port.GetName() + L"\", ";
-          t += L"target = \"" + port.GetTarget().GetAsText() + L"\"";
+          t += L"target = \"" + port.GetTarget().GetAsText() + L"\", ";
+          t += L"target classID = \"" + port.GetTarget().GetClassIDName() + L"\"";
           Application().LogMessage(t, siInfoMsg);
         }
         for (int i=0;i<outPorts.GetCount();i++)
@@ -704,7 +727,8 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
           t  = L"  " + CString(s) + L". ";
           t += L"type = \"Out\", ";
           t += L"name = \"" + port.GetName() + L"\", ";
-          t += L"target = \"" + port.GetTarget().GetAsText() + L"\"";
+          t += L"target = \"" + port.GetTarget().GetAsText() + L"\", ";
+          t += L"target classID = \"" + port.GetTarget().GetClassIDName() + L"\"";
           Application().LogMessage(t, siInfoMsg);
         }
       }
