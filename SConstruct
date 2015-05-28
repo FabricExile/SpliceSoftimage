@@ -24,6 +24,10 @@ for var in ['FABRIC_DIR', 'FABRIC_SPLICE_VERSION', 'FABRIC_BUILD_OS', 'FABRIC_BU
       print 'The path for environment variable %s does not exist.' % var
       exit(0)
 
+
+env = Environment(MSVC_VERSION = "12.0")
+
+
 if not os.path.exists(spliceEnv.Dir('.stage').abspath):
   os.makedirs(spliceEnv.Dir('.stage').abspath)
 

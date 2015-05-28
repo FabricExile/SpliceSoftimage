@@ -64,7 +64,7 @@ elif FABRIC_BUILD_OS == 'Windows':
 
 #env.Append(LIBS = ['FabricSplice-2.0', 'FabricCore-2.0'])
 if platform.system().lower().startswith('win'):
-  env.Append(LIBS = ['FabricServices-MSVC-12.0'])
+  env.Append(LIBS = ['FabricServices-MSVC-12.0-mt'])
 else:
   env.Append(LIBS = ['FabricServices'])
 env.Append(LIBS = ['FabricSplitSearch'])

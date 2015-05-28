@@ -253,12 +253,12 @@ bool BaseInterface::HasPort(const char *in_portName, const bool testForInput)
     }
 
     // get the port.
-    FabricServices::DFGWrapper::PortPtr port = graph->getPort(in_portName);
+    FabricServices::DFGWrapper::ExecPortPtr port = graph->getPort(in_portName);
 
     // return result.
     return (   !port.isNull()
             &&  port->isValid()
-            &&  port->getPortType() == portType);
+            &&  port->getOutsidePortType() == portType);
   }
   catch (FabricCore::Exception e)
   {
@@ -288,7 +288,7 @@ bool BaseInterface::HasOutputPort(const std::string &portName)
   return HasPort(portName.c_str(), false);
 }
 
-int BaseInterface::GetPortValueBoolean(FabricServices::DFGWrapper::PortPtr port, bool &out, bool strict)
+int BaseInterface::GetPortValueBoolean(FabricServices::DFGWrapper::ExecPortPtr port, bool &out, bool strict)
 {
   // init output.
   out = false;
@@ -336,7 +336,7 @@ int BaseInterface::GetPortValueBoolean(FabricServices::DFGWrapper::PortPtr port,
   return 0;
 }
 
-int BaseInterface::GetPortValueInteger(FabricServices::DFGWrapper::PortPtr port, int &out, bool strict)
+int BaseInterface::GetPortValueInteger(FabricServices::DFGWrapper::ExecPortPtr port, int &out, bool strict)
 {
   // init output.
   out = 0;
@@ -384,7 +384,7 @@ int BaseInterface::GetPortValueInteger(FabricServices::DFGWrapper::PortPtr port,
   return 0;
 }
 
-int BaseInterface::GetPortValueFloat(FabricServices::DFGWrapper::PortPtr port, double &out, bool strict)
+int BaseInterface::GetPortValueFloat(FabricServices::DFGWrapper::ExecPortPtr port, double &out, bool strict)
 {
   // init output.
   out = 0;
@@ -432,7 +432,7 @@ int BaseInterface::GetPortValueFloat(FabricServices::DFGWrapper::PortPtr port, d
   return 0;
 }
 
-int BaseInterface::GetPortValueString(FabricServices::DFGWrapper::PortPtr port, std::string &out, bool strict)
+int BaseInterface::GetPortValueString(FabricServices::DFGWrapper::ExecPortPtr port, std::string &out, bool strict)
 {
   // init output.
   out = "";
@@ -493,7 +493,7 @@ int BaseInterface::GetPortValueString(FabricServices::DFGWrapper::PortPtr port, 
   return 0;
 }
 
-int BaseInterface::GetPortValueVec2(FabricServices::DFGWrapper::PortPtr port, std::vector <double> &out, bool strict)
+int BaseInterface::GetPortValueVec2(FabricServices::DFGWrapper::ExecPortPtr port, std::vector <double> &out, bool strict)
 {
   // init output.
   out.clear();
@@ -527,7 +527,7 @@ int BaseInterface::GetPortValueVec2(FabricServices::DFGWrapper::PortPtr port, st
   return 0;
 }
 
-int BaseInterface::GetPortValueVec3(FabricServices::DFGWrapper::PortPtr port, std::vector <double> &out, bool strict)
+int BaseInterface::GetPortValueVec3(FabricServices::DFGWrapper::ExecPortPtr port, std::vector <double> &out, bool strict)
 {
   // init output.
   out.clear();
@@ -575,7 +575,7 @@ int BaseInterface::GetPortValueVec3(FabricServices::DFGWrapper::PortPtr port, st
   return 0;
 }
 
-int BaseInterface::GetPortValueVec4(FabricServices::DFGWrapper::PortPtr port, std::vector <double> &out, bool strict)
+int BaseInterface::GetPortValueVec4(FabricServices::DFGWrapper::ExecPortPtr port, std::vector <double> &out, bool strict)
 {
   // init output.
   out.clear();
@@ -620,7 +620,7 @@ int BaseInterface::GetPortValueVec4(FabricServices::DFGWrapper::PortPtr port, st
   return 0;
 }
 
-int BaseInterface::GetPortValueColor(FabricServices::DFGWrapper::PortPtr port, std::vector <double> &out, bool strict)
+int BaseInterface::GetPortValueColor(FabricServices::DFGWrapper::ExecPortPtr port, std::vector <double> &out, bool strict)
 {
   // init output.
   out.clear();
@@ -677,7 +677,7 @@ int BaseInterface::GetPortValueColor(FabricServices::DFGWrapper::PortPtr port, s
   return 0;
 }
 
-int BaseInterface::GetPortValueRGB(FabricServices::DFGWrapper::PortPtr port, std::vector <double> &out, bool strict)
+int BaseInterface::GetPortValueRGB(FabricServices::DFGWrapper::ExecPortPtr port, std::vector <double> &out, bool strict)
 {
   // init output.
   out.clear();
@@ -725,7 +725,7 @@ int BaseInterface::GetPortValueRGB(FabricServices::DFGWrapper::PortPtr port, std
   return 0;
 }
 
-int BaseInterface::GetPortValueRGBA(FabricServices::DFGWrapper::PortPtr port, std::vector <double> &out, bool strict)
+int BaseInterface::GetPortValueRGBA(FabricServices::DFGWrapper::ExecPortPtr port, std::vector <double> &out, bool strict)
 {
   // init output.
   out.clear();
@@ -776,7 +776,7 @@ int BaseInterface::GetPortValueRGBA(FabricServices::DFGWrapper::PortPtr port, st
   return 0;
 }
 
-int BaseInterface::GetPortValueQuat(FabricServices::DFGWrapper::PortPtr port, std::vector <double> &out, bool strict)
+int BaseInterface::GetPortValueQuat(FabricServices::DFGWrapper::ExecPortPtr port, std::vector <double> &out, bool strict)
 {
   // init output.
   out.clear();
@@ -814,7 +814,7 @@ int BaseInterface::GetPortValueQuat(FabricServices::DFGWrapper::PortPtr port, st
   return 0;
 }
 
-int BaseInterface::GetPortValueMat44(FabricServices::DFGWrapper::PortPtr port, std::vector <double> &out, bool strict)
+int BaseInterface::GetPortValueMat44(FabricServices::DFGWrapper::ExecPortPtr port, std::vector <double> &out, bool strict)
 {
   // init output.
   out.clear();
@@ -857,15 +857,15 @@ int BaseInterface::GetPortValueMat44(FabricServices::DFGWrapper::PortPtr port, s
   return 0;
 }
 
-int BaseInterface::GetPortValuePolygonMesh(FabricServices::DFGWrapper::PortPtr  port,
-                                           unsigned int                        &out_numVertices,
-                                           unsigned int                        &out_numPolygons,
-                                           unsigned int                        &out_numSamples,
-                                           std::vector <float>                 *out_positions,
-                                           std::vector <uint32_t>              *out_polygonNumVertices,
-                                           std::vector <uint32_t>              *out_polygonVertices,
-                                           std::vector <float>                 *out_polygonNodeNormals,
-                                           bool                                 strict)
+int BaseInterface::GetPortValuePolygonMesh(FabricServices::DFGWrapper::ExecPortPtr  port,
+                                           unsigned int                            &out_numVertices,
+                                           unsigned int                            &out_numPolygons,
+                                           unsigned int                            &out_numSamples,
+                                           std::vector <float>                     *out_positions,
+                                           std::vector <uint32_t>                  *out_polygonNumVertices,
+                                           std::vector <uint32_t>                  *out_polygonVertices,
+                                           std::vector <float>                     *out_polygonNodeNormals,
+                                           bool                                     strict)
 {
   // init output.
   out_numVertices = 0;
@@ -1002,7 +1002,7 @@ int BaseInterface::GetPortValuePolygonMesh(FabricServices::DFGWrapper::PortPtr  
   return errID;
 }
 
-void BaseInterface::SetValueOfPortBoolean(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::PortPtr port, const bool val)
+void BaseInterface::SetValueOfPortBoolean(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::ExecPortPtr port, const bool val)
 {
   if (port.isNull() || !port->isValid())
   {
@@ -1023,7 +1023,7 @@ void BaseInterface::SetValueOfPortBoolean(FabricCore::Client &client, FabricServ
   }
 }
 
-void BaseInterface::SetValueOfPortSInt(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::PortPtr port, const int32_t val)
+void BaseInterface::SetValueOfPortSInt(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::ExecPortPtr port, const int32_t val)
 {
   if (port.isNull() || !port->isValid())
   {
@@ -1048,7 +1048,7 @@ void BaseInterface::SetValueOfPortSInt(FabricCore::Client &client, FabricService
   }
 }
 
-void BaseInterface::SetValueOfPortUInt(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::PortPtr port, const uint32_t val)
+void BaseInterface::SetValueOfPortUInt(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::ExecPortPtr port, const uint32_t val)
 {
   if (port.isNull() || !port->isValid())
   {
@@ -1073,7 +1073,7 @@ void BaseInterface::SetValueOfPortUInt(FabricCore::Client &client, FabricService
   }
 }
 
-void BaseInterface::SetValueOfPortFloat(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::PortPtr port, const double val)
+void BaseInterface::SetValueOfPortFloat(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::ExecPortPtr port, const double val)
 {
   if (port.isNull() || !port->isValid())
   {
@@ -1096,7 +1096,7 @@ void BaseInterface::SetValueOfPortFloat(FabricCore::Client &client, FabricServic
   }
 }
 
-void BaseInterface::SetValueOfPortString(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::PortPtr port, const std::string &val)
+void BaseInterface::SetValueOfPortString(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::ExecPortPtr port, const std::string &val)
 {
   if (port.isNull() || !port->isValid())
   {
@@ -1117,7 +1117,7 @@ void BaseInterface::SetValueOfPortString(FabricCore::Client &client, FabricServi
   }
 }
 
-void BaseInterface::SetValueOfPortVec2(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::PortPtr port, const std::vector <double> &val)
+void BaseInterface::SetValueOfPortVec2(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::ExecPortPtr port, const std::vector <double> &val)
 {
   if (port.isNull() || !port->isValid())
   {
@@ -1144,7 +1144,7 @@ void BaseInterface::SetValueOfPortVec2(FabricCore::Client &client, FabricService
   }
 }
 
-void BaseInterface::SetValueOfPortVec3(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::PortPtr port, const std::vector <double> &val)
+void BaseInterface::SetValueOfPortVec3(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::ExecPortPtr port, const std::vector <double> &val)
 {
   if (port.isNull() || !port->isValid())
   {
@@ -1171,7 +1171,7 @@ void BaseInterface::SetValueOfPortVec3(FabricCore::Client &client, FabricService
   }
 }
 
-void BaseInterface::SetValueOfPortVec4(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::PortPtr port, const std::vector <double> &val)
+void BaseInterface::SetValueOfPortVec4(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::ExecPortPtr port, const std::vector <double> &val)
 {
   if (port.isNull() || !port->isValid())
   {
@@ -1198,7 +1198,7 @@ void BaseInterface::SetValueOfPortVec4(FabricCore::Client &client, FabricService
   }
 }
 
-void BaseInterface::SetValueOfPortColor(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::PortPtr port, const std::vector <double> &val)
+void BaseInterface::SetValueOfPortColor(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::ExecPortPtr port, const std::vector <double> &val)
 {
   if (port.isNull() || !port->isValid())
   {
@@ -1225,7 +1225,7 @@ void BaseInterface::SetValueOfPortColor(FabricCore::Client &client, FabricServic
   }
 }
 
-void BaseInterface::SetValueOfPortRGB(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::PortPtr port, const std::vector <double> &val)
+void BaseInterface::SetValueOfPortRGB(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::ExecPortPtr port, const std::vector <double> &val)
 {
   if (port.isNull() || !port->isValid())
   {
@@ -1252,7 +1252,7 @@ void BaseInterface::SetValueOfPortRGB(FabricCore::Client &client, FabricServices
   }
 }
 
-void BaseInterface::SetValueOfPortRGBA(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::PortPtr port, const std::vector <double> &val)
+void BaseInterface::SetValueOfPortRGBA(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::ExecPortPtr port, const std::vector <double> &val)
 {
   if (port.isNull() || !port->isValid())
   {
@@ -1279,7 +1279,7 @@ void BaseInterface::SetValueOfPortRGBA(FabricCore::Client &client, FabricService
   }
 }
 
-void BaseInterface::SetValueOfPortQuat(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::PortPtr port, const std::vector <double> &val)
+void BaseInterface::SetValueOfPortQuat(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::ExecPortPtr port, const std::vector <double> &val)
 {
   if (port.isNull() || !port->isValid())
   {
@@ -1307,7 +1307,7 @@ void BaseInterface::SetValueOfPortQuat(FabricCore::Client &client, FabricService
   }
 }
 
-void BaseInterface::SetValueOfPortMat44(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::PortPtr port, const std::vector <double> &val)
+void BaseInterface::SetValueOfPortMat44(FabricCore::Client &client, FabricServices::DFGWrapper::Binding &binding, FabricServices::DFGWrapper::ExecPortPtr port, const std::vector <double> &val)
 {
   if (port.isNull() || !port->isValid())
   {
