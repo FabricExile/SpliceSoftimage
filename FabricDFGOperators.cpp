@@ -96,11 +96,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
   // create default parameter(s).
   oPDef = oFactory.CreateParamDef(L"FabricActive",        CValue::siBool,   siPersistable | siAnimatable | siKeyable, L"", L"", true, CValue(), CValue(), CValue(), CValue());
   op.AddParameter(oPDef, Parameter());
-  oPDef = oFactory.CreateParamDef(L"evalID",              CValue::siInt4,   siReadOnly,                               L"", L"", 0, 0, 10000, 0, 10000);
-  op.AddParameter(oPDef, Parameter());
   oPDef = oFactory.CreateParamDef(L"persistenceData",     CValue::siString, siPersistable | siReadOnly,               L"", L"", "", "", "", "", "");
-  op.AddParameter(oPDef, Parameter());
-  oPDef = oFactory.CreateParamDef(L"alwaysConvertMeshes", CValue::siBool,   siPersistable,                            L"", L"", false, CValue(), CValue(), CValue(), CValue());
   op.AddParameter(oPDef, Parameter());
   oPDef = oFactory.CreateParamDef(L"verbose",             CValue::siBool,   siPersistable,                            L"", L"", true, CValue(), CValue(), CValue(), CValue());
   op.AddParameter(oPDef, Parameter());
@@ -402,9 +398,7 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
     oLayout.AddTab(L"Advanced");
     {
       oLayout.AddItem(L"verbose",             L"Verbose");
-      oLayout.AddItem(L"evalID",              L"evalID");
       oLayout.AddItem(L"persistenceData",     L"persistenceData");
-      oLayout.AddItem(L"alwaysConvertMeshes", L"Always Convert Meshes");
       oLayout.AddItem(L"mute",                L"Mute");
       oLayout.AddItem(L"alwaysevaluate",      L"Always Evaluate");
       oLayout.AddItem(L"debug",               L"Debug");
