@@ -449,7 +449,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
       if (_opUserData::s_portmap_newOp.size())
       {
         //
-        if (!DefinePortMapping(_opUserData::s_portmap_newOp))
+        if (!Dialog_DefinePortMapping(_opUserData::s_portmap_newOp))
         { _opUserData::s_portmap_newOp.clear();
           return CStatus::OK; }
 
@@ -799,60 +799,116 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
 
   // get pointers/refs at binding, graph & co.
   BaseInterface                                   *baseInterface  = pud->GetBaseInterface();
+  FabricCore::Client                              *client         = pud->GetBaseInterface()->getClient();
   FabricServices::DFGWrapper::Binding             *binding        = pud->GetBaseInterface()->getBinding();
   FabricServices::DFGWrapper::GraphExecutablePtr   graph          = pud->GetBaseInterface()->getGraph();
 
   // Fabric Engine (step 1): loop through all the DFG's input ports and set
-  //                         their values from the matching XSI ports / parameters.
+  //                         their values from the matching XSI ports or parameters.
   {
     try
     {
       FabricServices::DFGWrapper::PortList ports = graph->getPorts();
       for (int i=0;i<ports.size();i++)
       {
+        bool done = false;
+
         // get/check DFG port.
         FabricServices::DFGWrapper::PortPtr port = ports[i];
         if (port->getPortType() != FabricCore::DFGPortType_In)
           continue;
 
         // find a matching XSI port.
-        CValue xsiPortValue = op.GetInputValue(CString(port->getName()), CString(port->getName()));
-        if (!xsiPortValue.IsEmpty())
+        if (!done)
         {
-          //
-          if (verbose) Application().LogMessage(functionName + L": transfer xsi port data to dfg port \"" + CString(port->getName()) + L"\"");
+          CValue xsiPortValue = op.GetInputValue(CString(port->getName()), CString(port->getName()));
+          if (!xsiPortValue.IsEmpty())
+          {
+            done = true;
 
-          //
-          if (CString(port->getResolvedType()) == L"Mat44")
-            if (xsiPortValue.m_t == CValue::siRef)
+            //
+            if (verbose) Application().LogMessage(functionName + L": transfer xsi port data to dfg port \"" + CString(port->getName()) + L"\"");
+
+            //
+            if (CString(port->getResolvedType()) == L"Mat44")
             {
-              KinematicState ks(xsiPortValue);
-              if (ks.IsValid())
+              if (xsiPortValue.m_t == CValue::siRef)
               {
-                // put the XSI port's value into a std::vector.
-                MATH::CMatrix4 m = ks.GetTransform().GetMatrix4();
-                std::vector <double> val(16);
-                val[ 0] = m.GetValue(0, 0); // row 0.
-                val[ 1] = m.GetValue(1, 0);
-                val[ 2] = m.GetValue(2, 0);
-                val[ 3] = m.GetValue(3, 0);
-                val[ 4] = m.GetValue(0, 1); // row 1.
-                val[ 5] = m.GetValue(1, 1);
-                val[ 6] = m.GetValue(2, 1);
-                val[ 7] = m.GetValue(3, 1);
-                val[ 8] = m.GetValue(0, 2); // row 2.
-                val[ 9] = m.GetValue(1, 2);
-                val[10] = m.GetValue(2, 2);
-                val[11] = m.GetValue(3, 2);
-                val[12] = m.GetValue(0, 3); // row 3.
-                val[13] = m.GetValue(1, 3);
-                val[14] = m.GetValue(2, 3);
-                val[15] = m.GetValue(3, 3);
+                KinematicState ks(xsiPortValue);
+                if (ks.IsValid())
+                {
+                  // put the XSI port's value into a std::vector.
+                  MATH::CMatrix4 m = ks.GetTransform().GetMatrix4();
+                  std::vector <double> val(16);
+                  val[ 0] = m.GetValue(0, 0); // row 0.
+                  val[ 1] = m.GetValue(1, 0);
+                  val[ 2] = m.GetValue(2, 0);
+                  val[ 3] = m.GetValue(3, 0);
+                  val[ 4] = m.GetValue(0, 1); // row 1.
+                  val[ 5] = m.GetValue(1, 1);
+                  val[ 6] = m.GetValue(2, 1);
+                  val[ 7] = m.GetValue(3, 1);
+                  val[ 8] = m.GetValue(0, 2); // row 2.
+                  val[ 9] = m.GetValue(1, 2);
+                  val[10] = m.GetValue(2, 2);
+                  val[11] = m.GetValue(3, 2);
+                  val[12] = m.GetValue(0, 3); // row 3.
+                  val[13] = m.GetValue(1, 3);
+                  val[14] = m.GetValue(2, 3);
+                  val[15] = m.GetValue(3, 3);
 
-                // set the DFG port from the std::vector.
-                BaseInterface::SetValueOfPortMat44(*baseInterface->getClient(), *binding, port, val);
+                  // set the DFG port from the std::vector.
+                  BaseInterface::SetValueOfPortMat44(*client, *binding, port, val);
+                }
               }
             }
+          }
+        }
+
+        // find a matching XSI parameter.
+        if (!done)
+        {
+          Parameter xsiParam = op.GetParameter(port->getName());
+          if (xsiParam.IsValid())
+          {
+            done = true;
+
+            //
+            if (verbose) Application().LogMessage(functionName + L": transfer xsi parameter data to dfg port \"" + CString(port->getName()) + L"\"");
+
+            //
+            CValue xsiValue = xsiParam.GetValue();
+
+            //
+            std::string port__resolvedType = port->getResolvedType();
+            if      (   port__resolvedType == "Boolean")    {
+                                                              bool val = (bool)xsiValue;
+                                                              BaseInterface::SetValueOfPortBoolean(*client, *binding, port, val);
+                                                            }
+            else if (   port__resolvedType == "SInt8"
+                     || port__resolvedType == "SInt16"
+                     || port__resolvedType == "SInt32"
+                     || port__resolvedType == "SInt64" )    {
+                                                              int val = (int)(LONG)xsiValue;
+                                                              BaseInterface::SetValueOfPortSInt(*client, *binding, port, val);
+                                                            }
+            else if (   port__resolvedType == "UInt8"
+                     || port__resolvedType == "UInt16"
+                     || port__resolvedType == "UInt32"
+                     || port__resolvedType == "UInt64" )    {
+                                                              unsigned int val = (unsigned int)(ULONG)xsiValue;
+                                                              BaseInterface::SetValueOfPortUInt(*client, *binding, port, val);
+                                                            }
+            else if (   port__resolvedType == "Float32"
+                     || port__resolvedType == "Float64" )   {
+                                                              double val = (double)xsiValue;
+                                                              BaseInterface::SetValueOfPortFloat(*client, *binding, port, val);
+                                                            }
+            else
+            {
+              Application().LogMessage(L"the port \"" + CString(port->getName()) + L"\" has the unsupported data type \"" + CString(port__resolvedType.c_str()) + L"\"", siWarningMsg)  ;
+            }
+          }
         }
       }
     }
@@ -954,8 +1010,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
   return CStatus::OK;
 }
 
-// returns: true on success, false otherwise.
-bool DefinePortMapping(std::vector<_portMapping> &io_pmap)
+bool Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
 {
   // nothing to do?
   if (io_pmap.size() == 0)

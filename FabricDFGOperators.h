@@ -136,6 +136,6 @@ struct _opUserData
 };
 
 // forward declarations.
-bool DefinePortMapping(std::vector<_portMapping> &io_pmap);
+bool Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap);
 
 #endif
