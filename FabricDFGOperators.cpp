@@ -96,9 +96,9 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
   // create default parameter(s).
   oPDef = oFactory.CreateParamDef(L"FabricActive",        CValue::siBool,   siPersistable | siAnimatable | siKeyable, L"", L"", true, CValue(), CValue(), CValue(), CValue());
   op.AddParameter(oPDef, Parameter());
-  oPDef = oFactory.CreateParamDef(L"evalID",              CValue::siInt4,   siReadOnly,                               L"", L"", 0, 0, 1000, 0, 1000);
+  oPDef = oFactory.CreateParamDef(L"evalID",              CValue::siInt4,   siReadOnly,                               L"", L"", 0, 0, 10000, 0, 10000);
   op.AddParameter(oPDef, Parameter());
-  oPDef = oFactory.CreateParamDef(L"persistenceData",     CValue::siString, siReadOnly,                               L"", L"", "", "", "", "", "");
+  oPDef = oFactory.CreateParamDef(L"persistenceData",     CValue::siString, siPersistable | siReadOnly,               L"", L"", "", "", "", "", "");
   op.AddParameter(oPDef, Parameter());
   oPDef = oFactory.CreateParamDef(L"alwaysConvertMeshes", CValue::siBool,   siPersistable,                            L"", L"", false, CValue(), CValue(), CValue(), CValue());
   op.AddParameter(oPDef, Parameter());

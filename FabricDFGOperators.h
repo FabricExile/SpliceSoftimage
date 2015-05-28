@@ -105,6 +105,12 @@ struct _opUserData
     return m_baseInterface;
   }
 
+  // return pointer at static s_instances map.
+  static std::map <unsigned int, _opUserData *> *GetStaticMapOfInstances(void)
+  {
+    return &s_instances;
+  }
+
   // return pointer at _opUserData for a given operator's ObjectID.
   static _opUserData *GetUserData(unsigned int operatorObjectID)
   {
