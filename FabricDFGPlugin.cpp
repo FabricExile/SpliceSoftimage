@@ -35,7 +35,4 @@ void feLogError(const std::string &s)
   feLogError(NULL, s.c_str(), s.length());
 }
 
-// a global BaseInterface: its only purpose is to ensure
-// that Fabric is "up and running" when Softimage is executed.
-BaseInterface gblBaseInterface_dummy(feLog, feLogError);
 

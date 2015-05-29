@@ -11,6 +11,10 @@
 
 using namespace XSI;
 
+// a global BaseInterface: its only purpose is to ensure
+// that Fabric is "up and running" when Softimage is executed.
+BaseInterface *gblBaseInterface_dummy = NULL;
+
 // load plugin.
 SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
 {
@@ -80,6 +84,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     in_reg.RegisterMenu(siMenuMainTopLevelID, "Fabric:DFG", true, true);
 
     // events.
+    in_reg.RegisterEvent(L"FabricDFGsiOnStartup",             siOnStartup);
     in_reg.RegisterEvent(L"FabricDFGsiOnEndSceneOpen",        siOnEndSceneOpen);
     in_reg.RegisterEvent(L"FabricDFGsiOnBeginSceneSave",      siOnBeginSceneSave);
     in_reg.RegisterEvent(L"FabricDFGsiOnBeginSceneSave2",     siOnBeginSceneSave2);
@@ -97,6 +102,14 @@ SICALLBACK XSIUnloadPlugin(const PluginRegistrar& in_reg)
   strPluginName = in_reg.GetName();
   Application().LogMessage(strPluginName + L" has been unloaded.",siVerboseMsg);
 
+  // delete the dummy base interface.
+  if (gblBaseInterface_dummy)
+  {
+    delete gblBaseInterface_dummy;
+    gblBaseInterface_dummy = NULL;
+  }
+
+  // done.
   return CStatus::OK;
 }
 
@@ -104,16 +117,23 @@ SICALLBACK XSIUnloadPlugin(const PluginRegistrar& in_reg)
 // siEvent callback and helper functions.
 // --------------------------------------
 
+XSIPLUGINCALLBACK CStatus FabricDFGsiOnStartup_OnEvent(CRef & ctxt)
+{
+  // allocate the dummy base interface.
+  if (!gblBaseInterface_dummy)
+    gblBaseInterface_dummy = new BaseInterface(feLog, feLogError);
+
+  // done.
+  return 1;
+}
+
 CStatus helpFnct_siEventOpenSave(CRef &ctxt, int openSave)
 {
   Context context(ctxt);
 
   /*
-      if      openSave == 0:    store DFG JSON in op's persistenceData parameter (e.g. before saving a scene).
-
-      else if openSave == 1:    set DFG JSON from op's persistenceData parameter (e.g. after loading a scene).
-
-      else                      do nothing.
+      openSave == 0: store DFG JSON in op's persistenceData parameter (e.g. before saving a scene).
+      openSave == 1: set DFG JSON from op's persistenceData parameter (e.g. after loading a scene).
   */
 
   std::map <unsigned int, _opUserData *> &s_instances = *_opUserData::GetStaticMapOfInstances();
