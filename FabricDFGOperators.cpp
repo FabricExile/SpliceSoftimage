@@ -98,7 +98,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
   op.AddParameter(oPDef, Parameter());
   oPDef = oFactory.CreateParamDef(L"persistenceData",     CValue::siString, siPersistable | siReadOnly,               L"", L"", "", "", "", "", "");
   op.AddParameter(oPDef, Parameter());
-  oPDef = oFactory.CreateParamDef(L"verbose",             CValue::siBool,   siPersistable,                            L"", L"", true, CValue(), CValue(), CValue(), CValue());
+  oPDef = oFactory.CreateParamDef(L"verbose",             CValue::siBool,   siPersistable,                            L"", L"", false, CValue(), CValue(), CValue(), CValue());
   op.AddParameter(oPDef, Parameter());
 
   // create grid parameter for the list of DFG ports.
@@ -259,7 +259,6 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
           oLayout.AddItem(L"FabricActive", L"Execute Fabric DFG");
           oLayout.AddSpacer(0, 0);
           pi = oLayout.AddButton(L"BtnOpenCanvas", L"Open Canvas");
-          pi.PutAttribute(siUIButtonDisable, true);
           pi.PutAttribute(siUICX, btnCx);
           pi.PutAttribute(siUICY, btnCy);
         oLayout.EndRow();
@@ -291,7 +290,6 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
           oLayout.AddItem(L"FabricActive", L"Execute Fabric DFG");
           oLayout.AddSpacer(0, 0);
           pi = oLayout.AddButton(L"BtnOpenCanvas", L"Open Canvas");
-          pi.PutAttribute(siUIButtonDisable, true);
           pi.PutAttribute(siUICX, btnCx);
           pi.PutAttribute(siUICY, btnCy);
         oLayout.EndRow();
@@ -436,8 +434,8 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     }
     else if (btnName == L"BtnOpenCanvas")
     {
-      LONG ret;
-      toolkit.MsgBox(L"not yet implemented", siMsgOkOnly, "dfgSoftimageOp", ret);
+      CString title = L"Canvas - " + op.GetParent3DObject().GetName();
+      OpenCanvas(_opUserData::GetUserData(op.GetObjectID()), title.GetAsciiString());
     }
     else if (btnName == L"BtnPortsDefineTT")
     {

@@ -47,6 +47,8 @@ env.Append(LIBPATH = [os.path.join(os.environ['FABRIC_UI_DIR'], 'stage', 'lib')]
 env.Append(CPPPATH = [os.path.join(os.environ['FABRIC_DIR'], 'include')])
 env.Append(CPPPATH = [os.path.join(os.environ['FABRIC_DIR'], 'include', 'FabricServices')])
 
+env.Append(CPPPATH = [os.path.join(os.environ['QT_DIR'], 'include')])
+env.Append(LIBPATH = [os.path.join(os.environ['QT_DIR'], 'lib')])
 
 
 env.MergeFlags(sharedCapiFlags)
@@ -58,18 +60,21 @@ if FABRIC_BUILD_OS == 'Linux':
   env.Append(SHLINKFLAGS = ['-Wl,--version-script='+str(exportsFile)])
 elif FABRIC_BUILD_OS == 'Windows':
   env.Append(LIBS = ['OpenGL32.lib'])
+  env.Append(LIBS = ['user32.lib'])
 
 
 
 
-#env.Append(LIBS = ['FabricSplice-2.0', 'FabricCore-2.0'])
 if platform.system().lower().startswith('win'):
   env.Append(LIBS = ['FabricServices-MSVC-12.0-mt'])
 else:
   env.Append(LIBS = ['FabricServices'])
+
 env.Append(LIBS = ['FabricSplitSearch'])
-
-
+env.Append(LIBS = ['FabricUI'])
+env.Append(LIBS = ['QtCore4'])
+env.Append(LIBS = ['QtGui4'])
+env.Append(LIBS = ['QtOpenGL4'])
 
 
 
