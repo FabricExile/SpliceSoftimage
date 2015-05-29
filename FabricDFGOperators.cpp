@@ -135,7 +135,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
         continue; }
 
       Application().LogMessage(L"adding parameter \"" + pmap.dfgPortName + "\"" , siInfoMsg);
-      oPDef = oFactory.CreateParamDef(pmap.dfgPortName, dt, siPersistable | siAnimatable | siKeyable, L"", L"", CValue(), CValue(), CValue(), CValue(), CValue());
+      oPDef = oFactory.CreateParamDef(pmap.dfgPortName, dt, siPersistable | siAnimatable | siKeyable, L"", L"", CValue(), CValue(), CValue(), 0, 1);
       op.AddParameter(oPDef, Parameter());
       exposedDFGParams += pmap.dfgPortName + L";";
     }
@@ -202,8 +202,8 @@ int dfgSoftimageOp_UpdateGridData_dfgPorts(CustomOperator &op)
       case DFG_PORT_MAPTYPE::INTERNAL:        target = L"Internal";       break;
       case DFG_PORT_MAPTYPE::XSI_PARAMETER:   target = L"XSI Parameter";  break;
       case DFG_PORT_MAPTYPE::XSI_PORT:      { target = L"XSI Port";
-                                              if (!pmap[i].mapTarget.IsEmpty())
-                                                target += L" / " + pmap[i].mapTarget;
+                                              if (pmap[i].mapTarget.IsEmpty())  target += "  ( - )";
+                                              else                              target += L" ( -> " + pmap[i].mapTarget + L" )";
                                             }                             break;
       case DFG_PORT_MAPTYPE::XSI_ICE_PORT:    target = L"XSI ICE Port";   break;
       default:                                target = L"unknown";        break;
@@ -449,7 +449,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
       if (_opUserData::s_portmap_newOp.size())
       {
         //
-        if (!Dialog_DefinePortMapping(_opUserData::s_portmap_newOp))
+        if (Dialog_DefinePortMapping(_opUserData::s_portmap_newOp) <= 0)
         { _opUserData::s_portmap_newOp.clear();
           return CStatus::OK; }
 
@@ -984,46 +984,27 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
     }
   }
   
-  #ifdef OLD_RnR_STUFF___
-    // get default input.
-    KinematicState kineIn((CRef)ctxt.GetInputValue(L"reservedMatrixIn"));
-    MATH::CMatrix4 matrixIn = kineIn.GetTransform().GetMatrix4();
-    MATH::CTransformation gt;
-    gt.SetMatrix4(matrixIn);
-
-    // test (do something with gt).
-    {
-      double x, y, z;
-      gt.GetTranslationValues(x, y, z);
-      x = __max(-1, __min(1, x));
-      y = __max(-2, __min(2, y));
-      z = __max(-3, __min(3, z));
-      gt.SetTranslationFromValues(x, y, z);
-    }
-
-    // set output.
-    KinematicState kineOut(ctxt.GetOutputTarget());
-    kineOut.PutTransform(gt);
-  #endif
-
   // done.
   return CStatus::OK;
 }
 
-bool Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
+// returns: -1: error.
+//           0: canceled by user or no changes made.
+//           1: success.
+int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
 {
   // nothing to do?
   if (io_pmap.size() == 0)
-    return false;
+    return 0;
 
   // create the temporary custom property.
   CustomProperty cp = Application().GetActiveSceneRoot().AddProperty(L"CustomProperty", false, L"dfgDefinePortMapping");
   if (!cp.IsValid())
   { Application().LogMessage(L"failed to create custom property!", siErrorMsg);
-    return false; }
+    return -1; }
   
   // declare/init return value.
-  bool ret = true;
+  int ret = 1;
 
   // add parameters.
   if (ret)
@@ -1032,15 +1013,20 @@ bool Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
     {
       _portMapping &pmap = io_pmap[i];
 
-      // read only params.
+      // read only grid (name, etc.).
       {
-        // name.
-        cp.AddParameter(L"Name" + CString(i), CValue::siString, siReadOnly, L"Name", L"", pmap.dfgPortName, Parameter());
+        Parameter gridParam = cp.AddGridParameter(L"grid" + CString(i));
+        GridData grid((CRef)gridParam.GetValue());
 
-        // type (resolved data type).
-        cp.AddParameter(L"Type" + CString(i), CValue::siString, siReadOnly, L"Type", L"", pmap.dfgPortDataType, Parameter());
+        grid.PutRowCount(1);
+        grid.PutColumnCount(3);
+        grid.PutColumnLabel(0, "Name");         grid.PutColumnType(0, siColumnStandard);
+        grid.PutColumnLabel(1, "Type");         grid.PutColumnType(1, siColumnStandard);
+        grid.PutColumnLabel(2, "Mode");         grid.PutColumnType(2, siColumnStandard);
+        grid.PutReadOnly(true);
 
-        // mode (In/Out).
+        CString name = pmap.dfgPortName;
+        CString type = pmap.dfgPortDataType;
         CString mode;
         switch (pmap.dfgPortType)
         {
@@ -1048,7 +1034,11 @@ bool Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
           case DFG_PORT_TYPE::OUT:  mode = L"Out";        break;
           default:                  mode = L"undefined";  break;
         }
-        cp.AddParameter(L"Mode" + CString(i), CValue::siString, siReadOnly, L"Mode", L"", mode, Parameter());
+
+        grid.PutRowLabel( 0, L"  " + CString(i) + L"  ");
+        grid.PutCell(0,   0, L" " + name);
+        grid.PutCell(1,   0, L" " + type);
+        grid.PutCell(2,   0, L" " + mode);
       }
 
       // other params.
@@ -1062,6 +1052,7 @@ bool Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
   // define layout.
   if (ret)
   {
+    PPGItem pi;
     PPGLayout oLayout = cp.GetPPGLayout();
     oLayout.Clear();
     for (int i=0;i<io_pmap.size();i++)
@@ -1070,10 +1061,13 @@ bool Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
 
       oLayout.AddGroup(pmap.dfgPortName);
         oLayout.AddRow();
-          oLayout.AddGroup(L"", false, 20);
-            oLayout.AddItem(L"Name" + CString(i));
-            oLayout.AddItem(L"Type" + CString(i));
-            oLayout.AddItem(L"Mode" + CString(i));
+          oLayout.AddGroup(L"", false, 50);
+            pi = oLayout.AddItem(L"grid" + CString(i));
+            pi.PutAttribute(siUINoLabel,              true);
+            pi.PutAttribute(siUIGridSelectionMode,    siSelectionNone);
+            pi.PutAttribute(siUIGridHideColumnHeader, false);
+            pi.PutAttribute(siUIGridLockColumnWidth,  true);
+            pi.PutAttribute(siUIGridColumnWidths,     "20:128:64:40");
           oLayout.EndGroup();
           oLayout.AddGroup(L"", false, 5);
             oLayout.AddStaticText(L" ");
@@ -1170,19 +1164,24 @@ bool Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
     args.Add(false);
     if (Application().ExecuteCommand(L"InspectObj", args, r) != CStatus::OK)
     { Application().LogMessage(L"InspectObj failed", siErrorMsg);
-      ret = false; }
+      ret = -1; }
     if (r == true)  // canceled by user.
-      ret = false;
+      ret = 0;
   }
 
   // update io_pm from the custom property.
   if (ret)
   {
+    ret = 0;
+
     for (int i=0;i<io_pmap.size();i++)
     {
       _portMapping &pmap = io_pmap[i];
 
+      DFG_PORT_MAPTYPE mem = pmap.mapType;
       pmap.mapType = (DFG_PORT_MAPTYPE)(int)cp.GetParameterValue(L"MapType" + CString(i));
+      if (pmap.mapType != mem)
+        ret = 1;
     }
   }
 
