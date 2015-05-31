@@ -583,6 +583,18 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
             }
           }
 
+          // polygon mesh?
+          if (portClassID == siPolygonMeshID)
+          {
+            CRef tmp;
+            tmp.Set(targetRef.GetAsText() + L".polymsh");
+            if (tmp.IsValid())
+            {
+              targetRef = tmp;
+              err = false;
+            }
+          }
+
           //
           if (err)
           { Application().LogMessage(L"the picked element has the type \"" + targetRef.GetClassIDName() + L"\", but the port needs the type \"" + GetSiClassIdDescription(portClassID, CString()) + L"\".", siErrorMsg);
