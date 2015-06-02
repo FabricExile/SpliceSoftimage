@@ -8,7 +8,8 @@
 #include "FabricDFGOperators.h"
 
 #include <QtGui/QApplication>
-#include <QtGui/QMainWindow>
+#include <QtGui/QDialog>
+#include <QtGui/qboxlayout.h>
 
 #include <windows.h>
 #include <stdio.h>
@@ -22,11 +23,11 @@
 
 using namespace XSI;
 
-class MyDFGWidget : public DFG::DFGCombinedWidget
+class FabricDFGWidget : public DFG::DFGCombinedWidget
 {
  public:
 
-  MyDFGWidget(QWidget *parent) : DFGCombinedWidget(parent)
+  FabricDFGWidget(QWidget *parent) : DFGCombinedWidget(parent)
   {
   }
 
@@ -37,15 +38,15 @@ class MyDFGWidget : public DFG::DFGCombinedWidget
 
   static void log(void *userData, const char *message, unsigned int length)
   {
-    feLog(userData,message, length);
+    feLog(userData, message, length);
   }
 };
 
 struct _windowData
 {
-  QApplication  *qtApp;
-  QMainWindow   *qtMainWindow;
-  MyDFGWidget   *qtDFGWidget;
+  QApplication    *qtApp;
+  QDialog         *qtDialog;
+  FabricDFGWidget *qtDFGWidget;
 
   FabricCore::Client                             *client;
   FabricServices::ASTWrapper::KLASTManager       *manager;
@@ -57,7 +58,7 @@ struct _windowData
   _windowData(void)
   {
     qtApp         = NULL;
-    qtMainWindow  = NULL;
+    qtDialog      = NULL;
     qtDFGWidget   = NULL;
 
     client        = NULL;
@@ -105,16 +106,28 @@ void OpenCanvas(_opUserData *pud, const char *winTitle)
     _windowData *wd = &winData;
     if (wd->qtApp == NULL)
     {
-      int argv = 0;
-      wd->qtApp         = new QApplication(argv, NULL);
-      wd->qtMainWindow  = new QMainWindow ();
-      wd->qtDFGWidget   = new MyDFGWidget (wd->qtMainWindow);
-      wd->qtMainWindow->setCentralWidget  (wd->qtDFGWidget);
-      wd->qtMainWindow->setWindowTitle    (winTitle ? winTitle : "Canvas");
+      int argc = 0;
+      wd->qtApp         = new QApplication(argc, NULL);
+      wd->qtDialog      = new QDialog();
+      wd->qtDFGWidget   = new FabricDFGWidget(NULL/*wd->qtDialog*/);
 
+QVBoxLayout *layout = new QVBoxLayout();
+wd->qtDialog->setLayout(layout);
+layout->addWidget(wd->qtDFGWidget); 
+
+
+      wd->qtDialog->setWindowTitle(winTitle ? winTitle : "Canvas");
+
+      //wd->qtDialog->setModal(true);
+
+      wd->qtDialog->setWindowModality(Qt::WindowModal);
+
+      wd->qtDialog->setAttribute(Qt::WA_DeleteOnClose, true);
+
+
+      // init.
       DFG::DFGConfig config;
       config.graphConfig.useOpenGL = false;
-
       wd->qtDFGWidget->init(wd->client,
                             wd->manager,
                             wd->host,
@@ -124,18 +137,23 @@ void OpenCanvas(_opUserData *pud, const char *winTitle)
                             true,
                             config
                            );
+
+      // use Windows function SetParent() to parent the Qt dialog to XSI's main window.
+      SetParent((HWND)wd->qtDialog->winId(), (HWND)Application().GetDesktop().GetApplicationWindowHandle());
+
+      // show/execute Qt dialog.
+      wd->qtDialog->exec();
+      //if (!wd->qtDialog->isVisible())
+      //{
+      //  wd->qtDialog->show();
+      //  while (wd->qtDialog->isVisible())
+      //  {
+      //    wd->qtApp->processEvents();
+      //  }
+      //}
     }
 
-    SetParent((HWND)wd->qtMainWindow->winId(), (HWND)Application().GetDesktop().GetApplicationWindowHandle());
 
-    if (!wd->qtMainWindow->isVisible())
-    {
-      wd->qtMainWindow->show();
-      while (wd->qtMainWindow->isVisible())
-      {
-        wd->qtApp->processEvents();
-      }
-    }
   }
 
   // done.

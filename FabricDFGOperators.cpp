@@ -30,8 +30,10 @@
 #include <xsi_customoperator.h>
 #include <xsi_operatorcontext.h>
 #include <xsi_parameter.h>
+#include <xsi_polygonmesh.h>
 #include <xsi_value.h>
 #include <xsi_matrix4f.h>
+#include <xsi_primitive.h>
 
 #include "FabricDFGPlugin.h"
 #include "FabricDFGOperators.h"
@@ -839,8 +841,11 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
             //
             if (verbose) Application().LogMessage(functionName + L": transfer xsi port data to dfg port \"" + CString(port->getName()) + L"\"");
 
-            //
-            if (CString(port->getResolvedType()) == L"Mat44")
+            if      (CString(port->getResolvedType()) == L"")
+            {
+              // do nothing.
+            }
+            else if (CString(port->getResolvedType()) == L"Mat44")
             {
               if (xsiPortValue.m_t == CValue::siRef)
               {
@@ -870,6 +875,16 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
                   // set the DFG port from the std::vector.
                   BaseInterface::SetValueOfPortMat44(*client, *binding, port, val);
                 }
+              }
+            }
+
+            //
+            else if (CString(port->getResolvedType()) == L"PolygonMesh")
+            {
+              Application().LogMessage(L"input PolygonMesh ports not yet implemented.", siWarningMsg);
+              if (xsiPortValue.m_t == CValue::siRef)
+              {
+                // todo: set DFG port's polygon mesh from XSI port's polygon mesh.
               }
             }
           }
@@ -954,7 +969,11 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
           Application().LogMessage(functionName + L": graph->getPort() == NULL", siWarningMsg);
         else
         {
-          if (outputPort.GetTarget().GetClassID() == siKinematicStateID)
+          if      (outputPort.GetTarget().GetClassID() == siUnknownClassID)
+          {
+            // do nothing.
+          }
+          else if (outputPort.GetTarget().GetClassID() == siKinematicStateID)
           {
             std::vector <double> val;
             if (BaseInterface::GetPortValueMat44(port, val) != 0)
@@ -983,6 +1002,51 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
               t.SetMatrix4(m);
               kineOut.PutTransform(t);
             }
+          }
+          else if (outputPort.GetTarget().GetClassID() == siPrimitiveID)
+          {
+            PolygonMesh xsiPolymesh(Primitive(outputPort.GetTarget()).GetGeometry());
+            if (!xsiPolymesh.IsValid())
+              Application().LogMessage(L"PolygonMesh(Primitive(outputPort.GetTarget()).GetGeometry()) failed", siErrorMsg);
+            else
+            {
+              _polymesh polymesh;
+
+              int ret = polymesh.setFromDFGPort(port);
+              if (ret)
+                Application().LogMessage(functionName + L": failed to get mesh from DFG port \"" + CString(port->getName()) + L"\" (returned " + CString(ret) + L")", siWarningMsg);
+              else
+              {
+                if (verbose)
+                  Application().LogMessage(L"DFG port PolygonMesh: " + CString((LONG)polymesh.numVertices) + L" vertices, " + CString((LONG)polymesh.numPolygons) + L" polygons, " + CString((LONG)polymesh.numSamples) + L" nodes.");
+
+                MATH::CVector3Array vertices(polymesh.numVertices);
+                CLongArray          polygons(polymesh.numPolygons + polymesh.numSamples);
+                float *pv = polymesh.vertPositions.data();
+                for (LONG i=0;i<polymesh.numVertices;i++,pv+=3)
+                  vertices[i].Set(pv[0], pv[1], pv[2]);
+                LONG *dst = (LONG *)polygons.GetArray();
+                uint32_t *src = polymesh.polyVertices.data();
+                for (LONG i=0;i<polymesh.numPolygons;i++)
+                {
+                  LONG num = polymesh.polyNumVertices[i];
+                  *dst = num;
+                  dst++;
+                  for (LONG j=0;j<num;j++,src++, dst++)
+                    *dst = *src;
+                }
+                if (xsiPolymesh.Set(vertices, polygons) != CStatus::OK)
+                  Application().LogMessage(L"xsiPolymesh.Set(vertices, polygons) failed", siErrorMsg);
+                else
+                {
+
+                }
+              }
+            }
+          }
+          else
+          {
+            Application().LogMessage(L"XSI output port \"" + outputPort.GetName() + L"\" has the unsupported classID \"" + GetSiClassIdDescription(outputPort.GetTarget().GetClassID(), CString()) + L"\"", siWarningMsg);
           }
         }
       }
@@ -1023,7 +1087,7 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
     {
       _portMapping &pmap = io_pmap[i];
 
-      // read only grid (name, etc.).
+      // read-only grid with port name, type, etc.
       {
         Parameter gridParam = cp.AddGridParameter(L"grid" + CString(i));
         GridData grid((CRef)gridParam.GetValue());
@@ -1122,7 +1186,9 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
                   || pmap.dfgPortDataType == L"UInt32"
                   || pmap.dfgPortDataType == L"UInt64"
 
-                  || pmap.dfgPortDataType == L"Mat44")
+                  || pmap.dfgPortDataType == L"Mat44"
+
+                  || pmap.dfgPortDataType == L"PolygonMesh")
               {
                 cvaMapType.Add( L"XSI Port" );
                 cvaMapType.Add( DFG_PORT_MAPTYPE::XSI_PORT );
