@@ -254,3 +254,4 @@ SICALLBACK FabricDFG_Menu_LogStatus(XSI::CRef&)
   return CStatus::OK;
 }
 
+

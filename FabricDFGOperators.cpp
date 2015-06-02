@@ -3,6 +3,7 @@
 #include <xsi_status.h>
 
 #include <xsi_command.h>
+#include <xsi_desktop.h>
 #include <xsi_comapihandler.h>
 #include <xsi_argument.h>
 #include <xsi_factory.h>
@@ -437,11 +438,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     else if (btnName == L"BtnOpenCanvas")
     {
       CString title = L"Canvas - " + op.GetParent3DObject().GetName();
-
-      Application().LogMessage(L"invoke OpenCanvas()");
       OpenCanvas(_opUserData::GetUserData(op.GetObjectID()), title.GetAsciiString());
-      Application().LogMessage(L"done with OpenCanvas()");
-
     }
     else if (btnName == L"BtnPortsDefineTT")
     {

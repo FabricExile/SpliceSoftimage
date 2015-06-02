@@ -52,9 +52,9 @@ struct _windowData
   FabricCore::Client                             *client;
   FabricServices::ASTWrapper::KLASTManager       *manager;
   FabricServices::DFGWrapper::Host               *host;
-  FabricServices::DFGWrapper::Binding            *binding;
+  FabricServices::DFGWrapper::Binding             binding;
   FabricServices::DFGWrapper::GraphExecutablePtr  graph;
-  FabricServices::Commands::CommandStack         *stack;
+  FabricServices::Commands  ::CommandStack        stack;
 
   _windowData(void)
   {
@@ -66,8 +66,6 @@ struct _windowData
     client        = NULL;
     manager       = NULL;
     host          = NULL;
-    binding       = NULL;
-    stack         = NULL;
   }
 
   ~_windowData()
@@ -91,12 +89,12 @@ void OpenCanvas(_opUserData *pud, const char *winTitle)
   _windowData winData;
   try
   {
-    winData.client   = baseInterface->getClient();
-    winData.manager  = baseInterface->getManager();
-    winData.host     = baseInterface->getHost();
-    winData.binding  = baseInterface->getBinding();
-    winData.graph    = baseInterface->getGraph();
-    winData.stack    = baseInterface->getStack();
+    winData.client   =  baseInterface->getClient();
+    winData.manager  =  baseInterface->getManager();
+    winData.host     =  baseInterface->getHost();
+    winData.binding  = *baseInterface->getBinding();
+    winData.graph    =  baseInterface->getGraph();
+    winData.stack    = *baseInterface->getStack();
 
     _windowData *wd = &winData;
     if (wd->qtApp == NULL)
@@ -118,9 +116,9 @@ void OpenCanvas(_opUserData *pud, const char *winTitle)
       wd->qtDFGWidget->init(wd->client,
                             wd->manager,
                             wd->host,
-                           *wd->binding,
+                            wd->binding,
                             wd->graph,
-                            wd->stack,
+                           &wd->stack,
                             true,
                             config
                            );
