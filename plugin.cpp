@@ -15,7 +15,7 @@ using namespace XSI;
 
 // a global BaseInterface: its only purpose is to ensure
 // that Fabric is "up and running" when Softimage is executed.
-BaseInterface *gblBaseInterface_dummy = NULL;
+//BaseInterface *gblBaseInterface_dummy = NULL;
 
 // load plugin.
 SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
@@ -104,12 +104,12 @@ SICALLBACK XSIUnloadPlugin(const PluginRegistrar& in_reg)
   strPluginName = in_reg.GetName();
   Application().LogMessage(strPluginName + L" has been unloaded.",siVerboseMsg);
 
-  // delete the dummy base interface.
-  if (gblBaseInterface_dummy)
-  {
-    delete gblBaseInterface_dummy;
-    gblBaseInterface_dummy = NULL;
-  }
+  //// delete the dummy base interface.
+  //if (gblBaseInterface_dummy)
+  //{
+  //  delete gblBaseInterface_dummy;
+  //  gblBaseInterface_dummy = NULL;
+  //}
 
   // done.
   return CStatus::OK;
@@ -124,9 +124,9 @@ XSIPLUGINCALLBACK CStatus FabricDFGsiOnStartup_OnEvent(CRef & ctxt)
   // init splice.
   xsiInitializeSplice();
 
-  // allocate the dummy base interface.
-  if (!gblBaseInterface_dummy)
-    gblBaseInterface_dummy = new BaseInterface(feLog, feLogError);
+  //// allocate the dummy base interface.
+  //if (!gblBaseInterface_dummy)
+  //  gblBaseInterface_dummy = new BaseInterface(feLog, feLogError);
 
   // done.
   return 1;
