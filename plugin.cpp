@@ -80,9 +80,6 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
 
     // menu.
     in_reg.RegisterMenu(siMenuMainTopLevelID, "Fabric:DFG", true, true);
-
-    // events.
-    in_reg.RegisterEvent(L"FabricDFGsiOnEndSceneOpen",        siOnEndSceneOpen);
   }
 
   // done.
@@ -100,9 +97,9 @@ SICALLBACK XSIUnloadPlugin(const PluginRegistrar& in_reg)
   return CStatus::OK;
 }
 
-// ______________________________________
-// siEvent callback and helper functions.
-// --------------------------------------
+// _________________________
+// siEvent helper functions.
+// -------------------------
 
 CStatus helpFnct_siEventOpenSave(CRef &ctxt, int openSave)
 {
@@ -190,11 +187,6 @@ CStatus helpFnct_siEventOpenSave(CRef &ctxt, int openSave)
   // done.
   // /note: we return 1 (i.e. "true") instead of CStatus::OK or else the event gets aborted).
   return 1;
-}
-
-XSIPLUGINCALLBACK CStatus FabricDFGsiOnEndSceneOpen_OnEvent(CRef & ctxt)
-{
-  return helpFnct_siEventOpenSave(ctxt, 1);
 }
 
 

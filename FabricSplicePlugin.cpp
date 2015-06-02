@@ -34,9 +34,11 @@
 #include "FabricSpliceRenderPass.h"
 #include "FabricSpliceBaseInterface.h"
 
+#include "FabricDFGBaseInterface.h"
+
 using namespace XSI;
 
-// FabricDFG helper function for the save scene events.
+// FabricDFG's helper function for the save scene events.
 CStatus helpFnct_siEventOpenSave(CRef &ctxt, int openSave);
 
 void xsiLogFunc(const char * message, unsigned int length)
@@ -261,7 +263,24 @@ XSIPLUGINCALLBACK CStatus FabricSpliceOpenEndScene_OnEvent(CRef & ctxt)
   {
     xsiLogErrorFunc(e.getDesc_cstr());
   }
-  return FabricSpliceNewScene_OnEvent(ctxt);
+
+  // if necessary allocate a FabricSpliceBaseInterface to get the FabricDFG stuff working properly.
+  if (   FabricSpliceBaseInterface::getInstances().size() == 0
+      && BaseInterface::GetNumBaseInterfaces()            != 0 )
+  {
+    FabricSpliceBaseInterface *inst = new FabricSpliceBaseInterface();
+    inst->setObjectID(UINT_MAX);
+  }
+
+  // ?
+  FabricSpliceNewScene_OnEvent(ctxt);
+
+  // before returning we also call the FabricDFG onOpen function.
+  helpFnct_siEventOpenSave(ctxt, 1);
+
+  // done.
+  return 1;
+
 }
 
 XSIPLUGINCALLBACK CStatus FabricSpliceImport_OnEvent(CRef & ctxt)
@@ -492,22 +511,25 @@ CStatus onSaveScene(CRef & ctxt)
       continue;
     instances[i]->getInterf()->storePersistenceData(fileName);
   }
+
+  helpFnct_siEventOpenSave(ctxt, 0);  // before returning we also call the FabricDFG onSave function.
+
   return true;
 }
 
 XSIPLUGINCALLBACK CStatus FabricSpliceSaveScene_OnEvent(CRef & ctxt)
 { 
-  return (onSaveScene(ctxt) != 0 && helpFnct_siEventOpenSave(ctxt, 0) != 0);
+  return onSaveScene(ctxt);
 }
 
 XSIPLUGINCALLBACK CStatus FabricSpliceSaveAsScene_OnEvent(CRef & ctxt)
 {
-  return (onSaveScene(ctxt) != 0 && helpFnct_siEventOpenSave(ctxt, 0) != 0);
+  return onSaveScene(ctxt);
 }
 
 XSIPLUGINCALLBACK CStatus FabricSpliceSaveScene2_OnEvent(CRef & ctxt)
 {
-  return (onSaveScene(ctxt) != 0 && helpFnct_siEventOpenSave(ctxt, 0) != 0);
+  return onSaveScene(ctxt);
 }
 
 CString xsiGetKLKeyWords()
