@@ -45,8 +45,9 @@ class FabricDFGWidget : public DFG::DFGCombinedWidget
 struct _windowData
 {
   QApplication    *qtApp;
-  QDialog         *qtDialog;
+  QBoxLayout      *qtLayout;
   FabricDFGWidget *qtDFGWidget;
+  QDialog         *qtDialog;
 
   FabricCore::Client                             *client;
   FabricServices::ASTWrapper::KLASTManager       *manager;
@@ -60,6 +61,7 @@ struct _windowData
     qtApp         = NULL;
     qtDialog      = NULL;
     qtDFGWidget   = NULL;
+    qtLayout      = NULL;
 
     client        = NULL;
     manager       = NULL;
@@ -95,35 +97,20 @@ void OpenCanvas(_opUserData *pud, const char *winTitle)
     winData.binding  = baseInterface->getBinding();
     winData.graph    = baseInterface->getGraph();
     winData.stack    = baseInterface->getStack();
-  }
-  catch(FabricCore::Exception e)
-  {
-    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
-  }
 
-  // show canvas.
-  {
     _windowData *wd = &winData;
     if (wd->qtApp == NULL)
     {
       int argc = 0;
-      wd->qtApp         = new QApplication(argc, NULL);
-      wd->qtDialog      = new QDialog();
-      wd->qtDFGWidget   = new FabricDFGWidget(NULL/*wd->qtDialog*/);
-
-QVBoxLayout *layout = new QVBoxLayout();
-wd->qtDialog->setLayout(layout);
-layout->addWidget(wd->qtDFGWidget); 
-
+      wd->qtApp         = new QApplication    (argc, NULL);
+      wd->qtDialog      = new QDialog         (NULL);
+      wd->qtDFGWidget   = new FabricDFGWidget (wd->qtDialog);
+      wd->qtLayout      = new QVBoxLayout     (wd->qtDialog);
 
       wd->qtDialog->setWindowTitle(winTitle ? winTitle : "Canvas");
-
-      //wd->qtDialog->setModal(true);
-
-      wd->qtDialog->setWindowModality(Qt::WindowModal);
-
-      wd->qtDialog->setAttribute(Qt::WA_DeleteOnClose, true);
-
+      wd->qtLayout->addWidget(wd->qtDFGWidget); 
+      wd->qtLayout->setContentsMargins(0, 0, 0, 0);
+      wd->qtDialog->setWindowModality(Qt::WindowModal); // <- for some reason this doesn't work.
 
       // init.
       DFG::DFGConfig config;
@@ -143,17 +130,11 @@ layout->addWidget(wd->qtDFGWidget);
 
       // show/execute Qt dialog.
       wd->qtDialog->exec();
-      //if (!wd->qtDialog->isVisible())
-      //{
-      //  wd->qtDialog->show();
-      //  while (wd->qtDialog->isVisible())
-      //  {
-      //    wd->qtApp->processEvents();
-      //  }
-      //}
     }
-
-
+  }
+  catch(FabricCore::Exception e)
+  {
+    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
   }
 
   // done.

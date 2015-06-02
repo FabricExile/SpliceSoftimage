@@ -437,7 +437,11 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     else if (btnName == L"BtnOpenCanvas")
     {
       CString title = L"Canvas - " + op.GetParent3DObject().GetName();
+
+      Application().LogMessage(L"invoke OpenCanvas()");
       OpenCanvas(_opUserData::GetUserData(op.GetObjectID()), title.GetAsciiString());
+      Application().LogMessage(L"done with OpenCanvas()");
+
     }
     else if (btnName == L"BtnPortsDefineTT")
     {
