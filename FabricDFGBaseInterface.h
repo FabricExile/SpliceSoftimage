@@ -6,7 +6,7 @@
 #pragma warning(disable : 4800)     // forcing value to bool 'true' or 'false'.
 #pragma warning(disable : 4806)     // unsafe operation: no value of type 'bool' promoted to type ...etc.
 
-//#define USE_FABRICSPLICE__CLIENT    // if defined then use FabricSplice::ConstructClient()/DestroyClient() instead of FabricCore::Client(...).
+#define USE_FABRICSPLICE__CLIENT    // if defined then FabricSplice::ConstructClient()/DestroyClient() is used instead of FabricCore::Client(...).
 
 // includes.
 #include <DFGWrapper/DFGWrapper.h>
