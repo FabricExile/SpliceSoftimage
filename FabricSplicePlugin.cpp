@@ -36,6 +36,9 @@
 
 using namespace XSI;
 
+// FabricDFG helper function for the save scene events.
+CStatus helpFnct_siEventOpenSave(CRef &ctxt, int openSave);
+
 void xsiLogFunc(const char * message, unsigned int length)
 {
   Application().LogMessage(CString("[Splice] ")+CString(message), siVerboseMsg);
@@ -494,17 +497,17 @@ CStatus onSaveScene(CRef & ctxt)
 
 XSIPLUGINCALLBACK CStatus FabricSpliceSaveScene_OnEvent(CRef & ctxt)
 { 
-  return onSaveScene(ctxt);
+  return (onSaveScene(ctxt) != 0 && helpFnct_siEventOpenSave(ctxt, 0) != 0);
 }
 
 XSIPLUGINCALLBACK CStatus FabricSpliceSaveAsScene_OnEvent(CRef & ctxt)
 {
-  return onSaveScene(ctxt);
+  return (onSaveScene(ctxt) != 0 && helpFnct_siEventOpenSave(ctxt, 0) != 0);
 }
 
 XSIPLUGINCALLBACK CStatus FabricSpliceSaveScene2_OnEvent(CRef & ctxt)
 {
-  return onSaveScene(ctxt);
+  return (onSaveScene(ctxt) != 0 && helpFnct_siEventOpenSave(ctxt, 0) != 0);
 }
 
 CString xsiGetKLKeyWords()

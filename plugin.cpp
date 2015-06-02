@@ -53,10 +53,10 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     in_reg.RegisterEvent(L"FabricSpliceCloseScene",     siOnCloseScene);
     in_reg.RegisterEvent(L"FabricSpliceOpenBeginScene", siOnBeginSceneOpen);
     in_reg.RegisterEvent(L"FabricSpliceOpenEndScene",   siOnEndSceneOpen);
-    in_reg.RegisterEvent(L"FabricSpliceSaveScene",      siOnBeginSceneSave);
-    in_reg.RegisterEvent(L"FabricSpliceSaveAsScene",    siOnBeginSceneSaveAs);
+    in_reg.RegisterEvent(L"FabricSpliceSaveScene",      siOnBeginSceneSave);    //
+    in_reg.RegisterEvent(L"FabricSpliceSaveAsScene",    siOnBeginSceneSaveAs);  //
     in_reg.RegisterEvent(L"FabricSpliceTerminate",      siOnTerminate);
-    in_reg.RegisterEvent(L"FabricSpliceSaveScene2",     siOnBeginSceneSave2);
+    in_reg.RegisterEvent(L"FabricSpliceSaveScene2",     siOnBeginSceneSave2);   //
     in_reg.RegisterEvent(L"FabricSpliceImport",         siOnEndFileImport);     //
     in_reg.RegisterEvent(L"FabricSpliceBeginExport",    siOnBeginFileExport);   //
     in_reg.RegisterEvent(L"FabricSpliceEndExport",      siOnEndFileExport);     //
@@ -84,9 +84,6 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     // events.
     in_reg.RegisterEvent(L"FabricDFGsiOnStartup",             siOnStartup);
     in_reg.RegisterEvent(L"FabricDFGsiOnEndSceneOpen",        siOnEndSceneOpen);
-    in_reg.RegisterEvent(L"FabricDFGsiOnBeginSceneSave",      siOnBeginSceneSave);
-    in_reg.RegisterEvent(L"FabricDFGsiOnBeginSceneSave2",     siOnBeginSceneSave2);
-    in_reg.RegisterEvent(L"FabricDFGsiOnBeginSceneSaveAs",    siOnBeginSceneSaveAs);
   }
 
   // done.
@@ -207,18 +204,4 @@ XSIPLUGINCALLBACK CStatus FabricDFGsiOnEndSceneOpen_OnEvent(CRef & ctxt)
   return helpFnct_siEventOpenSave(ctxt, 1);
 }
 
-XSIPLUGINCALLBACK CStatus FabricDFGsiOnBeginSceneSave_OnEvent(CRef &ctxt)
-{ 
-  return helpFnct_siEventOpenSave(ctxt, 0);
-}
-
-XSIPLUGINCALLBACK CStatus FabricDFGsiOnBeginSceneSave2_OnEvent(CRef &ctxt)
-{
-  return helpFnct_siEventOpenSave(ctxt, 0);
-}
-
-XSIPLUGINCALLBACK CStatus FabricDFGsiOnBeginSceneSaveAs_OnEvent(CRef &ctxt)
-{
-  return helpFnct_siEventOpenSave(ctxt, 0);
-}
 
