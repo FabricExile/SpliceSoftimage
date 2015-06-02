@@ -7,6 +7,8 @@
 #include "FabricDFGBaseInterface.h"
 #include "FabricDFGPlugin.h"
 #include "FabricDFGOperators.h"
+
+#include "FabricSplicePlugin.h"
 #include "FabricSpliceICENodes.h"
 
 using namespace XSI;
@@ -119,6 +121,9 @@ SICALLBACK XSIUnloadPlugin(const PluginRegistrar& in_reg)
 
 XSIPLUGINCALLBACK CStatus FabricDFGsiOnStartup_OnEvent(CRef & ctxt)
 {
+  // init splice.
+  xsiInitializeSplice();
+
   // allocate the dummy base interface.
   if (!gblBaseInterface_dummy)
     gblBaseInterface_dummy = new BaseInterface(feLog, feLogError);
