@@ -13,10 +13,6 @@
 
 using namespace XSI;
 
-// a global BaseInterface: its only purpose is to ensure
-// that Fabric is "up and running" when Softimage is executed.
-//BaseInterface *gblBaseInterface_dummy = NULL;
-
 // load plugin.
 SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
 {
@@ -61,10 +57,10 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     in_reg.RegisterEvent(L"FabricSpliceSaveAsScene",    siOnBeginSceneSaveAs);
     in_reg.RegisterEvent(L"FabricSpliceTerminate",      siOnTerminate);
     in_reg.RegisterEvent(L"FabricSpliceSaveScene2",     siOnBeginSceneSave2);
-    in_reg.RegisterEvent(L"FabricSpliceImport",         siOnEndFileImport);
-    in_reg.RegisterEvent(L"FabricSpliceBeginExport",    siOnBeginFileExport);
-    in_reg.RegisterEvent(L"FabricSpliceEndExport",      siOnEndFileExport);
-    in_reg.RegisterEvent(L"FabricSpliceValueChange",    siOnValueChange);
+    in_reg.RegisterEvent(L"FabricSpliceImport",         siOnEndFileImport);     //
+    in_reg.RegisterEvent(L"FabricSpliceBeginExport",    siOnBeginFileExport);   //
+    in_reg.RegisterEvent(L"FabricSpliceEndExport",      siOnEndFileExport);     //
+    in_reg.RegisterEvent(L"FabricSpliceValueChange",    siOnValueChange);       //
 
     // ice nodes.
     Register_spliceGetData(in_reg);
@@ -104,13 +100,6 @@ SICALLBACK XSIUnloadPlugin(const PluginRegistrar& in_reg)
   strPluginName = in_reg.GetName();
   Application().LogMessage(strPluginName + L" has been unloaded.",siVerboseMsg);
 
-  //// delete the dummy base interface.
-  //if (gblBaseInterface_dummy)
-  //{
-  //  delete gblBaseInterface_dummy;
-  //  gblBaseInterface_dummy = NULL;
-  //}
-
   // done.
   return CStatus::OK;
 }
@@ -121,13 +110,6 @@ SICALLBACK XSIUnloadPlugin(const PluginRegistrar& in_reg)
 
 XSIPLUGINCALLBACK CStatus FabricDFGsiOnStartup_OnEvent(CRef & ctxt)
 {
-  // init splice.
-  xsiInitializeSplice();
-
-  //// allocate the dummy base interface.
-  //if (!gblBaseInterface_dummy)
-  //  gblBaseInterface_dummy = new BaseInterface(feLog, feLogError);
-
   // done.
   return 1;
 }

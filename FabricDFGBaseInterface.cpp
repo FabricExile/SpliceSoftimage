@@ -1,5 +1,7 @@
 #include "FabricDFGBaseInterface.h"
 
+#include "FabricSplicePlugin.h"
+
 #ifdef USE_FABRICSPLICE__CLIENT
   #include "FabricSplice.h"
 #endif
@@ -16,7 +18,11 @@ std::map<unsigned int, BaseInterface*> BaseInterface::s_instances;
 BaseInterface::BaseInterface(void (*in_logFunc)     (void *, const char *, unsigned int),
                              void (*in_logErrorFunc)(void *, const char *, unsigned int))
 {
-  //
+  // init splice.
+  xsiInitializeSplice();
+
+  // set log functions.
+  // (note: this is probably not necessary since the logging is done by the FabricSplice client).
   if (in_logFunc)       setLogFunc(in_logFunc);
   if (in_logErrorFunc)  setLogErrorFunc(in_logErrorFunc);
 
