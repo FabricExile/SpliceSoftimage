@@ -108,7 +108,13 @@ void OpenCanvas(_opUserData *pud, const char *winTitle)
       wd->qtDialog->setWindowTitle(winTitle ? winTitle : "Canvas");
       wd->qtLayout->addWidget(wd->qtDFGWidget); 
       wd->qtLayout->setContentsMargins(0, 0, 0, 0);
-      wd->qtDialog->setWindowModality(Qt::WindowModal); // <- for some reason this doesn't work.
+
+      // for some reason setting the qtDialog to modal doesn't work.
+      /*wd->qtDialog->setWindowModality(Qt::WindowModal);*/
+
+      // parenting the qtDialog to the Softimage main window results in a weird mouse position offset,
+      // so instead, as a temporary workaround, we set the qtDialog to top most.
+      wd->qtDialog->setWindowFlags(Qt::WindowStaysOnTopHint); // SetParent((HWND)wd->qtDialog->winId(), (HWND)Application().GetDesktop().GetApplicationWindowHandle());
 
       // init.
       DFG::DFGConfig config;
@@ -122,9 +128,6 @@ void OpenCanvas(_opUserData *pud, const char *winTitle)
                             true,
                             config
                            );
-
-      // use Windows function SetParent() to parent the Qt dialog to XSI's main window.
-      SetParent((HWND)wd->qtDialog->winId(), (HWND)Application().GetDesktop().GetApplicationWindowHandle());
 
       // show/execute Qt dialog.
       wd->qtDialog->exec();
