@@ -221,8 +221,13 @@ XSIPLUGINCALLBACK void SpliceRenderPass_Execute(CRef & in_ctxt, void ** in_pUser
 
   try
   {
-    if(!FabricSplice::SceneManagement::hasRenderableContent())
+
+    //Application().LogMessage(L"hasRenderableContent = " + CString(FabricSplice::SceneManagement::hasRenderableContent()));
+    //Application().LogMessage(L"FabricSpliceBaseInterface::getInstances().size() = " + CString((LONG)FabricSpliceBaseInterface::getInstances().size()));
+
+    if(!FabricSplice::SceneManagement::hasRenderableContent() && FabricSpliceBaseInterface::getInstances().size() == 0)
       return;
+
   }
   catch(FabricCore::Exception e)
   {
