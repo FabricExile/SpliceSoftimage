@@ -535,6 +535,8 @@ SICALLBACK dfgLogStatus_Execute(CRef &in_ctxt)
     num = _opUserData::GetNumOpUserData();
     s = L"       #_opUserData:   " + CString(num);
     Application().LogMessage(s, siInfoMsg);
+
+    Application().LogMessage(L"       #FabricSpliceBaseInterface: " + CString((LONG)FabricSpliceBaseInterface::getInstances().size()), siInfoMsg);
   }
   Application().LogMessage(line, siInfoMsg);
   
