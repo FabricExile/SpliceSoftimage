@@ -21,6 +21,8 @@
 #include "FabricDFGOperators.h"
 #include "FabricDFGTools.h"
 
+#include "FabricSpliceBaseInterface.h"
+
 #include <fstream>
 #include <streambuf>
 
@@ -76,7 +78,12 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
     _opUserData::s_portmap_newOp.clear();
     return CStatus::OK; }
 
-  // create the operator
+  // we also add a SpliceOp to the object, so that things don't go wrong when loading a scene.
+  {
+    dfgTool_ExecuteCommand(L"fabricSplice", L"newSplice", L"{\"targets\":\"" + objectName + L".kine.global\", \"portName\":\"matrix\", \"portMode\":\"io\"}");
+  }
+
+  // create the dfgSoftimageOp operator
   CString opName = L"dfgSoftimageOp";
   CustomOperator newOp = Application().GetFactory().CreateObject(opName);
 

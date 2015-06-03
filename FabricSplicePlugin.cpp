@@ -264,14 +264,6 @@ XSIPLUGINCALLBACK CStatus FabricSpliceOpenEndScene_OnEvent(CRef & ctxt)
     xsiLogErrorFunc(e.getDesc_cstr());
   }
 
-  // if necessary allocate a FabricSpliceBaseInterface to get the FabricDFG stuff working properly.
-  if (   FabricSpliceBaseInterface::getInstances().size() == 0
-      && BaseInterface::GetNumBaseInterfaces()            != 0 )
-  {
-    FabricSpliceBaseInterface *inst = new FabricSpliceBaseInterface();
-    inst->setObjectID(UINT_MAX);
-  }
-
   // ?
   FabricSpliceNewScene_OnEvent(ctxt);
 
@@ -280,7 +272,6 @@ XSIPLUGINCALLBACK CStatus FabricSpliceOpenEndScene_OnEvent(CRef & ctxt)
 
   // done.
   return 1;
-
 }
 
 XSIPLUGINCALLBACK CStatus FabricSpliceImport_OnEvent(CRef & ctxt)
