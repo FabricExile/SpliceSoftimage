@@ -335,7 +335,11 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
               pi.PutAttribute(siUICY, btnTy);
             oLayout.EndGroup();
             oLayout.AddGroup(L"", false);
-              pi = oLayout.AddButton(L"BtnPortConnect", L"Connect");
+              pi = oLayout.AddButton(L"BtnPortConnectPick", L"Connect (Pick)");
+              pi.PutAttribute(siUIButtonDisable, dfgPortsNumRows == 0);
+              pi.PutAttribute(siUICX, btnTx);
+              pi.PutAttribute(siUICY, btnTy);
+              pi = oLayout.AddButton(L"BtnPortConnectSelf", L"Connect with Self");
               pi.PutAttribute(siUIButtonDisable, dfgPortsNumRows == 0);
               pi.PutAttribute(siUICX, btnTx);
               pi.PutAttribute(siUICY, btnTy);
@@ -476,7 +480,8 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
         dfgTool_ExecuteCommand(L"DeleteObj", op.GetFullName());
       }
     }
-    else if (   btnName == L"BtnPortConnect"
+    else if (   btnName == L"BtnPortConnectPick"
+             || btnName == L"BtnPortConnectSelf"
              || btnName == L"BtnPortDisconnect")
     {
       LONG ret;
@@ -548,9 +553,9 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
       { toolkit.MsgBox(L"Unable to find matching port group.", siMsgOkOnly | siMsgExclamation, "dfgSoftimageOp", ret);
         return CStatus::OK; }
 
-      // pick target.
+      // set target.
       CRef targetRef;
-      if (btnName == L"BtnPortConnect")
+      if (btnName == L"BtnPortConnectPick")
       {
         CValueArray args(7);
         args[0] = siGenericObjectFilter;
@@ -565,9 +570,14 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
           return CStatus::OK; }
         targetRef = args[3];
       }
+      else if (btnName == L"BtnPortConnectSelf")
+      {
+        targetRef = op.GetParent3DObject().GetRef();
+      }
 
       // check/correct target's siClassID and CRef.
-      if (btnName == L"BtnPortConnect")
+      if (   btnName == L"BtnPortConnectPick"
+          || btnName == L"BtnPortConnectSelf")
       {
         siClassID portClassID = GetSiClassIdFromResolvedDataType(pmap.dfgPortDataType);
         if (targetRef.GetClassID() != portClassID)
@@ -614,7 +624,8 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
       }
 
       // connect.
-      if (btnName == L"BtnPortConnect")
+      if (   btnName == L"BtnPortConnectPick"
+          || btnName == L"BtnPortConnectSelf")
       {
         Application().LogMessage(L"connecting \"" + targetRef.GetAsText() + L"\".", siInfoMsg);
         LONG instance;
