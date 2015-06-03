@@ -100,18 +100,27 @@ void OpenCanvas(_opUserData *pud, const char *winTitle)
     // => as a temporary workaround, we set the qtDialog to top most.
     winData->qtDialog->setWindowFlags(Qt::WindowStaysOnTopHint); // SetParent((HWND)winData->qtDialog->winId(), (HWND)Application().GetDesktop().GetApplicationWindowHandle());
 
-    // init.
+    // init the DFG widget.
     DFG::DFGConfig config;
-    config.graphConfig.useOpenGL = false;
-    winData->qtDFGWidget->init(pud->GetBaseInterface()->getClient(),
-                               pud->GetBaseInterface()->getManager(),
-                               pud->GetBaseInterface()->getHost(),
-                              *pud->GetBaseInterface()->getBinding(),
-                               pud->GetBaseInterface()->getGraph(),
-                               pud->GetBaseInterface()->getStack(),
-                               true,
-                               config
-                              );
+    {
+      float f = 0.8f / 255.0f;
+
+      config.graphConfig.useOpenGL                = false;
+
+      config.graphConfig.headerBackgroundColor    . setRgbF(f * 113, f * 112, f * 111);
+      config.graphConfig.mainPanelBackgroundColor . setRgbF(f * 127, f * 127, f * 127);
+      config.graphConfig.sidePanelBackgroundColor . setRgbF(f * 171, f * 168, f * 166);
+
+      winData->qtDFGWidget->init(pud->GetBaseInterface()->getClient(),
+                                 pud->GetBaseInterface()->getManager(),
+                                 pud->GetBaseInterface()->getHost(),
+                                *pud->GetBaseInterface()->getBinding(),
+                                 pud->GetBaseInterface()->getGraph(),
+                                 pud->GetBaseInterface()->getStack(),
+                                 true,
+                                 config
+                                );
+    }
 
     // show/execute Qt dialog.
     winData->qtDialog->exec();
