@@ -79,50 +79,51 @@ void OpenCanvas(_opUserData *pud, const char *winTitle)
   g_canvasIsOpen = true;
 
   // declare and fill window data structure.
-  _windowData winData;
+  _windowData *winData = new _windowData;
   try
   {
-    if (winData.qtApp == NULL)
-    {
-      int argc = 0;
-      winData.qtApp         = new QApplication    (argc, NULL);
-      winData.qtDialog      = new QDialog         (NULL);
-      winData.qtDFGWidget   = new FabricDFGWidget (winData.qtDialog);
-      winData.qtLayout      = new QVBoxLayout     (winData.qtDialog);
+    int argc = 0;
+    winData->qtApp         = new QApplication    (argc, NULL);
+    winData->qtDialog      = new QDialog         (NULL);
+    winData->qtDFGWidget   = new FabricDFGWidget (winData->qtDialog);
+    winData->qtLayout      = new QVBoxLayout     (winData->qtDialog);
 
-      winData.qtDialog->setWindowTitle(winTitle ? winTitle : "Canvas");
-      winData.qtLayout->addWidget(winData.qtDFGWidget); 
-      winData.qtLayout->setContentsMargins(0, 0, 0, 0);
+    winData->qtDialog->setWindowTitle(winTitle ? winTitle : "Canvas");
+    winData->qtLayout->addWidget(winData->qtDFGWidget); 
+    winData->qtLayout->setContentsMargins(0, 0, 0, 0);
 
-      // for some reason setting the qtDialog to modal doesn't work.
-      /*winData.qtDialog->setWindowModality(Qt::WindowModal);*/
+    // for some reason setting the qtDialog to modal doesn't work.
+    /*winData->qtDialog->setWindowModality(Qt::WindowModal);*/
 
-      // parenting the qtDialog to the Softimage main window results in a weird mouse position offset
-      // => as a temporary workaround, we set the qtDialog to top most.
-      winData.qtDialog->setWindowFlags(Qt::WindowStaysOnTopHint); // SetParent((HWND)winData.qtDialog->winId(), (HWND)Application().GetDesktop().GetApplicationWindowHandle());
+    // parenting the qtDialog to the Softimage main window results in a weird mouse position offset
+    // => as a temporary workaround, we set the qtDialog to top most.
+    winData->qtDialog->setWindowFlags(Qt::WindowStaysOnTopHint); // SetParent((HWND)winData->qtDialog->winId(), (HWND)Application().GetDesktop().GetApplicationWindowHandle());
 
-      // init.
-      DFG::DFGConfig config;
-      config.graphConfig.useOpenGL = false;
-      winData.qtDFGWidget->init(pud->GetBaseInterface()->getClient(),
-                                pud->GetBaseInterface()->getManager(),
-                                pud->GetBaseInterface()->getHost(),
-                               *pud->GetBaseInterface()->getBinding(),
-                                pud->GetBaseInterface()->getGraph(),
-                                pud->GetBaseInterface()->getStack(),
-                                true,
-                                config
-                               );
+    // init.
+    DFG::DFGConfig config;
+    config.graphConfig.useOpenGL = false;
+    winData->qtDFGWidget->init(pud->GetBaseInterface()->getClient(),
+                               pud->GetBaseInterface()->getManager(),
+                               pud->GetBaseInterface()->getHost(),
+                              *pud->GetBaseInterface()->getBinding(),
+                               pud->GetBaseInterface()->getGraph(),
+                               pud->GetBaseInterface()->getStack(),
+                               true,
+                               config
+                              );
 
-      // show/execute Qt dialog.
-      winData.qtDialog->exec();
-    }
+    // show/execute Qt dialog.
+    winData->qtDialog->exec();
   }
   catch(FabricCore::Exception e)
   {
     feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
   }
 
+  // clean up.
+  delete winData;
+
   // done.
   g_canvasIsOpen = false;
+  return;
 }
