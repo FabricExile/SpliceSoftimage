@@ -33,7 +33,8 @@ class FabricDFGWidget : public DFG::DFGCombinedWidget
 
   virtual void onRecompilation()
   {
-    log(0, "Recompiling", 12);
+    std::string s = "Recompiling";
+    log(NULL, s.c_str(), s.length());
   }
 
   static void log(void *userData, const char *message, unsigned int length)
@@ -49,23 +50,12 @@ struct _windowData
   FabricDFGWidget *qtDFGWidget;
   QDialog         *qtDialog;
 
-  FabricCore::Client                             *client;
-  FabricServices::ASTWrapper::KLASTManager       *manager;
-  FabricServices::DFGWrapper::Host               *host;
-  FabricServices::DFGWrapper::Binding             binding;
-  FabricServices::DFGWrapper::GraphExecutablePtr  graph;
-  FabricServices::Commands  ::CommandStack        stack;
-
   _windowData(void)
   {
     qtApp         = NULL;
     qtDialog      = NULL;
     qtDFGWidget   = NULL;
     qtLayout      = NULL;
-
-    client        = NULL;
-    manager       = NULL;
-    host          = NULL;
   }
 
   ~_windowData()
@@ -74,13 +64,16 @@ struct _windowData
   }
 };
 
-bool g_canvasIsOpen = false;
+bool g_canvasIsOpen = false;  // global flag to ensure that not more than one Canvas is open.
+
 void OpenCanvas(_opUserData *pud, const char *winTitle)
 {
+  // canvas already open?
+  if (g_canvasIsOpen)   return;
+
   // check.
-  if (!pud || g_canvasIsOpen)  return;
-  BaseInterface *baseInterface = pud->GetBaseInterface();
-  if (!baseInterface)         return;
+  if (!pud)                     return;
+  if (!pud->GetBaseInterface()) return;
 
   // set global flag to block any further canvases.
   g_canvasIsOpen = true;
@@ -89,48 +82,40 @@ void OpenCanvas(_opUserData *pud, const char *winTitle)
   _windowData winData;
   try
   {
-    winData.client   =  baseInterface->getClient();
-    winData.manager  =  baseInterface->getManager();
-    winData.host     =  baseInterface->getHost();
-    winData.binding  = *baseInterface->getBinding();
-    winData.graph    =  baseInterface->getGraph();
-    winData.stack    = *baseInterface->getStack();
-
-    _windowData *wd = &winData;
-    if (wd->qtApp == NULL)
+    if (winData.qtApp == NULL)
     {
       int argc = 0;
-      wd->qtApp         = new QApplication    (argc, NULL);
-      wd->qtDialog      = new QDialog         (NULL);
-      wd->qtDFGWidget   = new FabricDFGWidget (wd->qtDialog);
-      wd->qtLayout      = new QVBoxLayout     (wd->qtDialog);
+      winData.qtApp         = new QApplication    (argc, NULL);
+      winData.qtDialog      = new QDialog         (NULL);
+      winData.qtDFGWidget   = new FabricDFGWidget (winData.qtDialog);
+      winData.qtLayout      = new QVBoxLayout     (winData.qtDialog);
 
-      wd->qtDialog->setWindowTitle(winTitle ? winTitle : "Canvas");
-      wd->qtLayout->addWidget(wd->qtDFGWidget); 
-      wd->qtLayout->setContentsMargins(0, 0, 0, 0);
+      winData.qtDialog->setWindowTitle(winTitle ? winTitle : "Canvas");
+      winData.qtLayout->addWidget(winData.qtDFGWidget); 
+      winData.qtLayout->setContentsMargins(0, 0, 0, 0);
 
       // for some reason setting the qtDialog to modal doesn't work.
-      /*wd->qtDialog->setWindowModality(Qt::WindowModal);*/
+      /*winData.qtDialog->setWindowModality(Qt::WindowModal);*/
 
-      // parenting the qtDialog to the Softimage main window results in a weird mouse position offset,
-      // so instead, as a temporary workaround, we set the qtDialog to top most.
-      wd->qtDialog->setWindowFlags(Qt::WindowStaysOnTopHint); // SetParent((HWND)wd->qtDialog->winId(), (HWND)Application().GetDesktop().GetApplicationWindowHandle());
+      // parenting the qtDialog to the Softimage main window results in a weird mouse position offset
+      // => as a temporary workaround, we set the qtDialog to top most.
+      winData.qtDialog->setWindowFlags(Qt::WindowStaysOnTopHint); // SetParent((HWND)winData.qtDialog->winId(), (HWND)Application().GetDesktop().GetApplicationWindowHandle());
 
       // init.
       DFG::DFGConfig config;
       config.graphConfig.useOpenGL = false;
-      wd->qtDFGWidget->init(wd->client,
-                            wd->manager,
-                            wd->host,
-                            wd->binding,
-                            wd->graph,
-                           &wd->stack,
-                            true,
-                            config
-                           );
+      winData.qtDFGWidget->init(pud->GetBaseInterface()->getClient(),
+                                pud->GetBaseInterface()->getManager(),
+                                pud->GetBaseInterface()->getHost(),
+                               *pud->GetBaseInterface()->getBinding(),
+                                pud->GetBaseInterface()->getGraph(),
+                                pud->GetBaseInterface()->getStack(),
+                                true,
+                                config
+                               );
 
       // show/execute Qt dialog.
-      wd->qtDialog->exec();
+      winData.qtDialog->exec();
     }
   }
   catch(FabricCore::Exception e)
