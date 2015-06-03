@@ -60,7 +60,8 @@ struct _windowData
 
   ~_windowData()
   {
-    if (qtApp)  delete qtApp;
+    if (qtDFGWidget)  delete qtDFGWidget;
+    if (qtApp)        delete qtApp;
   }
 };
 
