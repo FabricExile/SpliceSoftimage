@@ -73,7 +73,7 @@ else:
     env.Append(LIBS = ['FabricServices-MSVC-'+env['MSVC_VERSION']+'-mt'])
   else:
     env.Append(LIBS = ['FabricServices'])
-  env.Append(LIBS = ['FabricSplitSearch'])
+env.Append(LIBS = ['FabricSplitSearch'])
 
 uiLibPrefix = 'uiSoftimage'+str(SOFTIMAGE_VERSION)
 
