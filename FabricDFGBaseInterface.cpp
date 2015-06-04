@@ -6,6 +6,9 @@
   #include "FabricSplice.h"
 #endif
 
+#include <algorithm>
+#include <sstream>
+
 FabricCore::Client BaseInterface::s_client;
 FabricServices::DFGWrapper::Host *BaseInterface::s_host = NULL;
 FabricServices::ASTWrapper::KLASTManager *BaseInterface::s_manager = NULL;
@@ -29,7 +32,9 @@ BaseInterface::BaseInterface(void (*in_logFunc)     (void *, const char *, unsig
   //
   m_id = s_maxId++;
   std::string m;
-  m  = "calling BaseInterface(), m_id = " + std::to_string((long long)m_id);
+  std::stringstream ssId;
+  ssId << m_id;
+  m  = "calling BaseInterface(), m_id = " + ssId.str();
   logFunc(NULL, m.c_str(), m.length());
 
   // construct the client
@@ -93,7 +98,9 @@ BaseInterface::BaseInterface(void (*in_logFunc)     (void *, const char *, unsig
 BaseInterface::~BaseInterface()
 {
   std::string m;
-  m  = "calling ~BaseInterface(), m_id = " + std::to_string((long long)m_id);
+  std::stringstream ssId;
+  ssId << m_id;
+  m  = "calling ~BaseInterface(), m_id = " + ssId.str();
   logFunc(NULL, m.c_str(), m.length());
 
   std::map<unsigned int, BaseInterface*>::iterator it = s_instances.find(m_id);
@@ -1248,7 +1255,7 @@ void BaseInterface::SetValueOfPortRGB(FabricCore::Client &client, FabricServices
     FabricCore::RTVal v[N];
     const bool valIsValid  = (val.size() >= N);
     for (int i = 0; i < N; i++)
-      v[i] = FabricCore::RTVal::ConstructUInt8(client, valIsValid ? (uint8_t)__max(0.0, __min(255.0, 255.0 * val[i])) : 0);
+      v[i] = FabricCore::RTVal::ConstructUInt8(client, valIsValid ? (uint8_t)std::max(0.0, std::min(255.0, 255.0 * val[i])) : 0);
     rtval  = FabricCore::RTVal::Construct(client, name, N, v);
     binding.setArgValue(port->getPortName(), rtval);
   }
@@ -1275,7 +1282,7 @@ void BaseInterface::SetValueOfPortRGBA(FabricCore::Client &client, FabricService
     FabricCore::RTVal v[N];
     const bool valIsValid  = (val.size() >= N);
     for (int i = 0; i < N; i++)
-      v[i] = FabricCore::RTVal::ConstructUInt8(client, valIsValid ? (uint8_t)__max(0.0, __min(255.0, 255.0 * val[i])) : 0);
+      v[i] = FabricCore::RTVal::ConstructUInt8(client, valIsValid ? (uint8_t)std::max(0.0, std::min(255.0, 255.0 * val[i])) : 0);
     rtval  = FabricCore::RTVal::Construct(client, name, N, v);
     binding.setArgValue(port->getPortName(), rtval);
   }

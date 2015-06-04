@@ -44,12 +44,15 @@ elif FABRIC_BUILD_OS == 'Linux':
 env.MergeFlags(softimageFlags)
 env.Append(CPPDEFINES = ["_SPLICE_SOFTIMAGE_VERSION="+str(SOFTIMAGE_VERSION[:4])])
 
-qtDir = env.Dir('#').Dir('ThirdParty').Dir('PreBuilt').Dir(FABRIC_BUILD_OS).Dir(FABRIC_BUILD_ARCH).Dir('VS2013').Dir(FABRIC_BUILD_TYPE).Dir('qt').Dir('4.8.6')
+qtDir = None
+if FABRIC_BUILD_OS == 'Windows':
+    qtDir = env.Dir('#').Dir('ThirdParty').Dir('PreBuilt').Dir(FABRIC_BUILD_OS).Dir(FABRIC_BUILD_ARCH).Dir('VS2013').Dir(FABRIC_BUILD_TYPE).Dir('qt').Dir('4.8.6')
 if os.environ.has_key('QT_DIR'):
   qtDir = env.Dir(os.environ['QT_DIR'])
 
-env.Append(CPPPATH = [os.path.join(qtDir.abspath, 'include')])
-env.Append(LIBPATH = [os.path.join(qtDir.abspath, 'lib')])
+if qtDir:
+  env.Append(CPPPATH = [os.path.join(qtDir.abspath, 'include')])
+  env.Append(LIBPATH = [os.path.join(qtDir.abspath, 'lib')])
 
 env.MergeFlags(sharedCapiFlags)
 env.MergeFlags(spliceFlags)
@@ -89,11 +92,17 @@ env.Append(CPPPATH = [os.path.join(os.environ['FABRIC_DIR'], 'include')])
 env.Append(CPPPATH = [os.path.join(os.environ['FABRIC_DIR'], 'include', 'FabricServices')])
 env.Append(CPPPATH = [uiSconscript.dir])
 
+qtIncludeDir = '/usr/include/Qt'
+qtMocBin = '/usr/lib64/qt4/bin/moc'
+if qtDir:
+  qtIncludeDir = os.path.join(qtDir.abspath, 'include', 'Qt')
+  qtMocBin = os.path.join(qtDir.abspath, 'bin', 'moc')
+
 uiLibs = SConscript(uiSconscript, exports = {
   'parentEnv': env, 
   'uiLibPrefix': uiLibPrefix, 
-  'qtDir': os.path.join(qtDir.abspath, 'include', 'Qt'),
-  'qtMOC': os.path.join(qtDir.abspath, 'bin', 'moc'),
+  'qtDir': qtIncludeDir,
+  'qtMOC': qtMocBin,
   'qtFlags': {
   },
   'fabricFlags': sharedCapiFlags,
@@ -112,12 +121,22 @@ Import(uiLibPrefix+'Flags')
 # ui flags
 env.MergeFlags(locals()[uiLibPrefix + 'Flags'])
 
-env.Append(LIBPATH = [os.path.join(qtDir.abspath, 'lib')])
-env.Append(LIBS = ['QtCore4'])
-env.Append(LIBS = ['QtGui4'])
-env.Append(LIBS = ['QtOpenGL4'])
+if qtDir:
+  env.Append(LIBPATH = [os.path.join(qtDir.abspath, 'lib')])
+
+if FABRIC_BUILD_OS == 'Windows':
+  env.Append(LIBS = ['QtCore4'])
+  env.Append(LIBS = ['QtGui4'])
+  env.Append(LIBS = ['QtOpenGL4'])
+else:
+  env.Append(LIBS = ['QtCore'])
+  env.Append(LIBS = ['QtGui'])
+  env.Append(LIBS = ['QtOpenGL'])
 
 target = 'FabricSpliceSoftimage'
+
+if FABRIC_BUILD_OS == 'Linux':
+  env[ '_LIBFLAGS' ] = '-Wl,--start-group ' + env['_LIBFLAGS'] + ' -Wl,--end-group'
 
 softimageModule = env.SharedLibrary(target = target, source = Glob('*.cpp'), SHLIBPREFIX='')
 

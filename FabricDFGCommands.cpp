@@ -136,8 +136,8 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
   for (int i=0;i<_opUserData::s_portmap_newOp.size();i++)
   {
     _portMapping &pmap = _opUserData::s_portmap_newOp[i];
-    if (   pmap.dfgPortType != DFG_PORT_TYPE::OUT
-        || pmap.mapType     != DFG_PORT_MAPTYPE::XSI_PORT)
+    if (   pmap.dfgPortType != DFG_PORT_TYPE_OUT
+        || pmap.mapType     != DFG_PORT_MAPTYPE_XSI_PORT)
       continue;
     Application().LogMessage(L"create port group and port for output port \"" + pmap.dfgPortName + L"\"", siInfoMsg);
 
@@ -164,8 +164,8 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
   for (int i=0;i<_opUserData::s_portmap_newOp.size();i++)
   {
     _portMapping &pmap = _opUserData::s_portmap_newOp[i];
-    if (   pmap.dfgPortType != DFG_PORT_TYPE::IN
-        || pmap.mapType     != DFG_PORT_MAPTYPE::XSI_PORT)
+    if (   pmap.dfgPortType != DFG_PORT_TYPE_IN
+        || pmap.mapType     != DFG_PORT_MAPTYPE_XSI_PORT)
       continue;
     Application().LogMessage(L"create port group and port for input port \"" + pmap.dfgPortName + L"\"", siInfoMsg);
 

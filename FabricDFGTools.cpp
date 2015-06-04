@@ -33,20 +33,23 @@ using namespace XSI;
 XSI::CStatus dfgTool_ExecuteCommand(XSI::CString commandName)
 {
   CValueArray args;
-  return Application().ExecuteCommand(commandName, args, CValue());
+  CValue value;
+  return Application().ExecuteCommand(commandName, args, value);
 }
 XSI::CStatus dfgTool_ExecuteCommand(XSI::CString commandName, XSI::CValue arg1)
 {
   CValueArray args;
   args.Add(arg1);
-  return Application().ExecuteCommand(commandName, args, CValue());
+  CValue value;
+  return Application().ExecuteCommand(commandName, args, value);
 }
 XSI::CStatus dfgTool_ExecuteCommand(XSI::CString commandName, XSI::CValue arg1, XSI::CValue arg2)
 {
   CValueArray args;
   args.Add(arg1);
   args.Add(arg2);
-  return Application().ExecuteCommand(commandName, args, CValue());
+  CValue value;
+  return Application().ExecuteCommand(commandName, args, value);
 }
 XSI::CStatus dfgTool_ExecuteCommand(XSI::CString commandName, XSI::CValue arg1, XSI::CValue arg2, XSI::CValue arg3)
 {
@@ -54,7 +57,8 @@ XSI::CStatus dfgTool_ExecuteCommand(XSI::CString commandName, XSI::CValue arg1, 
   args.Add(arg1);
   args.Add(arg2);
   args.Add(arg3);
-  return Application().ExecuteCommand(commandName, args, CValue());
+  CValue value;
+  return Application().ExecuteCommand(commandName, args, value);
 }
 XSI::CStatus dfgTool_ExecuteCommand(XSI::CString commandName, XSI::CValue arg1, XSI::CValue arg2, XSI::CValue arg3, XSI::CValue arg4)
 {
@@ -63,7 +67,8 @@ XSI::CStatus dfgTool_ExecuteCommand(XSI::CString commandName, XSI::CValue arg1, 
   args.Add(arg2);
   args.Add(arg3);
   args.Add(arg4);
-  return Application().ExecuteCommand(commandName, args, CValue());
+  CValue value;
+  return Application().ExecuteCommand(commandName, args, value);
 }
 
 // opens a file browser for "*.dfg.json" files.
@@ -191,8 +196,8 @@ bool GetOperatorPortMapping(XSI::CRef &in_op, std::vector<_portMapping> &out_pma
     pmap.dfgPortName = port.getPortName();
 
     // dfg port type (in/out)
-    if      (port.getExecPortType() == FabricCore::DFGPortType_In)   pmap.dfgPortType = DFG_PORT_TYPE::IN;
-    else if (port.getExecPortType() == FabricCore::DFGPortType_Out)  pmap.dfgPortType = DFG_PORT_TYPE::OUT;
+    if      (port.getExecPortType() == FabricCore::DFGPortType_In)   pmap.dfgPortType = DFG_PORT_TYPE_IN;
+    else if (port.getExecPortType() == FabricCore::DFGPortType_Out)  pmap.dfgPortType = DFG_PORT_TYPE_OUT;
     else                                                                continue;
 
     // dfg port data type (resolved type).
@@ -201,16 +206,16 @@ bool GetOperatorPortMapping(XSI::CRef &in_op, std::vector<_portMapping> &out_pma
     // mapping type.
     {
       // init the type with 'internal'.
-      pmap.mapType = DFG_PORT_MAPTYPE::INTERNAL;
+      pmap.mapType = DFG_PORT_MAPTYPE_INTERNAL;
 
       // process input port.
-      if (pmap.dfgPortType == DFG_PORT_TYPE::IN)
+      if (pmap.dfgPortType == DFG_PORT_TYPE_IN)
       {
         // check if the operator has a parameter with the same name as the port.
         Parameter p = op.GetParameter(pmap.dfgPortName);
         if (p.IsValid())
         {
-          pmap.mapType = DFG_PORT_MAPTYPE::XSI_PARAMETER;
+          pmap.mapType = DFG_PORT_MAPTYPE_XSI_PARAMETER;
         }
 
         // check if the operator has a XSI input port group with the same name as the port.
@@ -223,7 +228,7 @@ bool GetOperatorPortMapping(XSI::CRef &in_op, std::vector<_portMapping> &out_pma
                 && pg.GetName() == pmap.dfgPortName)
             {
               // found one.
-              pmap.mapType = DFG_PORT_MAPTYPE::XSI_PORT;
+              pmap.mapType = DFG_PORT_MAPTYPE_XSI_PORT;
 
               // now look if there also is a connected input port of the same name.
               for (int k=0;k<opPortsInput.GetCount();k++)
@@ -243,7 +248,7 @@ bool GetOperatorPortMapping(XSI::CRef &in_op, std::vector<_portMapping> &out_pma
       }
 
       // process output port.
-      else if (pmap.dfgPortType == DFG_PORT_TYPE::OUT)
+      else if (pmap.dfgPortType == DFG_PORT_TYPE_OUT)
       {
         for (int j=0;j<opPortGroups.GetCount();j++)
         {
@@ -252,7 +257,7 @@ bool GetOperatorPortMapping(XSI::CRef &in_op, std::vector<_portMapping> &out_pma
               && pg.GetName() == pmap.dfgPortName)
           {
             // found one.
-            pmap.mapType = DFG_PORT_MAPTYPE::XSI_PORT;
+            pmap.mapType = DFG_PORT_MAPTYPE_XSI_PORT;
 
             // now look if there also is a connected output port of the same name.
             for (int k=0;k<opPortsOutput.GetCount();k++)

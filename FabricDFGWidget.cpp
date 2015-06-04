@@ -9,13 +9,16 @@
 
 #include <QtGui/QApplication>
 #include <QtGui/QDialog>
-#include <QtGui/QBoxlayout>
+#include <QtGui/QBoxLayout>
 #include <QtGui/QPalette>
 
-#include <windows.h>
+#ifdef _WIN32
+# include <windows.h>
+# include <io.h>
+#endif
+
 #include <stdio.h>
 #include <fcntl.h>
-#include <io.h>
 #include <iostream>
 #include <fstream>
 

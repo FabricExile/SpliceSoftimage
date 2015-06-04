@@ -1,4 +1,4 @@
 {
-  global: FabricSplice*; fabricSplice*; ImportSpliceDialog*; proceedToNextScene*; Splice*; splice*; XSI*;
+  global: dfgSoftimage*; FabricDFG*; FabricSplice*; fabricSplice*; ImportSpliceDialog*; proceedToNextScene*; Splice*; splice*; XSI*;
   local: *;
 };

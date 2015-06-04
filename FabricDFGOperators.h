@@ -6,20 +6,23 @@
 
 #include "FabricDFGBaseInterface.h"
 
+#include <algorithm>
+#include <math.h>
+
 // constants (port mapping).
-enum DFG_PORT_TYPE
+typedef enum DFG_PORT_TYPE
 {
-  UNDEFINED = 0,
-  IN,
-  OUT,
-};
-enum DFG_PORT_MAPTYPE
+  DFG_PORT_TYPE_UNDEFINED = 0,
+  DFG_PORT_TYPE_IN,
+  DFG_PORT_TYPE_OUT,
+} DFG_PORT_TYPE;
+typedef enum DFG_PORT_MAPTYPE
 {
-  INTERNAL =  0,
-  XSI_PARAMETER,
-  XSI_PORT,
-  XSI_ICE_PORT,
-};
+  DFG_PORT_MAPTYPE_INTERNAL =  0,
+  DFG_PORT_MAPTYPE_XSI_PARAMETER,
+  DFG_PORT_MAPTYPE_XSI_PORT,
+  DFG_PORT_MAPTYPE_XSI_ICE_PORT
+} DFG_PORT_MAPTYPE;
 
 // ___________________________
 // structure for port mapping.
@@ -44,9 +47,9 @@ struct _portMapping
   void clear(void)
   {
     dfgPortName     . Clear();
-    dfgPortType     = DFG_PORT_TYPE::UNDEFINED;
+    dfgPortType     = DFG_PORT_TYPE_UNDEFINED;
     dfgPortDataType . Clear();
-    mapType          = DFG_PORT_MAPTYPE::INTERNAL;
+    mapType          = DFG_PORT_MAPTYPE_INTERNAL;
     mapTarget       .Clear();
   }
 };
@@ -65,7 +68,7 @@ struct _opUserData
   long int updateCounter;
 
   // this is used by the functions that create new operators.
-  static std::vector<_portMapping> _opUserData::s_portmap_newOp;
+  static std::vector<_portMapping> s_portmap_newOp;
 
   // constructor.
   _opUserData(unsigned int operatorObjectID)
@@ -230,12 +233,12 @@ struct _polymesh
       bbox[5] = pv[2];
       for (unsigned int i=0;i<numVertices;i++,pv+=3)
       {
-        bbox[0] = __min(bbox[0], pv[0]);
-        bbox[1] = __min(bbox[1], pv[1]);
-        bbox[2] = __min(bbox[2], pv[2]);
-        bbox[3] = __max(bbox[3], pv[0]);
-        bbox[4] = __max(bbox[4], pv[1]);
-        bbox[5] = __max(bbox[5], pv[2]);
+        bbox[0] = std::min(bbox[0], pv[0]);
+        bbox[1] = std::min(bbox[1], pv[1]);
+        bbox[2] = std::min(bbox[2], pv[2]);
+        bbox[3] = std::max(bbox[3], pv[0]);
+        bbox[4] = std::max(bbox[4], pv[1]);
+        bbox[5] = std::max(bbox[5], pv[2]);
       }
     }
   }
@@ -354,12 +357,12 @@ struct _polymesh
     numSamples  += inMesh.numSamples;
 
     // re-calc bbox.
-    bbox[0] = __min(bbox[0], inMesh.bbox[0]);
-    bbox[1] = __min(bbox[1], inMesh.bbox[1]);
-    bbox[2] = __min(bbox[2], inMesh.bbox[2]);
-    bbox[3] = __max(bbox[3], inMesh.bbox[3]);
-    bbox[4] = __max(bbox[4], inMesh.bbox[4]);
-    bbox[5] = __max(bbox[5], inMesh.bbox[5]);
+    bbox[0] = std::min(bbox[0], inMesh.bbox[0]);
+    bbox[1] = std::min(bbox[1], inMesh.bbox[1]);
+    bbox[2] = std::min(bbox[2], inMesh.bbox[2]);
+    bbox[3] = std::max(bbox[3], inMesh.bbox[3]);
+    bbox[4] = std::max(bbox[4], inMesh.bbox[4]);
+    bbox[5] = std::max(bbox[5], inMesh.bbox[5]);
 
     // done.
     return isValid();

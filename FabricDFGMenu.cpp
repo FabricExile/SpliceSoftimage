@@ -45,13 +45,17 @@ SICALLBACK FabricDFG_Menu_CreateDFGOp(XSI::CRef&)
       // => fill targetObjects from picking session.
       CValueArray args(7);
       args[0] = siGenericObjectFilter;
-      args[1] = L"Pick Object";
-      args[2] = L"Pick Object";
+      args[1] = CString(L"Pick Object");
+      args[2] = CString(L"Pick Object");
       args[5] = 0;
+
+      CString command(L"PickElement");
+      CValue value;
+
       while (true)
       {
         // pick session failed?
-        if (Application().ExecuteCommand(L"PickElement", args, CValue()) == CStatus::Fail)
+        if (Application().ExecuteCommand(command, args, value) == CStatus::Fail)
           break;
 
         // right button?
