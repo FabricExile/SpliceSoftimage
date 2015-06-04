@@ -82,7 +82,7 @@ BaseInterface::BaseInterface(void (*in_logFunc)     (void *, const char *, unsig
     m_binding.setNotificationCallback(bindingNotificationCallback, this);
 
     // set the graph on the view
-    FabricServices::DFGWrapper::View::setGraph(FabricServices::DFGWrapper::GraphExecutablePtr::StaticCast(m_binding.getExecutable()));
+    FabricServices::DFGWrapper::View::setExec(FabricServices::DFGWrapper::GraphExecutablePtr::StaticCast(m_binding.getExecutable()));
   }
   catch (FabricCore::Exception e)
   {
@@ -187,7 +187,7 @@ void BaseInterface::setFromJSON(const std::string &json)
   {
     m_binding = s_host->createBindingFromJSON(json.c_str());
     m_binding.setNotificationCallback(bindingNotificationCallback, this);
-    FabricServices::DFGWrapper::View::setGraph(FabricServices::DFGWrapper::GraphExecutablePtr::StaticCast(m_binding.getExecutable()));
+    FabricServices::DFGWrapper::View::setExec(FabricServices::DFGWrapper::GraphExecutablePtr::StaticCast(m_binding.getExecutable()));
   }
   catch (FabricCore::Exception e)
   {
@@ -259,12 +259,12 @@ bool BaseInterface::HasPort(const char *in_portName, const bool testForInput)
     }
 
     // get the port.
-    FabricServices::DFGWrapper::ExecPortPtr port = graph->getPort(in_portName);
+    FabricServices::DFGWrapper::ExecPortPtr port = graph->getExecPort(in_portName);
 
     // return result.
     return (   !port.isNull()
             &&  port->isValid()
-            &&  port->getOutsidePortType() == portType);
+            &&  port->getExecPortType() == portType);
   }
   catch (FabricCore::Exception e)
   {
@@ -1021,7 +1021,7 @@ void BaseInterface::SetValueOfPortBoolean(FabricCore::Client &client, FabricServ
   {
     FabricCore::RTVal rtval;
     rtval = FabricCore::RTVal::ConstructBoolean(client, val);
-    binding.setArgValue(port->getName(), rtval);
+    binding.setArgValue(port->getPortName(), rtval);
   }
   catch (FabricCore::Exception e)
   {
@@ -1046,7 +1046,7 @@ void BaseInterface::SetValueOfPortSInt(FabricCore::Client &client, FabricService
     else if (resolvedType == "SInt16")  rtval = FabricCore::RTVal::ConstructSInt16(client, val);
     else if (resolvedType == "SInt32")  rtval = FabricCore::RTVal::ConstructSInt32(client, val);
     else if (resolvedType == "SInt64")  rtval = FabricCore::RTVal::ConstructSInt64(client, val);
-    binding.setArgValue(port->getName(), rtval);
+    binding.setArgValue(port->getPortName(), rtval);
   }
   catch (FabricCore::Exception e)
   {
@@ -1071,7 +1071,7 @@ void BaseInterface::SetValueOfPortUInt(FabricCore::Client &client, FabricService
     else if (resolvedType == "UInt16")  rtval = FabricCore::RTVal::ConstructUInt16(client, val);
     else if (resolvedType == "UInt32")  rtval = FabricCore::RTVal::ConstructUInt32(client, val);
     else if (resolvedType == "UInt64")  rtval = FabricCore::RTVal::ConstructUInt64(client, val);
-    binding.setArgValue(port->getName(), rtval);
+    binding.setArgValue(port->getPortName(), rtval);
   }
   catch (FabricCore::Exception e)
   {
@@ -1094,7 +1094,7 @@ void BaseInterface::SetValueOfPortFloat(FabricCore::Client &client, FabricServic
     std::string resolvedType = port->getResolvedType();
     if      (resolvedType == "Float32") rtval = FabricCore::RTVal::ConstructFloat32(client, val);
     else if (resolvedType == "Float64") rtval = FabricCore::RTVal::ConstructFloat64(client, val);
-    binding.setArgValue(port->getName(), rtval);
+    binding.setArgValue(port->getPortName(), rtval);
   }
   catch (FabricCore::Exception e)
   {
@@ -1115,7 +1115,7 @@ void BaseInterface::SetValueOfPortString(FabricCore::Client &client, FabricServi
   {
     FabricCore::RTVal rtval;
     rtval = FabricCore::RTVal::ConstructString(client, val.c_str());
-    binding.setArgValue(port->getName(), rtval);
+    binding.setArgValue(port->getPortName(), rtval);
   }
   catch (FabricCore::Exception e)
   {
@@ -1142,7 +1142,7 @@ void BaseInterface::SetValueOfPortVec2(FabricCore::Client &client, FabricService
     for (int i = 0; i < N; i++)
       v[i] = FabricCore::RTVal::ConstructFloat32(client, valIsValid ? val[i] : 0);
     rtval  = FabricCore::RTVal::Construct(client, name, N, v);
-    binding.setArgValue(port->getName(), rtval);
+    binding.setArgValue(port->getPortName(), rtval);
   }
   catch (FabricCore::Exception e)
   {
@@ -1169,7 +1169,7 @@ void BaseInterface::SetValueOfPortVec3(FabricCore::Client &client, FabricService
     for (int i = 0; i < N; i++)
       v[i] = FabricCore::RTVal::ConstructFloat32(client, valIsValid ? val[i] : 0);
     rtval  = FabricCore::RTVal::Construct(client, name, N, v);
-    binding.setArgValue(port->getName(), rtval);
+    binding.setArgValue(port->getPortName(), rtval);
   }
   catch (FabricCore::Exception e)
   {
@@ -1196,7 +1196,7 @@ void BaseInterface::SetValueOfPortVec4(FabricCore::Client &client, FabricService
     for (int i = 0; i < N; i++)
       v[i] = FabricCore::RTVal::ConstructFloat32(client, valIsValid ? val[i] : 0);
     rtval  = FabricCore::RTVal::Construct(client, name, N, v);
-    binding.setArgValue(port->getName(), rtval);
+    binding.setArgValue(port->getPortName(), rtval);
   }
   catch (FabricCore::Exception e)
   {
@@ -1223,7 +1223,7 @@ void BaseInterface::SetValueOfPortColor(FabricCore::Client &client, FabricServic
     for (int i = 0; i < N; i++)
       v[i] = FabricCore::RTVal::ConstructFloat32(client, valIsValid ? val[i] : 0);
     rtval  = FabricCore::RTVal::Construct(client, name, N, v);
-    binding.setArgValue(port->getName(), rtval);
+    binding.setArgValue(port->getPortName(), rtval);
   }
   catch (FabricCore::Exception e)
   {
@@ -1250,7 +1250,7 @@ void BaseInterface::SetValueOfPortRGB(FabricCore::Client &client, FabricServices
     for (int i = 0; i < N; i++)
       v[i] = FabricCore::RTVal::ConstructUInt8(client, valIsValid ? (uint8_t)__max(0.0, __min(255.0, 255.0 * val[i])) : 0);
     rtval  = FabricCore::RTVal::Construct(client, name, N, v);
-    binding.setArgValue(port->getName(), rtval);
+    binding.setArgValue(port->getPortName(), rtval);
   }
   catch (FabricCore::Exception e)
   {
@@ -1277,7 +1277,7 @@ void BaseInterface::SetValueOfPortRGBA(FabricCore::Client &client, FabricService
     for (int i = 0; i < N; i++)
       v[i] = FabricCore::RTVal::ConstructUInt8(client, valIsValid ? (uint8_t)__max(0.0, __min(255.0, 255.0 * val[i])) : 0);
     rtval  = FabricCore::RTVal::Construct(client, name, N, v);
-    binding.setArgValue(port->getName(), rtval);
+    binding.setArgValue(port->getPortName(), rtval);
   }
   catch (FabricCore::Exception e)
   {
@@ -1305,7 +1305,7 @@ void BaseInterface::SetValueOfPortQuat(FabricCore::Client &client, FabricService
     v[0]   = FabricCore::RTVal::Construct(client, "Vec3", 3, xyz);
     v[1]   = FabricCore::RTVal::ConstructFloat32(client, valIsValid ? val[3] : 0);
     rtval  = FabricCore::RTVal::Construct(client, "Quat", 2, v);
-    binding.setArgValue(port->getName(), rtval);
+    binding.setArgValue(port->getPortName(), rtval);
   }
   catch (FabricCore::Exception e)
   {
@@ -1337,7 +1337,7 @@ void BaseInterface::SetValueOfPortMat44(FabricCore::Client &client, FabricServic
       v[i]    = FabricCore::RTVal::Construct(client, "Vec4", 4, xyzt);
     }
     rtval = FabricCore::RTVal::Construct(client, "Mat44", 4, v);
-    binding.setArgValue(port->getName(), rtval);
+    binding.setArgValue(port->getPortName(), rtval);
   }
   catch (FabricCore::Exception e)
   {

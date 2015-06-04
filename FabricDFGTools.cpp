@@ -164,12 +164,12 @@ bool GetOperatorPortMapping(XSI::CRef &in_op, std::vector<_portMapping> &out_pma
 
   // check if the Fabric stuff is not valid.
   if (   !pud->GetBaseInterface()
-      || !pud->GetBaseInterface()->getGraph())
+      || !pud->GetBaseInterface()->getExec())
   { out_err = L"failed to get base interface or graph.";
     return false; }
 
   // get the DFG ports.
-  FabricServices::DFGWrapper::ExecPortList ports = pud->GetBaseInterface()->getGraph()->getPorts();
+  FabricServices::DFGWrapper::ExecPortList ports = pud->GetBaseInterface()->getExec()->getExecPorts();
   if (ports.size() == 0)
     return true;
 
@@ -188,11 +188,11 @@ bool GetOperatorPortMapping(XSI::CRef &in_op, std::vector<_portMapping> &out_pma
     _portMapping pmap;
 
     // dfg port name.
-    pmap.dfgPortName = port.getName();
+    pmap.dfgPortName = port.getPortName();
 
     // dfg port type (in/out)
-    if      (port.getOutsidePortType() == FabricCore::DFGPortType_In)   pmap.dfgPortType = DFG_PORT_TYPE::IN;
-    else if (port.getOutsidePortType() == FabricCore::DFGPortType_Out)  pmap.dfgPortType = DFG_PORT_TYPE::OUT;
+    if      (port.getExecPortType() == FabricCore::DFGPortType_In)   pmap.dfgPortType = DFG_PORT_TYPE::IN;
+    else if (port.getExecPortType() == FabricCore::DFGPortType_Out)  pmap.dfgPortType = DFG_PORT_TYPE::OUT;
     else                                                                continue;
 
     // dfg port data type (resolved type).

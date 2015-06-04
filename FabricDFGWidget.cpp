@@ -111,11 +111,13 @@ void OpenCanvas(_opUserData *pud, const char *winTitle)
       config.graphConfig.mainPanelBackgroundColor . setRgbF(f * 127, f * 127, f * 127);
       config.graphConfig.sidePanelBackgroundColor . setRgbF(f * 171, f * 168, f * 166);
 
+      DFGWrapper::GraphExecutablePtr graph = DFGWrapper::GraphExecutablePtr::StaticCast(pud->GetBaseInterface()->getExec());
+
       winData->qtDFGWidget->init(pud->GetBaseInterface()->getClient(),
                                  pud->GetBaseInterface()->getManager(),
                                  pud->GetBaseInterface()->getHost(),
                                 *pud->GetBaseInterface()->getBinding(),
-                                 pud->GetBaseInterface()->getGraph(),
+                                 graph,
                                  pud->GetBaseInterface()->getStack(),
                                  true,
                                  config
