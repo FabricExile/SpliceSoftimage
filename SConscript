@@ -11,11 +11,17 @@ Import(
   'STAGE_DIR',
   'FABRIC_BUILD_OS',
   'FABRIC_BUILD_TYPE',
+  'FABRIC_BUILD_ARCH',
   'SOFTIMAGE_INCLUDE_DIR',
   'SOFTIMAGE_LIB_DIR',
   'SOFTIMAGE_VERSION',
   'sharedCapiFlags',
-  'spliceFlags'
+  'spliceFlags',
+  'commandsFlags',
+  'dfgWrapperFlags',
+  'astWrapperFlags',
+  'legacyBoostFlags',
+  'codeCompletionFlags',
   )
 
 env = parentEnv.Clone()
@@ -38,18 +44,12 @@ elif FABRIC_BUILD_OS == 'Linux':
 env.MergeFlags(softimageFlags)
 env.Append(CPPDEFINES = ["_SPLICE_SOFTIMAGE_VERSION="+str(SOFTIMAGE_VERSION[:4])])
 
+qtDir = env.Dir('#').Dir('ThirdParty').Dir('PreBuilt').Dir(FABRIC_BUILD_OS).Dir(FABRIC_BUILD_ARCH).Dir('VS2013').Dir(FABRIC_BUILD_TYPE).Dir('qt').Dir('4.8.6')
+if os.environ.has_key('QT_DIR'):
+  qtDir = env.Dir(os.environ['QT_DIR'])
 
-
-env.Append(CPPPATH = [os.path.join(os.environ['FABRIC_UI_DIR'], 'stage', 'include')])
-env.Append(CPPPATH = [os.path.join(os.environ['FABRIC_UI_DIR'], 'stage', 'include', 'FabricUI')])
-env.Append(LIBPATH = [os.path.join(os.environ['FABRIC_DIR'], 'lib')])
-env.Append(LIBPATH = [os.path.join(os.environ['FABRIC_UI_DIR'], 'stage', 'lib')])
-env.Append(CPPPATH = [os.path.join(os.environ['FABRIC_DIR'], 'include')])
-env.Append(CPPPATH = [os.path.join(os.environ['FABRIC_DIR'], 'include', 'FabricServices')])
-
-env.Append(CPPPATH = [os.path.join(os.environ['QT_DIR'], 'include')])
-env.Append(LIBPATH = [os.path.join(os.environ['QT_DIR'], 'lib')])
-
+env.Append(CPPPATH = [os.path.join(qtDir.abspath, 'include')])
+env.Append(LIBPATH = [os.path.join(qtDir.abspath, 'lib')])
 
 env.MergeFlags(sharedCapiFlags)
 env.MergeFlags(spliceFlags)
@@ -62,21 +62,60 @@ elif FABRIC_BUILD_OS == 'Windows':
   env.Append(LIBS = ['OpenGL32.lib'])
   env.Append(LIBS = ['user32.lib'])
 
-
-
-
-if platform.system().lower().startswith('win'):
-  env.Append(LIBS = ['FabricServices-MSVC-12.0-mt'])
+if len(commandsFlags.keys()) > 0:
+  env.MergeFlags(commandsFlags)
+  env.MergeFlags(dfgWrapperFlags)
+  env.MergeFlags(astWrapperFlags)
+  env.MergeFlags(legacyBoostFlags)
+  env.MergeFlags(codeCompletionFlags)
 else:
-  env.Append(LIBS = ['FabricServices'])
+  if FABRIC_BUILD_OS == 'Windows':
+    env.Append(LIBS = ['FabricServices-MSVC-'+env['MSVC_VERSION']+'-mt'])
+  else:
+    env.Append(LIBS = ['FabricServices'])
+  env.Append(LIBS = ['FabricSplitSearch'])
 
-env.Append(LIBS = ['FabricSplitSearch'])
-env.Append(LIBS = ['FabricUI'])
+uiLibPrefix = 'uiSoftimage'+str(SOFTIMAGE_VERSION)
+
+uiDir = env.Dir('#').Dir('Native').Dir('FabricUI')
+if os.environ.has_key('FABRIC_UI_DIR'):
+  uiDir = env.Dir(os.environ['FABRIC_UI_DIR'])
+uiSconscript = uiDir.File('SConscript')
+if not os.path.exists(uiSconscript.abspath):
+  print "Error: You need to have FabricUI checked out to "+uiSconscript.dir.abspath
+
+env.Append(LIBPATH = [os.path.join(os.environ['FABRIC_DIR'], 'lib')])
+env.Append(CPPPATH = [os.path.join(os.environ['FABRIC_DIR'], 'include')])
+env.Append(CPPPATH = [os.path.join(os.environ['FABRIC_DIR'], 'include', 'FabricServices')])
+env.Append(CPPPATH = [uiSconscript.dir])
+
+uiLibs = SConscript(uiSconscript, exports = {
+  'parentEnv': env, 
+  'uiLibPrefix': uiLibPrefix, 
+  'qtDir': os.path.join(qtDir.abspath, 'include', 'Qt'),
+  'qtMOC': os.path.join(qtDir.abspath, 'bin', 'moc'),
+  'qtFlags': {
+  },
+  'fabricFlags': sharedCapiFlags,
+  'buildType': FABRIC_BUILD_TYPE,
+  'buildOS': FABRIC_BUILD_OS,
+  'buildArch': FABRIC_BUILD_ARCH,
+  'stageDir': env.Dir('#').Dir('stage').Dir('lib'),
+  },
+  duplicate=0,
+  variant_dir = env.Dir('FabricUI')
+  )
+
+# import the softimage specific libraries
+Import(uiLibPrefix+'Flags')
+
+# ui flags
+env.MergeFlags(locals()[uiLibPrefix + 'Flags'])
+
+env.Append(LIBPATH = [os.path.join(qtDir.abspath, 'lib')])
 env.Append(LIBS = ['QtCore4'])
 env.Append(LIBS = ['QtGui4'])
 env.Append(LIBS = ['QtOpenGL4'])
-
-
 
 target = 'FabricSpliceSoftimage'
 
@@ -118,7 +157,6 @@ softimageFiles.append(
     env.File('FabricSplice_Python.py')
     )
   )
-
 
 # todo: install the python client
 
