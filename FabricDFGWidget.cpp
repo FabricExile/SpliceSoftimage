@@ -9,7 +9,8 @@
 
 #include <QtGui/QApplication>
 #include <QtGui/QDialog>
-#include <QtGui/qboxlayout.h>
+#include <QtGui/QBoxlayout>
+#include <QtGui/QPalette>
 
 #include <windows.h>
 #include <stdio.h>

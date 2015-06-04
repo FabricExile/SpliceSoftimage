@@ -133,6 +133,8 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
       else if (pmap.dfgPortDataType == L"UInt32")   dt = CValue::siUInt4;
       else if (pmap.dfgPortDataType == L"UInt64")   dt = CValue::siUInt8;
 
+      else if (pmap.dfgPortDataType == L"String")   dt = CValue::siString;
+
       if (dt == CValue::siIUnknown)
       { Application().LogMessage(L"The DFG port \"" + pmap.dfgPortName + "\" cannot be exposed as a XSI Parameter (data type \"" + pmap.dfgPortDataType + "\" not yet supported)" , siWarningMsg);
         continue; }
@@ -937,9 +939,13 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
                                                               BaseInterface::SetValueOfPortUInt(*client, *binding, port, val);
                                                             }
             else if (   port__resolvedType == "Float32"
-                     || port__resolvedType == "Float64" )   {
+                     || port__resolvedType == "Float64")    {
                                                               double val = (double)xsiValue;
                                                               BaseInterface::SetValueOfPortFloat(*client, *binding, port, val);
+                                                            }
+            else if (   port__resolvedType == "String" )    {
+                                                              std::string val = CString(xsiValue).GetAsciiString();
+                                                              BaseInterface::SetValueOfPortString(*client, *binding, port, val);
                                                             }
             else
             {
@@ -1178,7 +1184,9 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
                   || pmap.dfgPortDataType == L"UInt8"
                   || pmap.dfgPortDataType == L"UInt16"
                   || pmap.dfgPortDataType == L"UInt32"
-                  || pmap.dfgPortDataType == L"UInt64")
+                  || pmap.dfgPortDataType == L"UInt64"
+
+                  || pmap.dfgPortDataType == L"String")
               {
                 cvaMapType.Add( L"XSI Parameter" );
                 cvaMapType.Add( DFG_PORT_MAPTYPE::XSI_PARAMETER );
