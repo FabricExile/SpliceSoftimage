@@ -24,11 +24,12 @@
 #include <xsi_customproperty.h>
 #include <vector>
 
-#include "plugin.h"
-#include "renderpass.h"
-#include "tools.h"
+#include "FabricSplicePlugin.h"
+#include "FabricSpliceRenderPass.h"
+#include "FabricSpliceTools.h"
 #include "FabricSpliceBaseInterface.h"
 
+#include "FabricDFGBaseInterface.h"
 
 #ifdef _WIN32
 # include <windows.h>
@@ -225,7 +226,7 @@ XSIPLUGINCALLBACK void SpliceRenderPass_Execute(CRef & in_ctxt, void ** in_pUser
 
   try
   {
-    if(!FabricSplice::SceneManagement::hasRenderableContent())
+    if(!FabricSplice::SceneManagement::hasRenderableContent() && BaseInterface::GetNumBaseInterfaces() == 0)
       return;
   }
   catch(FabricCore::Exception e)

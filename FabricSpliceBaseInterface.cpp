@@ -1,9 +1,9 @@
 
 #include "FabricSpliceBaseInterface.h"
-#include "plugin.h"
-#include "operators.h"
-#include "commands.h"
-#include "dialogs.h"
+#include "FabricSplicePlugin.h"
+#include "FabricSpliceOperators.h"
+#include "FabricSpliceCommands.h"
+#include "FabricSpliceDialogs.h"
 
 #include <string>
 #include <fstream>
@@ -313,7 +313,7 @@ void FabricSpliceBaseInterface::forceEvaluate()
   }
 }
 
-CStatus FabricSpliceBaseInterface::constructXSIParameters(CustomOperator & op, Factory & factory)
+CStatus FabricSpliceBaseInterface::constructXSIParameters(CustomOperator &op, Factory &factory)
 {
   if(_currentInstance == NULL)
     return CStatus::Unexpected;
@@ -445,7 +445,7 @@ CValueArray FabricSpliceBaseInterface::getSpliceInternalPortTypeCombo()
   return combo;
 }
 
-CStatus FabricSpliceBaseInterface::addXSIParameter(const CString &portName, const CString &dataType, const CString &portModeStr, const XSI::CString & dgNode, const FabricCore::Variant & defaultValue, const XSI::CString & extStr)
+CStatus FabricSpliceBaseInterface::addXSIParameter(const CString &portName, const CString &dataType, const CString &portModeStr, const XSI::CString &dgNode, const FabricCore::Variant &defaultValue, const XSI::CString &extStr)
 {
   FabricSplice::Port_Mode portMode = FabricSplice::Port_Mode_IN;
   if(portModeStr.IsEqualNoCase("out"))
@@ -464,7 +464,7 @@ CStatus FabricSpliceBaseInterface::addXSIParameter(const CString &portName, cons
   return CStatus::OK;
 }
 
-CStatus FabricSpliceBaseInterface::addXSIPort(const CRefArray & targets, const CString &portName, const CString &dataType, const FabricSplice::Port_Mode &portMode, const XSI::CString & dgNode, bool validateDataType)
+CStatus FabricSpliceBaseInterface::addXSIPort(const CRefArray &targets, const CString &portName, const CString &dataType, const FabricSplice::Port_Mode &portMode, const XSI::CString &dgNode, bool validateDataType)
 {
   if(validateDataType &&
      dataType != "Boolean" && 
@@ -505,7 +505,7 @@ CStatus FabricSpliceBaseInterface::addXSIPort(const CRefArray & targets, const C
   return CStatus::OK;
 }
 
-CStatus FabricSpliceBaseInterface::addXSIICEPort(const CRefArray & targets, const CString &portName, const CString &dataType, const CString &iceAttrName, const XSI::CString & dgNode)
+CStatus FabricSpliceBaseInterface::addXSIICEPort(const CRefArray &targets, const CString &portName, const CString &dataType, const CString &iceAttrName, const XSI::CString &dgNode)
 {
   if(!addXSIPort(targets, portName, dataType, FabricSplice::Port_Mode_IN, dgNode, false).Succeeded())
     return CStatus::Unexpected;
@@ -514,7 +514,7 @@ CStatus FabricSpliceBaseInterface::addXSIICEPort(const CRefArray & targets, cons
   return CStatus::OK;
 }
 
-CStatus FabricSpliceBaseInterface::addSplicePort(const CString &portName, const CString &dataType, const FabricSplice::Port_Mode &portMode, const XSI::CString & dgNode, bool autoInitObjects, const FabricCore::Variant & defaultValue, const XSI::CString & extStr)
+CStatus FabricSpliceBaseInterface::addSplicePort(const CString &portName, const CString &dataType, const FabricSplice::Port_Mode &portMode, const XSI::CString &dgNode, bool autoInitObjects, const FabricCore::Variant &defaultValue, const XSI::CString &extStr)
 {
   if(_parameters.find(portName.GetAsciiString()) != _parameters.end())
   {
@@ -579,7 +579,7 @@ CStatus FabricSpliceBaseInterface::removeSplicePort(const CString &portName)
   return CStatus::OK;
 }
 
-CStatus FabricSpliceBaseInterface::rerouteXSIPort(const CString &portName, FabricCore::Variant & scriptArgs)
+CStatus FabricSpliceBaseInterface::rerouteXSIPort(const CString &portName, FabricCore::Variant &scriptArgs)
 {
   XSISPLICE_CATCH_BEGIN()
 
@@ -635,7 +635,7 @@ CStatus FabricSpliceBaseInterface::rerouteXSIPort(const CString &portName, Fabri
   return CStatus::OK;
 }
 
-CString FabricSpliceBaseInterface::getXSIPortTargets(const CString & portName)
+CString FabricSpliceBaseInterface::getXSIPortTargets(const CString &portName)
 {
   std::map<std::string, portInfo>::iterator portIt = _ports.find(portName.GetAsciiString());
   if(portIt == _ports.end())
@@ -655,7 +655,7 @@ CString FabricSpliceBaseInterface::getParameterString()
   return _spliceGraph.generateKLOperatorParameterList().getStringData();
 }
 
-bool convertBasicInputParameter(const CString & dataType, const CValue & value, FabricCore::RTVal & rtVal)
+bool convertBasicInputParameter(const CString &dataType, const CValue &value, FabricCore::RTVal &rtVal)
 {
   if(dataType == "Boolean")
     rtVal = FabricSplice::constructBooleanRTVal((bool)value);
@@ -687,7 +687,7 @@ bool convertBasicInputParameter(const CString & dataType, const CValue & value, 
   return true;
 }
 
-bool convertBasicOutputParameter(const CString & dataType, CValue & value, FabricCore::RTVal & rtVal)
+bool convertBasicOutputParameter(const CString &dataType, CValue &value, FabricCore::RTVal &rtVal)
 {
   if(dataType == "Boolean")
     value = rtVal.getBoolean();
@@ -761,7 +761,7 @@ bool FabricSpliceBaseInterface::checkEvalIDCache(LONG evalID, int &evalIDCacheIn
   return result;
 }
 
-bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorContext & context)
+bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorContext &context)
 {
   FabricSplice::Logging::AutoTimer globalTimer("XSI::transferInputPorts");
   std::string localTimerName = (std::string("XSI::")+_spliceGraph.getName()+"::transferInputPorts()").c_str();
@@ -1133,7 +1133,7 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
   return result;
 }
 
-CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
+CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext &context)
 {
   FabricSplice::Logging::AutoTimer globalTimer("XSI::transferOutputPort");
   std::string localTimerName = (std::string("XSI::")+_spliceGraph.getName()+"::transferOutputPort()").c_str();
@@ -1360,7 +1360,7 @@ FabricSplice::DGGraph FabricSpliceBaseInterface::getSpliceGraph()
   return _spliceGraph;
 }
 
-CStatus FabricSpliceBaseInterface::addKLOperator(const CString &operatorName, const CString &operatorCode, const CString &operatorEntry, const XSI::CString & dgNode, const FabricCore::Variant & portMap)
+CStatus FabricSpliceBaseInterface::addKLOperator(const CString &operatorName, const CString &operatorCode, const CString &operatorEntry, const XSI::CString &dgNode, const FabricCore::Variant &portMap)
 {
   FabricSplice::Logging::AutoTimer globalTimer("XSI::addKLOperator");
   std::string localTimerName = (std::string("XSI::")+_spliceGraph.getName()+"::addKLOperator()").c_str();
@@ -1374,7 +1374,7 @@ CStatus FabricSpliceBaseInterface::addKLOperator(const CString &operatorName, co
   return CStatus::OK;
 }
 
-bool FabricSpliceBaseInterface::hasKLOperator(const XSI::CString &operatorName, const XSI::CString & dgNode)
+bool FabricSpliceBaseInterface::hasKLOperator(const XSI::CString &operatorName, const XSI::CString &dgNode)
 {
   FabricSplice::Logging::AutoTimer globalTimer("XSI::hasKLOperator");
   std::string localTimerName = (std::string("XSI::")+_spliceGraph.getName()+"::hasKLOperator()").c_str();
@@ -1440,7 +1440,7 @@ CStatus FabricSpliceBaseInterface::setKLOperatorIndex(const CString &operatorNam
   return CStatus::OK;
 }
 
-CStatus FabricSpliceBaseInterface::removeKLOperator(const CString &operatorName, const XSI::CString & dgNode)
+CStatus FabricSpliceBaseInterface::removeKLOperator(const CString &operatorName, const XSI::CString &dgNode)
 {
   XSISPLICE_CATCH_BEGIN()
 
@@ -1618,7 +1618,7 @@ CStatus FabricSpliceBaseInterface::saveToFile(CString fileName)
   return CStatus::OK;
 }
 
-CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Variant & scriptArgs, bool hideUI)
+CStatus FabricSpliceBaseInterface::loadFromFile(CString fileName, FabricCore::Variant &scriptArgs, bool hideUI)
 {
   FabricSplice::Logging::AutoTimer globalTimer("XSI::loadFromFile");
   std::string localTimerName = (std::string("XSI::")+_spliceGraph.getName()+"::loadFromFile()").c_str();
@@ -1865,7 +1865,7 @@ CString FabricSpliceBaseInterface::getDGPortInfo()
   }
 }
 
-CStatus FabricSpliceBaseInterface::disconnectForExport(XSI::CString file, Model & model)
+CStatus FabricSpliceBaseInterface::disconnectForExport(XSI::CString file, Model &model)
 {
   FabricSplice::Logging::AutoTimer globalTimer("XSI::disconnectForExport");
   std::string localTimerName = (std::string("XSI::")+_spliceGraph.getName()+"::disconnectForExport()").c_str();
@@ -1999,7 +1999,7 @@ CStatus FabricSpliceBaseInterface::disconnectForExport(XSI::CString file, Model 
   return CStatus::OK;
 }
 
-CStatus FabricSpliceBaseInterface::reconnectForImport(Model & model)
+CStatus FabricSpliceBaseInterface::reconnectForImport(Model &model)
 {
   FabricSplice::Logging::AutoTimer globalTimer("XSI::reconnectForImport");
   std::string localTimerName = (std::string("XSI::")+_spliceGraph.getName()+"::reconnectForImport()").c_str();
@@ -2101,7 +2101,7 @@ CStatus FabricSpliceBaseInterface::reconnectForImport(Model & model)
   return CStatus::OK;
 }
 
-CStatus FabricSpliceBaseInterface::cleanupForImport(Model & model)
+CStatus FabricSpliceBaseInterface::cleanupForImport(Model &model)
 {
   FabricSplice::Logging::AutoTimer globalTimer("XSI::cleanupForImport");
   std::string localTimerName = (std::string("XSI::")+std::string("FabricSpliceBaseInterface::cleanupForImport()")).c_str();

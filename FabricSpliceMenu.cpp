@@ -11,9 +11,9 @@
 #include <xsi_project.h>
 #include <xsi_uitoolkit.h>
 
-#include "plugin.h"
-#include "renderpass.h"
-#include "dialogs.h"
+#include "FabricSplicePlugin.h"
+#include "FabricSpliceRenderPass.h"
+#include "FabricSpliceDialogs.h"
 #include "FabricSpliceBaseInterface.h"
 
 using namespace XSI;
@@ -121,7 +121,7 @@ SICALLBACK FabricSplice_Menu_OnlineHelp( XSI::CRef& )
 {
   CValue returnVal;
   CValueArray args(3);
-  args[0] = "http://documentation.fabricengine.com/Splice/latest/HTML/";
+  args[0] = "http://docs.fabric-engine.com/FabricEngine/latest/HTML/Splice/Softimage/index.html";
   args[1] = true;
   args[2] = (LONG)1l;
   Application().ExecuteCommand(L"OpenNetView", args, returnVal);
@@ -132,7 +132,7 @@ SICALLBACK FabricSplice_Menu_ThirdPartyLicenses( XSI::CRef& )
 {
   CValue returnVal;
   CValueArray args(3);
-  args[0] = "http://documentation.fabricengine.com/Splice/latest/HTML/thirdpartylicenses.html";
+  args[0] = "http://docs.fabric-engine.com/FabricEngine/latest/HTML/Splice/thirdpartylicenses.html";
   args[1] = true;
   args[2] = (LONG)1l;
   Application().ExecuteCommand(L"OpenNetView", args, returnVal);

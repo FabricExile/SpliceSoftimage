@@ -9,6 +9,6 @@ void enableRTRPass(bool enable);
 
 void destroyDrawContext();
 
-void pushRefToDelete(const XSI::CRef & ref);
+void pushRefToDelete(const XSI::CRef &ref);
 
 #endif

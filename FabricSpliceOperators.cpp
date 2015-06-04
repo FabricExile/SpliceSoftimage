@@ -19,8 +19,8 @@
 #include <xsi_operatorcontext.h>
 
 // project includes
-#include "plugin.h"
-#include "operators.h"
+#include "FabricSplicePlugin.h"
+#include "FabricSpliceOperators.h"
 #include "FabricSpliceBaseInterface.h"
 
 using namespace XSI;
@@ -174,8 +174,8 @@ XSIPLUGINCALLBACK CStatus SpliceOp_Term(CRef & in_ctxt)
       }
     }
     delete(p);
-	 CValue val = (CValue::siPtrType)NULL;
-	 ctxt.PutUserData( val ) ;
+   CValue val = (CValue::siPtrType)NULL;
+   ctxt.PutUserData( val ) ;
   }
 
   XSISPLICE_CATCH_END_CSTATUS()

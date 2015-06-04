@@ -26,8 +26,8 @@
 #include <xsi_graphicsequencercontext.h>
 
 // project includes
-#include "plugin.h"
-#include "renderpass.h"
+#include "FabricSplicePlugin.h"
+#include "FabricSpliceRenderPass.h"
 #include <FabricSplice.h>
 #include <vector>
 #include "FabricSpliceBaseInterface.h"

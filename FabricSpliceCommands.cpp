@@ -21,11 +21,11 @@
 #include <boost/filesystem.hpp>
 
 // project includes
-#include "plugin.h"
-#include "dialogs.h"
-#include "commands.h"
+#include "FabricSplicePlugin.h"
+#include "FabricSpliceDialogs.h"
+#include "FabricSpliceCommands.h"
 #include "FabricSpliceBaseInterface.h"
-#include "renderpass.h"
+#include "FabricSpliceRenderPass.h"
 
 using namespace XSI;
 

@@ -31,9 +31,9 @@
 #include <xsi_meshbuilder.h>
 
 // project includes
-#include "plugin.h"
-#include "dialogs.h"
-#include "renderpass.h"
+#include "FabricSplicePlugin.h"
+#include "FabricSpliceDialogs.h"
+#include "FabricSpliceRenderPass.h"
 #include "FabricSpliceBaseInterface.h"
 #include "FabricSpliceConversion.h"
 #include <FabricSplice.h>

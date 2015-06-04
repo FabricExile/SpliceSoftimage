@@ -8,6 +8,6 @@ struct iceNodeUD {
   FabricSpliceBaseInterface * interf;
 };
 
-extern XSI::CStatus Register_spliceGetData( XSI::PluginRegistrar& in_reg );
+extern XSI::CStatus Register_spliceGetData( XSI::PluginRegistrar &in_reg );
 
 #endif
