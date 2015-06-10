@@ -80,6 +80,7 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
 
   // we also add a SpliceOp to the object, so that things don't go wrong when loading a scene.
   {
+    // hmathee: What is this for?
     dfgTool_ExecuteCommand(L"fabricSplice", L"newSplice", L"{\"targets\":\"" + objectName + L".kine.global\", \"portName\":\"matrix\", \"portMode\":\"io\"}");
   }
 

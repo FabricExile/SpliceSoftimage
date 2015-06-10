@@ -48,21 +48,30 @@ std::vector<FabricSpliceBaseInterface*> FabricSpliceBaseInterface::_instances;
 FabricSpliceBaseInterface * FabricSpliceBaseInterface::_currentInstance = NULL;
 
 FabricSpliceBaseInterface::FabricSpliceBaseInterface(){
-  XSISPLICE_CATCH_BEGIN();
+  try
+  {
+    xsiInitializeSplice();
+    _persist = false;
+    _usedInICENode = false;
+    _spliceGraph = FabricSplice::DGGraph("softimageGraph");
+    _spliceGraph.constructDGNode("DGNode");
+    _spliceGraph.setUserPointer(this);
+    _objectID = UINT_MAX;
+    _instances.push_back(this);
+    _nbOutputPorts = 0;
 
-  xsiInitializeSplice();
-  _persist = false;
-  _usedInICENode = false;
-  _spliceGraph = FabricSplice::DGGraph("softimageGraph");
-  _spliceGraph.constructDGNode("DGNode");
-  _spliceGraph.setUserPointer(this);
-  _objectID = UINT_MAX;
-  _instances.push_back(this);
-  _nbOutputPorts = 0;
-
-  FabricSplice::setDCCOperatorSourceCodeCallback(&getSourceCodeForOperator);
-
-  XSISPLICE_CATCH_END_VOID();
+    FabricSplice::setDCCOperatorSourceCodeCallback(&getSourceCodeForOperator);
+  }
+  catch(FabricSplice::Exception e)
+  {
+    xsiLogErrorFunc(e.what());
+    return;
+  }
+  catch(FabricCore::Exception e)
+  {
+    xsiLogErrorFunc(e.getDesc_cstr());
+    return;
+  }
 }
 
 FabricSpliceBaseInterface::~FabricSpliceBaseInterface(){
