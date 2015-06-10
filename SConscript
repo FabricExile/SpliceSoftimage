@@ -18,7 +18,6 @@ Import(
   'sharedCapiFlags',
   'spliceFlags',
   'commandsFlags',
-  'dfgWrapperFlags',
   'astWrapperFlags',
   'legacyBoostFlags',
   'codeCompletionFlags',
@@ -67,7 +66,6 @@ elif FABRIC_BUILD_OS == 'Windows':
 
 if len(commandsFlags.keys()) > 0:
   env.MergeFlags(commandsFlags)
-  env.MergeFlags(dfgWrapperFlags)
   env.MergeFlags(astWrapperFlags)
   env.MergeFlags(legacyBoostFlags)
   env.MergeFlags(codeCompletionFlags)

@@ -245,16 +245,17 @@ struct _polymesh
 
   // set from DFG port.
   // returns: 0 on success, -1 wrong port type, -2 invalid port, -3 memory error, -4 Fabric exception.
-  int setFromDFGPort(FabricServices::DFGWrapper::ExecPortPtr &port)
+  int setFromDFGArg(FabricCore::DFGBinding &binding, char const * argName)
   {
     // clear current.
     clear();
 
     // get RTVal.
-    FabricCore::RTVal rtMesh = port->getArgValue();
+    FabricCore::RTVal rtMesh = binding.getArgValue(argName);
 
     // get the mesh data (except for the vertex normals).
-    int retGet = BaseInterface::GetPortValuePolygonMesh( port,
+    int retGet = BaseInterface::GetArgValuePolygonMesh( binding,
+                                                         argName,
                                                          numVertices,
                                                          numPolygons,
                                                          numSamples,

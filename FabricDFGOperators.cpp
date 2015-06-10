@@ -703,27 +703,26 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
         _opUserData *pud = _opUserData::GetUserData(op.GetObjectID());
         if (!pud)                                 { Application().LogMessage(L"no user data found!",      siErrorMsg);  return CStatus::OK; }
         if (!pud->GetBaseInterface())             { Application().LogMessage(L"no base interface found!", siErrorMsg);  return CStatus::OK; }
-        if (!pud->GetBaseInterface()->getExec()) { Application().LogMessage(L"no graph found!",          siErrorMsg);  return CStatus::OK; }
+        // if (!pud->GetBaseInterface()->getBinding())  { Application().LogMessage(L"no graph found!",          siErrorMsg);  return CStatus::OK; }
 
         // log intro.
         Application().LogMessage(L"\"" + op.GetRef().GetAsText() + L"\" (ObjectID = " + CString(op.GetObjectID()) + L")", siInfoMsg);
         Application().LogMessage(L"{", siInfoMsg);
 
         // log (DFG ports).
-        FabricServices::DFGWrapper::ExecPortList ports = pud->GetBaseInterface()->getExec()->getExecPorts();
-        Application().LogMessage(L"    amount of DFG ports: " + CString((LONG)ports.size()), siInfoMsg);
-        for (int i=0;i<ports.size();i++)
+        FabricCore::DFGExec exec = pud->GetBaseInterface()->getBinding().getExec();
+        Application().LogMessage(L"    amount of DFG ports: " + CString((LONG)exec.getExecPortCount()), siInfoMsg);
+        for (int i=0;i<exec.getExecPortCount();i++)
         {
-          FabricServices::DFGWrapper::ExecPort &port = *ports[i];
           char s[16];
           sprintf(s, "%03ld", i);
           CString t;
           t  = L"        " + CString(s) + L". ";
-          if      (port.getExecPortType() == FabricCore::DFGPortType_In)  t += L"type = \"In\",  ";
-          else if (port.getExecPortType() == FabricCore::DFGPortType_Out) t += L"type = \"Out\", ";
+          if      (exec.getExecPortType(i) == FabricCore::DFGPortType_In)  t += L"type = \"In\",  ";
+          else if (exec.getExecPortType(i) == FabricCore::DFGPortType_Out) t += L"type = \"Out\", ";
           else                                                               t += L"type = \"IO\",  ";
-          t += L"name = \"" + CString(port.getPortName()) + L"\", ";
-          t += L"resolved data type = \"" + CString(port.getResolvedType()) + L"\"";
+          t += L"name = \"" + CString(exec.getExecPortName(i)) + L"\", ";
+          t += L"resolved data type = \"" + CString(exec.getExecPortResolvedType(i)) + L"\"";
           Application().LogMessage(t, siInfoMsg);
         }
 
@@ -816,8 +815,8 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
                                                   return CStatus::OK; }
   if (!pud->GetBaseInterface()->getBinding())   { Application().LogMessage(L"no binding found!", siErrorMsg);
                                                   return CStatus::OK; }
-  if (!pud->GetBaseInterface()->getExec())     { Application().LogMessage(L"no graph found!", siErrorMsg);
-                                                  return CStatus::OK; }
+  // if (!pud->GetBaseInterface()->getExec())     { Application().LogMessage(L"no graph found!", siErrorMsg);
+  //                                                 return CStatus::OK; }
   // init log.
   CString functionName = L"dfgSoftimageOp_Update(opObjID = " + CString(op.GetObjectID()) + L")";
   const bool verbose = (bool)ctxt.GetParameterValue(L"verbose");
@@ -835,40 +834,41 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
   // get pointers/refs at binding, graph & co.
   BaseInterface                                   *baseInterface  = pud->GetBaseInterface();
   FabricCore::Client                              *client         = pud->GetBaseInterface()->getClient();
-  FabricServices::DFGWrapper::Binding             *binding        = pud->GetBaseInterface()->getBinding();
-  FabricServices::DFGWrapper::ExecutablePtr       exec          = pud->GetBaseInterface()->getExec();
+  FabricCore::DFGBinding                           binding        = pud->GetBaseInterface()->getBinding();
+  FabricCore::DFGExec                              exec           = binding.getExec();
 
   // Fabric Engine (step 1): loop through all the DFG's input ports and set
   //                         their values from the matching XSI ports or parameters.
   {
     try
     {
-      FabricServices::DFGWrapper::ExecPortList ports = exec->getExecPorts();
-      for (int i=0;i<ports.size();i++)
+      for (int i=0;i<exec.getExecPortCount();i++)
       {
         bool done = false;
 
         // get/check DFG port.
-        FabricServices::DFGWrapper::ExecPortPtr port = ports[i];
-        if (port->getExecPortType() != FabricCore::DFGPortType_In)
+        if (exec.getExecPortType(i) != FabricCore::DFGPortType_In)
           continue;
+
+        CString portName = exec.getExecPortName(i);
+        CString portResolvedType = exec.getExecPortResolvedType(i);
 
         // find a matching XSI port.
         if (!done)
         {
-          CValue xsiPortValue = op.GetInputValue(CString(port->getPortName()), CString(port->getPortName()));
+          CValue xsiPortValue = op.GetInputValue(portName, portName);
           if (!xsiPortValue.IsEmpty())
           {
             done = true;
 
             //
-            if (verbose) Application().LogMessage(functionName + L": transfer xsi port data to dfg port \"" + CString(port->getPortName()) + L"\"");
+            if (verbose) Application().LogMessage(functionName + L": transfer xsi port data to dfg port \"" + portName + L"\"");
 
-            if      (CString(port->getResolvedType()) == L"")
+            if      (portResolvedType == L"")
             {
               // do nothing.
             }
-            else if (CString(port->getResolvedType()) == L"Mat44")
+            else if (portResolvedType == L"Mat44")
             {
               if (xsiPortValue.m_t == CValue::siRef)
               {
@@ -896,13 +896,13 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
                   val[15] = m.GetValue(3, 3);
 
                   // set the DFG port from the std::vector.
-                  BaseInterface::SetValueOfPortMat44(*client, *binding, port, val);
+                  BaseInterface::SetValueOfArgMat44(*client, binding, portName.GetAsciiString(), val);
                 }
               }
             }
 
             //
-            else if (CString(port->getResolvedType()) == L"PolygonMesh")
+            else if (portResolvedType == L"PolygonMesh")
             {
               Application().LogMessage(L"input PolygonMesh ports not yet implemented.", siWarningMsg);
               if (xsiPortValue.m_t == CValue::siRef)
@@ -916,49 +916,48 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
         // find a matching XSI parameter.
         if (!done)
         {
-          Parameter xsiParam = op.GetParameter(port->getPortName());
+          Parameter xsiParam = op.GetParameter(portName);
           if (xsiParam.IsValid())
           {
             done = true;
 
             //
-            if (verbose) Application().LogMessage(functionName + L": transfer xsi parameter data to dfg port \"" + CString(port->getPortName()) + L"\"");
+            if (verbose) Application().LogMessage(functionName + L": transfer xsi parameter data to dfg port \"" + portName + L"\"");
 
             //
             CValue xsiValue = xsiParam.GetValue();
 
             //
-            std::string port__resolvedType = port->getResolvedType();
-            if      (   port__resolvedType == "Boolean")    {
+            if      (   portResolvedType == "Boolean")    {
                                                               bool val = (bool)xsiValue;
-                                                              BaseInterface::SetValueOfPortBoolean(*client, *binding, port, val);
+                                                              BaseInterface::SetValueOfArgBoolean(*client, binding, portName.GetAsciiString(), val);
                                                             }
-            else if (   port__resolvedType == "SInt8"
-                     || port__resolvedType == "SInt16"
-                     || port__resolvedType == "SInt32"
-                     || port__resolvedType == "SInt64" )    {
+            else if (   portResolvedType == "SInt8"
+                     || portResolvedType == "SInt16"
+                     || portResolvedType == "SInt32"
+                     || portResolvedType == "SInt64" )    {
                                                               int val = (int)(LONG)xsiValue;
-                                                              BaseInterface::SetValueOfPortSInt(*client, *binding, port, val);
+                                                              BaseInterface::SetValueOfArgSInt(*client, binding, portName.GetAsciiString(), val);
                                                             }
-            else if (   port__resolvedType == "UInt8"
-                     || port__resolvedType == "UInt16"
-                     || port__resolvedType == "UInt32"
-                     || port__resolvedType == "UInt64" )    {
+            else if (   portResolvedType == "UInt8"
+                     || portResolvedType == "UInt16"
+                     || portResolvedType == "UInt32"
+                     || portResolvedType == "UInt64" )    {
                                                               unsigned int val = (unsigned int)(ULONG)xsiValue;
-                                                              BaseInterface::SetValueOfPortUInt(*client, *binding, port, val);
+                                                              BaseInterface::SetValueOfArgUInt(*client, binding, portName.GetAsciiString(), val);
                                                             }
-            else if (   port__resolvedType == "Float32"
-                     || port__resolvedType == "Float64")    {
+            else if (   portResolvedType == "Float32"
+                     || portResolvedType == "Float64")    {
                                                               double val = (double)xsiValue;
-                                                              BaseInterface::SetValueOfPortFloat(*client, *binding, port, val);
+                                                              BaseInterface::SetValueOfArgFloat(*client, binding, portName.GetAsciiString(), val);
                                                             }
-            else if (   port__resolvedType == "String" )    {
+            else if (   portResolvedType == "String" )    {
                                                               std::string val = CString(xsiValue).GetAsciiString();
-                                                              BaseInterface::SetValueOfPortString(*client, *binding, port, val);
+                                                              BaseInterface::SetValueOfArgString(*client, binding, portName.GetAsciiString(), val);
                                                             }
             else
             {
-              Application().LogMessage(L"the port \"" + CString(port->getPortName()) + L"\" has the unsupported data type \"" + CString(port__resolvedType.c_str()) + L"\"", siWarningMsg)  ;
+              Application().LogMessage(L"the port \"" + portName + L"\" has the unsupported data type \"" + portResolvedType + L"\"", siWarningMsg)  ;
             }
           }
         }
@@ -975,7 +974,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
   {
     try
     {
-      binding->execute();
+      binding.execute();
     }
     catch (FabricCore::Exception e)
     {
@@ -986,13 +985,15 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
 
   // Fabric Engine (step 3): set the current XSI output port from the matching DFG output port.
   {
+    CString portName = outputPort.GetName();
+    FabricCore::DFGExec exec = binding.getExec();
+
     try
     {
       if (baseInterface->HasOutputPort(outputPort.GetName().GetAsciiString()))
       {
         if (verbose) Application().LogMessage(functionName + L": transfer dfg port data to xsi port \"" + outputPort.GetName() + L"\"");
-        FabricServices::DFGWrapper::ExecPortPtr port = exec->getExecPort(outputPort.GetName().GetAsciiString());
-        if (port.isNull())
+        if (!exec.haveExecPort(portName.GetAsciiString()))
           Application().LogMessage(functionName + L": graph->getExecPort() == NULL", siWarningMsg);
         else
         {
@@ -1003,8 +1004,8 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
           else if (outputPort.GetTarget().GetClassID() == siKinematicStateID)
           {
             std::vector <double> val;
-            if (BaseInterface::GetPortValueMat44(port, val) != 0)
-              Application().LogMessage(functionName + L": BaseInterface::GetPortValueMat44(port) failed.", siWarningMsg);
+            if (BaseInterface::GetArgValueMat44(binding, portName.GetAsciiString(), val) != 0)
+              Application().LogMessage(functionName + L": BaseInterface::GetArgValueMat44(port) failed.", siWarningMsg);
             else
             {
               KinematicState kineOut(ctxt.GetOutputTarget());
@@ -1039,9 +1040,9 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
             {
               _polymesh polymesh;
 
-              int ret = polymesh.setFromDFGPort(port);
+              int ret = polymesh.setFromDFGArg(binding, portName.GetAsciiString());
               if (ret)
-                Application().LogMessage(functionName + L": failed to get mesh from DFG port \"" + CString(port->getPortName()) + L"\" (returned " + CString(ret) + L")", siWarningMsg);
+                Application().LogMessage(functionName + L": failed to get mesh from DFG port \"" + portName + L"\" (returned " + CString(ret) + L")", siWarningMsg);
               else
               {
                 if (verbose)
