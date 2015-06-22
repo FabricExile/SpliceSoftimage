@@ -71,7 +71,10 @@ if len(commandsFlags.keys()) > 0:
   env.MergeFlags(codeCompletionFlags)
 else:
   if FABRIC_BUILD_OS == 'Windows':
-    env.Append(LIBS = ['FabricServices-MSVC-'+env['MSVC_VERSION']+'-mt'])
+    if FABRIC_BUILD_TYPE == 'Release':
+      env.Append(LIBS = ['FabricServices-MSVC-'+env['MSVC_VERSION']+'-mt'])
+    else:
+      env.Append(LIBS = ['FabricServices-MSVC-'+env['MSVC_VERSION']+'-md'])
   else:
     env.Append(LIBS = ['FabricServices'])
 env.Append(LIBS = ['FabricSplitSearch'])
@@ -123,9 +126,14 @@ if qtDir:
   env.Append(LIBPATH = [os.path.join(qtDir.abspath, 'lib')])
 
 if FABRIC_BUILD_OS == 'Windows':
-  env.Append(LIBS = ['QtCore4'])
-  env.Append(LIBS = ['QtGui4'])
-  env.Append(LIBS = ['QtOpenGL4'])
+  if FABRIC_BUILD_TYPE == 'Release':
+    env.Append(LIBS = ['QtCore4'])
+    env.Append(LIBS = ['QtGui4'])
+    env.Append(LIBS = ['QtOpenGL4'])
+  else:
+    env.Append(LIBS = ['QtCored4'])
+    env.Append(LIBS = ['QtGuid4'])
+    env.Append(LIBS = ['QtOpenGLd4'])
 else:
   env.Append(LIBS = ['QtCore'])
   env.Append(LIBS = ['QtGui'])
