@@ -97,7 +97,7 @@ bool dfgTools::FileBrowserJSON(bool isSave, XSI::CString &out_filepath)
       out_filepath += uiFileName[i];
   }
 
-  // take care of possible double extension (e.g. "myProfile.gfd.json.gfd.json").
+  // take care of possible double extension (e.g. "myProfile.dfg.json.dfg.json").
   ULONG dfg1 = out_filepath.ReverseFindString(ext, UINT_MAX);
   if (dfg1 != UINT_MAX)
   {
@@ -545,4 +545,16 @@ XSI::CString &dfgTools::GetSiClassIdDescription(const XSI::siClassID in_siClassI
   }
 
   return out_description;
+}
+
+bool dfgTools::FileExists(const char *filePath)
+{
+  if (!filePath)  return false;
+  FILE *stream = fopen(filePath, "rb");
+  if (stream)
+  {
+    fclose(stream);
+    return true;
+  }
+  return false;
 }

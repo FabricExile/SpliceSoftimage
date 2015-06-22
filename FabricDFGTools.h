@@ -44,6 +44,11 @@ class dfgTools
   
   // gets the description of a siCLassID.
   static XSI::CString &GetSiClassIdDescription(const XSI::siClassID in_siClassID, XSI::CString &out_description);
+
+  // checks the existence of a file.
+  // params:  filePath    path and filename
+  // returns: true if file exists.
+  static bool FileExists(const char *filePath);
 };
 
 #endif
