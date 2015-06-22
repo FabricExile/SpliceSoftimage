@@ -78,7 +78,7 @@ SICALLBACK FabricDFG_Menu_CreateDFGOp(XSI::CRef&)
 
   // execute command for all elements in targetObjects.
   for (int i=0;i<targetObjects.GetCount();i++)
-    dfgTool_ExecuteCommand(L"dfgSoftimageOpApply", targetObjects[i], L"", true);
+    dfgTools::ExecuteCommand(L"dfgSoftimageOpApply", targetObjects[i], L"", true);
 
   // done.
   return CStatus::OK;
@@ -98,7 +98,7 @@ SICALLBACK FabricDFG_Menu_CreateNullWithOp(XSI::CRef&)
   sel.Add(obj.GetRef());
 
   // execute command.
-  dfgTool_ExecuteCommand(L"dfgSoftimageOpApply", obj.GetFullName(), L"", true);
+  dfgTools::ExecuteCommand(L"dfgSoftimageOpApply", obj.GetFullName(), L"", true);
 
   // done.
   return CStatus::OK;
@@ -118,7 +118,7 @@ SICALLBACK FabricDFG_Menu_CreatePolymeshWithOp(XSI::CRef&)
   sel.Add(obj.GetRef());
 
   // execute command.
-  dfgTool_ExecuteCommand(L"dfgSoftimageOpApply", obj.GetFullName(), L"", true);
+  dfgTools::ExecuteCommand(L"dfgSoftimageOpApply", obj.GetFullName(), L"", true);
 
   // done.
   return CStatus::OK;
@@ -126,7 +126,7 @@ SICALLBACK FabricDFG_Menu_CreatePolymeshWithOp(XSI::CRef&)
 
 SICALLBACK FabricDFG_Menu_OnlineHelp(XSI::CRef&)
 {
-  dfgTool_ExecuteCommand(L"OpenNetView",L"http://docs.fabric-engine.com/FabricEngine/latest/HTML/" ,true ,(LONG)1);
+  dfgTools::ExecuteCommand(L"OpenNetView",L"http://docs.fabric-engine.com/FabricEngine/latest/HTML/" ,true ,(LONG)1);
   return CStatus::OK;
 }
 
@@ -165,7 +165,7 @@ SICALLBACK FabricDFG_Menu_ImportJSON(XSI::CRef&)
     { toolkit.MsgBox(L"The selection cannot be used for this operation.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
       return CStatus::OK; }
     CRefArray opRefs;
-    int numOps = dfgTool_GetRefsAtOps(obj, CString(L"dfgSoftimageOp"), opRefs);
+    int numOps = dfgTools::GetRefsAtOps(obj, CString(L"dfgSoftimageOp"), opRefs);
     if (numOps < 1)
     { toolkit.MsgBox(L"No valid custom operator found to perform this operation.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
       return CStatus::OK; }
@@ -180,12 +180,12 @@ SICALLBACK FabricDFG_Menu_ImportJSON(XSI::CRef&)
 
   // open file browser.
   CString fileName;
-  if (!dfgTool_FileBrowserJSON(false, fileName))
+  if (!dfgTools::FileBrowserJSON(false, fileName))
   { Application().LogMessage(L"aborted by user.", siWarningMsg);
     return CStatus::OK; }
 
   // execute command.
-  dfgTool_ExecuteCommand(L"dfgImportJSON", op.GetUniqueName(), fileName);
+  dfgTools::ExecuteCommand(L"dfgImportJSON", op.GetUniqueName(), fileName);
 
   // done.
   return CStatus::OK;
@@ -226,7 +226,7 @@ SICALLBACK FabricDFG_Menu_ExportJSON(XSI::CRef&)
     { toolkit.MsgBox(L"The selection cannot be used for this operation.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
       return CStatus::OK; }
     CRefArray opRefs;
-    int numOps = dfgTool_GetRefsAtOps(obj, CString(L"dfgSoftimageOp"), opRefs);
+    int numOps = dfgTools::GetRefsAtOps(obj, CString(L"dfgSoftimageOp"), opRefs);
     if (numOps < 1)
     { toolkit.MsgBox(L"No valid custom operator found to perform this operation.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
       return CStatus::OK; }
@@ -241,12 +241,12 @@ SICALLBACK FabricDFG_Menu_ExportJSON(XSI::CRef&)
 
   // open file browser.
   CString fileName;
-  if (!dfgTool_FileBrowserJSON(true, fileName))
+  if (!dfgTools::FileBrowserJSON(true, fileName))
   { Application().LogMessage(L"aborted by user.", siWarningMsg);
     return CStatus::OK; }
 
   // execute command.
-  dfgTool_ExecuteCommand(L"dfgExportJSON", op.GetUniqueName(), fileName);
+  dfgTools::ExecuteCommand(L"dfgExportJSON", op.GetUniqueName(), fileName);
 
   // done.
   return CStatus::OK;
@@ -254,7 +254,7 @@ SICALLBACK FabricDFG_Menu_ExportJSON(XSI::CRef&)
 
 SICALLBACK FabricDFG_Menu_LogStatus(XSI::CRef&)
 {
-  dfgTool_ExecuteCommand(L"dfgLogStatus");
+  dfgTools::ExecuteCommand(L"dfgLogStatus");
   return CStatus::OK;
 }
 

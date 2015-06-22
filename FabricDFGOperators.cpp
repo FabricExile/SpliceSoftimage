@@ -168,7 +168,7 @@ int dfgSoftimageOp_UpdateGridData_dfgPorts(CustomOperator &op)
   // get operator's user data and check if there are any DFG ports.
   std::vector<_portMapping> pmap;
   CString       err;
-  if (!GetOperatorPortMapping(op, pmap, err))
+  if (!dfgTools::GetOperatorPortMapping(op, pmap, err))
   { 
     // clear grid data.
     grid = GridData();
@@ -451,8 +451,8 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     else if (btnName == L"BtnPortsDefineTT")
     {
       CString err;
-      if (!GetOperatorPortMapping(op, _opUserData::s_portmap_newOp, err))
-      { Application().LogMessage(L"GetOperatorPortMapping() failed, err = \"" + err + L"\"", siErrorMsg);
+      if (!dfgTools::GetOperatorPortMapping(op, _opUserData::s_portmap_newOp, err))
+      { Application().LogMessage(L"dfgTools::GetOperatorPortMapping() failed, err = \"" + err + L"\"", siErrorMsg);
         _opUserData::s_portmap_newOp.clear();
         return CStatus::OK; }
       if (_opUserData::s_portmap_newOp.size())
@@ -479,9 +479,9 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
           }
         }
 
-        dfgTool_ExecuteCommand(L"dfgSoftimageOpApply", op.GetParent3DObject().GetFullName(), dfgJSON, true);
+        dfgTools::ExecuteCommand(L"dfgSoftimageOpApply", op.GetParent3DObject().GetFullName(), dfgJSON, true);
 
-        dfgTool_ExecuteCommand(L"DeleteObj", op.GetFullName());
+        dfgTools::ExecuteCommand(L"DeleteObj", op.GetFullName());
       }
     }
     else if (   btnName == L"BtnPortConnectPick"
@@ -521,7 +521,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
       {
         std::vector<_portMapping> tmp;
         CString err;
-        GetOperatorPortMapping(op, tmp, err);
+        dfgTools::GetOperatorPortMapping(op, tmp, err);
         for (int i=0;i<tmp.size();i++)
           if (selPortName == tmp[i].dfgPortName)
           {
@@ -584,7 +584,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
       if (   btnName == L"BtnPortConnectPick"
           || btnName == L"BtnPortConnectSelf")
       {
-        siClassID portClassID = GetSiClassIdFromResolvedDataType(pmap.dfgPortDataType);
+        siClassID portClassID = dfgTools::GetSiClassIdFromResolvedDataType(pmap.dfgPortDataType);
         if (targetRef.GetClassID() != portClassID)
         {
           bool err = true;
@@ -617,7 +617,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
           if (err)
           {
             CString emptyString;
-            Application().LogMessage(L"the picked element has the type \"" + targetRef.GetClassIDName() + L"\", but the port needs the type \"" + GetSiClassIdDescription(portClassID, emptyString) + L"\".", siErrorMsg);
+            Application().LogMessage(L"the picked element has the type \"" + targetRef.GetClassIDName() + L"\", but the port needs the type \"" + dfgTools::GetSiClassIdDescription(portClassID, emptyString) + L"\".", siErrorMsg);
             return CStatus::OK;
           }
         }
@@ -649,15 +649,15 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     }
     else if (btnName == L"BtnSelConnectAll")
     {
-      dfgTool_ExecuteCommand(L"dfgSelectConnected", op.GetUniqueName(), (LONG)0);
+      dfgTools::ExecuteCommand(L"dfgSelectConnected", op.GetUniqueName(), (LONG)0);
     }
     else if (btnName == L"BtnSelConnectIn")
     {
-      dfgTool_ExecuteCommand(L"dfgSelectConnected", op.GetUniqueName(), (LONG)-1);
+      dfgTools::ExecuteCommand(L"dfgSelectConnected", op.GetUniqueName(), (LONG)-1);
     }
     else if (btnName == L"BtnSelConnectOut")
     {
-      dfgTool_ExecuteCommand(L"dfgSelectConnected", op.GetUniqueName(), (LONG)+1);
+      dfgTools::ExecuteCommand(L"dfgSelectConnected", op.GetUniqueName(), (LONG)+1);
     }
     else if (btnName == L"BtnImportJSON")
     {
@@ -666,12 +666,12 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
 
       // open file browser.
       CString fileName;
-      if (!dfgTool_FileBrowserJSON(false, fileName))
+      if (!dfgTools::FileBrowserJSON(false, fileName))
       { Application().LogMessage(L"aborted by user.", siWarningMsg);
         return CStatus::OK; }
 
       // execute command.
-      dfgTool_ExecuteCommand(L"dfgImportJSON", op.GetUniqueName(), fileName);
+      dfgTools::ExecuteCommand(L"dfgImportJSON", op.GetUniqueName(), fileName);
 
       //
       PPGLayout oLayout = op.GetPPGLayout();
@@ -682,12 +682,12 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     {
       // open file browser.
       CString fileName;
-      if (!dfgTool_FileBrowserJSON(true, fileName))
+      if (!dfgTools::FileBrowserJSON(true, fileName))
       { Application().LogMessage(L"aborted by user.", siWarningMsg);
         return CStatus::OK; }
 
       // export.
-      dfgTool_ExecuteCommand(L"dfgExportJSON", op.GetUniqueName(), fileName);
+      dfgTools::ExecuteCommand(L"dfgExportJSON", op.GetUniqueName(), fileName);
     }
     else if (btnName == L"BtnUpdatePPG")
     {
@@ -789,7 +789,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     }
     else if (btnName == L"BtnLogDFGJSON")
     {
-      dfgTool_ExecuteCommand(L"dfgExportJSON", op.GetUniqueName(), L"console");
+      dfgTools::ExecuteCommand(L"dfgExportJSON", op.GetUniqueName(), L"console");
     }
   }
   else if (eventID == PPGEventContext::siTabChange)
@@ -1075,7 +1075,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
           else
           {
             CString emptyString;
-            Application().LogMessage(L"XSI output port \"" + outputPort.GetName() + L"\" has the unsupported classID \"" + GetSiClassIdDescription(outputPort.GetTarget().GetClassID(), emptyString) + L"\"", siWarningMsg);
+            Application().LogMessage(L"XSI output port \"" + outputPort.GetName() + L"\" has the unsupported classID \"" + dfgTools::GetSiClassIdDescription(outputPort.GetTarget().GetClassID(), emptyString) + L"\"", siWarningMsg);
           }
         }
       }

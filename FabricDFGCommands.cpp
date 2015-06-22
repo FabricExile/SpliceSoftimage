@@ -65,7 +65,6 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
   bool openPPG = args[2];
   LONG createSpliceOp = args[3];
 
-
   // log.
   Application().LogMessage(L"applying a  \"dfgSoftimageOp\" custom operator to \"" + objectName + L"\"", siVerboseMsg);
 
@@ -84,9 +83,9 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
   // create a SpliceOp before creating the dfgSoftimageOp?
   // (note: adding a SpliceOp to the object prevents things from going wrong when loading a scene into XSI that has one or more dfgSoftimageOp.)
   if (    createSpliceOp == 1
-      || (createSpliceOp == 2 && dfgTool_GetRefsAtOps(obj, CString(L"SpliceOp"), XSI::CRefArray()) == 0)  )
+      || (createSpliceOp == 2 && dfgTools::GetRefsAtOps(obj, CString(L"SpliceOp"), XSI::CRefArray()) == 0)  )
   {
-    dfgTool_ExecuteCommand(L"fabricSplice", L"newSplice", L"{\"targets\":\"" + objectName + L".kine.global\", \"portName\":\"matrix\", \"portMode\":\"io\"}");
+    dfgTools::ExecuteCommand(L"fabricSplice", L"newSplice", L"{\"targets\":\"" + objectName + L".kine.global\", \"portName\":\"matrix\", \"portMode\":\"io\"}");
   }
 
   // create the dfgSoftimageOp operator
@@ -148,7 +147,7 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
     Application().LogMessage(L"create port group and port for output port \"" + pmap.dfgPortName + L"\"", siInfoMsg);
 
     // get classID for the port.
-    siClassID classID = GetSiClassIdFromResolvedDataType(pmap.dfgPortDataType);
+    siClassID classID = dfgTools::GetSiClassIdFromResolvedDataType(pmap.dfgPortDataType);
     if (classID == siUnknownClassID)
     { Application().LogMessage(L"The DFG port \"" + pmap.dfgPortName + "\" cannot be exposed as a XSI Port (data type \"" + pmap.dfgPortDataType + "\" not yet supported)" , siWarningMsg);
       continue; }
@@ -176,7 +175,7 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
     Application().LogMessage(L"create port group and port for input port \"" + pmap.dfgPortName + L"\"", siInfoMsg);
 
     // get classID for the port.
-    siClassID classID = GetSiClassIdFromResolvedDataType(pmap.dfgPortDataType);
+    siClassID classID = dfgTools::GetSiClassIdFromResolvedDataType(pmap.dfgPortDataType);
     if (classID == siUnknownClassID)
     { Application().LogMessage(L"The DFG port \"" + pmap.dfgPortName + "\" cannot be exposed as a XSI Port (data type \"" + pmap.dfgPortDataType + "\" not yet supported)" , siWarningMsg);
       continue; }
@@ -202,7 +201,7 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
 
   // display operator's property page?
   if (openPPG)
-    dfgTool_ExecuteCommand(L"InspectObj", newOp.GetUniqueName());
+    dfgTools::ExecuteCommand(L"InspectObj", newOp.GetUniqueName());
 
   // done.
   _opUserData::s_portmap_newOp.clear();
