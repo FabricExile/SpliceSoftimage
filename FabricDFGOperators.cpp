@@ -479,9 +479,9 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
           }
         }
 
-        dfgTools::ExecuteCommand(L"dfgSoftimageOpApply", op.GetParent3DObject().GetFullName(), dfgJSON, true);
+        dfgTools::ExecuteCommand3(L"dfgSoftimageOpApply", op.GetParent3DObject().GetFullName(), dfgJSON, true);
 
-        dfgTools::ExecuteCommand(L"DeleteObj", op.GetFullName());
+        dfgTools::ExecuteCommand1(L"DeleteObj", op.GetFullName());
       }
     }
     else if (   btnName == L"BtnPortConnectPick"
@@ -649,21 +649,18 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     }
     else if (btnName == L"BtnSelConnectAll")
     {
-      dfgTools::ExecuteCommand(L"dfgSelectConnected", op.GetUniqueName(), (LONG)0);
+      dfgTools::ExecuteCommand2(L"dfgSelectConnected", op.GetUniqueName(), (LONG)0);
     }
     else if (btnName == L"BtnSelConnectIn")
     {
-      dfgTools::ExecuteCommand(L"dfgSelectConnected", op.GetUniqueName(), (LONG)-1);
+      dfgTools::ExecuteCommand2(L"dfgSelectConnected", op.GetUniqueName(), (LONG)-1);
     }
     else if (btnName == L"BtnSelConnectOut")
     {
-      dfgTools::ExecuteCommand(L"dfgSelectConnected", op.GetUniqueName(), (LONG)+1);
+      dfgTools::ExecuteCommand2(L"dfgSelectConnected", op.GetUniqueName(), (LONG)+1);
     }
     else if (btnName == L"BtnImportJSON")
     {
-      //LONG ret;
-      //toolkit.MsgBox(L"Importing DFG Presets is not possible via the property page.\n\nPlease use the menu \"Fabric:DFG -> Import JSON\"\nor the custom command \"dfgImportJSON\" instead.", siMsgOkOnly | siMsgInformation, "dfgSoftimageOp", ret);
-
       // open file browser.
       CString fileName;
       if (!dfgTools::FileBrowserJSON(false, fileName))
@@ -671,7 +668,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
         return CStatus::OK; }
 
       // execute command.
-      dfgTools::ExecuteCommand(L"dfgImportJSON", op.GetUniqueName(), fileName);
+      dfgTools::ExecuteCommand2(L"dfgImportJSON", op.GetUniqueName(), fileName);
 
       //
       PPGLayout oLayout = op.GetPPGLayout();
@@ -687,7 +684,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
         return CStatus::OK; }
 
       // export.
-      dfgTools::ExecuteCommand(L"dfgExportJSON", op.GetUniqueName(), fileName);
+      dfgTools::ExecuteCommand2(L"dfgExportJSON", op.GetUniqueName(), fileName);
     }
     else if (btnName == L"BtnUpdatePPG")
     {
@@ -703,7 +700,6 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
         _opUserData *pud = _opUserData::GetUserData(op.GetObjectID());
         if (!pud)                                 { Application().LogMessage(L"no user data found!",      siErrorMsg);  return CStatus::OK; }
         if (!pud->GetBaseInterface())             { Application().LogMessage(L"no base interface found!", siErrorMsg);  return CStatus::OK; }
-        // if (!pud->GetBaseInterface()->getBinding())  { Application().LogMessage(L"no graph found!",          siErrorMsg);  return CStatus::OK; }
 
         // log intro.
         Application().LogMessage(L"\"" + op.GetRef().GetAsText() + L"\" (ObjectID = " + CString(op.GetObjectID()) + L")", siInfoMsg);
@@ -789,7 +785,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     }
     else if (btnName == L"BtnLogDFGJSON")
     {
-      dfgTools::ExecuteCommand(L"dfgExportJSON", op.GetUniqueName(), L"console");
+      dfgTools::ExecuteCommand2(L"dfgExportJSON", op.GetUniqueName(), L"console");
     }
   }
   else if (eventID == PPGEventContext::siTabChange)
@@ -815,8 +811,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
                                                   return CStatus::OK; }
   if (!pud->GetBaseInterface()->getBinding())   { Application().LogMessage(L"no binding found!", siErrorMsg);
                                                   return CStatus::OK; }
-  // if (!pud->GetBaseInterface()->getExec())     { Application().LogMessage(L"no graph found!", siErrorMsg);
-  //                                                 return CStatus::OK; }
+
   // init log.
   CString functionName = L"dfgSoftimageOp_Update(opObjID = " + CString(op.GetObjectID()) + L")";
   const bool verbose = (bool)ctxt.GetParameterValue(L"verbose");

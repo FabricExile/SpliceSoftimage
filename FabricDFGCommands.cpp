@@ -85,7 +85,7 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
   if (    createSpliceOp == 1
       || (createSpliceOp == 2 && dfgTools::GetRefsAtOps(obj, CString(L"SpliceOp"), XSI::CRefArray()) == 0)  )
   {
-    dfgTools::ExecuteCommand(L"fabricSplice", L"newSplice", L"{\"targets\":\"" + objectName + L".kine.global\", \"portName\":\"matrix\", \"portMode\":\"io\"}");
+    dfgTools::ExecuteCommand2(L"fabricSplice", L"newSplice", L"{\"targets\":\"" + objectName + L".kine.global\", \"portName\":\"matrix\", \"portMode\":\"io\"}");
   }
 
   // create the dfgSoftimageOp operator
@@ -201,7 +201,7 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
 
   // display operator's property page?
   if (openPPG)
-    dfgTools::ExecuteCommand(L"InspectObj", newOp.GetUniqueName());
+    dfgTools::ExecuteCommand1(L"InspectObj", newOp.GetUniqueName());
 
   // done.
   _opUserData::s_portmap_newOp.clear();

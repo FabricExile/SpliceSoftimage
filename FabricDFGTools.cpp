@@ -27,23 +27,20 @@
 
 using namespace XSI;
 
-// execute an XSI command.
-// params:  commandName   name of the command to execute.
-//          arg1234..     command arguments.
-XSI::CStatus dfgTools::ExecuteCommand(XSI::CString commandName)
+XSI::CStatus dfgTools::ExecuteCommand0(XSI::CString commandName)
 {
   CValueArray args;
   CValue value;
   return Application().ExecuteCommand(commandName, args, value);
 }
-XSI::CStatus dfgTools::ExecuteCommand(XSI::CString commandName, XSI::CValue arg1)
+XSI::CStatus dfgTools::ExecuteCommand1(XSI::CString commandName, XSI::CValue arg1)
 {
   CValueArray args;
   args.Add(arg1);
   CValue value;
   return Application().ExecuteCommand(commandName, args, value);
 }
-XSI::CStatus dfgTools::ExecuteCommand(XSI::CString commandName, XSI::CValue arg1, XSI::CValue arg2)
+XSI::CStatus dfgTools::ExecuteCommand2(XSI::CString commandName, XSI::CValue arg1, XSI::CValue arg2)
 {
   CValueArray args;
   args.Add(arg1);
@@ -51,7 +48,7 @@ XSI::CStatus dfgTools::ExecuteCommand(XSI::CString commandName, XSI::CValue arg1
   CValue value;
   return Application().ExecuteCommand(commandName, args, value);
 }
-XSI::CStatus dfgTools::ExecuteCommand(XSI::CString commandName, XSI::CValue arg1, XSI::CValue arg2, XSI::CValue arg3)
+XSI::CStatus dfgTools::ExecuteCommand3(XSI::CString commandName, XSI::CValue arg1, XSI::CValue arg2, XSI::CValue arg3)
 {
   CValueArray args;
   args.Add(arg1);
@@ -60,7 +57,7 @@ XSI::CStatus dfgTools::ExecuteCommand(XSI::CString commandName, XSI::CValue arg1
   CValue value;
   return Application().ExecuteCommand(commandName, args, value);
 }
-XSI::CStatus dfgTools::ExecuteCommand(XSI::CString commandName, XSI::CValue arg1, XSI::CValue arg2, XSI::CValue arg3, XSI::CValue arg4)
+XSI::CStatus dfgTools::ExecuteCommand4(XSI::CString commandName, XSI::CValue arg1, XSI::CValue arg2, XSI::CValue arg3, XSI::CValue arg4)
 {
   CValueArray args;
   args.Add(arg1);
@@ -71,10 +68,6 @@ XSI::CStatus dfgTools::ExecuteCommand(XSI::CString commandName, XSI::CValue arg1
   return Application().ExecuteCommand(commandName, args, value);
 }
 
-// opens a file browser for "*.dfg.json" files.
-// params:  isSave        true: save file browser, false: load file browser.
-//          out_filepath  complete filepath or "" on abort or error.
-// return: true on success, false on abort or error.
 bool dfgTools::FileBrowserJSON(bool isSave, XSI::CString &out_filepath)
 {
   // init output.
@@ -119,9 +112,6 @@ bool dfgTools::FileBrowserJSON(bool isSave, XSI::CString &out_filepath)
   return (out_filepath.Length() > 0);
 }
 
-// for a given X3DObject: fills the CRef array out_refs with all refs
-// at in_opName custom operators that belong to the X3DObject.
-// return value: the amount of custom operators that were found.
 int dfgTools::GetRefsAtOps(XSI::X3DObject &in_obj, XSI::CString &in_opName, XSI::CRefArray &out_refs)
 {
   // init output.
@@ -146,8 +136,6 @@ int dfgTools::GetRefsAtOps(XSI::X3DObject &in_obj, XSI::CString &in_opName, XSI:
   return out_refs.GetCount();
 }
 
-// for a given custom operator: allocates and fills out_pmap based on the op's DFG, ports, etc.
-// returns: true on success, otherwise false plus an error description in out_err.
 bool dfgTools::GetOperatorPortMapping(XSI::CRef &in_op, std::vector<_portMapping> &out_pmap, XSI::CString &out_err)
 {
   // init output.
@@ -287,7 +275,6 @@ bool dfgTools::GetOperatorPortMapping(XSI::CRef &in_op, std::vector<_portMapping
   return true;
 }
 
-// returns the matching siClassID for a given DFG resolved data type.
 XSI::siClassID dfgTools::GetSiClassIdFromResolvedDataType(const XSI::CString &resDataType)
 {
   if (   resDataType == L"Boolean"
@@ -312,7 +299,6 @@ XSI::siClassID dfgTools::GetSiClassIdFromResolvedDataType(const XSI::CString &re
   return siUnknownClassID;  // no match.
 }
 
-// gets the description of a siCLassID.
 XSI::CString &dfgTools::GetSiClassIdDescription(const XSI::siClassID in_siClassID, XSI::CString &out_description)
 {
   switch (in_siClassID)

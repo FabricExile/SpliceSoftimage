@@ -78,7 +78,7 @@ SICALLBACK FabricDFG_Menu_CreateDFGOp(XSI::CRef&)
 
   // execute command for all elements in targetObjects.
   for (int i=0;i<targetObjects.GetCount();i++)
-    dfgTools::ExecuteCommand(L"dfgSoftimageOpApply", targetObjects[i], L"", true);
+    dfgTools::ExecuteCommand3(L"dfgSoftimageOpApply", targetObjects[i], L"", true);
 
   // done.
   return CStatus::OK;
@@ -98,7 +98,7 @@ SICALLBACK FabricDFG_Menu_CreateNullWithOp(XSI::CRef&)
   sel.Add(obj.GetRef());
 
   // execute command.
-  dfgTools::ExecuteCommand(L"dfgSoftimageOpApply", obj.GetFullName(), L"", true);
+  dfgTools::ExecuteCommand3(L"dfgSoftimageOpApply", obj.GetFullName(), L"", true);
 
   // done.
   return CStatus::OK;
@@ -118,7 +118,7 @@ SICALLBACK FabricDFG_Menu_CreatePolymeshWithOp(XSI::CRef&)
   sel.Add(obj.GetRef());
 
   // execute command.
-  dfgTools::ExecuteCommand(L"dfgSoftimageOpApply", obj.GetFullName(), L"", true);
+  dfgTools::ExecuteCommand3(L"dfgSoftimageOpApply", obj.GetFullName(), L"", true);
 
   // done.
   return CStatus::OK;
@@ -126,7 +126,7 @@ SICALLBACK FabricDFG_Menu_CreatePolymeshWithOp(XSI::CRef&)
 
 SICALLBACK FabricDFG_Menu_OnlineHelp(XSI::CRef&)
 {
-  dfgTools::ExecuteCommand(L"OpenNetView",L"http://docs.fabric-engine.com/FabricEngine/latest/HTML/" ,true ,(LONG)1);
+  dfgTools::ExecuteCommand3(L"OpenNetView",L"http://docs.fabric-engine.com/FabricEngine/latest/HTML/" ,true ,(LONG)1);
   return CStatus::OK;
 }
 
@@ -185,7 +185,7 @@ SICALLBACK FabricDFG_Menu_ImportJSON(XSI::CRef&)
     return CStatus::OK; }
 
   // execute command.
-  dfgTools::ExecuteCommand(L"dfgImportJSON", op.GetUniqueName(), fileName);
+  dfgTools::ExecuteCommand2(L"dfgImportJSON", op.GetUniqueName(), fileName);
 
   // done.
   return CStatus::OK;
@@ -246,7 +246,7 @@ SICALLBACK FabricDFG_Menu_ExportJSON(XSI::CRef&)
     return CStatus::OK; }
 
   // execute command.
-  dfgTools::ExecuteCommand(L"dfgExportJSON", op.GetUniqueName(), fileName);
+  dfgTools::ExecuteCommand2(L"dfgExportJSON", op.GetUniqueName(), fileName);
 
   // done.
   return CStatus::OK;
@@ -254,7 +254,7 @@ SICALLBACK FabricDFG_Menu_ExportJSON(XSI::CRef&)
 
 SICALLBACK FabricDFG_Menu_LogStatus(XSI::CRef&)
 {
-  dfgTools::ExecuteCommand(L"dfgLogStatus");
+  dfgTools::ExecuteCommand0(L"dfgLogStatus");
   return CStatus::OK;
 }
 
