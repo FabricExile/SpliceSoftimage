@@ -120,9 +120,9 @@ bool dfgTool_FileBrowserJSON(bool isSave, XSI::CString &out_filepath)
 }
 
 // for a given X3DObject: fills the CRef array out_refs with all refs
-// at "dfgSoftimageOp" custom operators that belong to the X3DObject.
+// at in_opName custom operators that belong to the X3DObject.
 // return value: the amount of custom operators that were found.
-int dfgTool_GetRefsAtOps(XSI::X3DObject &in_obj, XSI::CRefArray &out_refs)
+int dfgTool_GetRefsAtOps(XSI::X3DObject &in_obj, XSI::CString &in_opName, XSI::CRefArray &out_refs)
 {
   // init output.
   out_refs.Clear();
@@ -134,7 +134,7 @@ int dfgTool_GetRefsAtOps(XSI::X3DObject &in_obj, XSI::CRefArray &out_refs)
     for (int i=0;i<refs.GetCount();i++)
     {
       CustomOperator op(refs[i]);
-      if (   op.GetType() == "dfgSoftimageOp"
+      if (   op.GetType() == in_opName
           && op.GetParent3DObject().GetUniqueName() == in_obj.GetUniqueName())
       {
         out_refs.Add(refs[i]);

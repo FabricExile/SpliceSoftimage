@@ -46,6 +46,7 @@ SICALLBACK dfgSoftimageOpApply_Init(CRef &in_ctxt)
   oArgs.Add(L"ObjectName", CString());
   oArgs.Add(L"dfgJSON", CString());
   oArgs.Add(L"OpenPPG", false);
+  oArgs.Add(L"CreateSpliceOp", 2L);  // 0: no, 1: yes, 2: yes, but only if the object has no SpliceOp yet.
 
   return CStatus::OK;
 }
@@ -62,6 +63,8 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
   CString objectName(args[0]);
   CString dfgJSON(args[1]);
   bool openPPG = args[2];
+  LONG createSpliceOp = args[3];
+
 
   // log.
   Application().LogMessage(L"applying a  \"dfgSoftimageOp\" custom operator to \"" + objectName + L"\"", siVerboseMsg);
@@ -78,9 +81,11 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
     _opUserData::s_portmap_newOp.clear();
     return CStatus::OK; }
 
-  // we also add a SpliceOp to the object, so that things don't go wrong when loading a scene.
+  // create a SpliceOp before creating the dfgSoftimageOp?
+  // (note: adding a SpliceOp to the object prevents things from going wrong when loading a scene into XSI that has one or more dfgSoftimageOp.)
+  if (    createSpliceOp == 1
+      || (createSpliceOp == 2 && dfgTool_GetRefsAtOps(obj, CString(L"SpliceOp"), XSI::CRefArray()) == 0)  )
   {
-    // hmathee: What is this for?
     dfgTool_ExecuteCommand(L"fabricSplice", L"newSplice", L"{\"targets\":\"" + objectName + L".kine.global\", \"portName\":\"matrix\", \"portMode\":\"io\"}");
   }
 

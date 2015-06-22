@@ -165,7 +165,7 @@ SICALLBACK FabricDFG_Menu_ImportJSON(XSI::CRef&)
     { toolkit.MsgBox(L"The selection cannot be used for this operation.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
       return CStatus::OK; }
     CRefArray opRefs;
-    int numOps = dfgTool_GetRefsAtOps(obj, opRefs);
+    int numOps = dfgTool_GetRefsAtOps(obj, CString(L"dfgSoftimageOp"), opRefs);
     if (numOps < 1)
     { toolkit.MsgBox(L"No valid custom operator found to perform this operation.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
       return CStatus::OK; }
@@ -226,7 +226,7 @@ SICALLBACK FabricDFG_Menu_ExportJSON(XSI::CRef&)
     { toolkit.MsgBox(L"The selection cannot be used for this operation.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
       return CStatus::OK; }
     CRefArray opRefs;
-    int numOps = dfgTool_GetRefsAtOps(obj, opRefs);
+    int numOps = dfgTool_GetRefsAtOps(obj, CString(L"dfgSoftimageOp"), opRefs);
     if (numOps < 1)
     { toolkit.MsgBox(L"No valid custom operator found to perform this operation.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
       return CStatus::OK; }
