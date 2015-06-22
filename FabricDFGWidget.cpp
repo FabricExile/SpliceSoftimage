@@ -13,8 +13,8 @@
 #include <QtGui/QPalette>
 
 #ifdef _WIN32
-# include <windows.h>
-# include <io.h>
+  #include <windows.h>
+  #include <io.h>
 #endif
 
 #include <stdio.h>

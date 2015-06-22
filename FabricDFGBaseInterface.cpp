@@ -473,22 +473,22 @@ int BaseInterface::GetArgValueString(FabricCore::DFGBinding &binding, char const
 
       if (GetArgValueInteger(binding, argName, i, true) == 0)
       {
-#ifdef _WIN32        
-        sprintf_s(s, sizeof(s), "%ld", i);
-#else
-        snprintf(s, sizeof(s), "%ld", i);
-#endif
+        #ifdef _WIN32
+          sprintf_s(s, sizeof(s), "%ld", i);
+        #else
+          snprintf(s, sizeof(s), "%ld", i);
+        #endif
         out = s;
         return 0;
       }
 
       if (GetArgValueFloat(binding, argName, f, true) == 0)
       {
-#ifdef _WIN32        
-        sprintf_s(s, sizeof(s), "%f", f);
-#else
-        snprintf(s, sizeof(s), "%f", f);
-#endif
+        #ifdef _WIN32
+          sprintf_s(s, sizeof(s), "%f", f);
+        #else
+          snprintf(s, sizeof(s), "%f", f);
+        #endif
         out = s;
         return 0;
       }
@@ -851,11 +851,11 @@ int BaseInterface::GetArgValueMat44(FabricCore::DFGBinding &binding, char const 
                                               FabricCore::RTVal rtRow;
                                               for (int i = 0; i < 4; i++)
                                               {
-#ifdef _WIN32        
-                                                sprintf_s(member, sizeof(member), "row%ld", i);
-#else
-                                                snprintf(member, sizeof(member), "row%ld", i);
-#endif
+                                                #ifdef _WIN32
+                                                  sprintf_s(member, sizeof(member), "row%ld", i);
+                                                #else
+                                                  snprintf(member, sizeof(member), "row%ld", i);
+                                                #endif
                                                 rtRow = rtval.maybeGetMember(member);
                                                 out.push_back(rtRow.maybeGetMember("x").getFloat32());
                                                 out.push_back(rtRow.maybeGetMember("y").getFloat32());
