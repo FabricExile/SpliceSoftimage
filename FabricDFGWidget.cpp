@@ -48,96 +48,95 @@ class FabricDFGWidget : public DFG::DFGCombinedWidget
 
 struct _windowData
 {
-  QApplication    *qtApp;
   QBoxLayout      *qtLayout;
   FabricDFGWidget *qtDFGWidget;
   QDialog         *qtDialog;
 
   _windowData(void)
   {
-    qtApp         = NULL;
     qtDialog      = NULL;
     qtDFGWidget   = NULL;
     qtLayout      = NULL;
   }
-
-  ~_windowData()
-  {
-    if (qtDFGWidget)  delete qtDFGWidget;
-    if (qtApp)        delete qtApp;
-  }
 };
 
-bool g_canvasIsOpen = false;  // global flag to ensure that not more than one Canvas is open.
+QApplication *g_qtApp         = NULL;   // global pointer at Qt application.
+bool          g_canvasIsOpen  = false;  // global flag to ensure that not more than one Canvas is open.
 
 void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
 {
-  // canvas already open?
-  if (g_canvasIsOpen)           return;
+  // if necessary allocate g_qtApp.
+  if (!g_qtApp)
+  {
+    int argc = 0;
+    g_qtApp = new QApplication(argc, NULL);
+  }
 
   // check.
+  if ( g_canvasIsOpen)          return;
+  if (!g_qtApp)                 return;
   if (!pud)                     return;
   if (!pud->GetBaseInterface()) return;
 
-  // set global flag to block any further canvases.
+  // set global flag to block any further canvas.
   g_canvasIsOpen = true;
 
   // declare and fill window data structure.
-  _windowData *winData = new _windowData;
+  _windowData winData;
   try
   {
-    int argc = 0;
-    winData->qtApp         = new QApplication    (argc, NULL);
-    winData->qtDialog      = new QDialog         (NULL);
-    winData->qtDFGWidget   = new FabricDFGWidget (winData->qtDialog);
-    winData->qtLayout      = new QVBoxLayout     (winData->qtDialog);
+    winData.qtDialog      = new QDialog         (NULL);
+    winData.qtDFGWidget   = new FabricDFGWidget (winData.qtDialog);
+    winData.qtLayout      = new QVBoxLayout     (winData.qtDialog);
 
-    winData->qtDialog->setWindowTitle(winTitle ? winTitle : "Canvas");
-    winData->qtLayout->addWidget(winData->qtDFGWidget); 
-    winData->qtLayout->setContentsMargins(0, 0, 0, 0);
+    winData.qtDialog->setWindowTitle(winTitle ? winTitle : "Canvas");
+    winData.qtLayout->addWidget(winData.qtDFGWidget); 
+    winData.qtLayout->setContentsMargins(0, 0, 0, 0);
 
     // for some reason setting the qtDialog to modal doesn't work.
-    /*winData->qtDialog->setWindowModality(Qt::WindowModal);*/
+    /*winData.qtDialog->setWindowModality(Qt::WindowModal);*/
 
     // parenting the qtDialog to the Softimage main window results in a weird mouse position offset
     // => as a temporary workaround, we set the qtDialog to top most.
     if (windowIsTopMost)
-      winData->qtDialog->setWindowFlags(Qt::WindowStaysOnTopHint); // SetParent((HWND)winData->qtDialog->winId(), (HWND)Application().GetDesktop().GetApplicationWindowHandle());
+      winData.qtDialog->setWindowFlags(Qt::WindowStaysOnTopHint); // SetParent((HWND)winData.qtDialog->winId(), (HWND)Application().GetDesktop().GetApplicationWindowHandle());
 
     // init the DFG widget.
     DFG::DFGConfig config;
-    {
-      float f = 0.8f / 255.0f;
-
-      config.graphConfig.useOpenGL                = false;
-
-      config.graphConfig.headerBackgroundColor    . setRgbF(f * 113, f * 112, f * 111);
-      config.graphConfig.mainPanelBackgroundColor . setRgbF(f * 127, f * 127, f * 127);
-      config.graphConfig.sidePanelBackgroundColor . setRgbF(f * 171, f * 168, f * 166);
-
-      FabricCore::DFGExec exec = pud->GetBaseInterface()->getBinding().getExec();
-
-      winData->qtDFGWidget->init(*pud->GetBaseInterface()->getClient(),
-                                  pud->GetBaseInterface()->getManager(),
-                                  pud->GetBaseInterface()->getHost(),
-                                  pud->GetBaseInterface()->getBinding(),
-                                  exec,
-                                  pud->GetBaseInterface()->getStack(),
-                                  false,
-                                  config
-                                );
-    }
-
-    // show/execute Qt dialog.
-    winData->qtDialog->exec();
+    float f = 0.8f / 255.0f;
+    config.graphConfig.useOpenGL                = false;
+    config.graphConfig.headerBackgroundColor    . setRgbF(f * 113, f * 112, f * 111);
+    config.graphConfig.mainPanelBackgroundColor . setRgbF(f * 127, f * 127, f * 127);
+    config.graphConfig.sidePanelBackgroundColor . setRgbF(f * 171, f * 168, f * 166);
+    FabricCore::DFGExec exec = pud->GetBaseInterface()->getBinding().getExec();
+    winData.qtDFGWidget->init(*pud->GetBaseInterface()->getClient(),
+                               pud->GetBaseInterface()->getManager(),
+                               pud->GetBaseInterface()->getHost(),
+                               pud->GetBaseInterface()->getBinding(),
+                               exec,
+                               pud->GetBaseInterface()->getStack(),
+                               false,
+                               config
+                             );
   }
   catch(FabricCore::Exception e)
   {
     feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
   }
 
+  // show/execute Qt dialog.
+  {
+    winData.qtDialog->exec();
+
+    //winData.qtDialog->show();
+    //while (winData.qtDialog->isVisible())
+    //{
+    //  winData.qtApp->processEvents();
+    //}
+  }
+
   // clean up.
-  delete winData;
+  //if (winData.qtDFGWidget)   delete winData.qtDFGWidget;
 
   // done.
   g_canvasIsOpen = false;
