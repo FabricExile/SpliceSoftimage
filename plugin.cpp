@@ -75,6 +75,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     in_reg.RegisterCommand(L"dfgSoftimageOpApply",  L"dfgSoftimageOpApply");
     in_reg.RegisterCommand(L"dfgImportJSON",        L"dfgImportJSON");
     in_reg.RegisterCommand(L"dfgExportJSON",        L"dfgExportJSON");
+    in_reg.RegisterCommand(L"dfgOpenCanvas",        L"dfgOpenCanvas");
     in_reg.RegisterCommand(L"dfgSelectConnected",   L"dfgSelectConnected");
     in_reg.RegisterCommand(L"dfgLogStatus",         L"dfgLogStatus");
 

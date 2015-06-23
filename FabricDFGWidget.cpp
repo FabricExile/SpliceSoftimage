@@ -70,7 +70,7 @@ struct _windowData
 
 bool g_canvasIsOpen = false;  // global flag to ensure that not more than one Canvas is open.
 
-void OpenCanvas(_opUserData *pud, const char *winTitle)
+void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
 {
   // canvas already open?
   if (g_canvasIsOpen)   return;
@@ -101,7 +101,8 @@ void OpenCanvas(_opUserData *pud, const char *winTitle)
 
     // parenting the qtDialog to the Softimage main window results in a weird mouse position offset
     // => as a temporary workaround, we set the qtDialog to top most.
-    winData->qtDialog->setWindowFlags(Qt::WindowStaysOnTopHint); // SetParent((HWND)winData->qtDialog->winId(), (HWND)Application().GetDesktop().GetApplicationWindowHandle());
+    if (windowIsTopMost)
+      winData->qtDialog->setWindowFlags(Qt::WindowStaysOnTopHint); // SetParent((HWND)winData->qtDialog->winId(), (HWND)Application().GetDesktop().GetApplicationWindowHandle());
 
     // init the DFG widget.
     DFG::DFGConfig config;
