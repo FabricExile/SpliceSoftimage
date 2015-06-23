@@ -73,7 +73,7 @@ bool g_canvasIsOpen = false;  // global flag to ensure that not more than one Ca
 void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
 {
   // canvas already open?
-  if (g_canvasIsOpen)   return;
+  if (g_canvasIsOpen)           return;
 
   // check.
   if (!pud)                     return;
@@ -123,7 +123,7 @@ void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
                                   pud->GetBaseInterface()->getBinding(),
                                   exec,
                                   pud->GetBaseInterface()->getStack(),
-                                  true,
+                                  false,
                                   config
                                 );
     }

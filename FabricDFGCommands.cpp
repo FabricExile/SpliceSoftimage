@@ -425,6 +425,7 @@ SICALLBACK dfgOpenCanvas_Init(CRef &in_ctxt)
 
   ArgumentArray oArgs = oCmd.GetArguments();
   oArgs.Add(L"OperatorName", CString());
+  oArgs.Add(L"makeWindowTopMost", true);
 
   return CStatus::OK;
 }
@@ -434,12 +435,11 @@ SICALLBACK dfgOpenCanvas_Execute(CRef &in_ctxt)
   // init.
   Context ctxt(in_ctxt);
   CValueArray args = ctxt.GetAttribute(L"Arguments");
-  if (args.GetCount() < 1 || CString(args[0]).IsEmpty())
+  if (args.GetCount() < 2 || CString(args[0]).IsEmpty())
   { Application().LogMessage(L"open canvas failed: empty or missing argument(s)", siErrorMsg);
     return CStatus::OK; }
   CString operatorName(args[0]);
-  CString filePath = args[1];
-  const bool onlyLog = filePath.IsEqualNoCase(L"console");
+  const bool makeWindowTopMost = args[1];
 
   // set ref at operator.
   CRef ref;
@@ -467,7 +467,7 @@ SICALLBACK dfgOpenCanvas_Execute(CRef &in_ctxt)
   // open canvas.
   Application().LogMessage(L"opening canvas for \"" + operatorName + L"\"", siVerboseMsg);
   CString title = L"Canvas - " + op.GetParent3DObject().GetName();
-  OpenCanvas(pud, title.GetAsciiString(), true);
+  OpenCanvas(pud, title.GetAsciiString(), makeWindowTopMost);
   Application().LogMessage(L"closing canvas", siVerboseMsg);
 
   // done.
