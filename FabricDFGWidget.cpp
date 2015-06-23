@@ -118,13 +118,13 @@ void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
       FabricCore::DFGExec exec = pud->GetBaseInterface()->getBinding().getExec();
 
       winData->qtDFGWidget->init(*pud->GetBaseInterface()->getClient(),
-                                 pud->GetBaseInterface()->getManager(),
-                                 pud->GetBaseInterface()->getHost(),
-                                 pud->GetBaseInterface()->getBinding(),
-                                 exec,
-                                 pud->GetBaseInterface()->getStack(),
-                                 true,
-                                 config
+                                  pud->GetBaseInterface()->getManager(),
+                                  pud->GetBaseInterface()->getHost(),
+                                  pud->GetBaseInterface()->getBinding(),
+                                  exec,
+                                  pud->GetBaseInterface()->getStack(),
+                                  true,
+                                  config
                                 );
     }
 
