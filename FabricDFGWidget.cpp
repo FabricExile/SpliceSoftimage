@@ -126,13 +126,23 @@ void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
 
   // show/execute Qt dialog.
   {
-    winData.qtDialog->exec();
+    const bool useExec = true;
 
-    //winData.qtDialog->show();
-    //while (winData.qtDialog->isVisible())
-    //{
-    //  winData.qtApp->processEvents();
-    //}
+    // use the widget's exec() function.
+    if (useExec)
+    {
+      winData.qtDialog->exec();
+    }
+
+    // use a manual loop.
+    else
+    {
+      winData.qtDialog->show();
+      while (winData.qtDialog->isVisible())
+      {
+        g_qtApp->processEvents();
+      }
+    }
   }
 
   // clean up.
