@@ -902,7 +902,14 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
               Application().LogMessage(L"input PolygonMesh ports not yet implemented.", siWarningMsg);
               if (xsiPortValue.m_t == CValue::siRef)
               {
+
+
                 // todo: set DFG port's polygon mesh from XSI port's polygon mesh.
+
+                // WIP: use the function dfgTools::GetGeometryFromX3DObject() to get the object's geometry
+                //      and then set the DFG port's value.
+
+
               }
             }
           }

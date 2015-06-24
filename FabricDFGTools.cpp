@@ -1,6 +1,7 @@
-#include <xsi_application.h>
+#pragma warning (disable : 4127)  // conditional expression is constant
+#pragma warning (disable : 4714)  // marked as __forceinline not inlined
+#pragma warning (disable : 4244)  // conversion ... possible loss of data
 #include <xsi_context.h>
-#include <xsi_status.h>
 #include <xsi_command.h>
 #include <xsi_argument.h>
 #include <xsi_uitoolkit.h>
@@ -8,24 +9,43 @@
 #include <xsi_customoperator.h>
 #include <xsi_operatorcontext.h>
 #include <xsi_comapihandler.h>
-#include <xsi_project.h>
 #include <xsi_port.h>
-#include <xsi_inputport.h>
 #include <xsi_outputport.h>
 #include <xsi_portgroup.h>
 #include <xsi_inputport.h>
 #include <xsi_factory.h>
-#include <xsi_model.h>
 #include <xsi_status.h>
 #include <xsi_parameter.h>
 #include <xsi_x3dobject.h>
+#include <xsi_application.h>
+#include <xsi_doublearray.h>
+#include <xsi_factory.h>
+#include <xsi_geometryaccessor.h>
+#include <xsi_iceattribute.h>
+#include <xsi_iceattributedataarray.h>
+#include <xsi_iceattributedataarray2D.h>
 #include <xsi_kinematics.h>
+#include <xsi_math.h>
+#include <xsi_camera.h>
+#include <xsi_light.h>
+#include <xsi_model.h>
+#include <xsi_pluginregistrar.h>
+#include <xsi_point.h>
+#include <xsi_polygonmesh.h>
+#include <xsi_ppglayout.h>
+#include <xsi_primitive.h>
+#include <xsi_project.h>
+#include <xsi_scene.h>
+#include <xsi_shader.h>
+#include <xsi_transformation.h>
+#include <xsi_utils.h>
 
 #include "FabricDFGPlugin.h"
 #include "FabricDFGOperators.h"
 #include "FabricDFGTools.h"
 
 using namespace XSI;
+using namespace XSI::MATH;
 
 XSI::CStatus dfgTools::ExecuteCommand0(XSI::CString commandName)
 {
@@ -558,3 +578,578 @@ bool dfgTools::FileExists(const char *filePath)
   }
   return false;
 }
+
+bool dfgTools::GetGeometryFromX3DObject(const XSI::X3DObject &in_x3DObj, double in_currFrame, bool in_useGlobalSRT, XSI::CDoubleArray &out_vertexPositions, XSI::CLongArray &out_polyVIndices, XSI::CLongArray &out_polyVCount, LONG &out_numNodes, bool &inout_useVertMotions, XSI::CFloatArray &out_vertMotions, bool noWarnMotions, bool &inout_useNodeNormals, bool in_useNormals, XSI::CFloatArray &out_nodeNormals, bool noWarnNormals, bool &inout_useNodeUVWs, XSI::CFloatArray &out_nodeUVWs, bool noWarnUVWs, bool &inout_useNodeColors, XSI::CFloatArray &out_nodeColors, bool noWarnColors, XSI::CString &in_nameMotions, XSI::CString &in_nameNormals, XSI::CString &in_nameUVWs, XSI::CString &in_nameColors, XSI::CString &errmsg, XSI::CString &wrnmsg)
+{
+    // init.
+    errmsg = L"";
+    wrnmsg = L"";
+
+    // invalid input?
+    if (!in_x3DObj.IsValid())
+    {  errmsg = L"Input Geometry not found.";
+      return false;  }
+      
+    // get the current global transformation.
+    CTransformation glbTransCurr( CTransformation(in_x3DObj.GetKinematics().GetGlobal().GetTransform(in_currFrame)) );
+
+    // get the global transformation of the next frame (if inout_useVertMotions != 0).
+    CTransformation glbTransNext;
+    if (inout_useVertMotions)  glbTransNext = CTransformation(in_x3DObj.GetKinematics().GetGlobal().GetTransform(in_currFrame + 1));
+    else            glbTransNext = glbTransCurr;
+
+    // get the polygon mesh.
+    PolygonMesh pmesh = in_x3DObj.GetActivePrimitive(in_currFrame).GetGeometry(in_currFrame, siConstructionModeSecondaryShape);
+    if (!pmesh.IsValid())
+    {  errmsg = L"GetActivePrimitive( ).GetGeometry( ) failed.";
+      return false;  }
+
+    // get the geometry accessor.
+    CGeometryAccessor ga = pmesh.GetGeometryAccessor(siConstructionModeSecondaryShape);
+    if (!ga.IsValid())
+    {  errmsg = L"GetGeometryAccessor() failed.";
+      return false;  }
+
+    // get the vertex local positions.
+    if (ga.GetVertexPositions(out_vertexPositions) != CStatus::OK)
+    {  errmsg = L"GetVertexPositions() failed.";
+      return false;  }
+    LONG numVertFlat = out_vertexPositions.GetCount();
+    LONG numVert   = numVertFlat / 3;
+
+    // get the polygons' vertex indices and count.
+    if (ga.GetVertexIndices(out_polyVIndices) != CStatus::OK)
+    {  errmsg = L"GetVertexIndices() failed.";
+      return false;  }
+    if (ga.GetPolygonVerticesCount(out_polyVCount) != CStatus::OK)
+    {  errmsg = L"GetPolygonVerticesCount() failed.";
+      return false;  }
+
+    // get the polygon node indices.
+    CLongArray nodeIndices(0);
+    if (ga.GetNodeIndices(nodeIndices) != CStatus::OK)
+    {  errmsg = L"GetNodeIndices() failed.";
+      return false;  }
+
+    // set out_numNodes and check whether the sum of out_polyVCount is equal out_numNodes.
+    out_numNodes = nodeIndices.GetCount();
+    {
+      LONG polyVCountSum = 0;
+      LONG *nc = (LONG *)out_polyVCount.GetArray();
+      for (LONG i=0;i<out_polyVCount.GetCount();i++,nc++)
+        polyVCountSum += *nc;
+      if (polyVCountSum != out_numNodes)
+      {  errmsg = L"polyVCountSum != out_numNodes.";
+        return false;  }
+    }
+
+    // get the motion vectors.
+    if (inout_useVertMotions)
+    {
+      // set tmpName and attempt to get ICE attribute.
+      ICEAttribute attrib;
+      CString tmpName;
+      if (in_nameMotions != L"")
+      {
+        tmpName = in_nameMotions;
+        attrib = pmesh.GetICEAttributeFromName(tmpName);
+      }
+      else
+      {
+        CRefArray ra = pmesh.GetICEAttributes();
+        bool found = false;
+        tmpName = L"viMotion";
+        for (LONG i=0;i<ra.GetCount();i++)
+        {
+          found = (ra.GetAsText().ReverseFindString(tmpName) != ULONG_MAX);
+          if (found)  break;
+        }
+        if (!found)
+        {
+          tmpName = L"PointUserMotions";
+          for (LONG i=0;i<ra.GetCount();i++)
+          {
+            found = (ra.GetAsText().ReverseFindString(tmpName) != ULONG_MAX);
+            if (found)  break;
+          }
+        }
+        attrib = pmesh.GetICEAttributeFromName(tmpName);
+      }
+
+      // check/get data and possibly switch to "transform".
+      bool useTransform = false;
+      if (!attrib.IsDefined())
+      {
+        if (noWarnMotions)
+        {
+          useTransform = true;
+        }
+        else
+        {
+          if (in_nameMotions != L"")
+          {
+            errmsg = L"the vertex motions \"" + tmpName + L"\" could not be found/accessed.";
+            return false;
+          }
+          else
+          {
+            useTransform = true;
+            wrnmsg = L"the vertex motions \"" + tmpName + L"\" could not be found/accessed, switching to \"transformations only\"";
+          }
+        }
+      }
+
+      // resize out_vertMotions.
+      if (out_vertMotions.Resize(numVertFlat) != CStatus::OK)
+      {  errmsg = L"out_vertMotions.Resize() failed.";
+        return false;  }
+
+      // use the ICE data.
+      if (!useTransform)
+      {
+        if (attrib.GetDataType() != siICENodeDataVector3)
+        {  errmsg = L"the motions \"" + tmpName + L"\" have the wrong data type (only 3D vector is supported).";
+          return false;  }
+        if (attrib.GetContextType() != siICENodeContextComponent0D)
+        {  errmsg = L"the motions \"" + tmpName + L"\" have the wrong context type (only \"per Point\" is supported).";
+          return false;  }
+        if (attrib.GetStructureType() == siICENodeStructureSingle)      // single value per Vertex.
+        {
+          // get ICE data.
+          CICEAttributeDataArrayVector3f tmpMtn;
+          if (attrib.GetDataArray(tmpMtn) != CStatus::OK)
+          {  errmsg = L"failed to get motion ICE data.";
+            return false;  }
+
+          // fill out_vertMotions from tmpMtn.
+          float *vm = (float *)out_vertMotions.GetArray();
+          for (LONG i=0;i<numVert;i++,vm+=3)
+            tmpMtn[i].Get(vm[0], vm[1], vm[2]);
+        }
+        else if (attrib.GetStructureType() == siICENodeStructureArray)    // array per Vertex.
+        {
+          // get ICE data.
+          CICEAttributeDataArray2DVector3f tmpMtn2D;
+          if (attrib.GetDataArray2D(tmpMtn2D) != CStatus::OK)
+          {  errmsg = L"failed to get motion ICE data.";
+            return false;  }
+
+          // fill out_vertMotions from tmpMtn.
+          CICEAttributeDataArrayVector3f sub;
+          float *vm = (float *)out_vertMotions.GetArray();
+          for (LONG i=0;i<numVert;i++,vm+=3)
+          {
+            if (tmpMtn2D.GetSubArray(i, sub) == CStatus::OK)
+              if (sub.GetCount())
+              {  sub[sub.GetCount() - 1].Get(vm[0], vm[1], vm[2]);
+                continue;    }
+            vm[0] = 0;
+            vm[1] = 0;
+            vm[2] = 0;
+          }
+        }
+        else
+        {  errmsg = L"the motions \"" + tmpName + L"\" have an unsupported structure type.";
+          return false;  }
+
+        // consider global SRT?
+        if (in_useGlobalSRT)
+        {
+          CTransformation tmpT(glbTransCurr);
+          tmpT.SetTranslationFromValues(0, 0, 0);
+          CVector3 v;
+          for (LONG i=0;i<numVertFlat;i+=3)
+          {
+            v.Set(out_vertMotions[i + 0],
+                out_vertMotions[i + 1],
+                out_vertMotions[i + 2]);
+            v.MulByTransformationInPlace(tmpT);
+            out_vertMotions[i + 0] = (float)v.GetX();
+            out_vertMotions[i + 1] = (float)v.GetY();
+            out_vertMotions[i + 2] = (float)v.GetZ();
+          }
+        }
+      }
+
+      // use the transformations only (= manually calculate the motions).
+      else
+      {
+        CVector3 vTransCurr = glbTransCurr.GetTranslation();
+        CVector3 vCurr, vNext;
+        for (LONG i=0;i<numVertFlat;i+=3)
+        {
+          vCurr.Set(out_vertexPositions[i + 0],
+                out_vertexPositions[i + 1],
+                out_vertexPositions[i + 2]);
+          vNext = vCurr;
+          vCurr.MulByTransformationInPlace(glbTransCurr);
+          vNext.MulByTransformationInPlace(glbTransNext);
+          vNext.SubInPlace(vCurr);
+          if (in_useGlobalSRT)  vCurr = vNext;
+          else
+          {
+            vNext.AddInPlace(vTransCurr);
+            vCurr = MapWorldPositionToObjectSpace(glbTransCurr, vNext);
+          }
+          out_vertMotions[i + 0] = (float)vCurr.GetX();
+          out_vertMotions[i + 1] = (float)vCurr.GetY();
+          out_vertMotions[i + 2] = (float)vCurr.GetZ();
+        }
+      }
+    }
+
+    // now that we are done with the local vertex positions:
+    // consider global SRT?
+    if (in_useGlobalSRT)
+    {
+      CVector3 v;
+      for (LONG i=0;i<numVertFlat;i+=3)
+      {
+        v.Set(out_vertexPositions[i + 0],
+            out_vertexPositions[i + 1],
+            out_vertexPositions[i + 2]);
+        v.MulByTransformationInPlace(glbTransCurr);
+        v.Get(out_vertexPositions[i + 0],
+            out_vertexPositions[i + 1],
+            out_vertexPositions[i + 2]);
+      }
+    }
+
+    // get the polygon node normals.
+    // note: GetNodeNormals() crashes with emPolygonizer normals, that's why the below code
+    //     gets the values "on foot" instead of using GetNodeNormals() directly.
+    if (inout_useNodeNormals)
+    {
+      // get array of references at user normals.
+      CRefArray userNormalsRefs = ga.GetUserNormals();
+      if (userNormalsRefs.GetCount() <= 0)
+      {
+        // there are no user normals.
+        if (in_useNormals)
+        {
+          // we just call GetNodeNormals().
+          CFloatArray tmpNorms(0);
+          if (ga.GetNodeNormals(tmpNorms) != CStatus::OK)
+          {  errmsg = L"GetNodeNormals() failed.";
+            return false;  }
+
+          // resize out_nodeNormals.
+          if (out_nodeNormals.Resize(out_numNodes * 3L) != CStatus::OK)
+          {  errmsg = L"out_nodeNormals.Resize() failed.";
+            return false;  }
+
+          // fill out_nodeNormals from tmpNorms.
+          LONG  *ni = (LONG *)nodeIndices.GetArray();
+          float *nn = (float *)out_nodeNormals.GetArray();
+          for (LONG i=0;i<out_numNodes;i++,ni++,nn+=3)
+          {
+            nn[0] = tmpNorms[(*ni) * 3L + 0];
+            nn[1] = tmpNorms[(*ni) * 3L + 1];
+            nn[2] = tmpNorms[(*ni) * 3L + 2];
+          }
+        }
+        else
+          inout_useNodeNormals = false;
+      }
+      else
+      {
+        // there are user normals available... we simply take the first user normals in the ref array.
+        ClusterProperty clusterProp(userNormalsRefs[0]);
+        if (!clusterProp.IsValid())
+        {  errmsg = L"ClusterProperty clusterProp(userNormalsRefs[0]) failed.";
+          return false;  }
+
+        // get the cluster property element array.
+        CClusterPropertyElementArray clusterPropElements = clusterProp.GetElements();
+
+        // resize out_nodeNormals.
+        if (out_nodeNormals.Resize(out_numNodes * 3L) != CStatus::OK)
+        {  errmsg = L"out_nodeNormals.Resize() failed.";
+          return false;  }
+
+        // fill out_nodeNormals "on foot".
+        LONG  *ni = (LONG *)nodeIndices.GetArray();
+        float *nn = (float *)out_nodeNormals.GetArray();
+        for (LONG i=0;i<out_numNodes;i++,ni++,nn+=3)
+        {
+          CDoubleArray tmp = clusterPropElements.GetItem(*ni);
+          nn[0] = (float)tmp[0];
+          nn[1] = (float)tmp[1];
+          nn[2] = (float)tmp[2];
+        }
+      }
+
+      // consider global SRT for the normals?
+      if (in_useGlobalSRT)
+      {
+        CTransformation tmpT(glbTransCurr);
+        tmpT.SetTranslationFromValues(0, 0, 0);
+        LONG numNormalsFlat = out_nodeNormals.GetCount();
+        CVector3 v;
+        for (LONG i=0;i<numNormalsFlat;i+=3)
+        {
+          v.Set(out_nodeNormals[i + 0],
+              out_nodeNormals[i + 1],
+              out_nodeNormals[i + 2]);
+          v.MulByTransformationInPlace(tmpT);
+          v.NormalizeInPlace();
+          out_nodeNormals[i + 0] = (float)v.GetX();
+          out_nodeNormals[i + 1] = (float)v.GetY();
+          out_nodeNormals[i + 2] = (float)v.GetZ();
+        }
+      }
+    }
+
+    // get the node UVWs.
+    if (inout_useNodeUVWs)
+    {
+      // get refs at UVs and look for the UVs specified by in_nameUVWs.
+      CRefArray refsUVs = ga.GetUVs();
+      LONG ruvIdx = -1;
+      for (LONG i=0;i<refsUVs.GetCount();i++)
+      {
+        CStringArray r = refsUVs[i].GetAsText().Split(L".");
+        if (  in_nameUVWs == L""
+          || (r.GetCount() > 0 && r[r.GetCount() - 1] == in_nameUVWs)  )
+        {
+          ruvIdx = i;
+          break;
+        }
+      }
+
+      // did we find some UVs?
+      if (ruvIdx >= 0)
+      {
+        ClusterProperty cProp(refsUVs[ruvIdx]);
+        if (  cProp.IsValid()
+          &&  cProp.GetPropertyType() == siClusterPropertyUVType
+          &&  cProp.GetValueSize() == 3  )
+        {
+          // get UVWs.
+          CFloatArray tmpUVWs(0);
+          if (cProp.GetValues(tmpUVWs) != CStatus::OK)
+          {  errmsg = L"cProp.GetValues(tmpUVWs) failed.";
+            return false;  }
+
+          // resize out_nodeUVWs.
+          if (out_nodeUVWs.Resize(out_numNodes * 3L) != CStatus::OK)
+          {  errmsg = L"out_nodeUVWs.Resize() failed.";
+            return false;  }
+
+          // fill out_nodeUVWs from tmpUVWs.
+          LONG  *ni = (LONG *)nodeIndices.GetArray();
+          float *nu = (float *)out_nodeUVWs.GetArray();
+          for (LONG i=0;i<out_numNodes;i++,ni++,nu+=3)
+          {
+            nu[0] = tmpUVWs[(*ni) * 3L + 0];
+            nu[1] = tmpUVWs[(*ni) * 3L + 1];
+            nu[2] = tmpUVWs[(*ni) * 3L + 2];
+          }
+        }
+        else
+        {  errmsg = cProp.GetFullName() + L" has an unsupported property type or value size.";
+          return false;  }
+      }
+
+      // we didn't find any UVs, so we check if there are any ICE UVs.
+      else
+      {
+        // set tmpName and get attribute.
+        ICEAttribute attrib;
+        CString tmpName;
+        if (in_nameUVWs != L"")
+        {
+          tmpName = in_nameUVWs;
+          attrib = pmesh.GetICEAttributeFromName(tmpName);
+        }
+        else
+        {
+          tmpName = L"viUVW";
+          attrib = pmesh.GetICEAttributeFromName(tmpName);
+        }
+
+        // check/get data.
+        if (attrib.IsDefined() || !noWarnUVWs)
+        {
+          if (!attrib.IsDefined())
+          {  errmsg = L"the UVWs \"" + tmpName + L"\" could not be found/accessed.";
+            return false;  }
+          if (attrib.GetDataType() != siICENodeDataVector3)
+          {  errmsg = L"the UVWs \"" + tmpName + L"\" have the wrong data type (only 3D vector is supported).";
+            return false;  }
+          if (attrib.GetStructureType() != siICENodeStructureSingle)
+          {  errmsg = L"the UVWs \"" + tmpName + L"\" have the wrong structure type.";
+            return false;  }
+          if    (attrib.GetContextType() == siICENodeContextComponent0D)    // per vertex.
+          {
+            // get ICE data.
+            CICEAttributeDataArrayVector3f tmpUVWs;
+            if (attrib.GetDataArray(tmpUVWs) != CStatus::OK)
+            {  errmsg = L"failed to get UVW ICE data.";
+              return false;  }
+            // resize out_nodeUVWs.
+            if (out_nodeUVWs.Resize(out_numNodes * 3L) != CStatus::OK)
+            {  errmsg = L"out_nodeUVWs.Resize() failed.";
+              return false;  }
+            // fill out_nodeUVWs from tmpUVWs.
+            LONG  *ni = (LONG *)out_polyVIndices.GetArray();
+            float *nu = (float *)out_nodeUVWs.GetArray();
+            for (LONG i=0;i<out_numNodes;i++,ni++,nu+=3)
+              tmpUVWs[*ni].Get(nu[0], nu[1], nu[2]);
+          }
+        else if (attrib.GetContextType() == siICENodeContextComponent0D2D)    // per node.
+        {
+          // get ICE data.
+          CICEAttributeDataArrayVector3f tmpUVWs;
+          if (attrib.GetDataArray(tmpUVWs) != CStatus::OK)
+          {  errmsg = L"failed to get UVW ICE data.";
+            return false;  }
+          // resize out_nodeUVWs.
+          if (out_nodeUVWs.Resize(out_numNodes * 3L) != CStatus::OK)
+          {  errmsg = L"out_nodeUVWs.Resize() failed.";
+            return false;  }
+          // fill out_nodeUVWs from tmpUVWs.
+          LONG  *ni = (LONG *)nodeIndices.GetArray();
+          float *nu = (float *)out_nodeUVWs.GetArray();
+          for (LONG i=0;i<out_numNodes;i++,ni++,nu+=3)
+            tmpUVWs[*ni].Get(nu[0], nu[1], nu[2]);
+        }
+          else
+          {  errmsg = L"the UVWs \"" + tmpName + L"\" have the wrong context type (only \"per Point\" and \"per Sample\" are supported).";
+            return false;  }
+        }
+      }
+    }
+
+    // get the node colors.
+    if (inout_useNodeColors)
+    {
+      // get refs at vertex colors and look for the vertex colors specified by in_nameColors.
+      CRefArray refsColors = ga.GetVertexColors();
+      LONG rcolIdx = -1;
+      for (LONG i=0;i<refsColors.GetCount();i++)
+      {
+        CStringArray r = refsColors[i].GetAsText().Split(L".");
+        if (  in_nameColors == L""
+          || (r.GetCount() > 0 && r[r.GetCount() - 1] == in_nameColors)  )
+        {
+          rcolIdx = i;
+          break;
+        }
+      }
+
+      // did we find some vertex colors?
+      if (rcolIdx >= 0)
+      {
+        ClusterProperty cProp(refsColors[rcolIdx]);
+        if (  cProp.IsValid()
+          &&  cProp.GetPropertyType() == siClusterPropertyVertexColorType  
+          &&  cProp.GetValueSize() == 4  )
+        {
+          // get colors.
+          CFloatArray tmpColors(0);
+          if (cProp.GetValues(tmpColors) != CStatus::OK)
+          {  errmsg = L"cProp.GetValues(tmpColors) failed.";
+            return false;  }
+
+          // resize out_nodeColors.
+          if (out_nodeColors.Resize(out_numNodes * 4L) != CStatus::OK)
+          {  errmsg = L"out_nodeColors.Resize() failed.";
+            return false;  }
+
+          // fill out_nodeColors from tmpColors.
+          LONG  *ni = (LONG *)nodeIndices.GetArray();
+          float *nu = (float *)out_nodeColors.GetArray();
+          for (LONG i=0;i<out_numNodes;i++,ni++,nu+=4)
+          {
+            nu[0] = tmpColors[(*ni) * 4L + 0];
+            nu[1] = tmpColors[(*ni) * 4L + 1];
+            nu[2] = tmpColors[(*ni) * 4L + 2];
+            nu[3] = tmpColors[(*ni) * 4L + 3];
+          }
+        }
+        else
+        {  errmsg = cProp.GetFullName() + L" has an unsupported property type or value size.";
+          return false;  }
+      }
+
+      // we didn't find any vertex colors, so we check if there are any ICE colors that we can use.
+      else
+      {
+        // set tmpName and get attribute.
+        ICEAttribute attrib;
+        CString tmpName;
+        if (in_nameColors != L"")
+        {
+          tmpName = in_nameColors;
+          attrib = pmesh.GetICEAttributeFromName(tmpName);
+        }
+        else
+        {
+          tmpName = L"viColor";
+          attrib = pmesh.GetICEAttributeFromName(tmpName);
+          if (attrib.GetName() != tmpName)
+          {
+            tmpName = L"Color";
+            attrib = pmesh.GetICEAttributeFromName(tmpName);
+          }
+        }
+
+        // check/get data.
+        if (attrib.IsDefined() || !noWarnColors)
+        {
+          if (!attrib.IsDefined())
+          {  errmsg = L"the colors \"" + tmpName + L"\" could not be found/accessed.";
+            return false;  }
+          if (attrib.GetDataType() != siICENodeDataColor4)
+          {  errmsg = L"the colors \"" + tmpName + L"\" have the wrong data type (only color is supported).";
+            return false;  }
+          if (attrib.GetStructureType() != siICENodeStructureSingle)
+          {  errmsg = L"the colors \"" + tmpName + L"\" have the wrong structure type.";
+            return false;  }
+          if    (attrib.GetContextType() == siICENodeContextComponent0D)    // per vertex.
+          {
+            // get ICE data.
+            CICEAttributeDataArrayColor4f tmpCols;
+            if (attrib.GetDataArray(tmpCols) != CStatus::OK)
+            {  errmsg = L"failed to get color ICE data.";
+              return false;  }
+            // resize out_nodeColors.
+            if (out_nodeColors.Resize(out_numNodes * 4L) != CStatus::OK)
+            {  errmsg = L"out_nodeColors.Resize() failed.";
+              return false;  }
+            // fill out_nodeColors from tmpCols.
+            LONG  *ni = (LONG *)out_polyVIndices.GetArray();
+            float *nc = (float *)out_nodeColors.GetArray();
+            for (LONG i=0;i<out_numNodes;i++,ni++,nc+=4)
+              tmpCols[*ni].GetAsRGBA(nc[0], nc[1], nc[2], nc[3]);
+          }
+          else if (attrib.GetContextType() == siICENodeContextComponent0D2D)    // per node.
+          {
+            // get ICE data.
+            CICEAttributeDataArrayColor4f tmpCols;
+            if (attrib.GetDataArray(tmpCols) != CStatus::OK)
+            {  errmsg = L"failed to get color ICE data.";
+              return false;  }
+            // resize out_nodeColors.
+            if (out_nodeColors.Resize(out_numNodes * 4L) != CStatus::OK)
+            {  errmsg = L"out_nodeColors.Resize() failed.";
+              return false;  }
+            // fill out_nodeColors from tmpCols.
+            LONG  *ni = (LONG *)nodeIndices.GetArray();
+            float *nc = (float *)out_nodeColors.GetArray();
+            for (LONG i=0;i<out_numNodes;i++,ni++,nc+=4)
+              tmpCols[*ni].GetAsRGBA(nc[0], nc[1], nc[2], nc[3]);
+          }
+          else
+          {  errmsg = L"the colors \"" + tmpName + L"\" have the wrong context type (only \"per Point\" and \"per Sample\" are supported).";
+            return false;  }
+        }
+      }
+    }
+
+    // done.
+    return true;
+}
+
+
