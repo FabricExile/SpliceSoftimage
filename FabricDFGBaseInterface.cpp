@@ -1373,24 +1373,23 @@ void BaseInterface::SetValueOfArgPolygonMesh(FabricCore::Client &client, FabricC
   {
     FabricCore::RTVal rtval;
     rtval = FabricSplice::constructObjectRTVal("PolygonMesh");
-    //rtval = FabricCore::RTVal::Construct(client, "PolygonMesh", 0, NULL);
     rtval.callMethod("", "clear", 0, NULL);
     if (val.isValid() && !val.isEmpty())
     {
       std::vector <FabricCore::RTVal> args(2);
 
       // vertices.
-      args[0] = FabricSplice::constructExternalArrayRTVal("Float32", val.vertPositions.size(), (void *)val.vertPositions.data());
-      args[1] = FabricSplice::constructUInt32RTVal(3);
+      args[0] = FabricCore::RTVal::ConstructExternalArray(client, "Float32", val.vertPositions.size(), (void *)val.vertPositions.data());
+      args[1] = FabricCore::RTVal::ConstructUInt32(client, 3);
       rtval.callMethod("", "setPointsFromExternalArray", 2, &args[0]);
 
       // polygonal description.
-      args[0] = FabricSplice::constructExternalArrayRTVal("UInt32", val.polyNumVertices.size(), (void *)val.polyNumVertices.data());
-      args[1] = FabricSplice::constructExternalArrayRTVal("UInt32", val.polyVertices   .size(), (void *)val.polyVertices   .data());
+      args[0] = FabricCore::RTVal::ConstructExternalArray(client, "UInt32", val.polyNumVertices.size(), (void *)val.polyNumVertices.data());
+      args[1] = FabricCore::RTVal::ConstructExternalArray(client, "UInt32", val.polyVertices   .size(), (void *)val.polyVertices   .data());
       rtval.callMethod("", "setTopologyFromCountsIndicesExternalArrays", 2, &args[0]);
 
       // normals.
-      args[0] = FabricSplice::constructExternalArrayRTVal("Float32", val.polyNodeNormals.size(), (void *)val.polyNodeNormals.data());
+      args[0] = FabricCore::RTVal::ConstructExternalArray(client, "Float32", val.polyNodeNormals.size(), (void *)val.polyNodeNormals.data());
       rtval.callMethod("", "setNormalsFromExternalArray", 1, &args[0]);
     }
     binding.setArgValue(argName, rtval);
