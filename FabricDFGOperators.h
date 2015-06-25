@@ -386,13 +386,75 @@ struct _polymesh
       memcpy(polyVertices.data(), in_polyVertices, polyVertices.size() * sizeof(unsigned int));
 
       // polygon node normals.
-      if (polyNodeNormals.size() == 3 * numSamples)
+      if (polyNodeNormals.size() == in_nodeNormals_size)
       {
         memcpy(polyNodeNormals.data(), in_nodeNormals, polyNodeNormals.size() * sizeof(float));
       }
       else
       {
         // no input normals available => create node normals from polygon normals.
+        float *v0, *v1, *v2;
+        float ax, ay, az;
+        float bx, by, bz;
+        float nx, ny, nz;
+        unsigned int *pn  = polyNumVertices.data();
+        unsigned int *pi  = polyVertices   .data();
+        float        *pnn = polyNodeNormals.data();
+        for (unsigned int i=0;i<numPolygons;i++,pn++)
+        {
+          if (*pn <= 2)
+          {
+            nx = 0;
+            ny = 1.0f;
+            nz = 0;
+          }
+          else
+          {
+            // pointers at polygon's vertex positions 0, 1 and 2.
+            v0 = vertPositions.data() + 3 * pi[0];
+            v1 = vertPositions.data() + 3 * pi[1];
+            v2 = vertPositions.data() + 3 * pi[2];
+
+            // vector from vertex position 0 to vertex position 1.
+            ax = v1[0] - v0[0];
+            ay = v1[1] - v0[1];
+            az = v1[2] - v0[2];
+
+            // vector from vertex position 0 to vertex position 2.
+            bx = v2[0] - v0[0];
+            by = v2[1] - v0[1];
+            bz = v2[2] - v0[2];
+
+            // cross (b x a).
+	          nx = by * az - bz * ay;
+				    ny = bz * ax - bx * az;
+				    nz = bx * ay - by * ax;
+
+            // normalize.
+            float len = nx * nx + ny * ny + nz * nz;
+            if (len < 1.0e-15f)
+            {
+              nx = 0;
+              ny = 1.0f;
+              nz = 0;
+            }
+            else
+            {
+              len = 1.0f / len;
+              nx *= len;
+              ny *= len;
+              nz *= len;
+            }
+          }
+
+          for (unsigned int j=0;j<*pn;j++,pnn+=3)
+          {
+            pnn[0] = nx;
+            pnn[1] = ny;
+            pnn[2] = nz;
+          }
+          pi += *pn;
+        }
       }
     }
 

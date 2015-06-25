@@ -1371,16 +1371,29 @@ void BaseInterface::SetValueOfArgPolygonMesh(FabricCore::Client &client, FabricC
 
   try
   {
-    if (val.isEmpty() || !val.isValid())
+    FabricCore::RTVal rtval;
+    rtval = FabricSplice::constructObjectRTVal("PolygonMesh");
+    //rtval = FabricCore::RTVal::Construct(client, "PolygonMesh", 0, NULL);
+    rtval.callMethod("", "clear", 0, NULL);
+    if (val.isValid() && !val.isEmpty())
     {
-      // the input mesh is empty or invalid, so we simply clear the argument and return.
+      std::vector <FabricCore::RTVal> args(2);
 
-      feLogError("BaseInterface::SetValueOfArgPolygonMesh() not yet implemented");
+      // vertices.
+      args[0] = FabricSplice::constructExternalArrayRTVal("Float32", val.vertPositions.size(), (void *)val.vertPositions.data());
+      args[1] = FabricSplice::constructUInt32RTVal(3);
+      rtval.callMethod("", "setPointsFromExternalArray", 2, &args[0]);
 
-      return;
+      // polygonal description.
+      args[0] = FabricSplice::constructExternalArrayRTVal("UInt32", val.polyNumVertices.size(), (void *)val.polyNumVertices.data());
+      args[1] = FabricSplice::constructExternalArrayRTVal("UInt32", val.polyVertices   .size(), (void *)val.polyVertices   .data());
+      rtval.callMethod("", "setTopologyFromCountsIndicesExternalArrays", 2, &args[0]);
+
+      // normals.
+      args[0] = FabricSplice::constructExternalArrayRTVal("Float32", val.polyNodeNormals.size(), (void *)val.polyNodeNormals.data());
+      rtval.callMethod("", "setNormalsFromExternalArray", 1, &args[0]);
     }
-
-    feLogError("BaseInterface::SetValueOfArgPolygonMesh() not yet implemented");
+    binding.setArgValue(argName, rtval);
   }
   catch (FabricCore::Exception e)
   {
