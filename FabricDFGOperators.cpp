@@ -899,17 +899,37 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
             //
             else if (portResolvedType == L"PolygonMesh")
             {
-              Application().LogMessage(L"input PolygonMesh ports not yet implemented.", siWarningMsg);
               if (xsiPortValue.m_t == CValue::siRef)
               {
+                CRef ref;   // note: Primitive::GetGeometryFromX3DObject() does not work inside the _update() context, so we build the reference at the X3DObject ourself.
+                CString s = CRef(xsiPortValue).GetAsText();
+                ref.Set(s.GetSubString(0, s.ReverseFindString(L".")));
+                if (ref.IsValid())
+                {
+                  CString   errmsg;
+                  CString   wrnmsg;
+                  _polymesh val;
+                  if (dfgTools::GetGeometryFromX3DObject( X3DObject(ref),
+                                                          ctxt.GetTime().GetTime(),
+                                                          val,
+                                                          errmsg,
+                                                          wrnmsg  ) )
+                  {
+                    // any warning?
+                    if (wrnmsg != L"")  Application().LogMessage(L"\"" + wrnmsg + L"\"", siWarningMsg);
 
+                    // verbose.
+                    if (verbose)  Application().LogMessage(functionName + L": polygon mesh \"" + ref.GetAsText() + L"\": #vertices = " + CString((ULONG)val.numVertices) + L"  #polygons = " + CString((ULONG)val.numPolygons) + L"  #samples = " + CString((ULONG)val.numSamples));
 
-                // todo: set DFG port's polygon mesh from XSI port's polygon mesh.
-
-                // WIP: use the function dfgTools::GetGeometryFromX3DObject() to get the object's geometry
-                //      and then set the DFG port's value.
-
-
+                    // set the DFG port from val.
+                    BaseInterface::SetValueOfArgPolygonMesh(*client, binding, portName.GetAsciiString(), val);
+                  }
+                  else
+                  {
+                    // failed to get geometry from X3DObject.
+                    Application().LogMessage(L"ERROR: failed to get geometry from \"" + ref.GetAsText() + "\": \"" + errmsg + L"\"", siWarningMsg);
+                  }
+                }
               }
             }
           }

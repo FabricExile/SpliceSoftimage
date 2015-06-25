@@ -208,7 +208,7 @@ struct _polymesh
             && polyNumVertices.size() ==     numPolygons
             && polyVertices   .size() ==     numSamples
             && polyNodeNormals.size() == 3 * numSamples
-            );
+           );
   }
     
   // returns true if this is an empty mesh.
@@ -255,14 +255,14 @@ struct _polymesh
 
     // get the mesh data (except for the vertex normals).
     int retGet = BaseInterface::GetArgValuePolygonMesh( binding,
-                                                         argName,
-                                                         numVertices,
-                                                         numPolygons,
-                                                         numSamples,
-                                                        &vertPositions,
-                                                        &polyNumVertices,
-                                                        &polyVertices,
-                                                        &polyNodeNormals
+                                                        argName,
+                                                        numVertices,
+                                                        numPolygons,
+                                                        numSamples,
+                                                       &vertPositions,
+                                                       &polyNumVertices,
+                                                       &polyVertices,
+                                                       &polyNodeNormals
                                                        );
     // error?
     if (retGet)
@@ -315,6 +315,127 @@ struct _polymesh
 
     // done.
     return retGet;
+  }
+
+  // set from flat arrays.
+  // returns: 0 on success, -1 pointer is NULL, -2 illegal array size, -3 memory error, -4 unknown error.
+  int SetFromFlatArrays(const double        *in_vertPositions,        // array of vertex positions.
+                        const unsigned int   in_vertPositions_size,   // size of array in_vertPositions.
+                        const float         *in_nodeNormals,          // array of node normals (this may be NULL).
+                        const unsigned int   in_nodeNormals_size,     // size of array in_nodeNormals.
+                        const unsigned int  *in_polyNumVertices,      // array of polygon vertex amounts.
+                        const unsigned int   in_polyNumVertices_size, // size of array in_polyNumVertices.
+                        const unsigned int  *in_polyVertices,         // array of polygon vertex indices.
+                        const unsigned int   in_polyVertices_size     // size of array in_polyVertices.
+                       )
+  {
+    // init this.
+    clear();
+
+    // check.
+    if (!in_vertPositions   && in_vertPositions_size    > 0)   return -1;
+    if (!in_nodeNormals     && in_nodeNormals_size      > 0)   return -1;
+    if (!in_polyNumVertices && in_polyNumVertices_size  > 0)   return -1;
+    if (!in_polyVertices    && in_polyVertices_size     > 0)   return -1;
+
+    // set num* members.
+    numVertices = in_vertPositions_size / 3;
+    numPolygons = in_polyNumVertices_size;
+    numSamples  = in_polyVertices_size;
+
+    // check.
+    if (    numVertices * 3 != in_vertPositions_size
+        || (numSamples  * 3 != in_nodeNormals_size && in_nodeNormals_size > 0))
+    {
+      clear();
+      return -2;
+    }
+
+    // allocate member arrays.
+    vertPositions   .resize(3 * numVertices);
+    vertNormals     .resize(3 * numVertices, 0.0f);
+    polyNumVertices .resize(    numPolygons);
+    polyVertices    .resize(    numSamples);
+    polyNodeNormals .resize(3 * numSamples);
+    if ( vertPositions   .size() != 3 * numVertices
+      || vertNormals     .size() != 3 * numVertices
+      || polyNumVertices .size() !=     numPolygons
+      || polyVertices    .size() !=     numSamples
+      || polyNodeNormals .size() != 3 * numSamples  )
+    {
+      clear();
+      return -2;
+    }
+
+    // fill member arrays from input arrays.
+    {
+      // vertex positions.
+      double *src = (double *)in_vertPositions;
+      float  *dst = vertPositions.data();
+      for (unsigned int i=0;i<numVertices;i++,src+=3,dst+=3)
+      {
+        dst[0] = (float)src[0];
+        dst[1] = (float)src[1];
+        dst[2] = (float)src[2];
+      }
+
+      // polygon vertex count.
+      memcpy(polyNumVertices.data(), in_polyNumVertices, polyNumVertices.size() * sizeof(unsigned int));
+
+      // polygon vertex indices.
+      memcpy(polyVertices.data(), in_polyVertices, polyVertices.size() * sizeof(unsigned int));
+
+      // polygon node normals.
+      if (polyNodeNormals.size() == 3 * numSamples)
+      {
+        memcpy(polyNodeNormals.data(), in_nodeNormals, polyNodeNormals.size() * sizeof(float));
+      }
+      else
+      {
+        // no input normals available => create node normals from polygon normals.
+      }
+    }
+
+    // create vertex normals from the polygon node normals.
+    if (numPolygons > 0 && polyNodeNormals.size() > 0)
+    {
+      // fill.
+      uint32_t *pvi = polyVertices.data();
+      float    *pnn = polyNodeNormals.data();
+      for (unsigned int i=0;i<numSamples;i++,pvi++,pnn+=3)
+      {
+        float *vn = vertNormals.data() + (*pvi) * 3;
+        vn[0] += pnn[0];
+        vn[1] += pnn[1];
+        vn[2] += pnn[2];
+      }
+
+      // normalize vertex normals.
+      float *vn = vertNormals.data();
+      for (unsigned int i=0;i<numVertices;i++,vn+=3)
+      {
+        float f = vn[0] * vn[0] + vn[1] * vn[1] + vn[2] * vn[2];
+        if (f > 1.0e-012f)
+        {
+          f = 1.0f / sqrt(f);
+          vn[0] *= f;
+          vn[1] *= f;
+          vn[2] *= f;
+        }
+        else
+        {
+          vn[0] = 0;
+          vn[1] = 1.0f;
+          vn[2] = 0;
+        }
+      }
+    }
+
+    // calc bbox.
+    calcBBox();
+
+    // done.
+    return 0;
   }
 
   // merge this mesh with the input mesh.

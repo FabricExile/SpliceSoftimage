@@ -10,6 +10,7 @@
 #include <vector>
 
 struct _portMapping;
+struct _polymesh;
 
 class dfgTools
 {
@@ -51,7 +52,7 @@ class dfgTools
   static bool FileExists(const char *filePath);
 
   // gets the geometry from the input X3DObject.
-  // params:  in_x3DObj             ref at or name of X3DObject.
+  // params:  in_x3DObj             ref at X3DObject.
   //          in_currFrame          current frame.
   //          in_useGlobalSRT       consider object's global transformation.
   //          out_vertexPositions   ref at CDoubleArray that will contain the vertex positions.
@@ -79,7 +80,16 @@ class dfgTools
   //          wrnmsg                ref at CString that will contain a warning if this functions returns true, or L"" if no warning.
   // returns: true on success else false (with an error description in errmsg).
   // note: this function was taken "as is" from the class MZDXSI which is part of the main Mootzoid c++ lib (see mootzoid_XSI.h and mootzoid_XSI.cpp).
-  static bool GetGeometryFromX3DObject(const XSI::X3DObject &in_x3DObj,  double in_currFrame, bool in_useGlobalSRT, XSI::CDoubleArray &out_vertexPositions, XSI::CLongArray &out_polyVIndices, XSI::CLongArray &out_polyVCount, LONG &out_numNodes, bool &inout_useVertMotions, XSI::CFloatArray &out_vertMotions, bool noWarnMotions, bool &inout_useNodeNormals, bool in_useNormals, XSI::CFloatArray &out_nodeNormals, bool noWarnNormals, bool &inout_useNodeUVWs, XSI::CFloatArray &out_nodeUVWs, bool noWarnUVWs, bool &inout_useNodeColors, XSI::CFloatArray &out_nodeColors, bool noWarnColors, XSI::CString &in_nameMotions, XSI::CString &in_nameNormals, XSI::CString &in_nameUVWs, XSI::CString &in_nameColors, XSI::CString &errmsg, XSI::CString &wrnmsg);
+  static bool GetGeometryFromX3DObject(const XSI::X3DObject &in_x3DObj, double in_currFrame, bool in_useGlobalSRT, XSI::CDoubleArray &out_vertexPositions, XSI::CLongArray &out_polyVIndices, XSI::CLongArray &out_polyVCount, LONG &out_numNodes, bool &inout_useVertMotions, XSI::CFloatArray &out_vertMotions, bool noWarnMotions, bool &inout_useNodeNormals, bool in_useNormals, XSI::CFloatArray &out_nodeNormals, bool noWarnNormals, bool &inout_useNodeUVWs, XSI::CFloatArray &out_nodeUVWs, bool noWarnUVWs, bool &inout_useNodeColors, XSI::CFloatArray &out_nodeColors, bool noWarnColors, XSI::CString &in_nameMotions, XSI::CString &in_nameNormals, XSI::CString &in_nameUVWs, XSI::CString &in_nameColors, XSI::CString &errmsg, XSI::CString &wrnmsg);
+
+  // gets the geometry from the input X3DObject and stores it in out_polymesh.
+  // params:  in_x3DObj             ref at X3DObject.
+  //          in_currFrame          current frame.
+  //          out_polymesh          result.
+  //          out_errmsg            ref at CString that will contain an error description if this functions returns false.
+  //          out_wrnmsg            ref at CString that will contain a warning if this functions returns true, or L"" if no warning.
+  // returns: true on success else false (with an error description in out_errmsg).
+  static bool GetGeometryFromX3DObject(const XSI::X3DObject &in_x3DObj, double in_currFrame, _polymesh &out_polymesh, XSI::CString &out_errmsg, XSI::CString &out_wrnmsg);
 };
 
 #endif

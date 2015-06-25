@@ -1152,4 +1152,74 @@ bool dfgTools::GetGeometryFromX3DObject(const XSI::X3DObject &in_x3DObj, double 
   return true;
 }
 
+bool dfgTools::GetGeometryFromX3DObject(const XSI::X3DObject &in_x3DObj, double in_currFrame, _polymesh &out_polymesh, XSI::CString &out_errmsg, XSI::CString &out_wrnmsg)
+{
+  // init.
+  out_polymesh.clear();
+
+  // get geo as flat arrays.
+  CDoubleArray  vertexPositions  (0);
+  CLongArray    polyVIndices     (0);
+  CLongArray    polyVCount       (0);
+  LONG          numNodes        = 0;
+  bool          useVertMotions  = false;
+  bool          useNodeNormals  = false;
+  bool          useNodeUVWs     = false;
+  bool          useNodeColors   = false;
+  CFloatArray   vertMotions      (0);
+  CFloatArray   nodeNormals      (0);
+  CFloatArray   nodeUVWs         (0);
+  CFloatArray   nodeColors       (0);
+  if (!GetGeometryFromX3DObject(in_x3DObj,
+                                in_currFrame,
+                                false,
+                                vertexPositions,
+                                polyVIndices,
+                                polyVCount,
+                                numNodes,
+                                useVertMotions,       vertMotions, true,
+                                useNodeNormals, true, nodeNormals, true,
+                                useNodeUVWs,          nodeUVWs,    true,
+                                useNodeColors,        nodeColors,  true,
+                                CString(),
+                                CString(),
+                                CString(),
+                                CString(),
+                                out_errmsg,
+                                out_wrnmsg  ) )
+  {
+    return false;
+  }
+
+  // set out_polymesh from arrays.
+  int ret = out_polymesh.SetFromFlatArrays(                      vertexPositions.GetArray(),  vertexPositions.GetCount(),
+                                                                 nodeNormals    .GetArray(),  nodeNormals    .GetCount(),
+                                           (const unsigned int *)polyVCount     .GetArray(),  polyVCount     .GetCount(),
+                                           (const unsigned int *)polyVIndices   .GetArray(),  polyVIndices   .GetCount()
+                                          );
+  if (ret)
+  {
+    out_polymesh.clear();
+    switch (ret)
+    {
+      case -1:
+        out_errmsg = L"out_polymesh.SetFromFlatArrays() returned " + CString((LONG)ret) + L" (\"pointer is NULL\")";
+        return false;
+      case -2:
+        out_errmsg = L"out_polymesh.SetFromFlatArrays() returned " + CString((LONG)ret) + L" (\"illegal array size\")";
+        return false;
+      case -3:
+        out_errmsg = L"out_polymesh.SetFromFlatArrays() returned " + CString((LONG)ret) + L" (\"memory error\")";
+        return false;
+      default:
+        out_errmsg = L"out_polymesh.SetFromFlatArrays() returned " + CString((LONG)ret) + L" (\"unknown error\")";
+        return false;
+    }
+    return false;
+  }
+
+  // done.
+  return true;
+}
+
 

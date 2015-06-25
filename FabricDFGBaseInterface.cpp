@@ -1,4 +1,6 @@
 #include "FabricDFGBaseInterface.h"
+#include "FabricDFGPlugin.h"
+#include "FabricDFGOperators.h"
 
 #include "FabricSplicePlugin.h"
 
@@ -1351,6 +1353,34 @@ void BaseInterface::SetValueOfArgMat44(FabricCore::Client &client, FabricCore::D
     }
     rtval = FabricCore::RTVal::Construct(client, "Mat44", 4, v);
     binding.setArgValue(argName, rtval);
+  }
+  catch (FabricCore::Exception e)
+  {
+    logErrorFunc(NULL, e.getDesc_cstr(), e.getDescLength());
+  }
+}
+
+void BaseInterface::SetValueOfArgPolygonMesh(FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const _polymesh &val)
+{
+  if (!binding.getExec().haveExecPort(argName))
+  {
+    std::string s = "BaseInterface::SetValueOfArgPolygonMesh(): port no good (either NULL or invalid).";
+    logErrorFunc(NULL, s.c_str(), s.length());
+    return;
+  }
+
+  try
+  {
+    if (val.isEmpty() || !val.isValid())
+    {
+      // the input mesh is empty or invalid, so we simply clear the argument and return.
+
+      feLogError("BaseInterface::SetValueOfArgPolygonMesh() not yet implemented");
+
+      return;
+    }
+
+    feLogError("BaseInterface::SetValueOfArgPolygonMesh() not yet implemented");
   }
   catch (FabricCore::Exception e)
   {
