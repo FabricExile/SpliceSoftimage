@@ -13,6 +13,8 @@
 #include <Commands/CommandStack.h>
 #include <map>
 
+struct _polymesh;
+
 // a management class for client and host
 class BaseInterface
 {
@@ -118,19 +120,20 @@ class BaseInterface
                                      bool                                     strict                     = false);
 
   // sets the value of a port.
-  static void SetValueOfArgBoolean(FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const bool                  val);
-  static void SetValueOfArgSInt   (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const int32_t               val);
-  static void SetValueOfArgUInt   (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const uint32_t              val);
-  static void SetValueOfArgFloat  (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const double                val);
-  static void SetValueOfArgString (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::string          &val);
-  static void SetValueOfArgVec2   (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val);
-  static void SetValueOfArgVec3   (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val);
-  static void SetValueOfArgVec4   (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val);
-  static void SetValueOfArgColor  (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val);
-  static void SetValueOfArgRGB    (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val);
-  static void SetValueOfArgRGBA   (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val);
-  static void SetValueOfArgQuat   (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val);
-  static void SetValueOfArgMat44  (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val);
+  static void SetValueOfArgBoolean      (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const bool                  val);
+  static void SetValueOfArgSInt         (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const int32_t               val);
+  static void SetValueOfArgUInt         (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const uint32_t              val);
+  static void SetValueOfArgFloat        (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const double                val);
+  static void SetValueOfArgString       (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::string          &val);
+  static void SetValueOfArgVec2         (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val);
+  static void SetValueOfArgVec3         (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val);
+  static void SetValueOfArgVec4         (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val);
+  static void SetValueOfArgColor        (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val);
+  static void SetValueOfArgRGB          (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val);
+  static void SetValueOfArgRGBA         (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val);
+  static void SetValueOfArgQuat         (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val);
+  static void SetValueOfArgMat44        (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val);
+  static void SetValueOfArgPolygonMesh  (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const _polymesh            &val);
 };
 
 #endif

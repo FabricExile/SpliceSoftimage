@@ -1,4 +1,6 @@
 #include "FabricDFGBaseInterface.h"
+#include "FabricDFGPlugin.h"
+#include "FabricDFGOperators.h"
 
 #include "FabricSplicePlugin.h"
 
@@ -1350,6 +1352,46 @@ void BaseInterface::SetValueOfArgMat44(FabricCore::Client &client, FabricCore::D
       v[i]    = FabricCore::RTVal::Construct(client, "Vec4", 4, xyzt);
     }
     rtval = FabricCore::RTVal::Construct(client, "Mat44", 4, v);
+    binding.setArgValue(argName, rtval);
+  }
+  catch (FabricCore::Exception e)
+  {
+    logErrorFunc(NULL, e.getDesc_cstr(), e.getDescLength());
+  }
+}
+
+void BaseInterface::SetValueOfArgPolygonMesh(FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const _polymesh &val)
+{
+  if (!binding.getExec().haveExecPort(argName))
+  {
+    std::string s = "BaseInterface::SetValueOfArgPolygonMesh(): port no good (either NULL or invalid).";
+    logErrorFunc(NULL, s.c_str(), s.length());
+    return;
+  }
+
+  try
+  {
+    FabricCore::RTVal rtval;
+    rtval = FabricSplice::constructObjectRTVal("PolygonMesh");
+    rtval.callMethod("", "clear", 0, NULL);
+    if (val.isValid() && !val.isEmpty())
+    {
+      std::vector <FabricCore::RTVal> args(2);
+
+      // vertices.
+      args[0] = FabricCore::RTVal::ConstructExternalArray(client, "Float32", val.vertPositions.size(), (void *)val.vertPositions.data());
+      args[1] = FabricCore::RTVal::ConstructUInt32(client, 3);
+      rtval.callMethod("", "setPointsFromExternalArray", 2, &args[0]);
+
+      // polygonal description.
+      args[0] = FabricCore::RTVal::ConstructExternalArray(client, "UInt32", val.polyNumVertices.size(), (void *)val.polyNumVertices.data());
+      args[1] = FabricCore::RTVal::ConstructExternalArray(client, "UInt32", val.polyVertices   .size(), (void *)val.polyVertices   .data());
+      rtval.callMethod("", "setTopologyFromCountsIndicesExternalArrays", 2, &args[0]);
+
+      // normals.
+      args[0] = FabricCore::RTVal::ConstructExternalArray(client, "Float32", val.polyNodeNormals.size(), (void *)val.polyNodeNormals.data());
+      rtval.callMethod("", "setNormalsFromExternalArray", 1, &args[0]);
+    }
     binding.setArgValue(argName, rtval);
   }
   catch (FabricCore::Exception e)
