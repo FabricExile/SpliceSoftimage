@@ -45,15 +45,4 @@ private:
   XSI::CustomProperty _prop;
 };
 
-class LicenseDialog
-{
-public:
-  LicenseDialog();
-  ~LicenseDialog();
-  bool show();
-  XSI::CustomProperty getProp() { return _prop; }
-private:
-  XSI::CustomProperty _prop;
-};
-
 #endif

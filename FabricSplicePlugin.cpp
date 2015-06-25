@@ -27,6 +27,8 @@
 
 #include <boost/filesystem.hpp>
 
+#include <Licensing/Licensing.h>
+
 #include "FabricSplicePlugin.h"
 #include "FabricSpliceOperators.h"
 #include "FabricSpliceICENodes.h"
@@ -35,6 +37,7 @@
 #include "FabricSpliceBaseInterface.h"
 
 #include "FabricDFGBaseInterface.h"
+#include "FabricDFGWidget.h"
 
 using namespace XSI;
 
@@ -115,9 +118,26 @@ void xsiCompilerErrorFunc(unsigned int row, unsigned int col, const char * file,
   }
 }
 
-void xsiKLStatusFunc(const char * topic, unsigned int topicLength,  const char * message, unsigned int messageLength)
+void xsiKLStatusFunc(const char * topicData, unsigned int topicLength,  const char * messageData, unsigned int messageLength)
 {
-  Application().LogMessage(CString("[KL Status]: ")+CString(message), siVerboseMsg);
+  FTL::StrRef topic( topicData, topicLength );
+  FTL::StrRef message( messageData, messageLength );
+  FabricCore::Client *client =
+    const_cast<FabricCore::Client *>( FabricSplice::DGGraph::getClient() );
+  if ( topic == FTL_STR( "licensing" ) )
+  {
+    try
+    {
+      InitGlobalCanvasQtApp();
+      FabricUI::HandleLicenseData( NULL, *client, message );
+    }
+    catch ( FabricCore::Exception e )
+    {
+      xsiLogErrorFunc(e.getDesc_cstr());
+    }
+  }
+  else
+    Application().LogMessage(CString("[KL Status]: ")+CString(messageData, messageLength), siVerboseMsg);
 }
 
 CString xsiGetWorkgroupPath()

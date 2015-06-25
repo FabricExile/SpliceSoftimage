@@ -63,14 +63,19 @@ struct _windowData
 QApplication *g_qtApp         = NULL;   // global pointer at Qt application.
 bool          g_canvasIsOpen  = false;  // global flag to ensure that not more than one Canvas is open.
 
-void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
+void InitGlobalCanvasQtApp()
 {
-  // if necessary allocate g_qtApp.
   if (!g_qtApp)
   {
     int argc = 0;
     g_qtApp = new QApplication(argc, NULL);
   }
+}
+
+void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
+{
+  // if necessary allocate g_qtApp.
+  InitGlobalCanvasQtApp();
 
   // check.
   if ( g_canvasIsOpen)          return;

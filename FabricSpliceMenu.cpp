@@ -32,7 +32,6 @@ XSIPLUGINCALLBACK CStatus FabricSplice_Init( CRef& in_ctxt )
   menu.AddSeparatorItem();
   menu.AddCallbackItem("Online Help", "FabricSplice_Menu_OnlineHelp", item);
   menu.AddCallbackItem("ThirdParty Licenses", "FabricSplice_Menu_ThirdPartyLicenses", item);
-  menu.AddCallbackItem("Licensing Tool", "FabricSplice_Menu_LicensingTool", item);
 
   return CStatus::OK;
 }
@@ -139,36 +138,3 @@ SICALLBACK FabricSplice_Menu_ThirdPartyLicenses( XSI::CRef& )
   return true;
 }
 
-SICALLBACK FabricSplice_Menu_LicensingTool( XSI::CRef& )
-{
-  try
-  {
-    xsiInitializeSplice();
-
-    LicenseDialog dialog;
-    if(dialog.show())
-    {
-      CString server = dialog.getProp().GetParameterValue(L"licenseServer");
-      if(!server.IsEmpty())
-        FabricSplice::setLicenseServer(server.GetAsciiString());
-
-      if(FabricSplice::isLicenseValid())
-      {
-        LONG result;
-        Application().GetUIToolkit().MsgBox(L"Your license has been validated successfully.", siMsgOkOnly | siMsgInformation, "Fabric:Splice", result);
-        return true;
-      }
-      else
-      {
-        LONG result;
-        Application().GetUIToolkit().MsgBox(L"Invalid license.", siMsgOkOnly | siMsgCritical, "Fabric:Splice", result);
-        return false;
-      }
-    }
-  }
-  catch(FabricSplice::Exception e)
-  {
-    return false;
-  }
-  return true;
-}
