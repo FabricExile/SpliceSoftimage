@@ -919,7 +919,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
                     if (wrnmsg != L"")  Application().LogMessage(L"\"" + wrnmsg + L"\"", siWarningMsg);
 
                     // verbose.
-                    if (verbose)  Application().LogMessage(functionName + L": the polygon mesh \"" + ref.GetAsText() + L"\" has: #vertices = " + CString((ULONG)val.numVertices) + L"  #polygons = " + CString((ULONG)val.numPolygons) + L"  #samples = " + CString((ULONG)val.numSamples));
+                    if (verbose)  Application().LogMessage(functionName + L": polygon mesh \"" + ref.GetAsText() + L"\": #vertices = " + CString((ULONG)val.numVertices) + L"  #polygons = " + CString((ULONG)val.numPolygons) + L"  #samples = " + CString((ULONG)val.numSamples));
 
                     // set the DFG port from val.
                     BaseInterface::SetValueOfArgPolygonMesh(*client, binding, portName.GetAsciiString(), val);
