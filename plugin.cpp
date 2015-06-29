@@ -34,8 +34,8 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
       #endif
       CString t1 = L"The environment variable " + envVarName + L" is not set!";
       CString t2 = L"Please make sure that " + envVarName + L" is set and points to \"" + fabric_dfg_path + L"\".";
-      Application().LogMessage(L"[Fabric]: " + t1, siWarningMsg);
-      Application().LogMessage(L"[Fabric]: " + t2, siWarningMsg);
+      Application().LogMessage(L"[Fabric]: " + t1, siErrorMsg);
+      Application().LogMessage(L"[Fabric]: " + t2, siErrorMsg);
       LONG ret;
       Application().GetUIToolkit().MsgBox(t1 + L"\n\n" + t2 + L"\n\nNote: Softimage might become unstable from now on.", siMsgExclamation | siMsgOkOnly, L"Fabric Software", ret);
     }
