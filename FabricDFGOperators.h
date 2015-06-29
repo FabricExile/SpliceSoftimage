@@ -426,9 +426,9 @@ struct _polymesh
             bz = v2[2] - v0[2];
 
             // cross (b x a).
-	          nx = by * az - bz * ay;
-				    ny = bz * ax - bx * az;
-				    nz = bx * ay - by * ax;
+            nx = by * az - bz * ay;
+            ny = bz * ax - bx * az;
+            nz = bx * ay - by * ax;
 
             // normalize.
             float len = nx * nx + ny * ny + nz * nz;
