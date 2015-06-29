@@ -141,9 +141,6 @@ else:
 
 target = 'FabricSpliceSoftimage'
 
-if FABRIC_BUILD_OS == 'Linux':
-  env[ '_LIBFLAGS' ] = '-Wl,--start-group ' + env['_LIBFLAGS'] + ' -Wl,--end-group'
-
 softimageModule = env.SharedLibrary(target = target, source = Glob('*.cpp'), SHLIBPREFIX='')
 
 if FABRIC_BUILD_OS == 'Linux':
