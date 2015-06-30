@@ -2,6 +2,7 @@
 #include <xsi_customoperator.h>
 #include <xsi_projectitem.h>
 #include <xsi_pluginregistrar.h>
+#include <xsi_uitoolkit.h>
 
 #include "plugin.h"
 #include "FabricDFGBaseInterface.h"
@@ -16,12 +17,42 @@ using namespace XSI;
 // load plugin.
 SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
 {
+  // check if the environment variable FABRIC_DFG_PATH exists.
+  {
+    // get the environment variable's value.
+    CString envVarName = L"FABRIC_DFG_PATH";
+    char *envVarValue  = envVarValue = getenv(envVarName.GetAsciiString());
+
+    // no value found?
+    if (!envVarValue || envVarValue[0] == '\0')
+    {
+      // log error.
+      #ifdef _WIN32
+        CString fabric_dfg_path = L"<Fabric-Installation-Path>\\DFG\\Presets";
+      #else
+        CString fabric_dfg_path = L"<Fabric-Installation-Path>/DFG/Presets";
+      #endif
+      CString t1 = L"The environment variable " + envVarName + L" is not set!";
+      CString t2 = L"Please make sure that " + envVarName + L" is set and points to \"" + fabric_dfg_path + L"\".";
+      CString t3 = L"Note: Softimage might become unstable from now on.";
+      Application().LogMessage(L"[Fabric]: " + t1, siErrorMsg);
+      Application().LogMessage(L"[Fabric]: " + t2, siErrorMsg);
+      Application().LogMessage(L"[Fabric]: " + t3, siErrorMsg);
+
+      // display a message box.
+      if (Application().IsInteractive())
+      {
+        LONG ret;
+        Application().GetUIToolkit().MsgBox(t1 + L"\n\n" + t2 + L"\n\n" + t3, siMsgExclamation | siMsgOkOnly, L"Fabric Software", ret);
+      }
+    }
+  }
+
   // set plugin's name, version and author.
   in_reg.PutAuthor(L"Fabric Engine");
   in_reg.PutName  (L"Fabric Engine Plugin");
   in_reg.PutVersion(FabricCore::GetVersionMaj(),
                     FabricCore::GetVersionMin());
-
   // register the (old) Fabric Splice.
   {
     // rendering.
