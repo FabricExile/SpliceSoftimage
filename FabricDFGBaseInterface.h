@@ -85,55 +85,57 @@ class BaseInterface
   bool HasOutputPort(const char *portName);
   bool HasOutputPort(const std::string &portName);
 
-  // gets the value of a port.
-  // params:  port        the port.
+  // gets the value of an argument (= a "port").
+  // params:  binding     ref at binding.
+  //          argName     name of the argument (= the "port").
   //          out         will contain the result.
   //          strict      true: the type must match perfectly, false: the type must 'kind of' match and will be converted if necessary (and if possible).
   // returns: 0 on success, -1 wrong port type, -2 invalid port, -3 unknown, -4 Fabric exception.
-  static int GetArgValueBoolean(FabricCore::DFGBinding & binding, char const * argName, bool                 &out, bool strict = false);
-  static int GetArgValueInteger(FabricCore::DFGBinding & binding, char const * argName, int                  &out, bool strict = false);
-  static int GetArgValueFloat  (FabricCore::DFGBinding & binding, char const * argName, double               &out, bool strict = false);
-  static int GetArgValueString (FabricCore::DFGBinding & binding, char const * argName, std::string          &out, bool strict = false);
-  static int GetArgValueVec2   (FabricCore::DFGBinding & binding, char const * argName, std::vector <double> &out, bool strict = false);
-  static int GetArgValueVec3   (FabricCore::DFGBinding & binding, char const * argName, std::vector <double> &out, bool strict = false);
-  static int GetArgValueVec4   (FabricCore::DFGBinding & binding, char const * argName, std::vector <double> &out, bool strict = false);
-  static int GetArgValueColor  (FabricCore::DFGBinding & binding, char const * argName, std::vector <double> &out, bool strict = false);
-  static int GetArgValueRGB    (FabricCore::DFGBinding & binding, char const * argName, std::vector <double> &out, bool strict = false);
-  static int GetArgValueRGBA   (FabricCore::DFGBinding & binding, char const * argName, std::vector <double> &out, bool strict = false);
-  static int GetArgValueQuat   (FabricCore::DFGBinding & binding, char const * argName, std::vector <double> &out, bool strict = false);
-  static int GetArgValueMat44  (FabricCore::DFGBinding & binding, char const * argName, std::vector <double> &out, bool strict = false);
+  static int GetArgValueBoolean(FabricCore::DFGBinding &binding, char const *argName, bool                 &out, bool strict = false);
+  static int GetArgValueInteger(FabricCore::DFGBinding &binding, char const *argName, int                  &out, bool strict = false);
+  static int GetArgValueFloat  (FabricCore::DFGBinding &binding, char const *argName, double               &out, bool strict = false);
+  static int GetArgValueString (FabricCore::DFGBinding &binding, char const *argName, std::string          &out, bool strict = false);
+  static int GetArgValueVec2   (FabricCore::DFGBinding &binding, char const *argName, std::vector <double> &out, bool strict = false);
+  static int GetArgValueVec3   (FabricCore::DFGBinding &binding, char const *argName, std::vector <double> &out, bool strict = false);
+  static int GetArgValueVec4   (FabricCore::DFGBinding &binding, char const *argName, std::vector <double> &out, bool strict = false);
+  static int GetArgValueColor  (FabricCore::DFGBinding &binding, char const *argName, std::vector <double> &out, bool strict = false);
+  static int GetArgValueRGB    (FabricCore::DFGBinding &binding, char const *argName, std::vector <double> &out, bool strict = false);
+  static int GetArgValueRGBA   (FabricCore::DFGBinding &binding, char const *argName, std::vector <double> &out, bool strict = false);
+  static int GetArgValueQuat   (FabricCore::DFGBinding &binding, char const *argName, std::vector <double> &out, bool strict = false);
+  static int GetArgValueMat44  (FabricCore::DFGBinding &binding, char const *argName, std::vector <double> &out, bool strict = false);
 
-  // gets the value of a "PolygonMesh" port.
-  // params:  port        the port.
+  // gets the value of a "PolygonMesh" argument (= port).
+  // params:  binding     ref at binding.
+  //          argName     name of the argument (= the "port").
   //          out_*       will contain the result. These may be NULL. See parameters for more information.
   //          strict      true: the type must match perfectly, false: the type must 'kind of' match and will be converted if necessary (and if possible).
   // returns: 0 on success, -1 wrong port type, -2 invalid port, -3 memory error, -4 Fabric exception.
-  static int GetArgValuePolygonMesh(FabricCore::DFGBinding & binding,
-                                     char const * argName,
-                                     unsigned int                            &out_numVertices,                       // amount of vertices.
-                                     unsigned int                            &out_numPolygons,                       // amount of polygons.
-                                     unsigned int                            &out_numSamples,                        // amount of samples.
-                                     std::vector <float>                     *out_positions              = NULL,     // vertex positions (as a flat array).
-                                     std::vector <uint32_t>                  *out_polygonNumVertices     = NULL,     // polygon vertex counts.
-                                     std::vector <uint32_t>                  *out_polygonVertices        = NULL,     // polygon vertex indices.
-                                     std::vector <float>                     *out_polygonNodeNormals     = NULL,     // polygon node normals.
-                                     bool                                     strict                     = false);
+  static int GetArgValuePolygonMesh(FabricCore::DFGBinding    &binding,
+                                     char const               *argName,
+                                     unsigned int             &out_numVertices,                       // amount of vertices.
+                                     unsigned int             &out_numPolygons,                       // amount of polygons.
+                                     unsigned int             &out_numSamples,                        // amount of samples.
+                                     std::vector <float>      *out_positions              = NULL,     // vertex positions (as a flat array).
+                                     std::vector <uint32_t>   *out_polygonNumVertices     = NULL,     // polygon vertex counts.
+                                     std::vector <uint32_t>   *out_polygonVertices        = NULL,     // polygon vertex indices.
+                                     std::vector <float>      *out_polygonNodeNormals     = NULL,     // polygon node normals.
+                                     bool                      strict                     = false);
 
-  // sets the value of a port.
-  static void SetValueOfArgBoolean      (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const bool                  val);
-  static void SetValueOfArgSInt         (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const int32_t               val);
-  static void SetValueOfArgUInt         (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const uint32_t              val);
-  static void SetValueOfArgFloat        (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const double                val);
-  static void SetValueOfArgString       (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::string          &val);
-  static void SetValueOfArgVec2         (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val);
-  static void SetValueOfArgVec3         (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val);
-  static void SetValueOfArgVec4         (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val);
-  static void SetValueOfArgColor        (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val);
-  static void SetValueOfArgRGB          (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val);
-  static void SetValueOfArgRGBA         (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val);
-  static void SetValueOfArgQuat         (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val);
-  static void SetValueOfArgMat44        (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val);
-  static void SetValueOfArgPolygonMesh  (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const _polymesh            &val);
+  // sets the value of an argument (= a port).
+  static void SetValueOfArgBoolean      (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const bool                  val);
+  static void SetValueOfArgSInt         (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const int32_t               val);
+  static void SetValueOfArgUInt         (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const uint32_t              val);
+  static void SetValueOfArgFloat        (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const double                val);
+  static void SetValueOfArgString       (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const std::string          &val);
+  static void SetValueOfArgVec2         (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const std::vector <double> &val);
+  static void SetValueOfArgVec3         (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const std::vector <double> &val);
+  static void SetValueOfArgVec4         (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const std::vector <double> &val);
+  static void SetValueOfArgColor        (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const std::vector <double> &val);
+  static void SetValueOfArgRGB          (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const std::vector <double> &val);
+  static void SetValueOfArgRGBA         (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const std::vector <double> &val);
+  static void SetValueOfArgQuat         (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const std::vector <double> &val);
+  static void SetValueOfArgMat44        (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const std::vector <double> &val);
+  static void SetValueOfArgPolygonMesh  (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const _polymesh            &val);
 };
 
 #endif
