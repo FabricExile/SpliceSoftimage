@@ -173,13 +173,6 @@ if FABRIC_BUILD_OS == 'Windows':
       )
     )
 
-softimageFiles.append(
-  env.Install(
-    os.path.join(STAGE_DIR.abspath, 'Application', 'Plugins'),
-    env.File('FabricSplice_Python.py')
-    )
-  )
-
 # todo: install the python client
 
 alias = env.Alias('splicesoftimage', softimageFiles)
