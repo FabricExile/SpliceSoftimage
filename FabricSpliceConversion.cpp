@@ -397,7 +397,8 @@ void convertInputICEAttribute(FabricSplice::DGPort & port, CString dataType, ICE
         FabricCore::RTVal element = value.getArrayElement(i);
         element.setArraySize(xsiSubValues.GetCount());
         FabricCore::RTVal data = element.callMethod("Data", "data", 0, 0);
-        memcpy(data.getData(), &portValues[0], sizeof(int32_t) * xsiSubValues.GetCount());
+        if (xsiSubValues.GetCount() > 0)
+          memcpy(data.getData(), &portValues[0], sizeof(int32_t) * xsiSubValues.GetCount());
 
         value.setArrayElement(i, element);
       }
@@ -420,7 +421,8 @@ void convertInputICEAttribute(FabricSplice::DGPort & port, CString dataType, ICE
         FabricCore::RTVal element = value.getArrayElement(i);
         element.setArraySize(xsiSubValues.GetCount());
         FabricCore::RTVal data = element.callMethod("Data", "data", 0, 0);
-        memcpy(data.getData(), &xsiSubValues[0], sizeof(float) * xsiSubValues.GetCount());
+        if (xsiSubValues.GetCount() > 0)
+          memcpy(data.getData(), &xsiSubValues[0], sizeof(float) * xsiSubValues.GetCount());
 
         value.setArrayElement(i, element);
       }
@@ -466,7 +468,8 @@ void convertInputICEAttribute(FabricSplice::DGPort & port, CString dataType, ICE
         FabricCore::RTVal element = value.getArrayElement(i);
         element.setArraySize(xsiSubValues.GetCount());
         FabricCore::RTVal data = element.callMethod("Data", "data", 0, 0);
-        memcpy(data.getData(), &xsiSubValues[0], sizeof(float) * 2 * xsiSubValues.GetCount());
+        if (xsiSubValues.GetCount() > 0)
+          memcpy(data.getData(), &xsiSubValues[0], sizeof(float) * 2 * xsiSubValues.GetCount());
 
         value.setArrayElement(i, element);
       }
@@ -489,7 +492,8 @@ void convertInputICEAttribute(FabricSplice::DGPort & port, CString dataType, ICE
         FabricCore::RTVal element = value.getArrayElement(i);
         element.setArraySize(xsiSubValues.GetCount());
         FabricCore::RTVal data = element.callMethod("Data", "data", 0, 0);
-        memcpy(data.getData(), &xsiSubValues[0], sizeof(float) * 3 * xsiSubValues.GetCount());
+        if (xsiSubValues.GetCount() > 0)
+          memcpy(data.getData(), &xsiSubValues[0], sizeof(float) * 3 * xsiSubValues.GetCount());
 
         value.setArrayElement(i, element);
       }
@@ -511,7 +515,7 @@ void convertInputICEAttribute(FabricSplice::DGPort & port, CString dataType, ICE
 
         size_t offset = 0;
         std::vector<float> portValues(xsiSubValues.GetCount() * 4);
-        for(size_t j=0;j<portValues.size();j++)
+        for(size_t j=0;j<xsiSubValues.GetCount();j++)
         {
           portValues[offset++] = xsiSubValues[j].GetX();
           portValues[offset++] = xsiSubValues[j].GetY();
@@ -522,7 +526,8 @@ void convertInputICEAttribute(FabricSplice::DGPort & port, CString dataType, ICE
         FabricCore::RTVal element = value.getArrayElement(i);
         element.setArraySize(xsiSubValues.GetCount());
         FabricCore::RTVal data = element.callMethod("Data", "data", 0, 0);
-        memcpy(data.getData(), &portValues[0], sizeof(float) * 4 * xsiSubValues.GetCount());
+        if (xsiSubValues.GetCount() > 0)
+          memcpy(data.getData(), &portValues[0], sizeof(float) * 4 * xsiSubValues.GetCount());
 
         value.setArrayElement(i, element);
       }
@@ -544,7 +549,7 @@ void convertInputICEAttribute(FabricSplice::DGPort & port, CString dataType, ICE
 
         size_t offset = 0;
         std::vector<float> portValues(xsiSubValues.GetCount() * 16);
-        for(size_t j=0;j<portValues.size();j++)
+        for(size_t j=0;j<xsiSubValues.GetCount();j++)
         {
           portValues[offset++] = xsiSubValues[j].GetValue(0, 0);
           portValues[offset++] = xsiSubValues[j].GetValue(1, 0);
@@ -567,7 +572,8 @@ void convertInputICEAttribute(FabricSplice::DGPort & port, CString dataType, ICE
         FabricCore::RTVal element = value.getArrayElement(i);
         element.setArraySize(xsiSubValues.GetCount());
         FabricCore::RTVal data = element.callMethod("Data", "data", 0, 0);
-        memcpy(data.getData(), &portValues[0], sizeof(float) * 16 * xsiSubValues.GetCount());
+        if (xsiSubValues.GetCount() > 0)
+          memcpy(data.getData(), &portValues[0], sizeof(float) * 16 * xsiSubValues.GetCount());
 
         value.setArrayElement(i, element);
       }
@@ -590,7 +596,8 @@ void convertInputICEAttribute(FabricSplice::DGPort & port, CString dataType, ICE
         FabricCore::RTVal element = value.getArrayElement(i);
         element.setArraySize(xsiSubValues.GetCount());
         FabricCore::RTVal data = element.callMethod("Data", "data", 0, 0);
-        memcpy(data.getData(), &xsiSubValues[0], sizeof(float) * 4 * xsiSubValues.GetCount());
+        if (xsiSubValues.GetCount() > 0)
+          memcpy(data.getData(), &xsiSubValues[0], sizeof(float) * 4 * xsiSubValues.GetCount());
 
         value.setArrayElement(i, element);
       }
