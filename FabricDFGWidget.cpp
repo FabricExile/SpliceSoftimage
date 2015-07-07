@@ -130,38 +130,48 @@ void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
   }
 
   // show/execute Qt dialog.
-  try
+  bool comeAgain;
+  do
   {
-    const bool useExec = true;
+    comeAgain = false;
 
-    // use the widget's exec() function.
-    if (useExec)
+    try
     {
-      winData.qtDialog->exec();
-    }
+      const bool useExec = true;
 
-    // use a manual loop.
-    else
-    {
-      winData.qtDialog->show();
-      while (winData.qtDialog->isVisible())
+      // use the widget's exec() function.
+      if (useExec)
       {
-        qtApp->processEvents();
+        winData.qtDialog->exec();
       }
-    }
 
-    // clean up.
-    //if (winData.qtDFGWidget)   delete winData.qtDFGWidget;
-  }
-  catch(std::exception &e)
-  {
-    feLogError(e.what() ? e.what() : "\"\"");
-    winData.qtDialog->close();
-  }
-  catch(FabricCore::Exception e)
-  {
-    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
-  }
+      // use a manual loop.
+      else
+      {
+        winData.qtDialog->show();
+        while (winData.qtDialog->isVisible())
+        {
+          qtApp->processEvents();
+        }
+      }
+
+      // clean up.
+      //if (winData.qtDFGWidget)   delete winData.qtDFGWidget;
+    }
+    catch(std::exception &e)
+    {
+      feLogError(e.what() ? e.what() : "\"\"");
+      // temporary construct to restart processing the Qt events of winData.qtDialog.
+      if (e.what() && std::string(e.what()) == std::string("invalid string position"))
+        comeAgain = true;
+      else
+        winData.qtDialog->close();
+    }
+    catch(FabricCore::Exception e)
+    {
+      feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+    }
+  } while (comeAgain);
 
   // put graph of temporary base interface back into pud.
   pud->GetBaseInterface()->setFromJSON(baseInterface->getJSON());
