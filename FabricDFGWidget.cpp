@@ -153,6 +153,11 @@ void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
     // clean up.
     //if (winData.qtDFGWidget)   delete winData.qtDFGWidget;
   }
+  catch(std::exception &e)
+  {
+    feLogError(e.what() ? e.what() : "\"\"");
+    winData.qtDialog->close();
+  }
   catch(FabricCore::Exception e)
   {
     feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
