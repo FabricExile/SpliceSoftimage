@@ -69,13 +69,17 @@ void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
   QApplication *qtApp = (QApplication *)QCoreApplication::instance();
   if (!qtApp)
   {
-    Application().LogMessage(L"QCoreApplication::instance() returned NULL => allocate it ourself.");
+    Application().LogMessage(L"QCoreApplication::instance() returned NULL => allocating an instance manually");
     int argc = 0;
     qtApp = new QApplication(argc, NULL);
   }
 
   // check.
-  if ( s_canvasIsOpen)          return;
+  if (s_canvasIsOpen)
+  {
+    Application().LogMessage(L"Not opening Canvas... reason: there already is an open Canvas window.", siWarningMsg);
+    return;
+  }
   if (!qtApp)                   return;
   if (!pud)                     return;
   if (!pud->GetBaseInterface()) return;
