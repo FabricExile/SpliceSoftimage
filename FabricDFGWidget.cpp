@@ -80,8 +80,12 @@ void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
   if (!pud)                     return;
   if (!pud->GetBaseInterface()) return;
 
-  // set global flag to block any further canvas.
+  // set flag to block any further canvas.
   s_canvasIsOpen = true;
+
+  // create temporary base interface and set its graph from pud.
+  BaseInterface *baseInterface = new BaseInterface(feLog, feLogError);
+  baseInterface->setFromJSON(pud->GetBaseInterface()->getJSON());
 
   // declare and fill window data structure.
   _windowData winData;
@@ -110,13 +114,12 @@ void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
     config.graphConfig.headerBackgroundColor    . setRgbF(f * 113, f * 112, f * 111);
     config.graphConfig.mainPanelBackgroundColor . setRgbF(f * 127, f * 127, f * 127);
     config.graphConfig.sidePanelBackgroundColor . setRgbF(f * 171, f * 168, f * 166);
-    FabricCore::DFGExec exec = pud->GetBaseInterface()->getBinding().getExec();
-    winData.qtDFGWidget->init(*pud->GetBaseInterface()->getClient(),
-                               pud->GetBaseInterface()->getManager(),
-                               pud->GetBaseInterface()->getHost(),
-                               pud->GetBaseInterface()->getBinding(),
-                               exec,
-                               pud->GetBaseInterface()->getStack(),
+    winData.qtDFGWidget->init(*baseInterface->getClient(),
+                               baseInterface->getManager(),
+                               baseInterface->getHost(),
+                               baseInterface->getBinding(),
+                               baseInterface->getBinding().getExec(),
+                               baseInterface->getStack(),
                                false,
                                config
                              );
@@ -155,7 +158,13 @@ void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
     feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
   }
 
-  // done.
+  // put graph of temporary base interface back into pud.
+  pud->GetBaseInterface()->setFromJSON(baseInterface->getJSON());
+
+  // clean up.
   s_canvasIsOpen = false;
+  delete baseInterface;
+
+  // done.
   return;
 }
