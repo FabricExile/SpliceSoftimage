@@ -60,26 +60,22 @@ struct _windowData
   }
 };
 
-QApplication *g_qtApp         = NULL;   // global pointer at Qt application.
 bool          g_canvasIsOpen  = false;  // global flag to ensure that not more than one Canvas is open.
-
-void InitGlobalCanvasQtApp()
-{
-  if (!g_qtApp)
-  {
-    int argc = 0;
-    g_qtApp = new QApplication(argc, NULL);
-  }
-}
 
 void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
 {
-  // if necessary allocate g_qtApp.
-  InitGlobalCanvasQtApp();
+  // get Qt app.
+  QApplication *qtApp = (QApplication *)QCoreApplication::instance();
+  if (!qtApp)
+  {
+    Application().LogMessage(L"QCoreApplication::instance() returned NULL => allocate it ourself.");
+    int argc = 0;
+    qtApp = new QApplication(argc, NULL);
+  }
 
   // check.
   if ( g_canvasIsOpen)          return;
-  if (!g_qtApp)                 return;
+  if (!qtApp)                   return;
   if (!pud)                     return;
   if (!pud->GetBaseInterface()) return;
 
@@ -146,7 +142,7 @@ void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
       winData.qtDialog->show();
       while (winData.qtDialog->isVisible())
       {
-        g_qtApp->processEvents();
+        qtApp->processEvents();
       }
     }
 
