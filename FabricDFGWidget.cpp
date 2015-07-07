@@ -60,10 +60,11 @@ struct _windowData
   }
 };
 
-bool          g_canvasIsOpen  = false;  // global flag to ensure that not more than one Canvas is open.
-
 void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
 {
+  // static flag to ensure that not more than one Canvas is open.
+  bool s_canvasIsOpen = false;
+
   // get Qt app.
   QApplication *qtApp = (QApplication *)QCoreApplication::instance();
   if (!qtApp)
@@ -74,13 +75,13 @@ void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
   }
 
   // check.
-  if ( g_canvasIsOpen)          return;
+  if ( canvasIsOpen)            return;
   if (!qtApp)                   return;
   if (!pud)                     return;
   if (!pud->GetBaseInterface()) return;
 
   // set global flag to block any further canvas.
-  g_canvasIsOpen = true;
+  canvasIsOpen = true;
 
   // declare and fill window data structure.
   _windowData winData;
@@ -155,6 +156,6 @@ void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
   }
 
   // done.
-  g_canvasIsOpen = false;
+  canvasIsOpen = false;
   return;
 }
