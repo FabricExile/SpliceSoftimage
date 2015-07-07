@@ -75,13 +75,13 @@ void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
   }
 
   // check.
-  if ( canvasIsOpen)            return;
+  if ( s_canvasIsOpen)          return;
   if (!qtApp)                   return;
   if (!pud)                     return;
   if (!pud->GetBaseInterface()) return;
 
   // set global flag to block any further canvas.
-  canvasIsOpen = true;
+  s_canvasIsOpen = true;
 
   // declare and fill window data structure.
   _windowData winData;
@@ -156,6 +156,6 @@ void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
   }
 
   // done.
-  canvasIsOpen = false;
+  s_canvasIsOpen = false;
   return;
 }
