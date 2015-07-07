@@ -130,6 +130,7 @@ void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
   }
 
   // show/execute Qt dialog.
+  try
   {
     const bool useExec = true;
 
@@ -148,10 +149,14 @@ void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
         g_qtApp->processEvents();
       }
     }
-  }
 
-  // clean up.
-  //if (winData.qtDFGWidget)   delete winData.qtDFGWidget;
+    // clean up.
+    //if (winData.qtDFGWidget)   delete winData.qtDFGWidget;
+  }
+  catch(FabricCore::Exception e)
+  {
+    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+  }
 
   // done.
   g_canvasIsOpen = false;
