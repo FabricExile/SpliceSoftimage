@@ -60,10 +60,25 @@ struct _windowData
   }
 };
 
-void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
+const char *GetOpenCanvasErrorDescription(OPENCANVAS_RETURN_VALS in_errID)
 {
-  // static flag to ensure that not more than one Canvas is open.
-  bool s_canvasIsOpen = false;
+  static const char str_SUCCESS     [] = "success";
+  static const char str_ALREADY_OPEN[] = "did not open Canvas, because there already is an open Canvas window";
+  static const char str_NULL_POINTER[] = "failed to open Canvas: a pointer is NULL";
+  static const char str_UNKNOWN     [] = "failed to open Canvas: unknown error";
+  switch (in_errID)
+  {
+    case OPENCANVAS_RETURN_VALS::SUCCESS:       return str_SUCCESS;
+    case OPENCANVAS_RETURN_VALS::ALREADY_OPEN:  return str_ALREADY_OPEN;
+    case OPENCANVAS_RETURN_VALS::NULL_POINTER:  return str_NULL_POINTER;
+    default:                                    return str_UNKNOWN;
+  }
+}
+
+OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
+{
+  // static flag to ensure that not more than one Canvas is open at the same time.
+  static bool s_canvasIsOpen = false;
 
   // get Qt app.
   QApplication *qtApp = (QApplication *)QCoreApplication::instance();
@@ -75,14 +90,10 @@ void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
   }
 
   // check.
-  if (s_canvasIsOpen)
-  {
-    Application().LogMessage(L"Not opening Canvas... reason: there already is an open Canvas window.", siWarningMsg);
-    return;
-  }
-  if (!qtApp)                   return;
-  if (!pud)                     return;
-  if (!pud->GetBaseInterface()) return;
+  if (s_canvasIsOpen)           return OPENCANVAS_RETURN_VALS::ALREADY_OPEN;
+  if (!qtApp)                   return OPENCANVAS_RETURN_VALS::NULL_POINTER;
+  if (!pud)                     return OPENCANVAS_RETURN_VALS::NULL_POINTER;
+  if (!pud->GetBaseInterface()) return OPENCANVAS_RETURN_VALS::NULL_POINTER;
 
   // set flag to block any further canvas.
   s_canvasIsOpen = true;
@@ -185,5 +196,5 @@ void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
   delete baseInterface;
 
   // done.
-  return;
+  return OPENCANVAS_RETURN_VALS::SUCCESS;
 }

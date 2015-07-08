@@ -555,6 +555,5 @@ struct _polymesh
 
 // forward declarations.
 int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap);
-void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost);
 
 #endif
