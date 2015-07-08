@@ -20,6 +20,7 @@
 #include "FabricDFGPlugin.h"
 #include "FabricDFGOperators.h"
 #include "FabricDFGTools.h"
+#include "FabricDFGWidget.h"
 
 #include "FabricSpliceBaseInterface.h"
 
@@ -467,8 +468,11 @@ SICALLBACK dfgOpenCanvas_Execute(CRef &in_ctxt)
   // open canvas.
   Application().LogMessage(L"opening canvas for \"" + operatorName + L"\"", siVerboseMsg);
   CString title = L"Canvas - " + op.GetParent3DObject().GetName();
-  OpenCanvas(pud, title.GetAsciiString(), makeWindowTopMost);
-  Application().LogMessage(L"closing canvas", siVerboseMsg);
+  OPENCANVAS_RETURN_VALS ret = OpenCanvas(pud, title.GetAsciiString(), makeWindowTopMost);
+  if (ret != OPENCANVAS_RETURN_VALS::SUCCESS)
+    Application().LogMessage(CString(GetOpenCanvasErrorDescription(ret)), siWarningMsg);
+  else
+    Application().LogMessage(L"closing canvas", siVerboseMsg);
 
   // done.
   return CStatus::OK;

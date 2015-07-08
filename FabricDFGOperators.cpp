@@ -40,6 +40,7 @@
 #include "FabricDFGOperators.h"
 #include "FabricDFGBaseInterface.h"
 #include "FabricDFGTools.h"
+#include "FabricDFGWidget.h"
 
 std::map <unsigned int, _opUserData *>  _opUserData::s_instances;
 std::vector<_portMapping>               _opUserData::s_portmap_newOp;
@@ -446,7 +447,12 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     else if (btnName == L"BtnOpenCanvas")
     {
       CString title = L"Canvas - " + op.GetParent3DObject().GetName();
-      OpenCanvas(_opUserData::GetUserData(op.GetObjectID()), title.GetAsciiString(), false);
+      OPENCANVAS_RETURN_VALS ocRet = OpenCanvas(_opUserData::GetUserData(op.GetObjectID()), title.GetAsciiString(), false);
+      if (ocRet != OPENCANVAS_RETURN_VALS::SUCCESS)
+      {
+        LONG ret;
+        toolkit.MsgBox(CString(GetOpenCanvasErrorDescription(ocRet)), siMsgOkOnly, "dfgSoftimageOp (Open Canvas)", ret);
+      }
     }
     else if (btnName == L"BtnPortsDefineTT")
     {
