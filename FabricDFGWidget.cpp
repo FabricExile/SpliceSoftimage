@@ -60,15 +60,18 @@ struct _windowData
   }
 };
 
-QApplication *g_qtApp         = NULL;   // global pointer at Qt application.
-bool          g_canvasIsOpen  = false;  // global flag to ensure that not more than one Canvas is open.
-
-void InitGlobalCanvasQtApp()
+void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
 {
-  if (!g_qtApp)
+  // static flag to ensure that not more than one Canvas is open.
+  bool s_canvasIsOpen = false;
+
+  // get Qt app.
+  QApplication *qtApp = (QApplication *)QCoreApplication::instance();
+  if (!qtApp)
   {
+    Application().LogMessage(L"QCoreApplication::instance() returned NULL => allocating an instance manually");
     int argc = 0;
-    g_qtApp = new QApplication(argc, NULL);
+    qtApp = new QApplication(argc, NULL);
   }
 }
 
@@ -78,13 +81,21 @@ void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
   InitGlobalCanvasQtApp();
 
   // check.
-  if ( g_canvasIsOpen)          return;
-  if (!g_qtApp)                 return;
+  if (s_canvasIsOpen)
+  {
+    Application().LogMessage(L"Not opening Canvas... reason: there already is an open Canvas window.", siWarningMsg);
+    return;
+  }
+  if (!qtApp)                   return;
   if (!pud)                     return;
   if (!pud->GetBaseInterface()) return;
 
-  // set global flag to block any further canvas.
-  g_canvasIsOpen = true;
+  // set flag to block any further canvas.
+  s_canvasIsOpen = true;
+
+  // create temporary base interface and set its graph from pud.
+  BaseInterface *baseInterface = new BaseInterface(feLog, feLogError);
+  baseInterface->setFromJSON(pud->GetBaseInterface()->getJSON());
 
   // declare and fill window data structure.
   _windowData winData;
@@ -113,13 +124,12 @@ void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
     config.graphConfig.headerBackgroundColor    . setRgbF(f * 113, f * 112, f * 111);
     config.graphConfig.mainPanelBackgroundColor . setRgbF(f * 127, f * 127, f * 127);
     config.graphConfig.sidePanelBackgroundColor . setRgbF(f * 171, f * 168, f * 166);
-    FabricCore::DFGExec exec = pud->GetBaseInterface()->getBinding().getExec();
-    winData.qtDFGWidget->init(*pud->GetBaseInterface()->getClient(),
-                               pud->GetBaseInterface()->getManager(),
-                               pud->GetBaseInterface()->getHost(),
-                               pud->GetBaseInterface()->getBinding(),
-                               exec,
-                               pud->GetBaseInterface()->getStack(),
+    winData.qtDFGWidget->init(*baseInterface->getClient(),
+                               baseInterface->getManager(),
+                               baseInterface->getHost(),
+                               baseInterface->getBinding(),
+                               baseInterface->getBinding().getExec(),
+                               baseInterface->getStack(),
                                false,
                                config
                              );
@@ -130,30 +140,56 @@ void OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
   }
 
   // show/execute Qt dialog.
+  bool comeAgain;
+  do
   {
-    const bool useExec = true;
+    comeAgain = false;
 
-    // use the widget's exec() function.
-    if (useExec)
+    try
     {
-      winData.qtDialog->exec();
-    }
+      const bool useExec = true;
 
-    // use a manual loop.
-    else
-    {
-      winData.qtDialog->show();
-      while (winData.qtDialog->isVisible())
+      // use the widget's exec() function.
+      if (useExec)
       {
-        g_qtApp->processEvents();
+        winData.qtDialog->exec();
       }
+
+      // use a manual loop.
+      else
+      {
+        winData.qtDialog->show();
+        while (winData.qtDialog->isVisible())
+        {
+          qtApp->processEvents();
+        }
+      }
+
+      // clean up.
+      //if (winData.qtDFGWidget)   delete winData.qtDFGWidget;
     }
-  }
+    catch(std::exception &e)
+    {
+      feLogError(e.what() ? e.what() : "\"\"");
+      // temporary construct to restart processing the Qt events of winData.qtDialog.
+      if (e.what() && std::string(e.what()) == std::string("invalid string position"))
+        comeAgain = true;
+      else
+        winData.qtDialog->close();
+    }
+    catch(FabricCore::Exception e)
+    {
+      feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+    }
+  } while (comeAgain);
+
+  // put graph of temporary base interface back into pud.
+  pud->GetBaseInterface()->setFromJSON(baseInterface->getJSON());
 
   // clean up.
-  //if (winData.qtDFGWidget)   delete winData.qtDFGWidget;
+  s_canvasIsOpen = false;
+  delete baseInterface;
 
   // done.
-  g_canvasIsOpen = false;
   return;
 }
