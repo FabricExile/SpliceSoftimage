@@ -386,16 +386,23 @@ public:
           Camera camera = in_ctxt.GetCamera();
           Primitive cameraPrim = camera.GetActivePrimitive();
           LONG projType = cameraPrim.GetParameterValue(L"proj");
-          FabricCore::RTVal param = FabricSplice::constructBooleanRTVal(projType == 0);
+          bool isOrthoGraphic = projType == 0;
+          FabricCore::RTVal param = FabricSplice::constructBooleanRTVal(isOrthoGraphic);
           inlineCamera.callMethod("", "setOrthographic", 1, &param);
 
           double xsiViewportAspect = double(width) / double(height);
           double cameraAspect = cameraPrim.GetParameterValue(L"aspect");
 
-          double fov = MATH::DegreesToRadians(cameraPrim.GetParameterValue(L"fov"));
-          LONG fovType = cameraPrim.GetParameterValue(L"fovType");
-          double fovY;
-          if(fovType != 0){ // Perspective projection.
+          if(isOrthoGraphic)
+          {
+            double orthoheight = cameraPrim.GetParameterValue(L"orthoheight");
+            param = FabricSplice::constructFloat64RTVal(orthoheight);
+            inlineCamera.callMethod("", "setOrthographicFrustumHeight", 1, &param);
+          }
+          else
+          {
+            double fov = MATH::DegreesToRadians(cameraPrim.GetParameterValue(L"fov"));
+            double fovY;
             double fovX = fov;
             if(xsiViewportAspect < cameraAspect){
               // bars top and bottom
@@ -405,17 +412,9 @@ public:
               // bars left and right
               fovY = atan( tan(fovX * 0.5) / cameraAspect ) * 2.0;
             }
+            param = FabricSplice::constructFloat64RTVal(fovY);
+            inlineCamera.callMethod("", "setFovY", 1, &param);
           }
-          else{ // orthographic projection
-            fovY = fov;
-            if(xsiViewportAspect < cameraAspect){
-              // bars top and bottom
-              double fovX = atan( tan(fovY * 0.5) * cameraAspect ) * 2.0;
-              fovY = atan( tan(fovX * 0.5) / xsiViewportAspect ) * 2.0;
-            }
-          }
-          param = FabricSplice::constructFloat64RTVal(fovY);
-          inlineCamera.callMethod("", "setFovY", 1, &param);
 
 
           double near = cameraPrim.GetParameterValue(L"near");
