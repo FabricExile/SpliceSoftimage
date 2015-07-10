@@ -137,6 +137,7 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle, bool w
                                baseInterface->getManager(),
                                baseInterface->getHost(),
                                baseInterface->getBinding(),
+                               "",
                                baseInterface->getBinding().getExec(),
                                baseInterface->getStack(),
                                false,
