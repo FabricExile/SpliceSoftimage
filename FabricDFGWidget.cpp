@@ -80,22 +80,23 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle, bool w
   // static flag to ensure that not more than one Canvas is open at the same time.
   static bool s_canvasIsOpen = false;
 
-  // get Qt app.
-  QApplication *qtApp = (QApplication *)QCoreApplication::instance();
-  if (!qtApp)
-  {
-    Application().LogMessage(L"QCoreApplication::instance() returned NULL => allocating an instance manually");
-    int argc = 0;
-    qtApp = new QApplication(argc, NULL);
-  }
-
   // check.
   if (s_canvasIsOpen)
   {
     Application().LogMessage(L"Not opening Canvas... reason: there already is an open Canvas window.", siWarningMsg);
     return OPENCANVAS_RETURN_VALS::ALREADY_OPEN;
   }
-  if (!qtApp)                   return OPENCANVAS_RETURN_VALS::NULL_POINTER;
+
+  // init Qt app.
+  if (!qApp)
+  {
+    Application().LogMessage(L"qApp equal NULL => allocating an instance manually");
+    int argc = 0;
+    new QApplication(argc, NULL);
+  }
+
+  // check.
+  if (!qApp)                    return OPENCANVAS_RETURN_VALS::NULL_POINTER;
   if (!pud)                     return OPENCANVAS_RETURN_VALS::NULL_POINTER;
   if (!pud->GetBaseInterface()) return OPENCANVAS_RETURN_VALS::NULL_POINTER;
 
@@ -171,7 +172,7 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle, bool w
         winData.qtDialog->show();
         while (winData.qtDialog->isVisible())
         {
-          qtApp->processEvents();
+          qApp->processEvents();
         }
       }
 

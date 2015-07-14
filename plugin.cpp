@@ -12,7 +12,12 @@
 #include "FabricSplicePlugin.h"
 #include "FabricSpliceICENodes.h"
 
+#include <QtGui/QApplication>
+
 using namespace XSI;
+
+#define INIT_QT_ON_STARTUP  1   // if != 0 then init Qt on startup.
+#define DELETE_QT_ON_EXIT   0   // if != 0 then delete Qt when XSI exits.
 
 // load plugin.
 SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
@@ -42,8 +47,8 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
   // set plugin's name, version and author.
   in_reg.PutAuthor(L"Fabric Engine");
   in_reg.PutName  (L"Fabric Engine Plugin");
-  in_reg.PutVersion(FabricCore::GetVersionMaj(),
-                    FabricCore::GetVersionMin());
+  in_reg.PutVersion(FabricCore::GetVersionMaj(), FabricCore::GetVersionMin());
+
   // register the (old) Fabric Splice.
   {
     // rendering.
@@ -103,6 +108,10 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
 
     // menu.
     in_reg.RegisterMenu(siMenuMainTopLevelID, "Fabric:DFG", true, true);
+
+    // events.
+    in_reg.RegisterEvent(L"FabricDFGOnStartup",   siOnStartup);
+    in_reg.RegisterEvent(L"FabricDFGOnTerminate", siOnTerminate);
   }
 
   // done.
@@ -114,7 +123,7 @@ SICALLBACK XSIUnloadPlugin(const PluginRegistrar& in_reg)
 {
   CString strPluginName;
   strPluginName = in_reg.GetName();
-  Application().LogMessage(strPluginName + L" has been unloaded.",siVerboseMsg);
+  Application().LogMessage(strPluginName + L" has been unloaded.", siVerboseMsg);
 
   // done.
   return CStatus::OK;
@@ -123,6 +132,49 @@ SICALLBACK XSIUnloadPlugin(const PluginRegistrar& in_reg)
 // _________________________
 // siEvent helper functions.
 // -------------------------
+
+XSIPLUGINCALLBACK CStatus FabricDFGOnStartup_OnEvent(CRef & ctxt)
+{
+  Context context(ctxt);
+
+  // Qt.
+  if (INIT_QT_ON_STARTUP && Application().IsInteractive() && !qApp)
+  {
+    Application().LogMessage(L"[FabricDFG] allocating an instance of QApplication.");
+    int argc = 0;
+    new QApplication(argc, NULL);
+  }
+
+
+  // done.
+  // /note: we return 1 (i.e. "true") instead of CStatus::OK or else the event gets aborted).
+  return 1;
+}
+
+XSIPLUGINCALLBACK CStatus FabricDFGOnTerminate_OnEvent(CRef & ctxt)
+{
+  Context context(ctxt);
+
+  // Qt.
+  if (DELETE_QT_ON_EXIT && qApp)
+  {
+    Application().LogMessage(L"[FabricDFG] deleting QApplication.");
+    LONG ret;
+    Application().GetUIToolkit().MsgBox(L"deleting QApplication.", siMsgOkOnly, L"debug", ret );
+
+    //delete qApp;
+    //qApp->deleteLater();
+    //qApp->exit();
+    //qApp->quit();
+
+    Application().GetUIToolkit().MsgBox(L"done.", siMsgOkOnly, L"debug", ret );
+  }
+
+
+  // done.
+  // /note: we return 1 (i.e. "true") instead of CStatus::OK or else the event gets aborted).
+  return 1;
+}
 
 CStatus helpFnct_siEventOpenSave(CRef &ctxt, int openSave)
 {
