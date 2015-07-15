@@ -363,30 +363,38 @@ SICALLBACK dfgExportJSON_Execute(CRef &in_ctxt)
   if (!pud->GetBaseInterface())
   { Application().LogMessage(L"no base interface found!", siErrorMsg);
     return CStatus::OK; }
-  
+
   // store the ports' exposure types and default values in the ports meta data.
-  try
   {
-    FabricCore::DFGExec exec = pud->GetBaseInterface()->getBinding().getExec();
-    for (int i=0;i<exec.getExecPortCount();i++)
+    // get op's port mapping.
+    CString pmap_err;
+    std::vector <_portMapping> pmap;
+    const bool hasValidPortMap = dfgTools::GetOperatorPortMapping(ref, pmap, pmap_err);
+    if (!hasValidPortMap)
+      Application().LogMessage(L"GetOperatorPortMapping() failed: \"" + pmap_err + L"\"", siWarningMsg);
+
+    // set meta data.
+    try
     {
-      if (exec.getExecPortType(i) == FabricCore::DFGPortType_In)
+      FabricCore::DFGExec exec = pud->GetBaseInterface()->getBinding().getExec();
+      for (int i=0;i<exec.getExecPortCount();i++)
       {
-        exec.setExecPortMetadata(exec.getExecPortName(i), "blaIn1", "bliIn1", false);
-        exec.setExecPortMetadata(exec.getExecPortName(i), "blaIn2", "bliIn2", false);
-        exec.setExecPortMetadata(exec.getExecPortName(i), "blaIn3", "bliIn3", false);
-      }
-      else if (exec.getExecPortType(i) == FabricCore::DFGPortType_Out)
-      {
-        exec.setExecPortMetadata(exec.getExecPortName(i), "blaOut", "bliOut1", false);
-        exec.setExecPortMetadata(exec.getExecPortName(i), "blaOut", "bliOut2", false);
-        exec.setExecPortMetadata(exec.getExecPortName(i), "blaOut", "bliOut3", false);
+        // mapType.
+        exec.setExecPortMetadata(exec.getExecPortName(i), "XSI_mapType", hasValidPortMap ? CString((LONG)pmap[i].mapType).GetAsciiString() : NULL, false);
+
+        //
+        if (exec.getExecPortType(i) == FabricCore::DFGPortType_In)
+        {
+        }
+        else if (exec.getExecPortType(i) == FabricCore::DFGPortType_Out)
+        {
+        }
       }
     }
-  }
-  catch (FabricCore::Exception e)
-  {
-    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+    catch (FabricCore::Exception e)
+    {
+      feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+    }
   }
     
   // log JSON.
