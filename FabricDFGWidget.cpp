@@ -183,6 +183,7 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle, bool w
     {
       feLogError(e.what() ? e.what() : "\"\"");
       // temporary construct to restart processing the Qt events of winData.qtDialog.
+      // (note: this was done as a workaround for FE-4646 / FE-4639)
       if (e.what() && std::string(e.what()) == std::string("invalid string position"))
         comeAgain = true;
       else
