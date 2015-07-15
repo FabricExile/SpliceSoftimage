@@ -98,6 +98,9 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
   CRef oPDef;
   Parameter emptyParam;
 
+  // ref at global _opUserData::s_portmap_newOp.
+  std::vector <_portMapping> &portmap = _opUserData::s_portmap_newOp;
+
   // create default parameter(s).
   oPDef = oFactory.CreateParamDef(L"FabricActive",        CValue::siBool,   siPersistable | siAnimatable | siKeyable, L"", L"", true, CValue(), CValue(), CValue(), CValue());
   op.AddParameter(oPDef, emptyParam);
@@ -112,9 +115,9 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
   // create exposed DFG parameters.
   CString exposedDFGParams = L"";
   {
-    for (int i=0;i<_opUserData::s_portmap_newOp.size();i++)
+    for (int i=0;i<portmap.size();i++)
     {
-      _portMapping &pmap = _opUserData::s_portmap_newOp[i];
+      _portMapping &pmap = portmap[i];
 
       if (pmap.mapType != DFG_PORT_MAPTYPE_XSI_PARAMETER)
         continue;
@@ -431,6 +434,9 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
   PPGEventContext::PPGEvent eventID = ctxt.GetEventID();
   UIToolkit toolkit = Application().GetUIToolkit();
 
+  // ref at global _opUserData::s_portmap_newOp.
+  std::vector <_portMapping> &portmap = _opUserData::s_portmap_newOp;
+
   // process event.
   if (eventID == PPGEventContext::siOnInit)
   {
@@ -457,15 +463,15 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     else if (btnName == L"BtnPortsDefineTT")
     {
       CString err;
-      if (!dfgTools::GetOperatorPortMapping(op, _opUserData::s_portmap_newOp, err))
+      if (!dfgTools::GetOperatorPortMapping(op, portmap, err))
       { Application().LogMessage(L"dfgTools::GetOperatorPortMapping() failed, err = \"" + err + L"\"", siErrorMsg);
-        _opUserData::s_portmap_newOp.clear();
+        portmap.clear();
         return CStatus::OK; }
-      if (_opUserData::s_portmap_newOp.size())
+      if (portmap.size())
       {
         //
-        if (Dialog_DefinePortMapping(_opUserData::s_portmap_newOp) <= 0)
-        { _opUserData::s_portmap_newOp.clear();
+        if (Dialog_DefinePortMapping(portmap) <= 0)
+        { portmap.clear();
           return CStatus::OK; }
 
         //
@@ -722,7 +728,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
           t  = L"        " + CString(s) + L". ";
           if      (exec.getExecPortType(i) == FabricCore::DFGPortType_In)  t += L"type = \"In\",  ";
           else if (exec.getExecPortType(i) == FabricCore::DFGPortType_Out) t += L"type = \"Out\", ";
-          else                                                               t += L"type = \"IO\",  ";
+          else                                                             t += L"type = \"IO\",  ";
           t += L"name = \"" + CString(exec.getExecPortName(i)) + L"\", ";
           t += L"resolved data type = \"" + CString(exec.getExecPortResolvedType(i)) + L"\"";
           Application().LogMessage(t, siInfoMsg);

@@ -54,12 +54,15 @@ SICALLBACK dfgSoftimageOpApply_Init(CRef &in_ctxt)
 
 SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
 {
+  // ref at global _opUserData::s_portmap_newOp.
+  std::vector <_portMapping> &portmap = _opUserData::s_portmap_newOp;
+
   // init.
   Context ctxt(in_ctxt);
   CValueArray args = ctxt.GetAttribute(L"Arguments");
   if (args.GetCount() < 2 || CString(args[0]).IsEmpty())
   { Application().LogMessage(L"apply dfgSoftimageOp operator failed: empty or missing argument(s)", siErrorMsg);
-    _opUserData::s_portmap_newOp.clear();
+    portmap.clear();
     return CStatus::OK; }
   CString objectName(args[0]);
   CString dfgJSON(args[1]);
@@ -73,12 +76,12 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
   CRefArray objRefArray = Application().GetActiveSceneRoot().FindChildren2(objectName, L"", CStringArray());
   if (objRefArray.GetCount() <= 0)
   { Application().LogMessage(L"failed to find an object called \"" + objectName + L"\" in the scene", siErrorMsg);
-    _opUserData::s_portmap_newOp.clear();
+    portmap.clear();
     return CStatus::OK; }
   X3DObject obj(objRefArray[0]);
   if (!obj.IsValid())
   { Application().LogMessage(L"failed to create X3DObject for \"" + objectName + L"\"", siErrorMsg);
-    _opUserData::s_portmap_newOp.clear();
+    portmap.clear();
     return CStatus::OK; }
 
   // create a SpliceOp before creating the dfgSoftimageOp?
@@ -125,23 +128,23 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
     newOp.AddOutputPort(obj.GetKinematics().GetGlobal().GetRef(), L"reservedMatrixOut", PortGroup(pgReservedRef).GetIndex(), -1,  siDefaultPort, &returnStatus);
     if (returnStatus != CStatus::OK)
     { Application().LogMessage(L"failed to create default output port for the global kinematics", siErrorMsg);
-      _opUserData::s_portmap_newOp.clear();
+      portmap.clear();
       return CStatus::OK; }
 
     // create the default input port "reservedMatrixIn" and connect the object's global kinematics to it.
     newOp.AddInputPort(obj.GetKinematics().GetGlobal().GetRef(), L"reservedMatrixIn", PortGroup(pgReservedRef).GetIndex(), -1,  siDefaultPort, &returnStatus);
     if (returnStatus != CStatus::OK)
     { Application().LogMessage(L"failed to create default input port for the global kinematics", siErrorMsg);
-      _opUserData::s_portmap_newOp.clear();
+      portmap.clear();
       return CStatus::OK; }
   }
 
 
 
   // create exposed DFG output ports.
-  for (int i=0;i<_opUserData::s_portmap_newOp.size();i++)
+  for (int i=0;i<portmap.size();i++)
   {
-    _portMapping &pmap = _opUserData::s_portmap_newOp[i];
+    _portMapping &pmap = portmap[i];
     if (   pmap.dfgPortType != DFG_PORT_TYPE_OUT
         || pmap.mapType     != DFG_PORT_MAPTYPE_XSI_PORT)
       continue;
@@ -167,9 +170,9 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
   }
 
   // create exposed DFG input ports.
-  for (int i=0;i<_opUserData::s_portmap_newOp.size();i++)
+  for (int i=0;i<portmap.size();i++)
   {
-    _portMapping &pmap = _opUserData::s_portmap_newOp[i];
+    _portMapping &pmap = portmap[i];
     if (   pmap.dfgPortType != DFG_PORT_TYPE_IN
         || pmap.mapType     != DFG_PORT_MAPTYPE_XSI_PORT)
       continue;
@@ -197,7 +200,7 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
   // connect the operator.
   if (newOp.Connect() != CStatus::OK)
   { Application().LogMessage(L"newOp.Connect() failed.",siErrorMsg);
-    _opUserData::s_portmap_newOp.clear();
+    portmap.clear();
     return CStatus::OK; }
 
   // display operator's property page?
@@ -205,7 +208,7 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
     dfgTools::ExecuteCommand1(L"InspectObj", newOp.GetUniqueName());
 
   // done.
-  _opUserData::s_portmap_newOp.clear();
+  portmap.clear();
   return CStatus::OK;
 }
 
@@ -356,14 +359,41 @@ SICALLBACK dfgExportJSON_Execute(CRef &in_ctxt)
     Application().LogMessage(L"... operator perhaps not dfgSoftimageOp?", siErrorMsg);
     return CStatus::OK; }
 
+  // check if base interface exists.
+  if (!pud->GetBaseInterface())
+  { Application().LogMessage(L"no base interface found!", siErrorMsg);
+    return CStatus::OK; }
+  
+  // store the ports' exposure types and default values in the ports meta data.
+  try
+  {
+    FabricCore::DFGExec exec = pud->GetBaseInterface()->getBinding().getExec();
+    for (int i=0;i<exec.getExecPortCount();i++)
+    {
+      if (exec.getExecPortType(i) == FabricCore::DFGPortType_In)
+      {
+        exec.setExecPortMetadata(exec.getExecPortName(i), "blaIn1", "bliIn1", false);
+        exec.setExecPortMetadata(exec.getExecPortName(i), "blaIn2", "bliIn2", false);
+        exec.setExecPortMetadata(exec.getExecPortName(i), "blaIn3", "bliIn3", false);
+      }
+      else if (exec.getExecPortType(i) == FabricCore::DFGPortType_Out)
+      {
+        exec.setExecPortMetadata(exec.getExecPortName(i), "blaOut", "bliOut1", false);
+        exec.setExecPortMetadata(exec.getExecPortName(i), "blaOut", "bliOut2", false);
+        exec.setExecPortMetadata(exec.getExecPortName(i), "blaOut", "bliOut3", false);
+      }
+    }
+  }
+  catch (FabricCore::Exception e)
+  {
+    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+  }
+    
   // log JSON.
   if (onlyLog)
   {
     try
     {
-      if (!pud->GetBaseInterface())
-      { Application().LogMessage(L"no base interface found!", siErrorMsg);
-        return CStatus::OK; }
       std::string json = pud->GetBaseInterface()->getJSON();
       Application().LogMessage(L"\n" + CString(json.c_str()), siInfoMsg);
     }
@@ -378,9 +408,6 @@ SICALLBACK dfgExportJSON_Execute(CRef &in_ctxt)
   {
     try
     {
-      if (!pud->GetBaseInterface())
-      { Application().LogMessage(L"no base interface found!", siErrorMsg);
-        return CStatus::OK; }
       std::ofstream t(filePath.GetAsciiString(), std::ios::binary);
       if (!t.good())
       { Application().LogMessage(L"unable to open file", siErrorMsg);
