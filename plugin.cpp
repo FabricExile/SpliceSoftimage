@@ -3,6 +3,7 @@
 #include <xsi_projectitem.h>
 #include <xsi_pluginregistrar.h>
 #include <xsi_uitoolkit.h>
+#include <xsi_plugin.h>
 
 #include "plugin.h"
 #include "FabricDFGBaseInterface.h"
@@ -145,6 +146,15 @@ XSIPLUGINCALLBACK CStatus FabricDFGOnStartup_OnEvent(CRef & ctxt)
     new QApplication(argc, NULL);
   }
 
+  /* load the PyQtForSoftimage plugin manually once Softimage is up.
+     This does *not* crash.
+  */
+  if (false)
+  {
+    CString path = L"T:\\SoftXSI_Plug-ins\\workgroupXSI_PyQtForSoftimage\\Addons\\PyQtForSoftimage\\Application\\Plugins\\";
+    Application().LoadPlugin(path + L"QtSoftimage.64.dll");
+    Application().LoadPlugin(path + L"qtevents.py");
+  }
 
   // done.
   // /note: we return 1 (i.e. "true") instead of CStatus::OK or else the event gets aborted).
