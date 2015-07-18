@@ -148,7 +148,7 @@ XSIPLUGINCALLBACK CStatus FabricDFGOnStartup_OnEvent(CRef & ctxt)
 
   // manually load a plugin that uses PyQt (note: this does *not* crash).
   {
-    //Application().LoadPlugin(L"C:\\Temp\\conflict.py");
+    //Application().LoadPlugin(L"C:\\Temp\\qtconflict.py");
   }
 
   // done.
