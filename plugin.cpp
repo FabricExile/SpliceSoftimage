@@ -146,18 +146,10 @@ XSIPLUGINCALLBACK CStatus FabricDFGOnStartup_OnEvent(CRef & ctxt)
     new QApplication(argc, NULL);
   }
 
-#if defined(WIN32) || defined(_WINDOWS)
-  /* manually load a plugin that uses PyQt.
-     (this does *not* crash).
-  */
-  std::string filepath = "C:\\Temp\\conflict.py";
-  FILE *stream = fopen(filepath.c_str(), "rb");
-  if (stream)
+  // manually load a plugin that uses PyQt (note: this does *not* crash).
   {
-    fclose(stream);
-    Application().LoadPlugin(CString(filepath.c_str()));
+    //Application().LoadPlugin(L"C:\\Temp\\conflict.py");
   }
-#endif
 
   // done.
   // /note: we return 1 (i.e. "true") instead of CStatus::OK or else the event gets aborted).
