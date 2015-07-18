@@ -146,15 +146,18 @@ XSIPLUGINCALLBACK CStatus FabricDFGOnStartup_OnEvent(CRef & ctxt)
     new QApplication(argc, NULL);
   }
 
-  /* load the PyQtForSoftimage plugin manually once Softimage is up.
-     This does *not* crash.
+#if defined(WIN32) || defined(_WINDOWS)
+  /* manually load a plugin that uses PyQt.
+     (this does *not* crash).
   */
-  if (false)
+  std::string filepath = "C:\\Temp\\conflict.py";
+  FILE *stream = fopen(filepath.c_str(), "rb");
+  if (stream)
   {
-    CString path = L"T:\\SoftXSI_Plug-ins\\workgroupXSI_PyQtForSoftimage\\Addons\\PyQtForSoftimage\\Application\\Plugins\\";
-    Application().LoadPlugin(path + L"QtSoftimage.64.dll");
-    Application().LoadPlugin(path + L"qtevents.py");
+    fclose(stream);
+    Application().LoadPlugin(CString(filepath.c_str()));
   }
+#endif
 
   // done.
   // /note: we return 1 (i.e. "true") instead of CStatus::OK or else the event gets aborted).
