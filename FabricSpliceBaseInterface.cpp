@@ -816,6 +816,41 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
   OutputPort xsiPort(context.GetOutputPort());
   std::string outPortName = xsiPort.GetGroupName().GetAsciiString();
 
+  // make sure that the output array is already of the right size.
+  // we need to resize the outputs prior to performing the operators.
+  if(outPortName.length() > 0)
+  {
+    std::map<std::string, portInfo>::iterator it = _ports.find(outPortName);
+    if(it != _ports.end())
+    {
+      unsigned int arraySize = it->second.portIndices.GetCount();
+
+      try
+      {
+        FabricCore::RTVal rtVal;
+        FabricSplice::DGPort port = _spliceGraph.getDGPort(outPortName.c_str());
+        FabricCore::RTVal arrayVal = port.getRTVal();
+        if(arrayVal.isValid() && arrayVal.isArray())
+        {
+          if(arrayVal.getArraySize() != arraySize)
+          {
+            FabricCore::RTVal countVal = FabricSplice::constructUInt32RTVal(arraySize);
+            arrayVal.callMethod("", "resize", 1, &countVal);
+            port.setRTVal(arrayVal);
+          }
+        }
+      }
+      catch(FabricSplice::Exception e)
+      {
+        xsiLogErrorFunc("Error resizing output array:" + CString(outPortName.c_str()) + ": " + CString(e.what()));
+      }
+      catch(FabricCore::Exception e)
+      {
+        xsiLogErrorFunc("Error resizing output array:" + CString(outPortName.c_str()) + ": " + CString(e.getDesc_cstr()));
+      }
+    }
+  }
+
   // setting to determine if we need to always convert meshes
   bool alwaysConvertMeshes = op.GetParameterValue("alwaysConvertMeshes");
 
