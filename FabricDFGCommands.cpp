@@ -295,6 +295,41 @@ SICALLBACK dfgImportJSON_Execute(CRef &in_ctxt)
     feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
   }
 
+  // see if we have any meta data regarding port mapping and if we need to re-create the operator.
+  bool recreateOp = false;
+  try
+  {
+    FabricCore::DFGExec exec = pud->GetBaseInterface()->getBinding().getExec();
+    for (int i=0;i<exec.getExecPortCount();i++)
+    {
+      // mapType.
+      const char *data = exec.getExecPortMetadata(exec.getExecPortName(i), "XSI_mapType");
+      if (data)
+      {
+        LONG mapType = atoi(data);
+        Application().LogMessage(CString(exec.getExecPortName(i)) + L" has mapType " + CString(mapType));
+        recreateOp |= (mapType == DFG_PORT_MAPTYPE_XSI_PARAMETER);
+        recreateOp |= (mapType == DFG_PORT_MAPTYPE_XSI_PORT);
+        recreateOp |= (mapType == DFG_PORT_MAPTYPE_XSI_ICE_PORT);
+      }
+    }
+  }
+  catch (FabricCore::Exception e)
+  {
+    recreateOp = false;
+    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+  }
+
+  // if we have some port mapping we need to re-create the operator.
+  if (recreateOp)
+  {
+    Application().LogMessage(L"we need to create a new operator.");
+  }
+  else
+  {
+    Application().LogMessage(L"no need to create a new operator.");
+  }
+
   // done.
   return CStatus::OK;
 }
@@ -381,14 +416,6 @@ SICALLBACK dfgExportJSON_Execute(CRef &in_ctxt)
       {
         // mapType.
         exec.setExecPortMetadata(exec.getExecPortName(i), "XSI_mapType", hasValidPortMap ? CString((LONG)pmap[i].mapType).GetAsciiString() : NULL, false);
-
-        //
-        if (exec.getExecPortType(i) == FabricCore::DFGPortType_In)
-        {
-        }
-        else if (exec.getExecPortType(i) == FabricCore::DFGPortType_Out)
-        {
-        }
       }
     }
     catch (FabricCore::Exception e)
