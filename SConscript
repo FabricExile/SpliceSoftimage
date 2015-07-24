@@ -140,7 +140,7 @@ if FABRIC_BUILD_OS == 'Windows':
       env.Append(LIBS = ['QtGui4'])
       env.Append(LIBS = ['QtOpenGL4'])
     else:
-      throw(Exception('QtCoreFabric4.lib or QtCore4.lib not found on '+qtDir.abspath))
+      raise(Exception('QtCoreFabric4.lib or QtCore4.lib not found on '+qtDir.abspath))
   else:
     env.Append(LIBS = ['QtCored4'])
     env.Append(LIBS = ['QtGuid4'])
