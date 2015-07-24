@@ -90,6 +90,7 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
   // init Qt app, if necessary.
   if (!qApp)
   {
+    Application().LogMessage(L"allocating an instance of QApplication", siCommentMsg);
     int argc = 0;
     new QApplication(argc, NULL);
   }
@@ -122,7 +123,7 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
     /*winData.qtDialog->setWindowModality(Qt::WindowModal);*/
 
     // parenting the qtDialog to the Softimage main window results in a weird mouse position offset
-    // SetParent((HWND)winData.qtDialog->winId(), (HWND)Application().GetDesktop().GetApplicationWindowHandle());
+    /*SetParent((HWND)winData.qtDialog->winId(), (HWND)Application().GetDesktop().GetApplicationWindowHandle());*/
 
     // init the DFG widget.
     DFG::DFGConfig config;
@@ -152,7 +153,6 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
   do
   {
     comeAgain = false;
-
     try
     {
       const bool useExec = true;
@@ -172,9 +172,6 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
           qApp->processEvents();
         }
       }
-
-      // clean up.
-      //if (winData.qtDFGWidget)   delete winData.qtDFGWidget;
     }
     catch(std::exception &e)
     {
@@ -197,7 +194,26 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
 
   // clean up.
   s_canvasIsOpen = false;
-  delete baseInterface;
+  try
+  {
+
+    delete baseInterface;
+
+    delete winData.qtDFGWidget;
+    delete winData.qtLayout;
+    delete winData.qtDialog;
+
+    delete qApp;
+
+  }
+  catch(std::exception &e)
+  {
+    feLogError(e.what() ? e.what() : "\"\"");
+  }
+  catch(FabricCore::Exception e)
+  {
+    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+  }
 
   // done.
   return OPENCANVAS_RETURN_VALS::SUCCESS;
