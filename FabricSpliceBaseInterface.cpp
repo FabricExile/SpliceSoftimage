@@ -495,6 +495,7 @@ CStatus FabricSpliceBaseInterface::addXSIPort(const CRefArray & targets, const C
   info.isArray = dataType.GetSubString(dataType.Length() - 2, 2) == L"[]";
   info.portMode = portMode;
   info.targets = targets.GetAsText();
+  info.outPortElementsProcessed = 0;
   _ports.insert(std::pair<std::string, portInfo>(portName.GetAsciiString(), info));
 
   if(portMode != FabricSplice::Port_Mode_IN)
@@ -769,6 +770,9 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
 
   bool result = false;
 
+  OutputPort xsiPort(context.GetOutputPort());
+  std::string outPortName = xsiPort.GetGroupName().GetAsciiString();
+
   // If 'AlwaysEvaluate' is on, then we will evaluate even if no changes have occured.
   // this can be usefull in debugging, or when an operator simply must evaluate even if none of its inputs are dirty.
   CustomOperator op(opRef);
@@ -783,16 +787,15 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
     // element of that array has already performed conversion.
     // transferOutputPort will reset the counter once all outputs
     // have been transfered.
-    OutputPort xsiPort(context.GetOutputPort());
-    std::string outPortName = xsiPort.GetGroupName().GetAsciiString();
-
     std::map<std::string, portInfo>::iterator it = _ports.find(outPortName);
     if(it != _ports.end())
     {
       if(it->second.dataType == "Mat44[]")
       {
         if(it->second.outPortElementsProcessed > 0)
+        {
           return false;
+        }
       }
     }
   }
@@ -803,9 +806,6 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
   // If the splice op has only output ports, then we should force an evaluation.
   // otherwize w must always provide one input param. (simple testing scenarios might not include input params).
   bool nodeHasInputs = false;
-
-  OutputPort xsiPort(context.GetOutputPort());
-  std::string outPortName = xsiPort.GetGroupName().GetAsciiString();
 
   // make sure that the output array is already of the right size.
   // we need to resize the outputs prior to performing the operators.
