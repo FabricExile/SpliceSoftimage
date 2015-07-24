@@ -6,6 +6,7 @@
 #include "FabricDFGPlugin.h"
 #include "FabricDFGWidget.h"
 #include "FabricDFGOperators.h"
+#include "FabricDFGUICmdHandlerXSI.h"
 
 #include <QtGui/QApplication>
 #include <QtGui/QDialog>
@@ -103,9 +104,20 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle, bool w
   // set flag to block any further canvas.
   s_canvasIsOpen = true;
 
-  // create temporary base interface and set its graph from pud.
-  BaseInterface *baseInterface = new BaseInterface(feLog, feLogError);
-  baseInterface->setFromJSON(pud->GetBaseInterface()->getJSON());
+  // pointer at base interface.
+  const bool useTemporaryBaseInterface = false;  // true: use a temporary base interface instead of the actual one.
+  BaseInterface *baseInterface = NULL;
+  if (useTemporaryBaseInterface)
+  {
+    // create temporary base interface and set its graph from pud.
+    BaseInterface *baseInterface = new BaseInterface(feLog, feLogError);
+    baseInterface->setFromJSON(pud->GetBaseInterface()->getJSON());
+  }
+  else
+  {
+    // use the actual base interface.
+    baseInterface = pud->GetBaseInterface();
+  }
 
   // declare and fill window data structure.
   _windowData winData;
@@ -140,7 +152,7 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle, bool w
                                baseInterface->getBinding(),
                                "",
                                baseInterface->getBinding().getExec(),
-                               baseInterface->getStack(),
+                               baseInterface->getCmdHandler(),  //baseInterface->getStack(),
                                false,
                                config
                              );
@@ -200,7 +212,8 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle, bool w
 
   // clean up.
   s_canvasIsOpen = false;
-  delete baseInterface;
+  if (useTemporaryBaseInterface)
+    delete baseInterface;
 
   // done.
   return OPENCANVAS_RETURN_VALS::SUCCESS;

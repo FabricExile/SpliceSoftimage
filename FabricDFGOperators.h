@@ -122,6 +122,24 @@ struct _opUserData
     else                          return NULL;
   }
 
+  // return pointer at _opUserData for a given base interface.
+  static _opUserData *GetUserData(const BaseInterface *baseInterface)
+  {
+    for (std::map<unsigned int, _opUserData *>::iterator it=s_instances.begin();it!=s_instances.end();it++)
+      if (it->second->GetBaseInterface() == baseInterface)
+        return it->second;
+    return NULL;
+  }
+
+  // return operator object ID for a given base interface (or UINT_MAX if not found).
+  static unsigned int GetOperatorObjectID(const BaseInterface *baseInterface)
+  {
+    for (std::map<unsigned int, _opUserData *>::iterator it=s_instances.begin();it!=s_instances.end();it++)
+      if (it->second->GetBaseInterface() == baseInterface)
+        return it->first;
+      return UINT_MAX;
+  }
+
   // return pointer at base interface for a given operator's ObjectID.
   static BaseInterface *GetBaseInterface(unsigned int operatorObjectID)
   {

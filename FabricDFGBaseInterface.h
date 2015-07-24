@@ -14,6 +14,7 @@
 #include <map>
 
 struct _polymesh;
+class DFGUICmdHandlerXSI;
 
 // a management class for client and host
 class BaseInterface
@@ -37,6 +38,7 @@ class BaseInterface
   FabricCore::DFGBinding                           getBinding();
   static FabricServices::ASTWrapper::KLASTManager *getManager();
   static FabricServices::Commands::CommandStack   *getStack();
+  DFGUICmdHandlerXSI                              *getCmdHandler();
 
   // persistence
   std::string getJSON();
@@ -65,6 +67,7 @@ class BaseInterface
   static FabricServices::ASTWrapper::KLASTManager *s_manager;
   static FabricServices::Commands::CommandStack    s_stack;
   FabricCore::DFGBinding                           m_binding;
+  DFGUICmdHandlerXSI                              *m_cmdHandler;
   static std::map<unsigned int, BaseInterface*>    s_instances;
 
   // returns true if the binding's executable has a port called portName that matches the port type (input/output).

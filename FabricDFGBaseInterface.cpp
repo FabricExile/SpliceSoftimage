@@ -1,3 +1,4 @@
+#include "FabricDFGUICmdHandlerXSI.h"
 #include "FabricDFGBaseInterface.h"
 #include "FabricDFGPlugin.h"
 #include "FabricDFGOperators.h"
@@ -87,6 +88,9 @@ BaseInterface::BaseInterface(void (*in_logFunc)     (void *, const char *, unsig
     // create an empty binding
     m_binding = s_host.createBindingToNewGraph();
     m_binding.setNotificationCallback(bindingNotificationCallback, this);
+
+    // command handler.
+    m_cmdHandler = new DFGUICmdHandlerXSI(this);
   }
   catch (FabricCore::Exception e)
   {
@@ -105,6 +109,8 @@ BaseInterface::~BaseInterface()
   std::map<unsigned int, BaseInterface*>::iterator it = s_instances.find(m_id);
 
   m_binding = FabricCore::DFGBinding();
+
+  delete m_cmdHandler;
 
   if (it != s_instances.end())
   {
@@ -172,6 +178,11 @@ FabricServices::ASTWrapper::KLASTManager *BaseInterface::getManager()
 FabricServices::Commands::CommandStack *BaseInterface::getStack()
 {
   return &s_stack;
+}
+
+DFGUICmdHandlerXSI *BaseInterface::getCmdHandler()
+{
+  return m_cmdHandler;
 }
 
 std::string BaseInterface::getJSON()
