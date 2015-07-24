@@ -87,10 +87,9 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle, bool w
     return OPENCANVAS_RETURN_VALS::ALREADY_OPEN;
   }
 
-  // init Qt app.
+  // init Qt app, if necessary.
   if (!qApp)
   {
-    Application().LogMessage(L"qApp equal NULL => allocating an instance manually");
     int argc = 0;
     new QApplication(argc, NULL);
   }
