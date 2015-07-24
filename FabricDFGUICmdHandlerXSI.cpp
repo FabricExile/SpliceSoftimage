@@ -471,8 +471,7 @@ void DFGUICmdHandlerXSI::dfgDoSetNodeComment(
   FTL::CStrRef execPath,
   FabricCore::DFGExec const &exec,
   FTL::CStrRef node,
-  FTL::CStrRef comment,
-  bool expanded
+  FTL::CStrRef comment
   )
 {
   XSI::CString cmdName(FabricUI::DFG::DFGUICmd_SetNodeComment::CmdName().c_str());
@@ -482,8 +481,6 @@ void DFGUICmdHandlerXSI::dfgDoSetNodeComment(
   args.Add(node.c_str());
   args.Add(L"comment");
   args.Add(comment.c_str());
-  args.Add(L"expanded");
-  args.Add((bool)expanded);
 
   XSI::CValue result;
   bool ok = executeCommand(cmdName, args, result);

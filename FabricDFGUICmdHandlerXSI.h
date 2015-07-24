@@ -180,8 +180,7 @@ protected:
     FTL::CStrRef execPath,
     FabricCore::DFGExec const &exec,
     FTL::CStrRef node,
-    FTL::CStrRef comment,
-    bool expanded
+    FTL::CStrRef comment
     );
 
   virtual void dfgDoSetCode(
