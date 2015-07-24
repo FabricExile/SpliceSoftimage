@@ -75,7 +75,7 @@ const char *GetOpenCanvasErrorDescription(OPENCANVAS_RETURN_VALS in_errID)
   }
 }
 
-OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle, bool windowIsTopMost)
+OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
 {
   // static flag to ensure that not more than one Canvas is open at the same time.
   static bool s_canvasIsOpen = false;
@@ -87,10 +87,9 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle, bool w
     return OPENCANVAS_RETURN_VALS::ALREADY_OPEN;
   }
 
-  // init Qt app.
+  // init Qt app, if necessary.
   if (!qApp)
   {
-    Application().LogMessage(L"qApp equal NULL => allocating an instance manually");
     int argc = 0;
     new QApplication(argc, NULL);
   }
@@ -123,9 +122,7 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle, bool w
     /*winData.qtDialog->setWindowModality(Qt::WindowModal);*/
 
     // parenting the qtDialog to the Softimage main window results in a weird mouse position offset
-    // => as a temporary workaround, we set the qtDialog to top most.
-    if (windowIsTopMost)
-      winData.qtDialog->setWindowFlags(Qt::WindowStaysOnTopHint); // SetParent((HWND)winData.qtDialog->winId(), (HWND)Application().GetDesktop().GetApplicationWindowHandle());
+    // SetParent((HWND)winData.qtDialog->winId(), (HWND)Application().GetDesktop().GetApplicationWindowHandle());
 
     // init the DFG widget.
     DFG::DFGConfig config;

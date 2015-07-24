@@ -453,7 +453,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     else if (btnName == L"BtnOpenCanvas")
     {
       CString title = L"Canvas - " + op.GetParent3DObject().GetName();
-      OPENCANVAS_RETURN_VALS ocRet = OpenCanvas(_opUserData::GetUserData(op.GetObjectID()), title.GetAsciiString(), false);
+      OPENCANVAS_RETURN_VALS ocRet = OpenCanvas(_opUserData::GetUserData(op.GetObjectID()), title.GetAsciiString());
       if (ocRet != OPENCANVAS_RETURN_VALS::SUCCESS)
       {
         LONG ret;
