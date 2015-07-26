@@ -45,8 +45,12 @@ env.Append(CPPDEFINES = ["_SPLICE_SOFTIMAGE_VERSION="+str(SOFTIMAGE_VERSION[:4])
 
 qtDir = None
 if FABRIC_BUILD_OS == 'Windows':
-    qtDir = env.Dir('#').Dir('ThirdParty').Dir('PreBuilt').Dir(FABRIC_BUILD_OS).Dir(FABRIC_BUILD_ARCH).Dir('VS2013').Dir(FABRIC_BUILD_TYPE).Dir('qt').Dir('4.8.6')
-if os.environ.has_key('QT_DIR'):
+  if FABRIC_BUILD_TYPE == 'Release':
+    qtDir = env.Dir('#').Dir('ThirdParty').Dir('PreBuilt').Dir(FABRIC_BUILD_OS).Dir(FABRIC_BUILD_ARCH).Dir('VS2013').Dir('Release').Dir('qt-fabric').Dir('4.8.6')
+  else:
+    qtDir = env.Dir('#').Dir('ThirdParty').Dir('PreBuilt').Dir(FABRIC_BUILD_OS).Dir(FABRIC_BUILD_ARCH).Dir('VS2013').Dir('Release').Dir('qt').Dir('4.8.6')
+
+if os.environ.has_key('QT_DIR') and not os.path.exists(qtDir.abspath):
   qtDir = env.Dir(os.environ['QT_DIR'])
 
 if qtDir:
@@ -127,9 +131,16 @@ if qtDir:
 
 if FABRIC_BUILD_OS == 'Windows':
   if FABRIC_BUILD_TYPE == 'Release':
-    env.Append(LIBS = ['QtCore4'])
-    env.Append(LIBS = ['QtGui4'])
-    env.Append(LIBS = ['QtOpenGL4'])
+    if os.path.exists(os.path.join(qtDir.abspath, 'lib', 'QtCoreFabric4.lib')):
+      env.Append(LIBS = ['QtCoreFabric4'])
+      env.Append(LIBS = ['QtGuiFabric4'])
+      env.Append(LIBS = ['QtOpenGLFabric4'])
+    elif os.path.exists(os.path.join(qtDir.abspath, 'lib', 'QtCore4.lib')):
+      env.Append(LIBS = ['QtCore4'])
+      env.Append(LIBS = ['QtGui4'])
+      env.Append(LIBS = ['QtOpenGL4'])
+    else:
+      raise(Exception('QtCoreFabric4.lib or QtCore4.lib not found on '+qtDir.abspath))
   else:
     env.Append(LIBS = ['QtCored4'])
     env.Append(LIBS = ['QtGuid4'])
@@ -163,7 +174,13 @@ if FABRIC_BUILD_OS == 'Windows':
   softimageFiles.append(
     env.Install(
       os.path.join(STAGE_DIR.abspath, 'Application', 'Plugins'),
-      env.Glob(os.path.join(FABRIC_DIR, 'bin', '*.dll'))
+      [
+        env.Glob(os.path.join(FABRIC_DIR, 'bin', 'Fabric*.dll')),
+        env.Glob(os.path.join(qtDir.abspath, 'lib', 'QtCore*.dll')),
+        env.Glob(os.path.join(qtDir.abspath, 'lib', 'QtGui*.dll')),
+        env.Glob(os.path.join(qtDir.abspath, 'lib', 'QtOpenGL*.dll')),
+        os.path.join(FABRIC_DIR, 'bin', 'tbb.dll'),
+      ]
       )
     )
   softimageFiles.append(
