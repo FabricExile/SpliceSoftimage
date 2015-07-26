@@ -297,6 +297,41 @@ SICALLBACK dfgImportJSON_Execute(CRef &in_ctxt)
     feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
   }
 
+  // see if we have any meta data regarding port mapping and if we need to re-create the operator.
+  bool recreateOp = false;
+  try
+  {
+    FabricCore::DFGExec exec = pud->GetBaseInterface()->getBinding().getExec();
+    for (int i=0;i<exec.getExecPortCount();i++)
+    {
+      // mapType.
+      const char *data = exec.getExecPortMetadata(exec.getExecPortName(i), "XSI_mapType");
+      if (data)
+      {
+        LONG mapType = atoi(data);
+        Application().LogMessage(CString(exec.getExecPortName(i)) + L" has mapType " + CString(mapType));
+        recreateOp |= (mapType == DFG_PORT_MAPTYPE_XSI_PARAMETER);
+        recreateOp |= (mapType == DFG_PORT_MAPTYPE_XSI_PORT);
+        recreateOp |= (mapType == DFG_PORT_MAPTYPE_XSI_ICE_PORT);
+      }
+    }
+  }
+  catch (FabricCore::Exception e)
+  {
+    recreateOp = false;
+    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+  }
+
+  // if we have some port mapping we need to re-create the operator.
+  if (recreateOp)
+  {
+    Application().LogMessage(L"we need to create a new operator.");
+  }
+  else
+  {
+    Application().LogMessage(L"no need to create a new operator.");
+  }
+
   // done.
   return CStatus::OK;
 }
@@ -383,14 +418,6 @@ SICALLBACK dfgExportJSON_Execute(CRef &in_ctxt)
       {
         // mapType.
         exec.setExecPortMetadata(exec.getExecPortName(i), "XSI_mapType", hasValidPortMap ? CString((LONG)pmap[i].mapType).GetAsciiString() : NULL, false);
-
-        //
-        if (exec.getExecPortType(i) == FabricCore::DFGPortType_In)
-        {
-        }
-        else if (exec.getExecPortType(i) == FabricCore::DFGPortType_Out)
-        {
-        }
       }
     }
     catch (FabricCore::Exception e)
@@ -463,7 +490,6 @@ SICALLBACK dfgOpenCanvas_Init(CRef &in_ctxt)
 
   ArgumentArray oArgs = oCmd.GetArguments();
   oArgs.Add(L"OperatorName", CString());
-  oArgs.Add(L"makeWindowTopMost", true);
 
   return CStatus::OK;
 }
@@ -473,11 +499,10 @@ SICALLBACK dfgOpenCanvas_Execute(CRef &in_ctxt)
   // init.
   Context ctxt(in_ctxt);
   CValueArray args = ctxt.GetAttribute(L"Arguments");
-  if (args.GetCount() < 2 || CString(args[0]).IsEmpty())
+  if (args.GetCount() < 1 || CString(args[0]).IsEmpty())
   { Application().LogMessage(L"open canvas failed: empty or missing argument(s)", siErrorMsg);
     return CStatus::OK; }
   CString operatorName(args[0]);
-  const bool makeWindowTopMost = args[1];
 
   // set ref at operator.
   CRef ref;
@@ -505,7 +530,7 @@ SICALLBACK dfgOpenCanvas_Execute(CRef &in_ctxt)
   // open canvas.
   Application().LogMessage(L"opening canvas for \"" + operatorName + L"\"", siVerboseMsg);
   CString title = L"Canvas - " + op.GetParent3DObject().GetName();
-  OPENCANVAS_RETURN_VALS ret = OpenCanvas(pud, title.GetAsciiString(), makeWindowTopMost);
+  OPENCANVAS_RETURN_VALS ret = OpenCanvas(pud, title.GetAsciiString());
   if (ret != OPENCANVAS_RETURN_VALS::SUCCESS)
     Application().LogMessage(CString(GetOpenCanvasErrorDescription(ret)), siWarningMsg);
   else

@@ -13,12 +13,7 @@
 #include "FabricSplicePlugin.h"
 #include "FabricSpliceICENodes.h"
 
-#include <QtGui/QApplication>
-
 using namespace XSI;
-
-#define INIT_QT_ON_STARTUP  1   // if != 0 then init Qt on startup.
-#define DELETE_QT_ON_EXIT   0   // if != 0 then delete Qt when XSI exits.
 
 // load plugin.
 SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
@@ -141,21 +136,7 @@ XSIPLUGINCALLBACK CStatus FabricDFGOnStartup_OnEvent(CRef & ctxt)
 {
   Context context(ctxt);
 
-  // Qt.
-  if (INIT_QT_ON_STARTUP && Application().IsInteractive() && !qApp)
-  {
-    Application().LogMessage(L"[FabricDFG] allocating an instance of QApplication.");
-    int argc = 0;
-    new QApplication(argc, NULL);
-  }
-
-  // manually load a plugin that uses PyQt (note: this does *not* crash).
-  {
-    //Application().LoadPlugin(L"C:\\Temp\\qtconflict.py");
-  }
-
-  // done.
-  // /note: we return 1 (i.e. "true") instead of CStatus::OK or else the event gets aborted).
+  // done (note: we return 1 (i.e. "true") instead of CStatus::OK or else the event gets aborted).
   return 1;
 }
 
@@ -163,24 +144,7 @@ XSIPLUGINCALLBACK CStatus FabricDFGOnTerminate_OnEvent(CRef & ctxt)
 {
   Context context(ctxt);
 
-  // Qt.
-  if (DELETE_QT_ON_EXIT && qApp)
-  {
-    Application().LogMessage(L"[FabricDFG] deleting QApplication.");
-    LONG ret;
-    Application().GetUIToolkit().MsgBox(L"deleting QApplication.", siMsgOkOnly, L"debug", ret );
-
-    //delete qApp;
-    //qApp->deleteLater();
-    //qApp->exit();
-    //qApp->quit();
-
-    Application().GetUIToolkit().MsgBox(L"done.", siMsgOkOnly, L"debug", ret );
-  }
-
-
-  // done.
-  // /note: we return 1 (i.e. "true") instead of CStatus::OK or else the event gets aborted).
+  // done (note: we return 1 (i.e. "true") instead of CStatus::OK or else the event gets aborted).
   return 1;
 }
 

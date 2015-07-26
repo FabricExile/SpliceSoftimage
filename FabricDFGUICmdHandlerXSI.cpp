@@ -369,8 +369,7 @@ void DFGUICmdHandlerXSI::dfgDoSetNodeComment(
   FTL::CStrRef execPath,
   FabricCore::DFGExec const &exec,
   FTL::CStrRef node,
-  FTL::CStrRef comment,
-  bool expanded
+  FTL::CStrRef comment
   )
 {
   CString cmdName(FabricUI::DFG::DFGUICmd_SetNodeComment::CmdName().c_str());
@@ -380,7 +379,6 @@ void DFGUICmdHandlerXSI::dfgDoSetNodeComment(
   args.Add(execPath.c_str());                             // exec.
   args.Add(node.c_str());                                 // node.
   args.Add(comment.c_str());                              // comment.
-  args.Add((bool)expanded);                               // expanded.
 
   executeCommand(cmdName, args, CValue());
 }
