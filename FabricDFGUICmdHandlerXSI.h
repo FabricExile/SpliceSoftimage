@@ -5,13 +5,6 @@
 
 #include <FabricUI/DFG/DFGUICmdHandler.h>
 
-#include <xsi_application.h>
-#include <xsi_customoperator.h>
-#include <xsi_command.h>
-#include <xsi_status.h>
-#include <xsi_value.h>
-#include <xsi_vector2f.h>
-
 class BaseInterface;
 
 class DFGUICmdHandlerXSI : public FabricUI::DFG::DFGUICmdHandler
@@ -237,65 +230,28 @@ protected:
 
 protected:
     
-  void encodeMELString(
-    FTL::CStrRef str,
-    std::stringstream &ss
-    );
-
-  void encodeStringArg(
-    FTL::CStrRef name,
-    FTL::CStrRef value,
-    std::stringstream &cmd
-    );
-
-  void encodeStringsArg(
-    FTL::CStrRef name,
-    FTL::ArrayRef<FTL::CStrRef> values,
-    std::stringstream &cmd
-    );
-
-  void encodePositionArg(
-    FTL::CStrRef name,
-    QPointF value,
-    std::stringstream &cmd
-    );
-
-  void encodePositionsArg(
-    FTL::CStrRef name,
-    FTL::ArrayRef<QPointF> values,
-    std::stringstream &cmd
-    );
-
-  void encodeSizeArg(
-    FTL::CStrRef name,
-    QSizeF value,
-    std::stringstream &cmd
-    );
-
-  void encodeSizesArg(
-    FTL::CStrRef name,
-    FTL::ArrayRef<QSizeF> values,
-    std::stringstream &cmd
-    );
-
-  void addBindingToArgs(
-    FabricCore::DFGBinding const &binding,
-    XSI::CValueArray &args
-    );
-
-  void addExecToArgs(
-    FabricCore::DFGBinding const &binding,
-    FTL::CStrRef execPath,
-    FabricCore::DFGExec const &exec,
-    XSI::CValueArray &args
-    );
-
-  void encodePositions(
-    FTL::ArrayRef<QPointF> poss,
-    std::stringstream &cmd
-    );
-
   std::string getOperatorNameFromBinding( FabricCore::DFGBinding const &binding );
+};
+
+class _dfgCmdTask
+{
+public:
+
+  _dfgCmdTask(void) {}
+  ~_dfgCmdTask()    {}
+
+  void Do(void)
+  {
+  };
+
+  void Undo(void)
+  {
+  };
+
+  void Redo(void)
+  {
+    Do();
+  };
 };
 
 #endif

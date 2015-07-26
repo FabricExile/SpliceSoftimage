@@ -107,12 +107,15 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     in_reg.RegisterCommand(L"dfgSelectConnected",   L"dfgSelectConnected");
     in_reg.RegisterCommand(L"dfgLogStatus",         L"dfgLogStatus");
 
+    // commands for DFGUICmdHandler.
+    in_reg.RegisterCommand(L"dfgUICmdInstPreset",   L"dfgUICmdInstPreset");
+
     // menu.
-    in_reg.RegisterMenu(siMenuMainTopLevelID, "Fabric:DFG", true, true);
+    in_reg.RegisterMenu(siMenuMainTopLevelID,       L"Fabric:DFG", true, true);
 
     // events.
-    in_reg.RegisterEvent(L"FabricDFGOnStartup",   siOnStartup);
-    in_reg.RegisterEvent(L"FabricDFGOnTerminate", siOnTerminate);
+    in_reg.RegisterEvent(L"FabricDFGOnStartup",     siOnStartup);
+    in_reg.RegisterEvent(L"FabricDFGOnTerminate",   siOnTerminate);
   }
 
   // done.

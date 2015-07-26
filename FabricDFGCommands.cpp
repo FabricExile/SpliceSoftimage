@@ -14,11 +14,13 @@
 #include <xsi_inputport.h>
 #include <xsi_factory.h>
 #include <xsi_model.h>
+#include <xsi_vector2f.h>
 #include <xsi_x3dobject.h>
 #include <xsi_kinematics.h>
 
 #include "FabricDFGPlugin.h"
 #include "FabricDFGOperators.h"
+#include "FabricDFGCommands.h"
 #include "FabricDFGTools.h"
 #include "FabricDFGWidget.h"
 
@@ -651,6 +653,4 @@ SICALLBACK dfgLogStatus_Execute(CRef &in_ctxt)
   
   return CStatus::OK;
 }
-
-
 
