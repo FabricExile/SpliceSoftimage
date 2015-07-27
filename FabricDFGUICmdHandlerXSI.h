@@ -164,7 +164,7 @@ protected:
     FabricCore::DFGBinding const &binding,
     FTL::CStrRef execPath,
     FabricCore::DFGExec const &exec,
-    FTL::CStrRef node,
+    FTL::CStrRef nodeName,
     FTL::CStrRef title
     );
 
@@ -172,7 +172,7 @@ protected:
     FabricCore::DFGBinding const &binding,
     FTL::CStrRef execPath,
     FabricCore::DFGExec const &exec,
-    FTL::CStrRef node,
+    FTL::CStrRef nodeName,
     FTL::CStrRef comment
     );
 
@@ -187,8 +187,8 @@ protected:
     FabricCore::DFGBinding const &binding,
     FTL::CStrRef execPath,
     FabricCore::DFGExec const &exec,
-    FTL::CStrRef oldName,
-    FTL::CStrRef desiredNewName
+    FTL::CStrRef oldPortName,
+    FTL::CStrRef desiredNewPortName
     );
 
   virtual std::vector<std::string> dfgDoPaste(
@@ -207,7 +207,7 @@ protected:
 
   virtual void dfgDoSetArgValue(
     FabricCore::DFGBinding const &binding,
-    FTL::CStrRef name,
+    FTL::CStrRef argName,
     FabricCore::RTVal const &value
     );
 
@@ -215,7 +215,7 @@ protected:
     FabricCore::DFGBinding const &binding,
     FTL::CStrRef execPath,
     FabricCore::DFGExec const &exec,
-    FTL::CStrRef port,
+    FTL::CStrRef portPath,
     FabricCore::RTVal const &value
     );
 

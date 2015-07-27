@@ -50,153 +50,11 @@ bool executeCommand(const CString &cmdName, const CValueArray &args, CValue &io_
   implementation of DFGUICmdHandlerXSI member functions.
 */
 
-std::string DFGUICmdHandlerXSI::dfgDoInstPreset(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef preset,
-  QPointF pos
-  )
-{
-  CString cmdName(FabricUI::DFG::DFGUICmd_InstPreset::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // exec.
-  args.Add(preset.c_str());                               // preset.
-  args.Add(pos.x());                                      // positionX.
-  args.Add(pos.y());                                      // positionY.
-
-  CValue result;
-  executeCommand(cmdName, args, result);
-  return result.GetAsText().GetAsciiString();
-}
-
-std::string DFGUICmdHandlerXSI::dfgDoAddVar(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef desiredName,
-  FTL::CStrRef dataType,
-  FTL::CStrRef extDep,
-  QPointF pos
-  )
-{
-  CString cmdName(FabricUI::DFG::DFGUICmd_AddVar::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // exec.
-  args.Add(desiredName.c_str());                          // desiredName.
-  args.Add(dataType.c_str());                             // dataType.
-  args.Add(extDep.c_str());                               // extDep.
-  args.Add(pos.x());                                      // positionX.
-  args.Add(pos.y());                                      // positionY.
-
-  CValue result;
-  executeCommand(cmdName, args, result);
-  return result.GetAsText().GetAsciiString();
-}
-
-std::string DFGUICmdHandlerXSI::dfgDoAddGet(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef desiredName,
-  FTL::CStrRef varPath,
-  QPointF pos
-  )
-{
-  CString cmdName(FabricUI::DFG::DFGUICmd_AddGet::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // exec.
-  args.Add(desiredName.c_str());                          // desiredName.
-  args.Add(varPath.c_str());                              // varPath.
-  args.Add(pos.x());                                      // positionX.
-  args.Add(pos.y());                                      // positionY.
-
-  CValue result;
-  executeCommand(cmdName, args, result);
-  return result.GetAsText().GetAsciiString();
-}
-
-std::string DFGUICmdHandlerXSI::dfgDoAddSet(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef desiredName,
-  FTL::CStrRef varPath,
-  QPointF pos
-  )
-{
-  CString cmdName(FabricUI::DFG::DFGUICmd_AddSet::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // exec.
-  args.Add(desiredName.c_str());                          // desiredName.
-  args.Add(varPath.c_str());                              // varPath.
-  args.Add(pos.x());                                      // positionX.
-  args.Add(pos.y());                                      // positionY.
-
-  CValue result;
-  executeCommand(cmdName, args, result);
-  return result.GetAsText().GetAsciiString();
-}
-
-std::string DFGUICmdHandlerXSI::dfgDoAddGraph(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef title,
-  QPointF pos
-  )
-{
-  CString cmdName(FabricUI::DFG::DFGUICmd_AddGraph::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // exec.
-  args.Add(title.c_str());                                // title.
-  args.Add(pos.x());                                      // positionX.
-  args.Add(pos.y());                                      // positionY.
-
-  CValue result;
-  executeCommand(cmdName, args, result);
-  return result.GetAsText().GetAsciiString();
-}
-
-std::string DFGUICmdHandlerXSI::dfgDoAddFunc(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef title,
-  FTL::CStrRef code,
-  QPointF pos
-  )
-{
-  CString cmdName(FabricUI::DFG::DFGUICmd_AddFunc::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // exec.
-  args.Add(title.c_str());                                // title.
-  args.Add(code.c_str());                                 // code.
-  args.Add(pos.x());                                      // positionX.
-  args.Add(pos.y());                                      // positionY.
-
-  CValue result;
-  executeCommand(cmdName, args, result);
-  return result.GetAsText().GetAsciiString();
-}
-
 void DFGUICmdHandlerXSI::dfgDoRemoveNodes(
   FabricCore::DFGBinding const &binding,
   FTL::CStrRef execPath,
   FabricCore::DFGExec const &exec,
-  FTL::ArrayRef<FTL::CStrRef> nodes
+  FTL::ArrayRef<FTL::CStrRef> nodeNames
   )
 {
   CString cmdName(FabricUI::DFG::DFGUICmd_RemoveNodes::CmdName().c_str());
@@ -231,6 +89,148 @@ void DFGUICmdHandlerXSI::dfgDoDisconnect(
   CValueArray args;
 
   Application().LogMessage(L"not yet implemented", siWarningMsg);
+}
+
+std::string DFGUICmdHandlerXSI::dfgDoAddGraph(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef title,
+  QPointF pos
+  )
+{
+  CString cmdName(FabricUI::DFG::DFGUICmd_AddGraph::CmdName().c_str());
+  CValueArray args;
+
+  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
+  args.Add(execPath.c_str());                             // execPath.
+  args.Add(title.c_str());                                // title.
+  args.Add(pos.x());                                      // positionX.
+  args.Add(pos.y());                                      // positionY.
+
+  CValue result;
+  executeCommand(cmdName, args, result);
+  return result.GetAsText().GetAsciiString();
+}
+
+std::string DFGUICmdHandlerXSI::dfgDoAddFunc(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef title,
+  FTL::CStrRef initialCode,
+  QPointF pos
+  )
+{
+  CString cmdName(FabricUI::DFG::DFGUICmd_AddFunc::CmdName().c_str());
+  CValueArray args;
+
+  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
+  args.Add(execPath.c_str());                             // execPath.
+  args.Add(title.c_str());                                // title.
+  args.Add(initialCode.c_str());                          // initialCode.
+  args.Add(pos.x());                                      // positionX.
+  args.Add(pos.y());                                      // positionY.
+
+  CValue result;
+  executeCommand(cmdName, args, result);
+  return result.GetAsText().GetAsciiString();
+}
+
+std::string DFGUICmdHandlerXSI::dfgDoInstPreset(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef presetPath,
+  QPointF pos
+  )
+{
+  CString cmdName(FabricUI::DFG::DFGUICmd_InstPreset::CmdName().c_str());
+  CValueArray args;
+
+  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
+  args.Add(execPath.c_str());                             // execPath.
+  args.Add(presetPath.c_str());                           // preset.
+  args.Add(pos.x());                                      // positionX.
+  args.Add(pos.y());                                      // positionY.
+
+  CValue result;
+  executeCommand(cmdName, args, result);
+  return result.GetAsText().GetAsciiString();
+}
+
+std::string DFGUICmdHandlerXSI::dfgDoAddVar(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef desiredNodeName,
+  FTL::CStrRef dataType,
+  FTL::CStrRef extDep,
+  QPointF pos
+  )
+{
+  CString cmdName(FabricUI::DFG::DFGUICmd_AddVar::CmdName().c_str());
+  CValueArray args;
+
+  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
+  args.Add(execPath.c_str());                             // execPath.
+  args.Add(desiredNodeName.c_str());                      // desiredNodeName.
+  args.Add(dataType.c_str());                             // dataType.
+  args.Add(extDep.c_str());                               // extDep.
+  args.Add(pos.x());                                      // positionX.
+  args.Add(pos.y());                                      // positionY.
+
+  CValue result;
+  executeCommand(cmdName, args, result);
+  return result.GetAsText().GetAsciiString();
+}
+
+std::string DFGUICmdHandlerXSI::dfgDoAddGet(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef desiredNodeName,
+  FTL::CStrRef varPath,
+  QPointF pos
+  )
+{
+  CString cmdName(FabricUI::DFG::DFGUICmd_AddGet::CmdName().c_str());
+  CValueArray args;
+
+  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
+  args.Add(execPath.c_str());                             // execPath.
+  args.Add(desiredNodeName.c_str());                      // desiredNodeName.
+  args.Add(varPath.c_str());                              // varPath.
+  args.Add(pos.x());                                      // positionX.
+  args.Add(pos.y());                                      // positionY.
+
+  CValue result;
+  executeCommand(cmdName, args, result);
+  return result.GetAsText().GetAsciiString();
+}
+
+std::string DFGUICmdHandlerXSI::dfgDoAddSet(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef desiredNodeName,
+  FTL::CStrRef varPath,
+  QPointF pos
+  )
+{
+  CString cmdName(FabricUI::DFG::DFGUICmd_AddSet::CmdName().c_str());
+  CValueArray args;
+
+  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
+  args.Add(execPath.c_str());                             // execPath.
+  args.Add(desiredNodeName.c_str());                      // desiredNodeName.
+  args.Add(varPath.c_str());                              // varPath.
+  args.Add(pos.x());                                      // positionX.
+  args.Add(pos.y());                                      // positionY.
+
+  CValue result;
+  executeCommand(cmdName, args, result);
+  return result.GetAsText().GetAsciiString();
 }
 
 std::string DFGUICmdHandlerXSI::dfgDoAddPort(
@@ -268,8 +268,8 @@ void DFGUICmdHandlerXSI::dfgDoMoveNodes(
   FabricCore::DFGBinding const &binding,
   FTL::CStrRef execPath,
   FabricCore::DFGExec const &exec,
-  FTL::ArrayRef<FTL::CStrRef> nodes,
-  FTL::ArrayRef<QPointF> poss
+  FTL::ArrayRef<FTL::CStrRef> nodeNames,
+  FTL::ArrayRef<QPointF> newTopLeftPoss
   )
 {
   CString cmdName(FabricUI::DFG::DFGUICmd_MoveNodes::CmdName().c_str());
@@ -297,8 +297,8 @@ std::string DFGUICmdHandlerXSI::dfgDoImplodeNodes(
   FabricCore::DFGBinding const &binding,
   FTL::CStrRef execPath,
   FabricCore::DFGExec const &exec,
-  FTL::CStrRef desiredName,
-  FTL::ArrayRef<FTL::CStrRef> nodes
+  FTL::CStrRef desiredNodeName,
+  FTL::ArrayRef<FTL::CStrRef> nodeNames
   )
 {
   CString cmdName(FabricUI::DFG::DFGUICmd_ImplodeNodes::CmdName().c_str());
@@ -337,7 +337,7 @@ void DFGUICmdHandlerXSI::dfgDoAddBackDrop(
   CValueArray args;
 
   args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // exec.
+  args.Add(execPath.c_str());                             // execPath.
   args.Add(title.c_str());                                // title.
   args.Add(pos.x());                                      // positionX.
   args.Add(pos.y());                                      // positionY.
@@ -349,7 +349,7 @@ void DFGUICmdHandlerXSI::dfgDoSetNodeTitle(
   FabricCore::DFGBinding const &binding,
   FTL::CStrRef execPath,
   FabricCore::DFGExec const &exec,
-  FTL::CStrRef node,
+  FTL::CStrRef nodeName,
   FTL::CStrRef title
   )
 {
@@ -357,8 +357,8 @@ void DFGUICmdHandlerXSI::dfgDoSetNodeTitle(
   CValueArray args;
 
   args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // exec.
-  args.Add(node.c_str());                                 // node.
+  args.Add(execPath.c_str());                             // execPath.
+  args.Add(nodeName.c_str());                             // nodeName.
   args.Add(title.c_str());                                // title.
 
   executeCommand(cmdName, args, CValue());
@@ -368,7 +368,7 @@ void DFGUICmdHandlerXSI::dfgDoSetNodeComment(
   FabricCore::DFGBinding const &binding,
   FTL::CStrRef execPath,
   FabricCore::DFGExec const &exec,
-  FTL::CStrRef node,
+  FTL::CStrRef nodeName,
   FTL::CStrRef comment
   )
 {
@@ -376,8 +376,8 @@ void DFGUICmdHandlerXSI::dfgDoSetNodeComment(
   CValueArray args;
 
   args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // exec.
-  args.Add(node.c_str());                                 // node.
+  args.Add(execPath.c_str());                             // execPath.
+  args.Add(nodeName.c_str());                             // nodeName.
   args.Add(comment.c_str());                              // comment.
 
   executeCommand(cmdName, args, CValue());
@@ -394,7 +394,7 @@ void DFGUICmdHandlerXSI::dfgDoSetCode(
   CValueArray args;
 
   args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // exec.
+  args.Add(execPath.c_str());                             // execPath.
   args.Add(code.c_str());                                 // code.
 
   executeCommand(cmdName, args, CValue());
@@ -404,17 +404,17 @@ std::string DFGUICmdHandlerXSI::dfgDoRenamePort(
   FabricCore::DFGBinding const &binding,
   FTL::CStrRef execPath,
   FabricCore::DFGExec const &exec,
-  FTL::CStrRef name,
-  FTL::CStrRef desiredName
+  FTL::CStrRef oldPortName,
+  FTL::CStrRef desiredNewPortName
   )
 {
   CString cmdName(FabricUI::DFG::DFGUICmd_RenamePort::CmdName().c_str());
   CValueArray args;
 
   args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // exec.
-  args.Add(name.c_str());                                 // name.
-  args.Add(desiredName.c_str());                          // desiredName.
+  args.Add(execPath.c_str());                             // execPath.
+  args.Add(oldPortName.c_str());                          // oldPortName.
+  args.Add(desiredNewPortName.c_str());                   // desiredNewPortName.
 
   CValue result;
   executeCommand(cmdName, args, result);
@@ -440,23 +440,23 @@ std::vector<std::string> DFGUICmdHandlerXSI::dfgDoPaste(
 
 void DFGUICmdHandlerXSI::dfgDoSetArgType(
   FabricCore::DFGBinding const &binding,
-  FTL::CStrRef name,
-  FTL::CStrRef type
+  FTL::CStrRef argName,
+  FTL::CStrRef typeName
   )
 {
   CString cmdName(FabricUI::DFG::DFGUICmd_SetArgType::CmdName().c_str());
   CValueArray args;
 
   args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(name.c_str());                                 // name.
-  args.Add(type.c_str());                                 // type.
+  args.Add(argName.c_str());                              // argName.
+  args.Add(typeName.c_str());                             // typeName.
 
   executeCommand(cmdName, args, CValue());
 }
 
 void DFGUICmdHandlerXSI::dfgDoSetArgValue(
   FabricCore::DFGBinding const &binding,
-  FTL::CStrRef name,
+  FTL::CStrRef argName,
   FabricCore::RTVal const &value
   )
 {
@@ -464,7 +464,7 @@ void DFGUICmdHandlerXSI::dfgDoSetArgValue(
   CValueArray args;
 
   args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(name.c_str());                                 // name.
+  args.Add(argName.c_str());                              // argName.
   args.Add(value.getJSON().getStringCString());           // value.
 
   executeCommand(cmdName, args, CValue());
@@ -474,7 +474,7 @@ void DFGUICmdHandlerXSI::dfgDoSetPortDefaultValue(
   FabricCore::DFGBinding const &binding,
   FTL::CStrRef execPath,
   FabricCore::DFGExec const &exec,
-  FTL::CStrRef port,
+  FTL::CStrRef portPath,
   FabricCore::RTVal const &value
   )
 {
@@ -482,8 +482,8 @@ void DFGUICmdHandlerXSI::dfgDoSetPortDefaultValue(
   CValueArray args;
 
   args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // exec.
-  args.Add(port.c_str());                                 // port.
+  args.Add(execPath.c_str());                             // execPath.
+  args.Add(portPath.c_str());                             // portPath.
   args.Add(value.getJSON().getStringCString());           // value.
 
   executeCommand(cmdName, args, CValue());
@@ -493,7 +493,7 @@ void DFGUICmdHandlerXSI::dfgDoSetRefVarPath(
   FabricCore::DFGBinding const &binding,
   FTL::CStrRef execPath,
   FabricCore::DFGExec const &exec,
-  FTL::CStrRef node,
+  FTL::CStrRef refName,
   FTL::CStrRef varPath
   )
 {
@@ -501,8 +501,8 @@ void DFGUICmdHandlerXSI::dfgDoSetRefVarPath(
   CValueArray args;
 
   args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // exec.
-  args.Add(node.c_str());                                 // node.
+  args.Add(execPath.c_str());                             // execPath.
+  args.Add(refName.c_str());                              // refName.
   args.Add(varPath.c_str());                              // varPath.
 
   executeCommand(cmdName, args, CValue());
