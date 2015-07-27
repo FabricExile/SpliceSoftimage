@@ -594,7 +594,7 @@ SICALLBACK dfgInstPreset_Execute(CRef &in_ctxt)
     }
     FTL::CStrRef            execPath   (CString(args[ai++]).GetAsciiString());
     FTL::CStrRef            presetPath (CString(args[ai++]).GetAsciiString());
-    QPointF                 pos((LONG)args[ai + 0], (LONG)args[ai + 1]);
+    QPointF                 pos((LONG)args[ai++], (LONG)args[ai++]);
 
     cmd = new FabricUI::DFG::DFGUICmd_InstPreset( binding,
                                                   execPath,
