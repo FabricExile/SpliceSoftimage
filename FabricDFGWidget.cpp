@@ -103,10 +103,6 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
   // set flag to block any further canvas.
   s_canvasIsOpen = true;
 
-  // create temporary base interface and set its graph from pud.
-  BaseInterface *baseInterface = new BaseInterface(feLog, feLogError);
-  baseInterface->setFromJSON(pud->GetBaseInterface()->getJSON());
-
   // declare and fill window data structure.
   _windowData winData;
   try
@@ -132,13 +128,13 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
     config.graphConfig.headerBackgroundColor    . setRgbF(f * 113, f * 112, f * 111);
     config.graphConfig.mainPanelBackgroundColor . setRgbF(f * 127, f * 127, f * 127);
     config.graphConfig.sidePanelBackgroundColor . setRgbF(f * 171, f * 168, f * 166);
-    winData.qtDFGWidget->init(*baseInterface->getClient(),
-                               baseInterface->getManager(),
-                               baseInterface->getHost(),
-                               baseInterface->getBinding(),
+    winData.qtDFGWidget->init(*pud->GetBaseInterface()->getClient(),
+                               pud->GetBaseInterface()->getManager(),
+                               pud->GetBaseInterface()->getHost(),
+                               pud->GetBaseInterface()->getBinding(),
                                "",
-                               baseInterface->getBinding().getExec(),
-                               baseInterface->getStack(),
+                               pud->GetBaseInterface()->getBinding().getExec(),
+                               pud->GetBaseInterface()->getStack(),
                                false,
                                config
                              );
@@ -189,22 +185,15 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
     }
   } while (comeAgain);
 
-  // put graph of temporary base interface back into pud.
-  pud->GetBaseInterface()->setFromJSON(baseInterface->getJSON());
-
   // clean up.
   s_canvasIsOpen = false;
   try
   {
-
-    delete baseInterface;
-
     delete winData.qtDFGWidget;
     delete winData.qtLayout;
     delete winData.qtDialog;
 
     delete qApp;
-
   }
   catch(std::exception &e)
   {
