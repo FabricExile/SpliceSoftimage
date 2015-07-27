@@ -592,15 +592,16 @@ SICALLBACK dfgInstPreset_Execute(CRef &in_ctxt)
       Application().LogMessage(L"[DFGUICmd] invalid binding!", siErrorMsg);
       return CStatus::Fail;
     }
-    FTL::CStrRef            execPath   (CString(args[ai++]).GetAsciiString());
-    FTL::CStrRef            presetPath (CString(args[ai++]).GetAsciiString());
-    QPointF                 pos((LONG)args[ai++], (LONG)args[ai++]);
+    std::string execPath  (CString(args[ai++]).GetAsciiString());
+    std::string presetPath(CString(args[ai++]).GetAsciiString());
+    QPointF     position  (  (LONG)args[ai++],
+                             (LONG)args[ai++]  );
 
     cmd = new FabricUI::DFG::DFGUICmd_InstPreset( binding,
                                                   execPath,
                                                   binding.getExec(),
                                                   presetPath,
-                                                  pos );
+                                                  position );
   }
 
   // execute the DFG command.
