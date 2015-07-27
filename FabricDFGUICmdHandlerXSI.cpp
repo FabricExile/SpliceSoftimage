@@ -604,7 +604,14 @@ SICALLBACK dfgInstPreset_Execute(CRef &in_ctxt)
   }
 
   // execute the DFG command.
-  cmd->doit();
+  try
+  {
+    cmd->doit();
+  }
+  catch(FabricCore::Exception e)
+  {
+    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+  }
 
   // store return value.
   CValue returnValue(CString(cmd->getActualNodeName().c_str()));
