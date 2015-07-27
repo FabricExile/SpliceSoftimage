@@ -102,12 +102,11 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     in_reg.RegisterCommand(L"dfgSelectConnected",   L"dfgSelectConnected");
     in_reg.RegisterCommand(L"dfgLogStatus",         L"dfgLogStatus");
 
-    // menu.
-    in_reg.RegisterMenu(siMenuMainTopLevelID, "Fabric:DFG", true, true);
+    // commands for DFGUICmdHandler.
+    in_reg.RegisterCommand(L"dfgInstPreset",        L"dfgInstPreset");
 
-    // events.
-    in_reg.RegisterEvent(L"FabricDFGOnStartup",   siOnStartup);
-    in_reg.RegisterEvent(L"FabricDFGOnTerminate", siOnTerminate);
+    // menu.
+    in_reg.RegisterMenu(siMenuMainTopLevelID,       L"Fabric:DFG", true, true);
   }
 
   // done.
@@ -128,22 +127,6 @@ SICALLBACK XSIUnloadPlugin(const PluginRegistrar& in_reg)
 // _________________________
 // siEvent helper functions.
 // -------------------------
-
-XSIPLUGINCALLBACK CStatus FabricDFGOnStartup_OnEvent(CRef & ctxt)
-{
-  Context context(ctxt);
-
-  // done (note: we return 1 (i.e. "true") instead of CStatus::OK or else the event gets aborted).
-  return 1;
-}
-
-XSIPLUGINCALLBACK CStatus FabricDFGOnTerminate_OnEvent(CRef & ctxt)
-{
-  Context context(ctxt);
-
-  // done (note: we return 1 (i.e. "true") instead of CStatus::OK or else the event gets aborted).
-  return 1;
-}
 
 CStatus helpFnct_siEventOpenSave(CRef &ctxt, int openSave)
 {
