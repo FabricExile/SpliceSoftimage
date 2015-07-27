@@ -229,28 +229,11 @@ protected:
 
 protected:
     
-  std::string getOperatorNameFromBinding( FabricCore::DFGBinding const &binding );
-};
+  std::string getOperatorNameFromBinding(FabricCore::DFGBinding const &binding);
 
-class _dfgCmdTask
-{
 public:
-
-  _dfgCmdTask(void) {}
-  ~_dfgCmdTask()    {}
-
-  void Do(void)
-  {
-  };
-
-  void Undo(void)
-  {
-  };
-
-  void Redo(void)
-  {
-    Do();
-  };
+    
+  static FabricCore::DFGBinding getBindingFromOperatorName(std::string operatorName);
 };
 
 #endif

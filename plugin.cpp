@@ -103,7 +103,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     in_reg.RegisterCommand(L"dfgLogStatus",         L"dfgLogStatus");
 
     // commands for DFGUICmdHandler.
-    in_reg.RegisterCommand(L"dfgUICmdInstPreset",   L"dfgUICmdInstPreset");
+    in_reg.RegisterCommand(L"dfgInstPreset",        L"dfgInstPreset");
 
     // menu.
     in_reg.RegisterMenu(siMenuMainTopLevelID,       L"Fabric:DFG", true, true);

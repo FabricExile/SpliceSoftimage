@@ -150,7 +150,7 @@ std::string DFGUICmdHandlerXSI::dfgDoInstPreset(
 
   args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
   args.Add(execPath.c_str());                             // execPath.
-  args.Add(presetPath.c_str());                           // preset.
+  args.Add(presetPath.c_str());                           // presetPath.
   args.Add(pos.x());                                      // positionX.
   args.Add(pos.y());                                      // positionY.
 
@@ -529,11 +529,25 @@ std::string DFGUICmdHandlerXSI::getOperatorNameFromBinding( FabricCore::DFGBindi
   return "";
 }
 
+FabricCore::DFGBinding DFGUICmdHandlerXSI::getBindingFromOperatorName(std::string operatorName)
+{
+  // try to get the binding from the operator's name.
+  CRef opRef;
+  opRef.Set(CString(operatorName.c_str()));
+  CustomOperator op(opRef);
+  BaseInterface *baseInterface = _opUserData::GetBaseInterface(op.GetObjectID());
+  if (baseInterface)
+    return baseInterface->getBinding();
+
+  // not found.
+  return FabricCore::DFGBinding();
+}
+
 // ---
-// command "dfgUICmdInstPreset"
+// command "dfgInstPreset"
 // ---
 
-SICALLBACK dfgUICmdInstPreset_Init(CRef &in_ctxt)
+SICALLBACK dfgInstPreset_Init(CRef &in_ctxt)
 {
   Context ctxt(in_ctxt);
   Command oCmd;
@@ -542,54 +556,74 @@ SICALLBACK dfgUICmdInstPreset_Init(CRef &in_ctxt)
   oCmd.EnableReturnValue(true);
 
   ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",   CString());
-  oArgs.Add(L"exec",      CString());
-  oArgs.Add(L"preset",    CString());
-  oArgs.Add(L"positionX", 0.0);
-  oArgs.Add(L"positionY", 0.0);
+  oArgs.Add(L"binding",     CString());
+  oArgs.Add(L"execPath",    CString());
+  oArgs.Add(L"presetPath",  CString());
+  oArgs.Add(L"positionX",   0.0);
+  oArgs.Add(L"positionY",   0.0);
 
   return CStatus::OK;
 }
 
-SICALLBACK dfgUICmdInstPreset_Execute(CRef &in_ctxt)
+SICALLBACK dfgInstPreset_Execute(CRef &in_ctxt)
 {
   // init.
   Context ctxt(in_ctxt);
 	CValueArray args = ctxt.GetAttribute(L"Arguments");
 
-  // declare/init task.
-  _dfgCmdTask taskTmp, *task = &taskTmp;
- 	if ((bool)ctxt.GetAttribute(L"UndoRequired") == true)
-	{
-    task = new _dfgCmdTask;
-		ctxt.PutAttribute(L"UndoRedoData", (CValue::siPtrType)task);
-	}
+  // create the DFG command.
+  FabricUI::DFG::DFGUICmd_InstPreset *cmd = NULL;
+  {
+    unsigned int ai = 0;
+    FabricCore::DFGBinding binding = DFGUICmdHandlerXSI::getBindingFromOperatorName(CString(args[ai++]).GetAsciiString());
+    if (!binding.isValid())
+    {
+      // invalid binding.
+      Application().LogMessage(L"invalid binding", siErrorMsg);
+      return CStatus::Fail;
+    }
+    FTL::CStrRef            execPath   (CString(args[ai++]).GetAsciiString());
+    FTL::CStrRef            presetPath (CString(args[ai++]).GetAsciiString());
+    QPointF                 pos((float)args[ai++], (float)args[ai++]);
 
-  //
-	task->Do();
+    cmd = new FabricUI::DFG::DFGUICmd_InstPreset( binding,
+                                                  execPath,
+                                                  binding.getExec(),
+                                                  presetPath,
+                                                  pos );
+  }
+
+  // execute the DFG command.
+  cmd->doit();
+
+  // TAKE CARE OF RESULT.
+
+  // store or delete the DFG command, depending on XSI's current undo preferences.
+ 	if ((bool)ctxt.GetAttribute(L"UndoRequired") == true)   ctxt.PutAttribute(L"UndoRedoData", (CValue::siPtrType)cmd);
+  else                                                    delete cmd;
 
   // done.
   return CStatus::OK;
 }
 
-SICALLBACK dfgUICmdInstPreset_Undo(CRef &in_ctxt)
+SICALLBACK dfgInstPreset_Undo(CRef &in_ctxt)
 {
-	_dfgCmdTask *task = (_dfgCmdTask *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
-	if (task)  task->Undo();
+	FabricUI::DFG::DFGUICmd_InstPreset *cmd = (FabricUI::DFG::DFGUICmd_InstPreset *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
+	if (cmd)  cmd->undo();
   return CStatus::OK;
 }
 
-SICALLBACK dfgUICmdInstPreset_Redo(CRef &in_ctxt)
+SICALLBACK dfgInstPreset_Redo(CRef &in_ctxt)
 {
-	_dfgCmdTask *task = (_dfgCmdTask *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
-	if (task)  task->Redo();
+	FabricUI::DFG::DFGUICmd_InstPreset *cmd = (FabricUI::DFG::DFGUICmd_InstPreset *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
+	if (cmd)  cmd->redo();
   return CStatus::OK;
 }
 
-SICALLBACK dfgUICmdInstPreset_TermUndoRedo(CRef &in_ctxt)
+SICALLBACK dfgInstPreset_TermUndoRedo(CRef &in_ctxt)
 {
-	_dfgCmdTask *task = (_dfgCmdTask *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
-	if (task)  delete task;
+	FabricUI::DFG::DFGUICmd_InstPreset *cmd = (FabricUI::DFG::DFGUICmd_InstPreset *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
+	if (cmd)  delete cmd;
   return CStatus::OK;
 }
 
