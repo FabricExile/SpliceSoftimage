@@ -146,54 +146,44 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
   }
 
   // show/execute Qt dialog.
-  bool comeAgain;
-  do
+  try
   {
-    comeAgain = false;
-    try
+    const bool useExec = true;
+
+    // use the widget's exec() function.
+    if (useExec)
     {
-      const bool useExec = true;
+      winData.qtDialog->exec();
+    }
 
-      // use the widget's exec() function.
-      if (useExec)
+    // use a manual loop.
+    else
+    {
+      winData.qtDialog->show();
+      while (winData.qtDialog->isVisible())
       {
-        winData.qtDialog->exec();
-      }
-
-      // use a manual loop.
-      else
-      {
-        winData.qtDialog->show();
-        while (winData.qtDialog->isVisible())
-        {
-          qApp->processEvents();
-        }
+        qApp->processEvents();
       }
     }
-    catch(std::exception &e)
-    {
-      feLogError(e.what() ? e.what() : "\"\"");
-      // temporary construct to restart processing the Qt events of winData.qtDialog.
-      // (note: this was done as a workaround for FE-4646 / FE-4639)
-      if (e.what() && std::string(e.what()) == std::string("invalid string position"))
-        comeAgain = true;
-      else
-        winData.qtDialog->close();
-    }
-    catch(FabricCore::Exception e)
-    {
-      feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
-    }
-  } while (comeAgain);
+  }
+  catch(std::exception &e)
+  {
+    feLogError(e.what() ? e.what() : "\"\"");
+    winData.qtDialog->close();
+  }
+  catch(FabricCore::Exception e)
+  {
+    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+  }
 
   // clean up.
   s_canvasIsOpen = false;
   try
   {
-    delete winData.qtDFGWidget;
-    delete winData.qtLayout;
-    delete winData.qtDialog;
-    delete qApp;
+    //delete winData.qtDFGWidget;
+    //delete winData.qtLayout;
+    //delete winData.qtDialog;
+    //delete qApp;
   }
   catch(std::exception &e)
   {
