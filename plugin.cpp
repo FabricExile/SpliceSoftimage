@@ -13,6 +13,8 @@
 #include "FabricSplicePlugin.h"
 #include "FabricSpliceICENodes.h"
 
+#include <QtGui/QApplication>
+
 using namespace XSI;
 
 // load plugin.
@@ -119,6 +121,10 @@ SICALLBACK XSIUnloadPlugin(const PluginRegistrar& in_reg)
   CString strPluginName;
   strPluginName = in_reg.GetName();
   Application().LogMessage(strPluginName + L" has been unloaded.", siVerboseMsg);
+
+  // Qt.
+  if (qApp)
+    delete qApp;
 
   // done.
   return CStatus::OK;
