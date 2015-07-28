@@ -297,8 +297,8 @@ std::string DFGUICmdHandlerXSI::dfgDoImplodeNodes(
   FabricCore::DFGBinding const &binding,
   FTL::CStrRef execPath,
   FabricCore::DFGExec const &exec,
-  FTL::CStrRef desiredNodeName,
-  FTL::ArrayRef<FTL::CStrRef> nodeNames
+  FTL::ArrayRef<FTL::CStrRef> nodeNames,
+  FTL::CStrRef desiredNodeName
   )
 {
   CString cmdName(FabricUI::DFG::DFGUICmd_ImplodeNodes::CmdName().c_str());
