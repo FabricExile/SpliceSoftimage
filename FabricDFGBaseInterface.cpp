@@ -315,9 +315,11 @@ int BaseInterface::GetArgValueBoolean(FabricCore::DFGBinding &binding, char cons
 
     else if (!strict)
     {
-      if      (resolvedType == "Float32")   out = (0 != rtval.getFloat32());
+      if      (resolvedType == "Scalar")    out = (0 != rtval.getFloat32());
+      else if (resolvedType == "Float32")   out = (0 != rtval.getFloat32());
       else if (resolvedType == "Float64")   out = (0 != rtval.getFloat64());
 
+      else if (resolvedType == "Integer")   out = (0 != rtval.getSInt32());
       else if (resolvedType == "SInt8")     out = (0 != rtval.getSInt8());
       else if (resolvedType == "SInt16")    out = (0 != rtval.getSInt16());
       else if (resolvedType == "SInt32")    out = (0 != rtval.getSInt32());
@@ -359,6 +361,7 @@ int BaseInterface::GetArgValueInteger(FabricCore::DFGBinding &binding, char cons
 
     if      (resolvedType.length() == 0)    return -1;
 
+    else if (resolvedType == "Integer")     out = (int)rtval.getSInt32();
     else if (resolvedType == "SInt8")       out = (int)rtval.getSInt8();
     else if (resolvedType == "SInt16")      out = (int)rtval.getSInt16();
     else if (resolvedType == "SInt32")      out = (int)rtval.getSInt32();
@@ -373,6 +376,7 @@ int BaseInterface::GetArgValueInteger(FabricCore::DFGBinding &binding, char cons
     {
       if      (resolvedType == "Boolean")   out = (int)rtval.getBoolean();
 
+      else if (resolvedType == "Scalar")    out = (int)rtval.getFloat32();
       else if (resolvedType == "Float32")   out = (int)rtval.getFloat32();
       else if (resolvedType == "Float64")   out = (int)rtval.getFloat64();
 
@@ -407,6 +411,7 @@ int BaseInterface::GetArgValueFloat(FabricCore::DFGBinding &binding, char const 
 
     if      (resolvedType.length() == 0)    return -1;
 
+    else if (resolvedType == "Scalar")      out = (double)rtval.getFloat32();
     else if (resolvedType == "Float32")     out = (double)rtval.getFloat32();
     else if (resolvedType == "Float64")     out = (double)rtval.getFloat64();
 
@@ -414,6 +419,7 @@ int BaseInterface::GetArgValueFloat(FabricCore::DFGBinding &binding, char const 
     {
       if      (resolvedType == "Boolean")   out = (double)rtval.getBoolean();
 
+      else if (resolvedType == "Integer")   out = (double)rtval.getSInt32();
       else if (resolvedType == "SInt8")     out = (double)rtval.getSInt8();
       else if (resolvedType == "SInt16")    out = (double)rtval.getSInt16();
       else if (resolvedType == "SInt32")    out = (double)rtval.getSInt32();
@@ -1055,7 +1061,8 @@ void BaseInterface::SetValueOfArgSInt(FabricCore::Client &client, FabricCore::DF
   {
     FabricCore::RTVal rtval;
     std::string resolvedType = binding.getExec().getExecPortResolvedType(argName);
-    if      (resolvedType == "SInt8")   rtval = FabricCore::RTVal::ConstructSInt8 (client, val);
+    if      (resolvedType == "Integer") rtval = FabricCore::RTVal::ConstructSInt32(client, val);
+    else if (resolvedType == "SInt8")   rtval = FabricCore::RTVal::ConstructSInt8 (client, val);
     else if (resolvedType == "SInt16")  rtval = FabricCore::RTVal::ConstructSInt16(client, val);
     else if (resolvedType == "SInt32")  rtval = FabricCore::RTVal::ConstructSInt32(client, val);
     else if (resolvedType == "SInt64")  rtval = FabricCore::RTVal::ConstructSInt64(client, val);
@@ -1105,7 +1112,8 @@ void BaseInterface::SetValueOfArgFloat(FabricCore::Client &client, FabricCore::D
   {
     FabricCore::RTVal rtval;
     std::string resolvedType = binding.getExec().getExecPortResolvedType(argName);
-    if      (resolvedType == "Float32") rtval = FabricCore::RTVal::ConstructFloat32(client, val);
+    if      (resolvedType == "Scalar")  rtval = FabricCore::RTVal::ConstructFloat32(client, val);
+    else if (resolvedType == "Float32") rtval = FabricCore::RTVal::ConstructFloat32(client, val);
     else if (resolvedType == "Float64") rtval = FabricCore::RTVal::ConstructFloat64(client, val);
     binding.setArgValue(argName, rtval);
   }
