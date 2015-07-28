@@ -13,6 +13,8 @@
 #include "FabricSplicePlugin.h"
 #include "FabricSpliceICENodes.h"
 
+#include <QtGui/QApplication>
+
 using namespace XSI;
 
 // load plugin.
@@ -124,6 +126,10 @@ SICALLBACK XSIUnloadPlugin(const PluginRegistrar& in_reg)
   strPluginName = in_reg.GetName();
   Application().LogMessage(strPluginName + L" has been unloaded.", siVerboseMsg);
 
+  // Qt.
+  if (qApp)
+    delete qApp;
+
   // done.
   return CStatus::OK;
 }
@@ -131,22 +137,6 @@ SICALLBACK XSIUnloadPlugin(const PluginRegistrar& in_reg)
 // _________________________
 // siEvent helper functions.
 // -------------------------
-
-XSIPLUGINCALLBACK CStatus FabricDFGOnStartup_OnEvent(CRef & ctxt)
-{
-  Context context(ctxt);
-
-  // done (note: we return 1 (i.e. "true") instead of CStatus::OK or else the event gets aborted).
-  return 1;
-}
-
-XSIPLUGINCALLBACK CStatus FabricDFGOnTerminate_OnEvent(CRef & ctxt)
-{
-  Context context(ctxt);
-
-  // done (note: we return 1 (i.e. "true") instead of CStatus::OK or else the event gets aborted).
-  return 1;
-}
 
 CStatus helpFnct_siEventOpenSave(CRef &ctxt, int openSave)
 {

@@ -299,9 +299,11 @@ XSI::siClassID dfgTools::GetSiClassIdFromResolvedDataType(const XSI::CString &re
 {
   if (   resDataType == L"Boolean"
 
+      || resDataType == L"Scalar"
       || resDataType == L"Float32"
       || resDataType == L"Float64"
 
+      || resDataType == L"Integer"
       || resDataType == L"SInt8"
       || resDataType == L"SInt16"
       || resDataType == L"SInt32"

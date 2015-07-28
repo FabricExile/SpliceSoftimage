@@ -125,9 +125,11 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
       CValue::DataType dt = CValue::siIUnknown;
       if      (pmap.dfgPortDataType == L"Boolean")  dt = CValue::siBool;
 
+      else if (pmap.dfgPortDataType == L"Scalar")   dt = CValue::siFloat;
       else if (pmap.dfgPortDataType == L"Float32")  dt = CValue::siFloat;
       else if (pmap.dfgPortDataType == L"Float64")  dt = CValue::siDouble;
 
+      else if (pmap.dfgPortDataType == L"Integer")  dt = CValue::siInt4;
       else if (pmap.dfgPortDataType == L"SInt8")    dt = CValue::siInt1;
       else if (pmap.dfgPortDataType == L"SInt16")   dt = CValue::siInt2;
       else if (pmap.dfgPortDataType == L"SInt32")   dt = CValue::siInt4;
@@ -966,7 +968,8 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
                                                               bool val = (bool)xsiValue;
                                                               BaseInterface::SetValueOfArgBoolean(*client, binding, portName.GetAsciiString(), val);
                                                             }
-            else if (   portResolvedType == "SInt8"
+            else if (   portResolvedType == "Integer"
+                     || portResolvedType == "SInt8"
                      || portResolvedType == "SInt16"
                      || portResolvedType == "SInt32"
                      || portResolvedType == "SInt64" )    {
@@ -980,7 +983,8 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
                                                               unsigned int val = (unsigned int)(ULONG)xsiValue;
                                                               BaseInterface::SetValueOfArgUInt(*client, binding, portName.GetAsciiString(), val);
                                                             }
-            else if (   portResolvedType == "Float32"
+            else if (   portResolvedType == "Scalar"
+                     || portResolvedType == "Float32"
                      || portResolvedType == "Float64")    {
                                                               double val = (double)xsiValue;
                                                               BaseInterface::SetValueOfArgFloat(*client, binding, portName.GetAsciiString(), val);
@@ -1219,9 +1223,11 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
             {
               if (   pmap.dfgPortDataType == L"Boolean"
 
+                  || pmap.dfgPortDataType == L"Scalar"
                   || pmap.dfgPortDataType == L"Float32"
                   || pmap.dfgPortDataType == L"Float64"
 
+                  || pmap.dfgPortDataType == L"Integer"
                   || pmap.dfgPortDataType == L"SInt8"
                   || pmap.dfgPortDataType == L"SInt16"
                   || pmap.dfgPortDataType == L"SInt32"
@@ -1239,9 +1245,11 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
               }
               if (   pmap.dfgPortDataType == L"Boolean"
 
+                  || pmap.dfgPortDataType == L"Scalar"
                   || pmap.dfgPortDataType == L"Float32"
                   || pmap.dfgPortDataType == L"Float64"
 
+                  || pmap.dfgPortDataType == L"Integer"
                   || pmap.dfgPortDataType == L"SInt8"
                   || pmap.dfgPortDataType == L"SInt16"
                   || pmap.dfgPortDataType == L"SInt32"
@@ -1264,9 +1272,11 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
             {
               if (   pmap.dfgPortDataType == L"Boolean"
 
+                  || pmap.dfgPortDataType == L"Scalar"
                   || pmap.dfgPortDataType == L"Float32"
                   || pmap.dfgPortDataType == L"Float64"
 
+                  || pmap.dfgPortDataType == L"Integer"
                   || pmap.dfgPortDataType == L"SInt8"
                   || pmap.dfgPortDataType == L"SInt16"
                   || pmap.dfgPortDataType == L"SInt32"
