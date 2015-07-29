@@ -180,16 +180,10 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
   s_canvasIsOpen = false;
   try
   {
-<<<<<<< HEAD
     //delete winData.qtDFGWidget;
     //delete winData.qtLayout;
     //delete winData.qtDialog;
     //delete qApp;
-=======
-    delete winData.qtDFGWidget;
-    delete winData.qtLayout;
-    delete winData.qtDialog;
->>>>>>> pablo
   }
   catch(std::exception &e)
   {
