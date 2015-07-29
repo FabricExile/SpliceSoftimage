@@ -54,9 +54,199 @@ bool executeCommand(const CString &cmdName, const CValueArray &args, CValue &io_
   }
 }
 
+static inline CStatus HandleFabricCoreException(
+  FabricCore::Exception const &e
+  )
+{
+  std::wstring msg = L"[DFGUICmd] Fabric Core exception: ";
+  FTL::CStrRef desc = e.getDesc_cstr();
+  msg.insert( msg.end(), desc.begin(), desc.end() );
+  Application().LogMessage( msg.c_str(), siErrorMsg );
+  return CStatus::Fail;
+}
+
+static inline std::string EncodeNames(
+  FTL::ArrayRef<FTL::CStrRef> names
+  )
+{
+  std::stringstream nameSS;
+  for ( FTL::ArrayRef<FTL::CStrRef>::IT it = names.begin();
+    it != names.end(); ++it )
+  {
+    if ( it != names.begin() )
+      nameSS << '|';
+    nameSS << *it;
+  }
+  return nameSS.str();
+}
+
+static inline CStatus DecodeString(
+  CValueArray const &args,
+  unsigned &ai,
+  std::string &value
+  )
+{
+  value = CString( args[ai++] ).GetAsciiString();
+  return CStatus::OK;
+}
+
+static inline CStatus DecodeExec(
+  CValueArray const &args,
+  unsigned &ai,
+  FabricCore::DFGBinding &binding,
+  std::string &execPath,
+  FabricCore::DFGExec &exec
+  )
+{
+  binding =
+    DFGUICmdHandlerXSI::getBindingFromOperatorName(
+      CString(args[ai++]).GetAsciiString()
+      );
+  if (!binding.isValid())
+  {
+    Application().LogMessage(L"[DFGUICmd] invalid binding!", siErrorMsg);
+    return CStatus::Fail;
+  }
+
+  CStatus execPathStatus = DecodeString( args, ai, execPath );
+  if ( execPathStatus != CStatus::OK )
+    return execPathStatus;
+
+  try
+  {
+    exec = binding.getExec().getSubExec( execPath.c_str() );
+  }
+  catch ( FabricCore::Exception e )
+  {
+    return HandleFabricCoreException( e );
+  }
+
+  return CStatus::OK;
+}
+
+static inline CStatus DecodeNames(
+  CValueArray const &args,
+  unsigned &ai,
+  std::string &namesString,
+  std::vector<FTL::StrRef> &names
+  )
+{
+  CStatus namesStatus = DecodeString( args, ai, namesString );
+  if ( namesStatus != CStatus::OK )
+    return namesStatus;
+  
+  FTL::StrRef namesStr = namesString;
+  while ( !namesStr.empty() )
+  {
+    FTL::StrRef::Split split = namesStr.trimSplit('|');
+    if ( !split.first.empty() )
+      names.push_back( split.first );
+    namesStr = split.second;
+  }
+
+  return CStatus::OK;
+}
+
 /*-----------------------------------------------------
   implementation of DFGUICmdHandlerXSI member functions.
 */
+
+// ---
+// command "dfgRemoveNodes"
+// ---
+
+SICALLBACK dfgRemoveNodes_Init(CRef &in_ctxt)
+{
+  Context ctxt(in_ctxt);
+  Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.EnableReturnValue(true);
+
+  ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",     CString());
+  oArgs.Add(L"execPath",    CString());
+  oArgs.Add(L"nodeNames",  CString());
+  oArgs.Add(L"xPoss",   CString());
+  oArgs.Add(L"yPoss",   CString());
+
+  return CStatus::OK;
+}
+
+SICALLBACK dfgRemoveNodes_Execute(CRef &in_ctxt)
+{
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgRemoveNodes_Execute()", siCommentMsg);
+
+  // init.
+  Context ctxt(in_ctxt);
+  CValueArray args = ctxt.GetAttribute(L"Arguments");
+
+  // create the DFG command.
+  FabricUI::DFG::DFGUICmd_RemoveNodes *cmd = NULL;
+  {
+    unsigned int ai = 0;
+
+    FabricCore::DFGBinding binding;
+    std::string execPath;
+    FabricCore::DFGExec exec;
+    CStatus execStatus = DecodeExec( args, ai, binding, execPath, exec );
+    if ( execStatus != CStatus::OK )
+      return execStatus;
+
+    std::string nodeNamesString;
+    std::vector<FTL::StrRef> nodeNames;
+    CStatus nodeNamesStatus =
+      DecodeNames( args, ai, nodeNamesString, nodeNames );
+    if ( nodeNamesStatus != CStatus::OK )
+      return nodeNamesStatus;
+    
+    cmd = new FabricUI::DFG::DFGUICmd_RemoveNodes( binding,
+                                                  execPath.c_str(),
+                                                  exec,
+                                                  nodeNames );
+  }
+
+  // execute the DFG command.
+  try
+  {
+    cmd->doit();
+  }
+  catch(FabricCore::Exception e)
+  {
+    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+  }
+
+  // store or delete the DFG command, depending on XSI's current undo preferences.
+  if ((bool)ctxt.GetAttribute(L"UndoRequired") == true)   ctxt.PutAttribute(L"UndoRedoData", (CValue::siPtrType)cmd);
+  else                                                    delete cmd;
+
+  // done.
+  return CStatus::OK;
+}
+
+SICALLBACK dfgRemoveNodes_Undo(CRef &in_ctxt)
+{
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgRemoveNodes_Undo()", siCommentMsg);
+  FabricUI::DFG::DFGUICmd_RemoveNodes *cmd = (FabricUI::DFG::DFGUICmd_RemoveNodes *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
+  if (cmd)  cmd->undo();
+  return CStatus::OK;
+}
+
+SICALLBACK dfgRemoveNodes_Redo(CRef &in_ctxt)
+{
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgRemoveNodes_Redo()", siCommentMsg);
+  FabricUI::DFG::DFGUICmd_RemoveNodes *cmd = (FabricUI::DFG::DFGUICmd_RemoveNodes *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
+  if (cmd)  cmd->redo();
+  return CStatus::OK;
+}
+
+SICALLBACK dfgRemoveNodes_TermUndoRedo(CRef &in_ctxt)
+{
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgRemoveNodes_TermUndoRedo()", siCommentMsg);
+  FabricUI::DFG::DFGUICmd_RemoveNodes *cmd = (FabricUI::DFG::DFGUICmd_RemoveNodes *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
+  if (cmd)  delete cmd;
+  return CStatus::OK;
+}
 
 void DFGUICmdHandlerXSI::dfgDoRemoveNodes(
   FabricCore::DFGBinding const &binding,
@@ -68,7 +258,11 @@ void DFGUICmdHandlerXSI::dfgDoRemoveNodes(
   CString cmdName(FabricUI::DFG::DFGUICmd_RemoveNodes::CmdName().c_str());
   CValueArray args;
 
-  Application().LogMessage(L"not yet implemented", siWarningMsg);
+  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
+  args.Add(execPath.c_str());
+  args.Add( EncodeNames( nodeNames ).c_str() );
+
+  executeCommand(cmdName, args, CValue());
 }
 
 void DFGUICmdHandlerXSI::dfgDoConnect(
@@ -179,22 +373,26 @@ SICALLBACK dfgInstPreset_Execute(CRef &in_ctxt)
   FabricUI::DFG::DFGUICmd_InstPreset *cmd = NULL;
   {
     unsigned int ai = 0;
-    FabricCore::DFGBinding binding = DFGUICmdHandlerXSI::getBindingFromOperatorName(CString(args[ai++]).GetAsciiString());
-    if (!binding.isValid())
-    {
-      // invalid binding.
-      Application().LogMessage(L"[DFGUICmd] invalid binding!", siErrorMsg);
-      return CStatus::Fail;
-    }
-    std::string execPath  (CString(args[ai++]).GetAsciiString());
-    std::string presetPath(CString(args[ai++]).GetAsciiString());
-    QPointF     position  (  (LONG)args[ai++],
+
+    FabricCore::DFGBinding binding;
+    std::string execPath;
+    FabricCore::DFGExec exec;
+    CStatus execStatus = DecodeExec( args, ai, binding, execPath, exec );
+    if ( execStatus != CStatus::OK )
+      return execStatus;
+
+    std::string presetPath;
+    CStatus presetPathStatus = DecodeString( args, ai, presetPath );
+    if ( presetPathStatus != CStatus::OK )
+      return presetPathStatus;
+
+   QPointF     position  (  (LONG)args[ai++],
                              (LONG)args[ai++]  );
 
     cmd = new FabricUI::DFG::DFGUICmd_InstPreset( binding,
-                                                  execPath,
-                                                  binding.getExec().getSubExec( execPath.c_str() ),
-                                                  presetPath,
+                                                  execPath.c_str(),
+                                                  exec,
+                                                  presetPath.c_str(),
                                                   position );
   }
 
@@ -372,21 +570,6 @@ void DFGUICmdHandlerXSI::dfgDoRemovePort(
   Application().LogMessage(L"not yet implemented", siWarningMsg);
 }
 
-static inline std::string EncodeNames(
-  FTL::ArrayRef<FTL::CStrRef> names
-  )
-{
-  std::stringstream nameSS;
-  for ( FTL::ArrayRef<FTL::CStrRef>::IT it = names.begin();
-    it != names.end(); ++it )
-  {
-    if ( it != names.begin() )
-      nameSS << '|';
-    nameSS << *it;
-  }
-  return nameSS.str();
-}
-
 static inline std::string EncodeXPoss(
   FTL::ArrayRef<QPointF> poss
   )
@@ -449,25 +632,20 @@ SICALLBACK dfgMoveNodes_Execute(CRef &in_ctxt)
   FabricUI::DFG::DFGUICmd_MoveNodes *cmd = NULL;
   {
     unsigned int ai = 0;
-    FabricCore::DFGBinding binding = DFGUICmdHandlerXSI::getBindingFromOperatorName(CString(args[ai++]).GetAsciiString());
-    if (!binding.isValid())
-    {
-      // invalid binding.
-      Application().LogMessage(L"[DFGUICmd] invalid binding!", siErrorMsg);
-      return CStatus::Fail;
-    }
-    std::string execPath  (CString(args[ai++]).GetAsciiString());
 
+    FabricCore::DFGBinding binding;
+    std::string execPath;
+    FabricCore::DFGExec exec;
+    CStatus execStatus = DecodeExec( args, ai, binding, execPath, exec );
+    if ( execStatus != CStatus::OK )
+      return execStatus;
+
+    std::string nodeNamesString;
     std::vector<FTL::StrRef> nodeNames;
-    std::string nodeNamesString = CString(args[ai++]).GetAsciiString();
-    FTL::StrRef nodeNamesStr = nodeNamesString;
-    while ( !nodeNamesStr.empty() )
-    {
-      FTL::StrRef::Split split = nodeNamesStr.trimSplit('|');
-      if ( !split.first.empty() )
-        nodeNames.push_back( split.first );
-      nodeNamesStr = split.second;
-    }
+    CStatus nodeNamesStatus =
+      DecodeNames( args, ai, nodeNamesString, nodeNames );
+    if ( nodeNamesStatus != CStatus::OK )
+      return nodeNamesStatus;
 
     std::vector<QPointF> poss;
     std::string xPosString = CString(args[ai++]).GetAsciiString();
@@ -489,8 +667,8 @@ SICALLBACK dfgMoveNodes_Execute(CRef &in_ctxt)
     }
 
     cmd = new FabricUI::DFG::DFGUICmd_MoveNodes( binding,
-                                                  execPath,
-                                                  binding.getExec().getSubExec( execPath.c_str() ),
+                                                  execPath.c_str(),
+                                                  exec,
                                                   nodeNames,
                                                   poss );
   }

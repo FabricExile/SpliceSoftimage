@@ -118,6 +118,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     // commands for DFGUICmdHandler.
     REGISTER_DFGUICMD( in_reg, InstPreset );
     REGISTER_DFGUICMD( in_reg, MoveNodes );
+    REGISTER_DFGUICMD( in_reg, RemoveNodes );
 
     // menu.
     in_reg.RegisterMenu(siMenuMainTopLevelID,       L"Fabric:DFG", true, true);
