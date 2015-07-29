@@ -124,6 +124,15 @@ static inline CStatus DecodeExec(
   return CStatus::OK;
 }
 
+static inline CStatus DecodeName(
+  CValueArray const &args,
+  unsigned &ai,
+  std::string &value
+  )
+{
+  return DecodeString( args, ai, value );
+}
+
 static inline CStatus DecodeNames(
   CValueArray const &args,
   unsigned &ai,
@@ -265,6 +274,109 @@ void DFGUICmdHandlerXSI::dfgDoRemoveNodes(
   executeCommand(cmdName, args, CValue());
 }
 
+// ---
+// command "dfgConnect"
+// ---
+
+SICALLBACK dfgConnect_Init(CRef &in_ctxt)
+{
+  Context ctxt(in_ctxt);
+  Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.EnableReturnValue(true);
+
+  ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",     CString());
+  oArgs.Add(L"execPath",    CString());
+  oArgs.Add(L"nodeNames",  CString());
+  oArgs.Add(L"xPoss",   CString());
+  oArgs.Add(L"yPoss",   CString());
+
+  return CStatus::OK;
+}
+
+SICALLBACK dfgConnect_Execute(CRef &in_ctxt)
+{
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgConnect_Execute()", siCommentMsg);
+
+  // init.
+  Context ctxt(in_ctxt);
+  CValueArray args = ctxt.GetAttribute(L"Arguments");
+
+  // create the DFG command.
+  FabricUI::DFG::DFGUICmd_Connect *cmd = NULL;
+  {
+    unsigned int ai = 0;
+
+    FabricCore::DFGBinding binding;
+    std::string execPath;
+    FabricCore::DFGExec exec;
+    CStatus execStatus = DecodeExec( args, ai, binding, execPath, exec );
+    if ( execStatus != CStatus::OK )
+      return execStatus;
+
+    std::string srcPortPath;
+    CStatus srcPortPathStatus =
+      DecodeName( args, ai, srcPortPath );
+    if ( srcPortPathStatus != CStatus::OK )
+      return srcPortPathStatus;
+
+    std::string dstPortPath;
+    CStatus dstPortPathStatus =
+      DecodeName( args, ai, dstPortPath );
+    if ( dstPortPathStatus != CStatus::OK )
+      return dstPortPathStatus;
+    
+    cmd = new FabricUI::DFG::DFGUICmd_Connect( binding,
+                                                  execPath.c_str(),
+                                                  exec,
+                                                  srcPortPath.c_str(),
+                                                  dstPortPath.c_str() );
+  }
+
+  // execute the DFG command.
+  try
+  {
+    cmd->doit();
+  }
+  catch(FabricCore::Exception e)
+  {
+    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+  }
+
+  // store or delete the DFG command, depending on XSI's current undo preferences.
+  if ((bool)ctxt.GetAttribute(L"UndoRequired") == true)   ctxt.PutAttribute(L"UndoRedoData", (CValue::siPtrType)cmd);
+  else                                                    delete cmd;
+
+  // done.
+  return CStatus::OK;
+}
+
+SICALLBACK dfgConnect_Undo(CRef &in_ctxt)
+{
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgConnect_Undo()", siCommentMsg);
+  FabricUI::DFG::DFGUICmd_Connect *cmd = (FabricUI::DFG::DFGUICmd_Connect *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
+  if (cmd)  cmd->undo();
+  return CStatus::OK;
+}
+
+SICALLBACK dfgConnect_Redo(CRef &in_ctxt)
+{
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgConnect_Redo()", siCommentMsg);
+  FabricUI::DFG::DFGUICmd_Connect *cmd = (FabricUI::DFG::DFGUICmd_Connect *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
+  if (cmd)  cmd->redo();
+  return CStatus::OK;
+}
+
+SICALLBACK dfgConnect_TermUndoRedo(CRef &in_ctxt)
+{
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgConnect_TermUndoRedo()", siCommentMsg);
+  FabricUI::DFG::DFGUICmd_Connect *cmd = (FabricUI::DFG::DFGUICmd_Connect *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
+  if (cmd)  delete cmd;
+  return CStatus::OK;
+}
+
 void DFGUICmdHandlerXSI::dfgDoConnect(
   FabricCore::DFGBinding const &binding,
   FTL::CStrRef execPath,
@@ -276,7 +388,115 @@ void DFGUICmdHandlerXSI::dfgDoConnect(
   CString cmdName(FabricUI::DFG::DFGUICmd_Connect::CmdName().c_str());
   CValueArray args;
 
-  Application().LogMessage(L"not yet implemented", siWarningMsg);
+  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
+  args.Add(execPath.c_str());
+  args.Add( srcPort.c_str() );
+  args.Add( dstPort.c_str() );
+
+  executeCommand(cmdName, args, CValue());
+}
+
+// ---
+// command "dfgDisconnect"
+// ---
+
+SICALLBACK dfgDisconnect_Init(CRef &in_ctxt)
+{
+  Context ctxt(in_ctxt);
+  Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.EnableReturnValue(true);
+
+  ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",     CString());
+  oArgs.Add(L"execPath",    CString());
+  oArgs.Add(L"nodeNames",  CString());
+  oArgs.Add(L"xPoss",   CString());
+  oArgs.Add(L"yPoss",   CString());
+
+  return CStatus::OK;
+}
+
+SICALLBACK dfgDisconnect_Execute(CRef &in_ctxt)
+{
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgDisconnect_Execute()", siCommentMsg);
+
+  // init.
+  Context ctxt(in_ctxt);
+  CValueArray args = ctxt.GetAttribute(L"Arguments");
+
+  // create the DFG command.
+  FabricUI::DFG::DFGUICmd_Disconnect *cmd = NULL;
+  {
+    unsigned int ai = 0;
+
+    FabricCore::DFGBinding binding;
+    std::string execPath;
+    FabricCore::DFGExec exec;
+    CStatus execStatus = DecodeExec( args, ai, binding, execPath, exec );
+    if ( execStatus != CStatus::OK )
+      return execStatus;
+
+    std::string srcPortPath;
+    CStatus srcPortPathStatus =
+      DecodeName( args, ai, srcPortPath );
+    if ( srcPortPathStatus != CStatus::OK )
+      return srcPortPathStatus;
+
+    std::string dstPortPath;
+    CStatus dstPortPathStatus =
+      DecodeName( args, ai, dstPortPath );
+    if ( dstPortPathStatus != CStatus::OK )
+      return dstPortPathStatus;
+    
+    cmd = new FabricUI::DFG::DFGUICmd_Disconnect( binding,
+                                                  execPath.c_str(),
+                                                  exec,
+                                                  srcPortPath.c_str(),
+                                                  dstPortPath.c_str() );
+  }
+
+  // execute the DFG command.
+  try
+  {
+    cmd->doit();
+  }
+  catch(FabricCore::Exception e)
+  {
+    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+  }
+
+  // store or delete the DFG command, depending on XSI's current undo preferences.
+  if ((bool)ctxt.GetAttribute(L"UndoRequired") == true)   ctxt.PutAttribute(L"UndoRedoData", (CValue::siPtrType)cmd);
+  else                                                    delete cmd;
+
+  // done.
+  return CStatus::OK;
+}
+
+SICALLBACK dfgDisconnect_Undo(CRef &in_ctxt)
+{
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgDisconnect_Undo()", siCommentMsg);
+  FabricUI::DFG::DFGUICmd_Disconnect *cmd = (FabricUI::DFG::DFGUICmd_Disconnect *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
+  if (cmd)  cmd->undo();
+  return CStatus::OK;
+}
+
+SICALLBACK dfgDisconnect_Redo(CRef &in_ctxt)
+{
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgDisconnect_Redo()", siCommentMsg);
+  FabricUI::DFG::DFGUICmd_Disconnect *cmd = (FabricUI::DFG::DFGUICmd_Disconnect *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
+  if (cmd)  cmd->redo();
+  return CStatus::OK;
+}
+
+SICALLBACK dfgDisconnect_TermUndoRedo(CRef &in_ctxt)
+{
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgDisconnect_TermUndoRedo()", siCommentMsg);
+  FabricUI::DFG::DFGUICmd_Disconnect *cmd = (FabricUI::DFG::DFGUICmd_Disconnect *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
+  if (cmd)  delete cmd;
+  return CStatus::OK;
 }
 
 void DFGUICmdHandlerXSI::dfgDoDisconnect(
@@ -290,7 +510,12 @@ void DFGUICmdHandlerXSI::dfgDoDisconnect(
   CString cmdName(FabricUI::DFG::DFGUICmd_Disconnect::CmdName().c_str());
   CValueArray args;
 
-  Application().LogMessage(L"not yet implemented", siWarningMsg);
+  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
+  args.Add(execPath.c_str());
+  args.Add( srcPort.c_str() );
+  args.Add( dstPort.c_str() );
+
+  executeCommand(cmdName, args, CValue());
 }
 
 std::string DFGUICmdHandlerXSI::dfgDoAddGraph(
