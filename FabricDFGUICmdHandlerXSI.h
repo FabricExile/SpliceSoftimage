@@ -5,6 +5,8 @@
 
 #include <FabricUI/DFG/DFGUICmdHandler.h>
 
+#define DFGUICmdHandlerLOG  true  // log some info for debugging.
+
 class BaseInterface;
 
 class DFGUICmdHandlerXSI : public FabricUI::DFG::DFGUICmdHandler

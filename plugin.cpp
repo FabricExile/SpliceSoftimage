@@ -109,10 +109,6 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
 
     // menu.
     in_reg.RegisterMenu(siMenuMainTopLevelID,       L"Fabric:DFG", true, true);
-
-    // events.
-    in_reg.RegisterEvent(L"FabricDFGOnStartup",     siOnStartup);
-    in_reg.RegisterEvent(L"FabricDFGOnTerminate",   siOnTerminate);
   }
 
   // done.

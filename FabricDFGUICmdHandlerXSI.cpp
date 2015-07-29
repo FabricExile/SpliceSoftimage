@@ -30,6 +30,14 @@ bool executeCommand(const CString &cmdName, const CValueArray &args, CValue &io_
   // init result.
   io_result.Clear();
 
+  // log.
+  if (DFGUICmdHandlerLOG)
+  {
+    Application().LogMessage(L"[DFGUICmd] about to execute \"" + cmdName + L"\" with the following array of arguments:", siCommentMsg);
+    for (LONG i=0;i<args.GetCount();i++)
+      Application().LogMessage(L"[DFGUICmd]     \"" + args[i].GetAsText() + L"\"", siCommentMsg);
+  }
+
   // execute command.
   if (Application().ExecuteCommand(cmdName, args, io_result) == CStatus::OK)
   {
@@ -105,8 +113,8 @@ std::string DFGUICmdHandlerXSI::dfgDoAddGraph(
   args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
   args.Add(execPath.c_str());                             // execPath.
   args.Add(title.c_str());                                // title.
-  args.Add(pos.x());                                      // positionX.
-  args.Add(pos.y());                                      // positionY.
+  args.Add((LONG)pos.x());                                // positionX.
+  args.Add((LONG)pos.y());                                // positionY.
 
   CValue result;
   executeCommand(cmdName, args, result);
@@ -129,8 +137,8 @@ std::string DFGUICmdHandlerXSI::dfgDoAddFunc(
   args.Add(execPath.c_str());                             // execPath.
   args.Add(title.c_str());                                // title.
   args.Add(initialCode.c_str());                          // initialCode.
-  args.Add(pos.x());                                      // positionX.
-  args.Add(pos.y());                                      // positionY.
+  args.Add((LONG)pos.x());                                // positionX.
+  args.Add((LONG)pos.y());                                // positionY.
 
   CValue result;
   executeCommand(cmdName, args, result);
@@ -151,8 +159,8 @@ std::string DFGUICmdHandlerXSI::dfgDoInstPreset(
   args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
   args.Add(execPath.c_str());                             // execPath.
   args.Add(presetPath.c_str());                           // presetPath.
-  args.Add(pos.x());                                      // positionX.
-  args.Add(pos.y());                                      // positionY.
+  args.Add((LONG)pos.x());                                // positionX.
+  args.Add((LONG)pos.y());                                // positionY.
 
   CValue result;
   executeCommand(cmdName, args, result);
@@ -177,8 +185,8 @@ std::string DFGUICmdHandlerXSI::dfgDoAddVar(
   args.Add(desiredNodeName.c_str());                      // desiredNodeName.
   args.Add(dataType.c_str());                             // dataType.
   args.Add(extDep.c_str());                               // extDep.
-  args.Add(pos.x());                                      // positionX.
-  args.Add(pos.y());                                      // positionY.
+  args.Add((LONG)pos.x());                                // positionX.
+  args.Add((LONG)pos.y());                                // positionY.
 
   CValue result;
   executeCommand(cmdName, args, result);
@@ -201,8 +209,8 @@ std::string DFGUICmdHandlerXSI::dfgDoAddGet(
   args.Add(execPath.c_str());                             // execPath.
   args.Add(desiredNodeName.c_str());                      // desiredNodeName.
   args.Add(varPath.c_str());                              // varPath.
-  args.Add(pos.x());                                      // positionX.
-  args.Add(pos.y());                                      // positionY.
+  args.Add((LONG)pos.x());                                // positionX.
+  args.Add((LONG)pos.y());                                // positionY.
 
   CValue result;
   executeCommand(cmdName, args, result);
@@ -225,8 +233,8 @@ std::string DFGUICmdHandlerXSI::dfgDoAddSet(
   args.Add(execPath.c_str());                             // execPath.
   args.Add(desiredNodeName.c_str());                      // desiredNodeName.
   args.Add(varPath.c_str());                              // varPath.
-  args.Add(pos.x());                                      // positionX.
-  args.Add(pos.y());                                      // positionY.
+  args.Add((LONG)pos.x());                                // positionX.
+  args.Add((LONG)pos.y());                                // positionY.
 
   CValue result;
   executeCommand(cmdName, args, result);
@@ -339,8 +347,8 @@ void DFGUICmdHandlerXSI::dfgDoAddBackDrop(
   args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
   args.Add(execPath.c_str());                             // execPath.
   args.Add(title.c_str());                                // title.
-  args.Add(pos.x());                                      // positionX.
-  args.Add(pos.y());                                      // positionY.
+  args.Add((LONG)pos.x());                                // positionX.
+  args.Add((LONG)pos.y());                                // positionY.
 
   executeCommand(cmdName, args, CValue());
 }
@@ -559,14 +567,16 @@ SICALLBACK dfgInstPreset_Init(CRef &in_ctxt)
   oArgs.Add(L"binding",     CString());
   oArgs.Add(L"execPath",    CString());
   oArgs.Add(L"presetPath",  CString());
-  oArgs.Add(L"positionX",   0.0);
-  oArgs.Add(L"positionY",   0.0);
+  oArgs.Add(L"positionX",   0L);
+  oArgs.Add(L"positionY",   0L);
 
   return CStatus::OK;
 }
 
 SICALLBACK dfgInstPreset_Execute(CRef &in_ctxt)
 {
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgInstPreset_Execute()", siCommentMsg);
+
   // init.
   Context ctxt(in_ctxt);
 	CValueArray args = ctxt.GetAttribute(L"Arguments");
@@ -579,24 +589,35 @@ SICALLBACK dfgInstPreset_Execute(CRef &in_ctxt)
     if (!binding.isValid())
     {
       // invalid binding.
-      Application().LogMessage(L"invalid binding", siErrorMsg);
+      Application().LogMessage(L"[DFGUICmd] invalid binding!", siErrorMsg);
       return CStatus::Fail;
     }
-    FTL::CStrRef            execPath   (CString(args[ai++]).GetAsciiString());
-    FTL::CStrRef            presetPath (CString(args[ai++]).GetAsciiString());
-    QPointF                 pos((float)args[ai + 0], (float)args[ai + 1]);
+    std::string execPath  (CString(args[ai++]).GetAsciiString());
+    std::string presetPath(CString(args[ai++]).GetAsciiString());
+    QPointF     position  (  (LONG)args[ai++],
+                             (LONG)args[ai++]  );
 
     cmd = new FabricUI::DFG::DFGUICmd_InstPreset( binding,
                                                   execPath,
                                                   binding.getExec(),
                                                   presetPath,
-                                                  pos );
+                                                  position );
   }
 
   // execute the DFG command.
-  cmd->doit();
+  try
+  {
+    cmd->doit();
+  }
+  catch(FabricCore::Exception e)
+  {
+    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+  }
 
-  // TAKE CARE OF RESULT.
+  // store return value.
+  CValue returnValue(CString(cmd->getActualNodeName().c_str()));
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue.GetAsText() + L"\"", siCommentMsg);
+  ctxt.PutAttribute(L"ReturnValue", returnValue);
 
   // store or delete the DFG command, depending on XSI's current undo preferences.
  	if ((bool)ctxt.GetAttribute(L"UndoRequired") == true)   ctxt.PutAttribute(L"UndoRedoData", (CValue::siPtrType)cmd);
@@ -608,6 +629,7 @@ SICALLBACK dfgInstPreset_Execute(CRef &in_ctxt)
 
 SICALLBACK dfgInstPreset_Undo(CRef &in_ctxt)
 {
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgInstPreset_Undo()", siCommentMsg);
 	FabricUI::DFG::DFGUICmd_InstPreset *cmd = (FabricUI::DFG::DFGUICmd_InstPreset *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
 	if (cmd)  cmd->undo();
   return CStatus::OK;
@@ -615,6 +637,7 @@ SICALLBACK dfgInstPreset_Undo(CRef &in_ctxt)
 
 SICALLBACK dfgInstPreset_Redo(CRef &in_ctxt)
 {
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgInstPreset_Redo()", siCommentMsg);
 	FabricUI::DFG::DFGUICmd_InstPreset *cmd = (FabricUI::DFG::DFGUICmd_InstPreset *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
 	if (cmd)  cmd->redo();
   return CStatus::OK;
@@ -622,7 +645,8 @@ SICALLBACK dfgInstPreset_Redo(CRef &in_ctxt)
 
 SICALLBACK dfgInstPreset_TermUndoRedo(CRef &in_ctxt)
 {
-	FabricUI::DFG::DFGUICmd_InstPreset *cmd = (FabricUI::DFG::DFGUICmd_InstPreset *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgInstPreset_TermUndoRedo()", siCommentMsg);
+  FabricUI::DFG::DFGUICmd_InstPreset *cmd = (FabricUI::DFG::DFGUICmd_InstPreset *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
 	if (cmd)  delete cmd;
   return CStatus::OK;
 }
