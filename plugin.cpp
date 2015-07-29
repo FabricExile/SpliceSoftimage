@@ -13,9 +13,20 @@
 #include "FabricSplicePlugin.h"
 #include "FabricSpliceICENodes.h"
 
+#include <FabricUI/DFG/DFGUICmd/DFGUICmds.h>
+
 #include <QtGui/QApplication>
 
 using namespace XSI;
+
+#define REGISTER_DFGUICMD(inreg, CMD) \
+  { \
+    std::wstring cmdName( \
+      FabricUI::DFG::DFGUICmd_##CMD::CmdName().begin(), \
+      FabricUI::DFG::DFGUICmd_##CMD::CmdName().end() \
+      ); \
+    in_reg.RegisterCommand( cmdName.c_str(), cmdName.c_str() ); \
+  }
 
 // load plugin.
 SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
@@ -105,7 +116,8 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     in_reg.RegisterCommand(L"dfgLogStatus",         L"dfgLogStatus");
 
     // commands for DFGUICmdHandler.
-    in_reg.RegisterCommand(L"dfgInstPreset",        L"dfgInstPreset");
+    REGISTER_DFGUICMD( in_reg, InstPreset );
+    REGISTER_DFGUICMD( in_reg, MoveNodes );
 
     // menu.
     in_reg.RegisterMenu(siMenuMainTopLevelID,       L"Fabric:DFG", true, true);
