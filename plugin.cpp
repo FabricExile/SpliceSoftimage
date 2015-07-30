@@ -125,6 +125,8 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     REGISTER_DFGUICMD( in_reg, AddVar );
     REGISTER_DFGUICMD( in_reg, Connect );
     REGISTER_DFGUICMD( in_reg, Disconnect );
+    REGISTER_DFGUICMD( in_reg, ExplodeNode );
+    REGISTER_DFGUICMD( in_reg, ImplodeNodes );
     REGISTER_DFGUICMD( in_reg, InstPreset );
     REGISTER_DFGUICMD( in_reg, MoveNodes );
     REGISTER_DFGUICMD( in_reg, RemoveNodes );

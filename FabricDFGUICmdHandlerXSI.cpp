@@ -1793,6 +1793,100 @@ void DFGUICmdHandlerXSI::dfgDoResizeBackDrop(
   executeCommand(cmdName, args, CValue());
 }
 
+// ---
+// command "dfgImplodeNodes"
+// ---
+
+SICALLBACK dfgImplodeNodes_Init(CRef &in_ctxt)
+{
+  Context ctxt(in_ctxt);
+  Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.EnableReturnValue(true);
+
+  ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",     CString());
+  oArgs.Add(L"execPath",    CString());
+  oArgs.Add(L"nodeNames",    CString());
+  oArgs.Add(L"desiredImplodedNodeName",  CString());
+
+  return CStatus::OK;
+}
+
+SICALLBACK dfgImplodeNodes_Execute(CRef &in_ctxt)
+{
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgImplodeNodes_Execute()", siCommentMsg);
+
+  // init.
+  Context ctxt(in_ctxt);
+  CValueArray args = ctxt.GetAttribute(L"Arguments");
+
+  // create the DFG command.
+  FabricUI::DFG::DFGUICmd_ImplodeNodes *cmd = NULL;
+  {
+    unsigned int ai = 0;
+
+    FabricCore::DFGBinding binding;
+    std::string execPath;
+    FabricCore::DFGExec exec;
+    CStatus execStatus = DecodeExec( args, ai, binding, execPath, exec );
+    if ( execStatus != CStatus::OK )
+      return execStatus;
+
+    std::string nodeNamesString;
+    std::vector<FTL::StrRef> nodeNames;
+    CStatus nodeNamesStatus =
+      DecodeNames( args, ai, nodeNamesString, nodeNames );
+    if ( nodeNamesStatus != CStatus::OK )
+      return nodeNamesStatus;
+
+    std::string desiredImplodedNodeName;
+    CStatus desiredImplodedNodeNameStatus =
+      DecodeString( args, ai, desiredImplodedNodeName );
+    if ( desiredImplodedNodeNameStatus != CStatus::OK )
+      return desiredImplodedNodeNameStatus;
+
+    cmd = new FabricUI::DFG::DFGUICmd_ImplodeNodes( binding,
+                                                  execPath.c_str(),
+                                                  exec,
+                                                  nodeNames,
+                                                  desiredImplodedNodeName.c_str() );
+  }
+
+  // execute the DFG command.
+  try
+  {
+    cmd->doit();
+  }
+  catch(FabricCore::Exception e)
+  {
+    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+  }
+
+  // store return value.
+  CValue returnValue(CString(cmd->getActualImplodedNodeName().c_str()));
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue.GetAsText() + L"\"", siCommentMsg);
+  ctxt.PutAttribute(L"ReturnValue", returnValue);
+
+  return DFGUICmd_Finish( ctxt, cmd );
+}
+
+SICALLBACK dfgImplodeNodes_Undo( CRef &ctxt )
+{
+  return DFGUICmd_Undo( ctxt );
+}
+
+SICALLBACK dfgImplodeNodes_Redo( CRef &ctxt )
+{
+  return DFGUICmd_Redo( ctxt );
+}
+
+SICALLBACK dfgImplodeNodes_TermUndoRedo( CRef &ctxt )
+{
+  return DFGUICmd_TermUndoRedo( ctxt );
+}
+
 std::string DFGUICmdHandlerXSI::dfgDoImplodeNodes(
   FabricCore::DFGBinding const &binding,
   FTL::CStrRef execPath,
@@ -1804,24 +1898,129 @@ std::string DFGUICmdHandlerXSI::dfgDoImplodeNodes(
   CString cmdName(FabricUI::DFG::DFGUICmd_ImplodeNodes::CmdName().c_str());
   CValueArray args;
 
-  Application().LogMessage(L"not yet implemented", siWarningMsg);
+  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
+  args.Add(execPath.c_str());
+  args.Add( EncodeNames( nodeNames ).c_str() );
+  args.Add( desiredNodeName.c_str() );
 
-  return "";
+  CValue result;
+  executeCommand(cmdName, args, result);
+  return result.GetAsText().GetAsciiString();
+}
+
+// ---
+// command "dfgExplodeNode"
+// ---
+
+SICALLBACK dfgExplodeNode_Init(CRef &in_ctxt)
+{
+  Context ctxt(in_ctxt);
+  Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.EnableReturnValue(true);
+
+  ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",     CString());
+  oArgs.Add(L"execPath",    CString());
+  oArgs.Add(L"nodeName",    CString());
+
+  return CStatus::OK;
+}
+
+SICALLBACK dfgExplodeNode_Execute(CRef &in_ctxt)
+{
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgExplodeNode_Execute()", siCommentMsg);
+
+  // init.
+  Context ctxt(in_ctxt);
+  CValueArray args = ctxt.GetAttribute(L"Arguments");
+
+  // create the DFG command.
+  FabricUI::DFG::DFGUICmd_ExplodeNode *cmd = NULL;
+  {
+    unsigned int ai = 0;
+
+    FabricCore::DFGBinding binding;
+    std::string execPath;
+    FabricCore::DFGExec exec;
+    CStatus execStatus = DecodeExec( args, ai, binding, execPath, exec );
+    if ( execStatus != CStatus::OK )
+      return execStatus;
+
+    std::string nodeName;
+    CStatus nodeNameStatus =
+      DecodeName( args, ai, nodeName );
+    if ( nodeNameStatus != CStatus::OK )
+      return nodeNameStatus;
+
+    cmd = new FabricUI::DFG::DFGUICmd_ExplodeNode( binding,
+                                                  execPath.c_str(),
+                                                  exec,
+                                                  nodeName.c_str() );
+  }
+
+  // execute the DFG command.
+  try
+  {
+    cmd->doit();
+  }
+  catch(FabricCore::Exception e)
+  {
+    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+  }
+
+  // store return value.
+  CStringArray returnValue;
+  FTL::ArrayRef<std::string> explodedNodeNames =
+    cmd->getExplodedNodeNames();
+  std::string explodedNodeNamesString;
+  for ( FTL::ArrayRef<std::string>::IT it = explodedNodeNames.begin();
+    it != explodedNodeNames.end(); ++it )
+    returnValue.Add( CString( it->c_str() ) );
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] storing return value", siCommentMsg);
+  ctxt.PutAttribute(L"ReturnValue", returnValue);
+
+  return DFGUICmd_Finish( ctxt, cmd );
+}
+
+SICALLBACK dfgExplodeNode_Undo( CRef &ctxt )
+{
+  return DFGUICmd_Undo( ctxt );
+}
+
+SICALLBACK dfgExplodeNode_Redo( CRef &ctxt )
+{
+  return DFGUICmd_Redo( ctxt );
+}
+
+SICALLBACK dfgExplodeNode_TermUndoRedo( CRef &ctxt )
+{
+  return DFGUICmd_TermUndoRedo( ctxt );
 }
 
 std::vector<std::string> DFGUICmdHandlerXSI::dfgDoExplodeNode(
   FabricCore::DFGBinding const &binding,
   FTL::CStrRef execPath,
   FabricCore::DFGExec const &exec,
-  FTL::CStrRef name
+  FTL::CStrRef nodeName
   )
 {
   CString cmdName(FabricUI::DFG::DFGUICmd_ExplodeNode::CmdName().c_str());
   CValueArray args;
 
-  Application().LogMessage(L"not yet implemented", siWarningMsg);
+  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
+  args.Add(execPath.c_str());
+  args.Add( nodeName.c_str() );
 
+  CValue resultValue;
+  executeCommand(cmdName, args, resultValue);
+  CStringArray resultStringArray( resultValue );
+  LONG resultCount = resultStringArray.GetCount();
   std::vector<std::string> result;
+  result.reserve( resultCount );
+  for ( LONG i = 0; i < resultCount; ++i )
+    result.push_back( resultStringArray[i].GetAsciiString() );
   return result;
 }
 
