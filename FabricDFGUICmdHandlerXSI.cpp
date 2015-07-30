@@ -80,6 +80,51 @@ static inline std::string EncodeNames(
   return nameSS.str();
 }
 
+static inline std::string EncodeXPoss(
+  FTL::ArrayRef<QPointF> poss
+  )
+{
+  std::stringstream xPosSS;
+  for ( FTL::ArrayRef<QPointF>::IT it = poss.begin(); it != poss.end(); ++it )
+  {
+    if ( it != poss.begin() )
+      xPosSS << '|';
+    xPosSS << it->x();
+  }
+  return xPosSS.str();
+}
+
+static inline std::string EncodeYPoss(
+  FTL::ArrayRef<QPointF> poss
+  )
+{
+  std::stringstream yPosSS;
+  for ( FTL::ArrayRef<QPointF>::IT it = poss.begin(); it != poss.end(); ++it )
+  {
+    if ( it != poss.begin() )
+      yPosSS << '|';
+    yPosSS << it->y();
+  }
+  return yPosSS.str();
+}
+
+static inline void EncodePosition(
+  QPointF const &position,
+  CValueArray &args
+  )
+{
+  {
+    std::stringstream ss;
+    ss << position.x();
+    args.Add( CString( ss.str().c_str() ) );
+  }
+  {
+    std::stringstream ss;
+    ss << position.y();
+    args.Add( CString( ss.str().c_str() ) );
+  }
+}
+
 static inline CStatus DecodeString(
   CValueArray const &args,
   unsigned &ai,
@@ -87,6 +132,21 @@ static inline CStatus DecodeString(
   )
 {
   value = CString( args[ai++] ).GetAsciiString();
+  return CStatus::OK;
+}
+
+static inline CStatus DecodePosition(
+  CValueArray const &args,
+  unsigned &ai,
+  QPointF &position
+  )
+{
+  position.setX(
+    FTL::CStrRef( CString( args[ai++] ).GetAsciiString() ).toFloat64()
+    );
+  position.setY(
+    FTL::CStrRef( CString( args[ai++] ).GetAsciiString() ).toFloat64()
+    );
   return CStatus::OK;
 }
 
@@ -289,9 +349,8 @@ SICALLBACK dfgConnect_Init(CRef &in_ctxt)
   ArgumentArray oArgs = oCmd.GetArguments();
   oArgs.Add(L"binding",     CString());
   oArgs.Add(L"execPath",    CString());
-  oArgs.Add(L"nodeNames",  CString());
-  oArgs.Add(L"xPoss",   CString());
-  oArgs.Add(L"yPoss",   CString());
+  oArgs.Add(L"srcPortPath",  CString());
+  oArgs.Add(L"dstPortPath",   CString());
 
   return CStatus::OK;
 }
@@ -411,9 +470,8 @@ SICALLBACK dfgDisconnect_Init(CRef &in_ctxt)
   ArgumentArray oArgs = oCmd.GetArguments();
   oArgs.Add(L"binding",     CString());
   oArgs.Add(L"execPath",    CString());
-  oArgs.Add(L"nodeNames",  CString());
-  oArgs.Add(L"xPoss",   CString());
-  oArgs.Add(L"yPoss",   CString());
+  oArgs.Add(L"srcPortPath",  CString());
+  oArgs.Add(L"dstPortPath",   CString());
 
   return CStatus::OK;
 }
@@ -580,8 +638,8 @@ SICALLBACK dfgInstPreset_Init(CRef &in_ctxt)
   oArgs.Add(L"binding",     CString());
   oArgs.Add(L"execPath",    CString());
   oArgs.Add(L"presetPath",  CString());
-  oArgs.Add(L"xPos",   0L);
-  oArgs.Add(L"yPos",   0L);
+  oArgs.Add(L"xPos",   CString());
+  oArgs.Add(L"yPos",   CString());
 
   return CStatus::OK;
 }
@@ -611,8 +669,10 @@ SICALLBACK dfgInstPreset_Execute(CRef &in_ctxt)
     if ( presetPathStatus != CStatus::OK )
       return presetPathStatus;
 
-   QPointF     position  (  (LONG)args[ai++],
-                             (LONG)args[ai++]  );
+    QPointF position;
+    CStatus positionStatus = DecodePosition( args, ai, position );
+    if ( positionStatus != CStatus::OK )
+      return positionStatus;
 
     cmd = new FabricUI::DFG::DFGUICmd_InstPreset( binding,
                                                   execPath.c_str(),
@@ -682,8 +742,7 @@ std::string DFGUICmdHandlerXSI::dfgDoInstPreset(
   args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
   args.Add(execPath.c_str());                             // execPath.
   args.Add(presetPath.c_str());                           // presetPath.
-  args.Add((LONG)pos.x());                                // positionX.
-  args.Add((LONG)pos.y());                                // positionY.
+  EncodePosition( pos, args );
 
   CValue result;
   executeCommand(cmdName, args, result);
@@ -793,34 +852,6 @@ void DFGUICmdHandlerXSI::dfgDoRemovePort(
   CValueArray args;
 
   Application().LogMessage(L"not yet implemented", siWarningMsg);
-}
-
-static inline std::string EncodeXPoss(
-  FTL::ArrayRef<QPointF> poss
-  )
-{
-  std::stringstream xPosSS;
-  for ( FTL::ArrayRef<QPointF>::IT it = poss.begin(); it != poss.end(); ++it )
-  {
-    if ( it != poss.begin() )
-      xPosSS << '|';
-    xPosSS << it->x();
-  }
-  return xPosSS.str();
-}
-
-static inline std::string EncodeYPoss(
-  FTL::ArrayRef<QPointF> poss
-  )
-{
-  std::stringstream yPosSS;
-  for ( FTL::ArrayRef<QPointF>::IT it = poss.begin(); it != poss.end(); ++it )
-  {
-    if ( it != poss.begin() )
-      yPosSS << '|';
-    yPosSS << it->y();
-  }
-  return yPosSS.str();
 }
 
 // ---
