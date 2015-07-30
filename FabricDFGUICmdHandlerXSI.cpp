@@ -160,6 +160,23 @@ static inline void EncodePosition(
   }
 }
 
+static inline void EncodeSize(
+  QSizeF const &size,
+  CValueArray &args
+  )
+{
+  {
+    std::stringstream ss;
+    ss << size.width();
+    args.Add( CString( ss.str().c_str() ) );
+  }
+  {
+    std::stringstream ss;
+    ss << size.height();
+    args.Add( CString( ss.str().c_str() ) );
+  }
+}
+
 static inline CStatus DecodeString(
   CValueArray const &args,
   unsigned &ai,
@@ -180,6 +197,21 @@ static inline CStatus DecodePosition(
     FTL::CStrRef( CString( args[ai++] ).GetAsciiString() ).toFloat64()
     );
   position.setY(
+    FTL::CStrRef( CString( args[ai++] ).GetAsciiString() ).toFloat64()
+    );
+  return CStatus::OK;
+}
+
+static inline CStatus DecodeSize(
+  CValueArray const &args,
+  unsigned &ai,
+  QSizeF &size
+  )
+{
+  size.setWidth(
+    FTL::CStrRef( CString( args[ai++] ).GetAsciiString() ).toFloat64()
+    );
+  size.setHeight(
     FTL::CStrRef( CString( args[ai++] ).GetAsciiString() ).toFloat64()
     );
   return CStatus::OK;
@@ -1502,19 +1534,122 @@ void DFGUICmdHandlerXSI::dfgDoMoveNodes(
   executeCommand(cmdName, args, CValue());
 }
 
+// ---
+// command "dfgResizeBackDrop"
+// ---
+
+SICALLBACK dfgResizeBackDrop_Init(CRef &in_ctxt)
+{
+  Context ctxt(in_ctxt);
+  Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.EnableReturnValue(false);
+
+  ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",     CString());
+  oArgs.Add(L"execPath",    CString());
+  oArgs.Add(L"backDropName",   CString());
+  oArgs.Add(L"xPos",   CString());
+  oArgs.Add(L"yPos",   CString());
+  oArgs.Add(L"width",   CString());
+  oArgs.Add(L"height",   CString());
+
+  return CStatus::OK;
+}
+
+SICALLBACK dfgResizeBackDrop_Execute(CRef &in_ctxt)
+{
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgResizeBackDrop_Execute()", siCommentMsg);
+
+  // init.
+  Context ctxt(in_ctxt);
+  CValueArray args = ctxt.GetAttribute(L"Arguments");
+
+  // create the DFG command.
+  FabricUI::DFG::DFGUICmd_ResizeBackDrop *cmd = NULL;
+  {
+    unsigned int ai = 0;
+
+    FabricCore::DFGBinding binding;
+    std::string execPath;
+    FabricCore::DFGExec exec;
+    CStatus execStatus = DecodeExec( args, ai, binding, execPath, exec );
+    if ( execStatus != CStatus::OK )
+      return execStatus;
+
+    std::string backDropName;
+    CStatus backDropNameStatus =
+      DecodeName( args, ai, backDropName );
+    if ( backDropNameStatus != CStatus::OK )
+      return backDropNameStatus;
+
+    QPointF position;
+    CStatus positionStatus = DecodePosition( args, ai, position );
+    if ( positionStatus != CStatus::OK )
+      return positionStatus;
+
+    QSizeF size;
+    CStatus sizeStatus = DecodeSize( args, ai, size );
+    if ( sizeStatus != CStatus::OK )
+      return sizeStatus;
+
+    cmd = new FabricUI::DFG::DFGUICmd_ResizeBackDrop( binding,
+                                                  execPath.c_str(),
+                                                  exec,
+                                                  backDropName.c_str(),
+                                                  position,
+                                                  size );
+  }
+
+  // execute the DFG command.
+  try
+  {
+    cmd->doit();
+  }
+  catch(FabricCore::Exception e)
+  {
+    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+  }
+
+  return DFGUICmd_Finish( ctxt, cmd );
+}
+
+SICALLBACK dfgResizeBackDrop_Undo( CRef &ctxt )
+{
+  return DFGUICmd_Undo( ctxt );
+}
+
+SICALLBACK dfgResizeBackDrop_Redo( CRef &ctxt )
+{
+  return DFGUICmd_Redo( ctxt );
+}
+
+SICALLBACK dfgResizeBackDrop_TermUndoRedo( CRef &ctxt )
+{
+  return DFGUICmd_TermUndoRedo( ctxt );
+}
+
+
 void DFGUICmdHandlerXSI::dfgDoResizeBackDrop(
   FabricCore::DFGBinding const &binding,
   FTL::CStrRef execPath,
   FabricCore::DFGExec const &exec,
-  FTL::CStrRef name,
-  QPointF newTopLeftPos,
-  QSizeF newSize
+  FTL::CStrRef backDropName,
+  QPointF pos,
+  QSizeF size
   )
 {
   CString cmdName(FabricUI::DFG::DFGUICmd_ResizeBackDrop::CmdName().c_str());
   CValueArray args;
 
-  Application().LogMessage(L"not yet implemented", siWarningMsg);
+  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
+  args.Add(execPath.c_str());
+  args.Add( backDropName.c_str() );
+  EncodePosition( pos, args );
+  EncodeSize( size, args );
+
+  executeCommand(cmdName, args, CValue());
 }
 
 std::string DFGUICmdHandlerXSI::dfgDoImplodeNodes(
