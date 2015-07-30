@@ -120,6 +120,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     REGISTER_DFGUICMD( in_reg, AddFunc );
     REGISTER_DFGUICMD( in_reg, AddGet );
     REGISTER_DFGUICMD( in_reg, AddGraph );
+    REGISTER_DFGUICMD( in_reg, AddPort );
     REGISTER_DFGUICMD( in_reg, AddSet );
     REGISTER_DFGUICMD( in_reg, AddVar );
     REGISTER_DFGUICMD( in_reg, Connect );

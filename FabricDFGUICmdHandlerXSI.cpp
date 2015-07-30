@@ -1380,6 +1380,127 @@ std::string DFGUICmdHandlerXSI::dfgDoAddSet(
   return result.GetAsText().GetAsciiString();
 }
 
+// ---
+// command "dfgAddPort"
+// ---
+
+SICALLBACK dfgAddPort_Init(CRef &in_ctxt)
+{
+  Context ctxt(in_ctxt);
+  Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.EnableReturnValue(true);
+
+  ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",     CString());
+  oArgs.Add(L"execPath",    CString());
+  oArgs.Add(L"desiredPortName",  CString());
+  oArgs.Add(L"portType",  CString());
+  oArgs.Add(L"typeSpec",   CString());
+  oArgs.Add(L"portToConnect",   CString());
+
+  return CStatus::OK;
+}
+
+SICALLBACK dfgAddPort_Execute(CRef &in_ctxt)
+{
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgAddPort_Execute()", siCommentMsg);
+
+  // init.
+  Context ctxt(in_ctxt);
+  CValueArray args = ctxt.GetAttribute(L"Arguments");
+
+  // create the DFG command.
+  FabricUI::DFG::DFGUICmd_AddPort *cmd = NULL;
+  {
+    unsigned int ai = 0;
+
+    FabricCore::DFGBinding binding;
+    std::string execPath;
+    FabricCore::DFGExec exec;
+    CStatus execStatus = DecodeExec( args, ai, binding, execPath, exec );
+    if ( execStatus != CStatus::OK )
+      return execStatus;
+
+    std::string desiredPortName;
+    CStatus desiredPortNameStatus = DecodeString( args, ai, desiredPortName );
+    if ( desiredPortNameStatus != CStatus::OK )
+      return desiredPortNameStatus;
+
+    std::string portTypeString;
+    CStatus portTypeStatus = DecodeString( args, ai, portTypeString );
+    if ( portTypeStatus != CStatus::OK )
+      return portTypeStatus;
+    FabricCore::DFGPortType portType;
+    if ( portTypeString == "In" || portTypeString == "in" )
+      portType = FabricCore::DFGPortType_In;
+    else if ( portTypeString == "IO" || portTypeString == "io" )
+      portType = FabricCore::DFGPortType_IO;
+    else if ( portTypeString == "Out" || portTypeString == "out" )
+      portType = FabricCore::DFGPortType_Out;
+    else
+    {
+      std::wstring msg;
+      msg += L"[DFGUICmd] Unrecognize port type '";
+      msg.insert( msg.end(), portTypeString.begin(), portTypeString.end() );
+      msg += L'\'';
+      Application().LogMessage( msg.c_str(), siErrorMsg );
+      return CStatus::Fail;
+    }
+
+    std::string typeSpec;
+    CStatus typeSpecStatus = DecodeString( args, ai, typeSpec );
+    if ( typeSpecStatus != CStatus::OK )
+      return typeSpecStatus;
+
+    std::string portToConnectWith;
+    CStatus portToConnectWithStatus = DecodeString( args, ai, portToConnectWith );
+    if ( portToConnectWithStatus != CStatus::OK )
+      return portToConnectWithStatus;
+
+    cmd = new FabricUI::DFG::DFGUICmd_AddPort( binding,
+                                                  execPath.c_str(),
+                                                  exec,
+                                                  desiredPortName.c_str(),
+                                                  portType,
+                                                  typeSpec.c_str(),
+                                                  portToConnectWith.c_str() );
+  }
+
+  // execute the DFG command.
+  try
+  {
+    cmd->doit();
+  }
+  catch(FabricCore::Exception e)
+  {
+    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+  }
+
+  // store return value.
+  CValue returnValue(CString(cmd->getActualPortName().c_str()));
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue.GetAsText() + L"\"", siCommentMsg);
+  ctxt.PutAttribute(L"ReturnValue", returnValue);
+
+  return DFGUICmd_Finish( ctxt, cmd );
+}
+
+SICALLBACK dfgAddPort_Undo( CRef &ctxt )
+{
+  return DFGUICmd_Undo( ctxt );
+}
+
+SICALLBACK dfgAddPort_Redo( CRef &ctxt )
+{
+  return DFGUICmd_Redo( ctxt );
+}
+
+SICALLBACK dfgAddPort_TermUndoRedo( CRef &ctxt )
+{
+  return DFGUICmd_TermUndoRedo( ctxt );
+}
+
 std::string DFGUICmdHandlerXSI::dfgDoAddPort(
   FabricCore::DFGBinding const &binding,
   FTL::CStrRef execPath,
@@ -1393,9 +1514,29 @@ std::string DFGUICmdHandlerXSI::dfgDoAddPort(
   CString cmdName(FabricUI::DFG::DFGUICmd_AddPort::CmdName().c_str());
   CValueArray args;
 
-  Application().LogMessage(L"not yet implemented", siWarningMsg);
+  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
+  args.Add(execPath.c_str());                             // execPath.
+  args.Add(desiredPortName.c_str());                      // desiredNodeName.
+  FTL::CStrRef portTypeStr;
+  switch ( portType )
+  {
+    case FabricCore::DFGPortType_In:
+      portTypeStr = FTL_STR("In");
+      break;
+    case FabricCore::DFGPortType_IO:
+      portTypeStr = FTL_STR("IO");
+      break;
+    case FabricCore::DFGPortType_Out:
+      portTypeStr = FTL_STR("Out");
+      break;
+  }
+  args.Add(portTypeStr.c_str());                      // desiredNodeName.
+  args.Add(typeSpec.c_str());                      // desiredNodeName.
+  args.Add(portToConnect.c_str());                      // desiredNodeName.
 
-  return "";
+  CValue result;
+  executeCommand(cmdName, args, result);
+  return result.GetAsText().GetAsciiString();
 }
 
 void DFGUICmdHandlerXSI::dfgDoRemovePort(
