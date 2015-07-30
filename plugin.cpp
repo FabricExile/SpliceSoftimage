@@ -116,6 +116,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     in_reg.RegisterCommand(L"dfgLogStatus",         L"dfgLogStatus");
 
     // commands for DFGUICmdHandler.
+    REGISTER_DFGUICMD( in_reg, AddBackDrop );
     REGISTER_DFGUICMD( in_reg, AddFunc );
     REGISTER_DFGUICMD( in_reg, AddGet );
     REGISTER_DFGUICMD( in_reg, AddGraph );
@@ -126,6 +127,10 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     REGISTER_DFGUICMD( in_reg, InstPreset );
     REGISTER_DFGUICMD( in_reg, MoveNodes );
     REGISTER_DFGUICMD( in_reg, RemoveNodes );
+    REGISTER_DFGUICMD( in_reg, SetCode );
+    REGISTER_DFGUICMD( in_reg, SetNodeComment );
+    REGISTER_DFGUICMD( in_reg, SetNodeTitle );
+    REGISTER_DFGUICMD( in_reg, SetRefVarPath );
 
     // menu.
     in_reg.RegisterMenu(siMenuMainTopLevelID,       L"Fabric:DFG", true, true);
