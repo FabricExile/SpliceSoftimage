@@ -216,6 +216,54 @@ static inline CStatus DecodeNames(
   return CStatus::OK;
 }
 
+static inline CStatus DFGUICmd_Finish(
+  Context &ctxt,
+  FabricUI::DFG::DFGUICmd *cmd
+  )
+{
+  // store or delete the DFG command, depending on XSI's current undo preferences.
+  if ( (bool)ctxt.GetAttribute(L"UndoRequired") == true )
+    ctxt.PutAttribute( L"UndoRedoData", (CValue::siPtrType)cmd );
+  else
+    delete cmd;
+
+  // done.
+  return CStatus::OK;
+}
+
+static inline CStatus DFGUICmd_Undo( CRef &in_ctxt )
+{
+  Context ctxt( in_ctxt );
+  if ( DFGUICmdHandlerLOG )
+    Application().LogMessage(L"[DFGUICmd] Undo", siCommentMsg);
+  FabricUI::DFG::DFGUICmd *cmd =
+    (FabricUI::DFG::DFGUICmd *)(CValue::siPtrType)ctxt.GetAttribute(L"UndoRedoData");
+  if (cmd)  cmd->undo();
+  return CStatus::OK;
+}
+
+static inline CStatus DFGUICmd_Redo( CRef &in_ctxt )
+{
+  Context ctxt( in_ctxt );
+  if ( DFGUICmdHandlerLOG )
+    Application().LogMessage(L"[DFGUICmd] Redo", siCommentMsg);
+  FabricUI::DFG::DFGUICmd *cmd =
+    (FabricUI::DFG::DFGUICmd *)(CValue::siPtrType)ctxt.GetAttribute(L"UndoRedoData");
+  if (cmd)  cmd->redo();
+  return CStatus::OK;
+}
+
+static inline CStatus DFGUICmd_TermUndoRedo(CRef &in_ctxt)
+{
+  Context ctxt( in_ctxt );
+  if ( DFGUICmdHandlerLOG )
+    Application().LogMessage(L"[DFGUICmd] TermUndoRedo", siCommentMsg);
+  FabricUI::DFG::DFGUICmd *cmd =
+    (FabricUI::DFG::DFGUICmd *)(CValue::siPtrType)ctxt.GetAttribute(L"UndoRedoData");
+  if (cmd)  delete cmd;
+  return CStatus::OK;
+}
+
 /*-----------------------------------------------------
   implementation of DFGUICmdHandlerXSI member functions.
 */
@@ -230,7 +278,7 @@ SICALLBACK dfgRemoveNodes_Init(CRef &in_ctxt)
   Command oCmd;
 
   oCmd = ctxt.GetSource();
-  oCmd.EnableReturnValue(true);
+  oCmd.EnableReturnValue(false);
 
   ArgumentArray oArgs = oCmd.GetArguments();
   oArgs.Add(L"binding",     CString());
@@ -285,36 +333,30 @@ SICALLBACK dfgRemoveNodes_Execute(CRef &in_ctxt)
     feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
   }
 
+  // return DFGUICmd_Finish( ctxt, cmd );
   // store or delete the DFG command, depending on XSI's current undo preferences.
-  if ((bool)ctxt.GetAttribute(L"UndoRequired") == true)   ctxt.PutAttribute(L"UndoRedoData", (CValue::siPtrType)cmd);
-  else                                                    delete cmd;
+  if ( (bool)ctxt.GetAttribute(L"UndoRequired") == true )
+    ctxt.PutAttribute( L"UndoRedoData", (CValue::siPtrType)cmd );
+  else
+    delete cmd;
 
   // done.
   return CStatus::OK;
 }
 
-SICALLBACK dfgRemoveNodes_Undo(CRef &in_ctxt)
+SICALLBACK dfgRemoveNodes_Undo(CRef &ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgRemoveNodes_Undo()", siCommentMsg);
-  FabricUI::DFG::DFGUICmd_RemoveNodes *cmd = (FabricUI::DFG::DFGUICmd_RemoveNodes *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
-  if (cmd)  cmd->undo();
-  return CStatus::OK;
+  return DFGUICmd_Undo( ctxt );
 }
 
-SICALLBACK dfgRemoveNodes_Redo(CRef &in_ctxt)
+SICALLBACK dfgRemoveNodes_Redo(CRef &ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgRemoveNodes_Redo()", siCommentMsg);
-  FabricUI::DFG::DFGUICmd_RemoveNodes *cmd = (FabricUI::DFG::DFGUICmd_RemoveNodes *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
-  if (cmd)  cmd->redo();
-  return CStatus::OK;
+  return DFGUICmd_Redo( ctxt );
 }
 
-SICALLBACK dfgRemoveNodes_TermUndoRedo(CRef &in_ctxt)
+SICALLBACK dfgRemoveNodes_TermUndoRedo(CRef &ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgRemoveNodes_TermUndoRedo()", siCommentMsg);
-  FabricUI::DFG::DFGUICmd_RemoveNodes *cmd = (FabricUI::DFG::DFGUICmd_RemoveNodes *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
-  if (cmd)  delete cmd;
-  return CStatus::OK;
+  return DFGUICmd_TermUndoRedo( ctxt );
 }
 
 void DFGUICmdHandlerXSI::dfgDoRemoveNodes(
@@ -344,7 +386,7 @@ SICALLBACK dfgConnect_Init(CRef &in_ctxt)
   Command oCmd;
 
   oCmd = ctxt.GetSource();
-  oCmd.EnableReturnValue(true);
+  oCmd.EnableReturnValue(false);
 
   ArgumentArray oArgs = oCmd.GetArguments();
   oArgs.Add(L"binding",     CString());
@@ -404,36 +446,22 @@ SICALLBACK dfgConnect_Execute(CRef &in_ctxt)
     feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
   }
 
-  // store or delete the DFG command, depending on XSI's current undo preferences.
-  if ((bool)ctxt.GetAttribute(L"UndoRequired") == true)   ctxt.PutAttribute(L"UndoRedoData", (CValue::siPtrType)cmd);
-  else                                                    delete cmd;
-
-  // done.
-  return CStatus::OK;
+  return DFGUICmd_Finish( ctxt, cmd );
 }
 
-SICALLBACK dfgConnect_Undo(CRef &in_ctxt)
+SICALLBACK dfgConnect_Undo( CRef &ctxt )
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgConnect_Undo()", siCommentMsg);
-  FabricUI::DFG::DFGUICmd_Connect *cmd = (FabricUI::DFG::DFGUICmd_Connect *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
-  if (cmd)  cmd->undo();
-  return CStatus::OK;
+  return DFGUICmd_Undo( ctxt );
 }
 
-SICALLBACK dfgConnect_Redo(CRef &in_ctxt)
+SICALLBACK dfgConnect_Redo( CRef &ctxt )
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgConnect_Redo()", siCommentMsg);
-  FabricUI::DFG::DFGUICmd_Connect *cmd = (FabricUI::DFG::DFGUICmd_Connect *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
-  if (cmd)  cmd->redo();
-  return CStatus::OK;
+  return DFGUICmd_Redo( ctxt );
 }
 
-SICALLBACK dfgConnect_TermUndoRedo(CRef &in_ctxt)
+SICALLBACK dfgConnect_TermUndoRedo( CRef &ctxt )
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgConnect_TermUndoRedo()", siCommentMsg);
-  FabricUI::DFG::DFGUICmd_Connect *cmd = (FabricUI::DFG::DFGUICmd_Connect *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
-  if (cmd)  delete cmd;
-  return CStatus::OK;
+  return DFGUICmd_TermUndoRedo( ctxt );
 }
 
 void DFGUICmdHandlerXSI::dfgDoConnect(
@@ -465,7 +493,7 @@ SICALLBACK dfgDisconnect_Init(CRef &in_ctxt)
   Command oCmd;
 
   oCmd = ctxt.GetSource();
-  oCmd.EnableReturnValue(true);
+  oCmd.EnableReturnValue(false);
 
   ArgumentArray oArgs = oCmd.GetArguments();
   oArgs.Add(L"binding",     CString());
@@ -525,36 +553,22 @@ SICALLBACK dfgDisconnect_Execute(CRef &in_ctxt)
     feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
   }
 
-  // store or delete the DFG command, depending on XSI's current undo preferences.
-  if ((bool)ctxt.GetAttribute(L"UndoRequired") == true)   ctxt.PutAttribute(L"UndoRedoData", (CValue::siPtrType)cmd);
-  else                                                    delete cmd;
-
-  // done.
-  return CStatus::OK;
+  return DFGUICmd_Finish( ctxt, cmd );
 }
 
-SICALLBACK dfgDisconnect_Undo(CRef &in_ctxt)
+SICALLBACK dfgDisconnect_Undo( CRef &ctxt )
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgDisconnect_Undo()", siCommentMsg);
-  FabricUI::DFG::DFGUICmd_Disconnect *cmd = (FabricUI::DFG::DFGUICmd_Disconnect *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
-  if (cmd)  cmd->undo();
-  return CStatus::OK;
+  return DFGUICmd_Undo( ctxt );
 }
 
-SICALLBACK dfgDisconnect_Redo(CRef &in_ctxt)
+SICALLBACK dfgDisconnect_Redo( CRef &ctxt )
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgDisconnect_Redo()", siCommentMsg);
-  FabricUI::DFG::DFGUICmd_Disconnect *cmd = (FabricUI::DFG::DFGUICmd_Disconnect *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
-  if (cmd)  cmd->redo();
-  return CStatus::OK;
+  return DFGUICmd_Redo( ctxt );
 }
 
-SICALLBACK dfgDisconnect_TermUndoRedo(CRef &in_ctxt)
+SICALLBACK dfgDisconnect_TermUndoRedo( CRef &ctxt )
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgDisconnect_TermUndoRedo()", siCommentMsg);
-  FabricUI::DFG::DFGUICmd_Disconnect *cmd = (FabricUI::DFG::DFGUICmd_Disconnect *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
-  if (cmd)  delete cmd;
-  return CStatus::OK;
+  return DFGUICmd_TermUndoRedo( ctxt );
 }
 
 void DFGUICmdHandlerXSI::dfgDoDisconnect(
@@ -696,36 +710,30 @@ SICALLBACK dfgInstPreset_Execute(CRef &in_ctxt)
   if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue.GetAsText() + L"\"", siCommentMsg);
   ctxt.PutAttribute(L"ReturnValue", returnValue);
 
+  // return DFGUICmd_Finish( ctxt, cmd );
   // store or delete the DFG command, depending on XSI's current undo preferences.
-  if ((bool)ctxt.GetAttribute(L"UndoRequired") == true)   ctxt.PutAttribute(L"UndoRedoData", (CValue::siPtrType)cmd);
-  else                                                    delete cmd;
+  if ( (bool)ctxt.GetAttribute(L"UndoRequired") )
+    ctxt.PutAttribute( L"UndoRedoData", (CValue::siPtrType)cmd );
+  else
+    delete cmd;
 
   // done.
   return CStatus::OK;
 }
 
-SICALLBACK dfgInstPreset_Undo(CRef &in_ctxt)
+SICALLBACK dfgInstPreset_Undo( CRef &ctxt )
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgInstPreset_Undo()", siCommentMsg);
-  FabricUI::DFG::DFGUICmd_InstPreset *cmd = (FabricUI::DFG::DFGUICmd_InstPreset *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
-  if (cmd)  cmd->undo();
-  return CStatus::OK;
+  return DFGUICmd_Undo( ctxt );
 }
 
-SICALLBACK dfgInstPreset_Redo(CRef &in_ctxt)
+SICALLBACK dfgInstPreset_Redo( CRef &ctxt )
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgInstPreset_Redo()", siCommentMsg);
-  FabricUI::DFG::DFGUICmd_InstPreset *cmd = (FabricUI::DFG::DFGUICmd_InstPreset *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
-  if (cmd)  cmd->redo();
-  return CStatus::OK;
+  return DFGUICmd_Redo( ctxt );
 }
 
-SICALLBACK dfgInstPreset_TermUndoRedo(CRef &in_ctxt)
+SICALLBACK dfgInstPreset_TermUndoRedo( CRef &ctxt )
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgInstPreset_TermUndoRedo()", siCommentMsg);
-  FabricUI::DFG::DFGUICmd_InstPreset *cmd = (FabricUI::DFG::DFGUICmd_InstPreset *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
-  if (cmd)  delete cmd;
-  return CStatus::OK;
+  return DFGUICmd_TermUndoRedo( ctxt );
 }
 
 std::string DFGUICmdHandlerXSI::dfgDoInstPreset(
@@ -864,7 +872,7 @@ SICALLBACK dfgMoveNodes_Init(CRef &in_ctxt)
   Command oCmd;
 
   oCmd = ctxt.GetSource();
-  oCmd.EnableReturnValue(true);
+  oCmd.EnableReturnValue(false);
 
   ArgumentArray oArgs = oCmd.GetArguments();
   oArgs.Add(L"binding",     CString());
@@ -939,36 +947,22 @@ SICALLBACK dfgMoveNodes_Execute(CRef &in_ctxt)
     feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
   }
 
-  // store or delete the DFG command, depending on XSI's current undo preferences.
-  if ((bool)ctxt.GetAttribute(L"UndoRequired") == true)   ctxt.PutAttribute(L"UndoRedoData", (CValue::siPtrType)cmd);
-  else                                                    delete cmd;
-
-  // done.
-  return CStatus::OK;
+  return DFGUICmd_Finish( ctxt, cmd );
 }
 
-SICALLBACK dfgMoveNodes_Undo(CRef &in_ctxt)
+SICALLBACK dfgMoveNodes_Undo( CRef &ctxt )
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgMoveNodes_Undo()", siCommentMsg);
-  FabricUI::DFG::DFGUICmd_MoveNodes *cmd = (FabricUI::DFG::DFGUICmd_MoveNodes *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
-  if (cmd)  cmd->undo();
-  return CStatus::OK;
+  return DFGUICmd_Undo( ctxt );
 }
 
-SICALLBACK dfgMoveNodes_Redo(CRef &in_ctxt)
+SICALLBACK dfgMoveNodes_Redo( CRef &ctxt )
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgMoveNodes_Redo()", siCommentMsg);
-  FabricUI::DFG::DFGUICmd_MoveNodes *cmd = (FabricUI::DFG::DFGUICmd_MoveNodes *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
-  if (cmd)  cmd->redo();
-  return CStatus::OK;
+  return DFGUICmd_Redo( ctxt );
 }
 
-SICALLBACK dfgMoveNodes_TermUndoRedo(CRef &in_ctxt)
+SICALLBACK dfgMoveNodes_TermUndoRedo( CRef &ctxt )
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgMoveNodes_TermUndoRedo()", siCommentMsg);
-  FabricUI::DFG::DFGUICmd_MoveNodes *cmd = (FabricUI::DFG::DFGUICmd_MoveNodes *)(CValue::siPtrType)Context(in_ctxt).GetAttribute(L"UndoRedoData");
-  if (cmd)  delete cmd;
-  return CStatus::OK;
+  return DFGUICmd_TermUndoRedo( ctxt );
 }
 
 void DFGUICmdHandlerXSI::dfgDoMoveNodes(
