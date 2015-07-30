@@ -1971,13 +1971,18 @@ SICALLBACK dfgExplodeNode_Execute(CRef &in_ctxt)
   }
 
   // store return value.
-  CStringArray returnValue;
   FTL::ArrayRef<std::string> explodedNodeNames =
     cmd->getExplodedNodeNames();
   std::string explodedNodeNamesString;
   for ( FTL::ArrayRef<std::string>::IT it = explodedNodeNames.begin();
     it != explodedNodeNames.end(); ++it )
-    returnValue.Add( CString( it->c_str() ) );
+  {
+    if ( it != explodedNodeNames.begin() )
+      explodedNodeNamesString += '|';
+    explodedNodeNamesString += *it;
+  }
+
+  CString returnValue( explodedNodeNamesString.c_str() );
   if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] storing return value", siCommentMsg);
   ctxt.PutAttribute(L"ReturnValue", returnValue);
 
@@ -2015,12 +2020,16 @@ std::vector<std::string> DFGUICmdHandlerXSI::dfgDoExplodeNode(
 
   CValue resultValue;
   executeCommand(cmdName, args, resultValue);
-  CStringArray resultStringArray( resultValue );
-  LONG resultCount = resultStringArray.GetCount();
+  CString resultString( resultValue );
+  std::string explodedNodeNamesString = resultString.GetAsciiString();
+  FTL::StrRef explodedNodeNamesStr = explodedNodeNamesString;
   std::vector<std::string> result;
-  result.reserve( resultCount );
-  for ( LONG i = 0; i < resultCount; ++i )
-    result.push_back( resultStringArray[i].GetAsciiString() );
+  while ( !explodedNodeNamesStr.empty() )
+  {
+    FTL::StrRef::Split split = explodedNodeNamesStr.split('|');
+    result.push_back( split.first );
+    explodedNodeNamesStr = split.second;
+  }
   return result;
 }
 
@@ -2467,20 +2476,138 @@ std::string DFGUICmdHandlerXSI::dfgDoRenamePort(
   return result.GetAsText().GetAsciiString();
 }
 
+// ---
+// command "dfgPaste"
+// ---
+
+SICALLBACK dfgPaste_Init(CRef &in_ctxt)
+{
+  Context ctxt(in_ctxt);
+  Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.EnableReturnValue(true);
+
+  ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",     CString());
+  oArgs.Add(L"execPath",    CString());
+  oArgs.Add(L"text",    CString());
+  oArgs.Add(L"xPos",    CString());
+  oArgs.Add(L"yPos",    CString());
+
+  return CStatus::OK;
+}
+
+SICALLBACK dfgPaste_Execute(CRef &in_ctxt)
+{
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgPaste_Execute()", siCommentMsg);
+
+  // init.
+  Context ctxt(in_ctxt);
+  CValueArray args = ctxt.GetAttribute(L"Arguments");
+
+  // create the DFG command.
+  FabricUI::DFG::DFGUICmd_Paste *cmd = NULL;
+  {
+    unsigned int ai = 0;
+
+    FabricCore::DFGBinding binding;
+    std::string execPath;
+    FabricCore::DFGExec exec;
+    CStatus execStatus = DecodeExec( args, ai, binding, execPath, exec );
+    if ( execStatus != CStatus::OK )
+      return execStatus;
+
+    std::string text;
+    CStatus textStatus =
+      DecodeName( args, ai, text );
+    if ( textStatus != CStatus::OK )
+      return textStatus;
+
+    QPointF position;
+    CStatus positionStatus = DecodePosition( args, ai, position );
+    if ( positionStatus != CStatus::OK )
+      return positionStatus;
+
+    cmd = new FabricUI::DFG::DFGUICmd_Paste( binding,
+                                                  execPath.c_str(),
+                                                  exec,
+                                                  text.c_str(),
+                                                  position );
+  }
+
+  // execute the DFG command.
+  try
+  {
+    cmd->doit();
+  }
+  catch(FabricCore::Exception e)
+  {
+    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+  }
+
+  // store return value.
+  FTL::ArrayRef<std::string> pastedNodeNames =
+    cmd->getPastedNodeNames();
+  std::string pastedNodeNamesString;
+  for ( FTL::ArrayRef<std::string>::IT it = pastedNodeNames.begin();
+    it != pastedNodeNames.end(); ++it )
+  {
+    if ( it != pastedNodeNames.begin() )
+      pastedNodeNamesString += '|';
+    pastedNodeNamesString += *it;
+  }
+
+  CString returnValue( pastedNodeNamesString.c_str() );
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] storing return value", siCommentMsg);
+  ctxt.PutAttribute(L"ReturnValue", returnValue);
+
+  return DFGUICmd_Finish( ctxt, cmd );
+}
+
+SICALLBACK dfgPaste_Undo( CRef &ctxt )
+{
+  return DFGUICmd_Undo( ctxt );
+}
+
+SICALLBACK dfgPaste_Redo( CRef &ctxt )
+{
+  return DFGUICmd_Redo( ctxt );
+}
+
+SICALLBACK dfgPaste_TermUndoRedo( CRef &ctxt )
+{
+  return DFGUICmd_TermUndoRedo( ctxt );
+}
+
 std::vector<std::string> DFGUICmdHandlerXSI::dfgDoPaste(
   FabricCore::DFGBinding const &binding,
   FTL::CStrRef execPath,
   FabricCore::DFGExec const &exec,
-  FTL::CStrRef json,
+  FTL::CStrRef text,
   QPointF cursorPos
   )
 {
   CString cmdName(FabricUI::DFG::DFGUICmd_Paste::CmdName().c_str());
   CValueArray args;
 
-  Application().LogMessage(L"not yet implemented", siWarningMsg);
+  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
+  args.Add(execPath.c_str());
+  args.Add( text.c_str() );
+  EncodePosition( cursorPos, args );
 
+  CValue resultValue;
+  executeCommand(cmdName, args, resultValue);
+  CString resultString( resultValue );
+  std::string pastedNodeNamesString = resultString.GetAsciiString();
+  FTL::StrRef pastedNodeNamesStr = pastedNodeNamesString;
   std::vector<std::string> result;
+  while ( !pastedNodeNamesStr.empty() )
+  {
+    FTL::StrRef::Split split = pastedNodeNamesStr.split('|');
+    result.push_back( split.first );
+    pastedNodeNamesStr = split.second;
+  }
   return result;
 }
 

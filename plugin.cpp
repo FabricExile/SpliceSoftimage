@@ -129,6 +129,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     REGISTER_DFGUICMD( in_reg, ImplodeNodes );
     REGISTER_DFGUICMD( in_reg, InstPreset );
     REGISTER_DFGUICMD( in_reg, MoveNodes );
+    REGISTER_DFGUICMD( in_reg, Paste );
     REGISTER_DFGUICMD( in_reg, RemoveNodes );
     REGISTER_DFGUICMD( in_reg, ResizeBackDrop );
     REGISTER_DFGUICMD( in_reg, SetCode );
