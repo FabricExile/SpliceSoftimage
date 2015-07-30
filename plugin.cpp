@@ -134,9 +134,12 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     REGISTER_DFGUICMD( in_reg, RemoveNodes );
     REGISTER_DFGUICMD( in_reg, RemovePort );
     REGISTER_DFGUICMD( in_reg, ResizeBackDrop );
+    REGISTER_DFGUICMD( in_reg, SetArgType );
+    REGISTER_DFGUICMD( in_reg, SetArgValue );
     REGISTER_DFGUICMD( in_reg, SetCode );
     REGISTER_DFGUICMD( in_reg, SetNodeComment );
     REGISTER_DFGUICMD( in_reg, SetNodeTitle );
+    REGISTER_DFGUICMD( in_reg, SetPortDefaultValue );
     REGISTER_DFGUICMD( in_reg, SetRefVarPath );
 
     // menu.

@@ -217,12 +217,10 @@ static inline CStatus DecodeSize(
   return CStatus::OK;
 }
 
-static inline CStatus DecodeExec(
+static inline CStatus DecodeBinding(
   CValueArray const &args,
   unsigned &ai,
-  FabricCore::DFGBinding &binding,
-  std::string &execPath,
-  FabricCore::DFGExec &exec
+  FabricCore::DFGBinding &binding
   )
 {
   binding =
@@ -234,6 +232,21 @@ static inline CStatus DecodeExec(
     Application().LogMessage(L"[DFGUICmd] invalid binding!", siErrorMsg);
     return CStatus::Fail;
   }
+
+  return CStatus::OK;
+}
+
+static inline CStatus DecodeExec(
+  CValueArray const &args,
+  unsigned &ai,
+  FabricCore::DFGBinding &binding,
+  std::string &execPath,
+  FabricCore::DFGExec &exec
+  )
+{
+  CStatus bindingStatus = DecodeBinding( args, ai, binding );
+  if ( bindingStatus != CStatus::OK )
+    return bindingStatus;
 
   CStatus execPathStatus = DecodeString( args, ai, execPath );
   if ( execPathStatus != CStatus::OK )
@@ -2787,6 +2800,89 @@ std::vector<std::string> DFGUICmdHandlerXSI::dfgDoPaste(
   return result;
 }
 
+// ---
+// command "dfgSetArgType"
+// ---
+
+SICALLBACK dfgSetArgType_Init(CRef &in_ctxt)
+{
+  Context ctxt(in_ctxt);
+  Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.EnableReturnValue(false);
+
+  ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",     CString());
+  oArgs.Add(L"argName",  CString());
+  oArgs.Add(L"typeName",   CString());
+
+  return CStatus::OK;
+}
+
+SICALLBACK dfgSetArgType_Execute(CRef &in_ctxt)
+{
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgSetArgType_Execute()", siCommentMsg);
+
+  // init.
+  Context ctxt(in_ctxt);
+  CValueArray args = ctxt.GetAttribute(L"Arguments");
+
+  // create the DFG command.
+  FabricUI::DFG::DFGUICmd_SetArgType *cmd = NULL;
+  {
+    unsigned int ai = 0;
+
+    FabricCore::DFGBinding binding;
+    CStatus bindingStatus = DecodeBinding( args, ai, binding );
+    if ( bindingStatus != CStatus::OK )
+      return bindingStatus;
+
+    std::string argName;
+    CStatus argNameStatus =
+      DecodeName( args, ai, argName );
+    if ( argNameStatus != CStatus::OK )
+      return argNameStatus;
+
+    std::string typeName;
+    CStatus typeNameStatus =
+      DecodeName( args, ai, typeName );
+    if ( typeNameStatus != CStatus::OK )
+      return typeNameStatus;
+    
+    cmd = new FabricUI::DFG::DFGUICmd_SetArgType( binding,
+                                                  argName.c_str(),
+                                                  typeName.c_str() );
+  }
+
+  // execute the DFG command.
+  try
+  {
+    cmd->doit();
+  }
+  catch(FabricCore::Exception e)
+  {
+    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+  }
+
+  return DFGUICmd_Finish( ctxt, cmd );
+}
+
+SICALLBACK dfgSetArgType_Undo( CRef &ctxt )
+{
+  return DFGUICmd_Undo( ctxt );
+}
+
+SICALLBACK dfgSetArgType_Redo( CRef &ctxt )
+{
+  return DFGUICmd_Redo( ctxt );
+}
+
+SICALLBACK dfgSetArgType_TermUndoRedo( CRef &ctxt )
+{
+  return DFGUICmd_TermUndoRedo( ctxt );
+}
+
 void DFGUICmdHandlerXSI::dfgDoSetArgType(
   FabricCore::DFGBinding const &binding,
   FTL::CStrRef argName,
@@ -2803,6 +2899,101 @@ void DFGUICmdHandlerXSI::dfgDoSetArgType(
   executeCommand(cmdName, args, CValue());
 }
 
+// ---
+// command "dfgSetArgValue"
+// ---
+
+SICALLBACK dfgSetArgValue_Init(CRef &in_ctxt)
+{
+  Context ctxt(in_ctxt);
+  Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.EnableReturnValue(false);
+
+  ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",     CString());
+  oArgs.Add(L"argName",  CString());
+  oArgs.Add(L"typeName",   CString());
+  oArgs.Add(L"valueJSON",   CString());
+
+  return CStatus::OK;
+}
+
+SICALLBACK dfgSetArgValue_Execute(CRef &in_ctxt)
+{
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgSetArgValue_Execute()", siCommentMsg);
+
+  // init.
+  Context ctxt(in_ctxt);
+  CValueArray args = ctxt.GetAttribute(L"Arguments");
+
+  // create the DFG command.
+  FabricUI::DFG::DFGUICmd_SetArgValue *cmd = NULL;
+  {
+    unsigned int ai = 0;
+
+    FabricCore::DFGBinding binding;
+    CStatus bindingStatus = DecodeBinding( args, ai, binding );
+    if ( bindingStatus != CStatus::OK )
+      return bindingStatus;
+
+    std::string argName;
+    CStatus argNameStatus =
+      DecodeName( args, ai, argName );
+    if ( argNameStatus != CStatus::OK )
+      return argNameStatus;
+
+    std::string typeName;
+    CStatus typeNameStatus =
+      DecodeName( args, ai, typeName );
+    if ( typeNameStatus != CStatus::OK )
+      return typeNameStatus;
+  
+    std::string valueJSON;
+    CStatus valueJSONStatus =
+      DecodeString( args, ai, valueJSON );
+    if ( valueJSONStatus != CStatus::OK )
+      return valueJSONStatus;
+    FabricCore::DFGHost host = binding.getHost();
+    FabricCore::Context context = host.getContext();
+    FabricCore::RTVal value =
+      FabricCore::RTVal::Construct( context, typeName.c_str(), 0, NULL );
+    value.setJSON( valueJSON.c_str() );
+
+    cmd = new FabricUI::DFG::DFGUICmd_SetArgValue( binding,
+                                                  argName.c_str(),
+                                                  value );
+  }
+
+  // execute the DFG command.
+  try
+  {
+    cmd->doit();
+  }
+  catch(FabricCore::Exception e)
+  {
+    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+  }
+
+  return DFGUICmd_Finish( ctxt, cmd );
+}
+
+SICALLBACK dfgSetArgValue_Undo( CRef &ctxt )
+{
+  return DFGUICmd_Undo( ctxt );
+}
+
+SICALLBACK dfgSetArgValue_Redo( CRef &ctxt )
+{
+  return DFGUICmd_Redo( ctxt );
+}
+
+SICALLBACK dfgSetArgValue_TermUndoRedo( CRef &ctxt )
+{
+  return DFGUICmd_TermUndoRedo( ctxt );
+}
+
 void DFGUICmdHandlerXSI::dfgDoSetArgValue(
   FabricCore::DFGBinding const &binding,
   FTL::CStrRef argName,
@@ -2814,9 +3005,113 @@ void DFGUICmdHandlerXSI::dfgDoSetArgValue(
 
   args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
   args.Add(argName.c_str());                              // argName.
+  args.Add(value.getTypeNameCStr());                              // argName.
   args.Add(value.getJSON().getStringCString());           // value.
 
   executeCommand(cmdName, args, CValue());
+}
+
+// ---
+// command "dfgSetPortDefaultValue"
+// ---
+
+SICALLBACK dfgSetPortDefaultValue_Init(CRef &in_ctxt)
+{
+  Context ctxt(in_ctxt);
+  Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.EnableReturnValue(false);
+
+  ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",     CString());
+  oArgs.Add(L"execPath",    CString());
+  oArgs.Add(L"portPath",  CString());
+  oArgs.Add(L"typeName",   CString());
+  oArgs.Add(L"valueJSON",   CString());
+
+  return CStatus::OK;
+}
+
+SICALLBACK dfgSetPortDefaultValue_Execute(CRef &in_ctxt)
+{
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgSetPortDefaultValue_Execute()", siCommentMsg);
+
+  // init.
+  Context ctxt(in_ctxt);
+  CValueArray args = ctxt.GetAttribute(L"Arguments");
+
+  // create the DFG command.
+  FabricUI::DFG::DFGUICmd_SetPortDefaultValue *cmd = NULL;
+  {
+    unsigned int ai = 0;
+
+    FabricCore::DFGBinding binding;
+    std::string execPath;
+    FabricCore::DFGExec exec;
+    CStatus execStatus = DecodeExec( args, ai, binding, execPath, exec );
+    if ( execStatus != CStatus::OK )
+      return execStatus;
+
+    std::string portPath;
+    CStatus portPathStatus =
+      DecodeName( args, ai, portPath );
+    if ( portPathStatus != CStatus::OK )
+      return portPathStatus;
+
+    std::string typeName;
+    CStatus typeNameStatus =
+      DecodeName( args, ai, typeName );
+    if ( typeNameStatus != CStatus::OK )
+      return typeNameStatus;
+  
+    std::string valueJSON;
+    CStatus valueJSONStatus =
+      DecodeString( args, ai, valueJSON );
+    if ( valueJSONStatus != CStatus::OK )
+      return valueJSONStatus;
+    FabricCore::DFGHost host = binding.getHost();
+    FabricCore::Context context = host.getContext();
+    FabricCore::RTVal value =
+      FabricCore::RTVal::Construct( context, typeName.c_str(), 0, NULL );
+    value.setJSON( valueJSON.c_str() );
+
+    cmd =
+      new FabricUI::DFG::DFGUICmd_SetPortDefaultValue(
+        binding,
+        execPath.c_str(),
+        exec,
+        portPath.c_str(),
+        value
+        );
+  }
+
+  // execute the DFG command.
+  try
+  {
+    cmd->doit();
+  }
+  catch(FabricCore::Exception e)
+  {
+    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+  }
+
+  return DFGUICmd_Finish( ctxt, cmd );
+}
+
+SICALLBACK dfgSetPortDefaultValue_Undo( CRef &ctxt )
+{
+  return DFGUICmd_Undo( ctxt );
+}
+
+SICALLBACK dfgSetPortDefaultValue_Redo( CRef &ctxt )
+{
+  return DFGUICmd_Redo( ctxt );
+}
+
+SICALLBACK dfgSetPortDefaultValue_TermUndoRedo( CRef &ctxt )
+{
+  return DFGUICmd_TermUndoRedo( ctxt );
 }
 
 void DFGUICmdHandlerXSI::dfgDoSetPortDefaultValue(
