@@ -1539,6 +1539,86 @@ std::string DFGUICmdHandlerXSI::dfgDoAddPort(
   return result.GetAsText().GetAsciiString();
 }
 
+// ---
+// command "dfgRemovePort"
+// ---
+
+SICALLBACK dfgRemovePort_Init(CRef &in_ctxt)
+{
+  Context ctxt(in_ctxt);
+  Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.EnableReturnValue(false);
+
+  ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",     CString());
+  oArgs.Add(L"execPath",    CString());
+  oArgs.Add(L"portName",   CString());
+
+  return CStatus::OK;
+}
+
+SICALLBACK dfgRemovePort_Execute(CRef &in_ctxt)
+{
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgRemovePort_Execute()", siCommentMsg);
+
+  // init.
+  Context ctxt(in_ctxt);
+  CValueArray args = ctxt.GetAttribute(L"Arguments");
+
+  // create the DFG command.
+  FabricUI::DFG::DFGUICmd_RemovePort *cmd = NULL;
+  {
+    unsigned int ai = 0;
+
+    FabricCore::DFGBinding binding;
+    std::string execPath;
+    FabricCore::DFGExec exec;
+    CStatus execStatus = DecodeExec( args, ai, binding, execPath, exec );
+    if ( execStatus != CStatus::OK )
+      return execStatus;
+
+    std::string portName;
+    CStatus portNameStatus =
+      DecodeName( args, ai, portName );
+    if ( portNameStatus != CStatus::OK )
+      return portNameStatus;
+
+    cmd = new FabricUI::DFG::DFGUICmd_RemovePort( binding,
+                                                  execPath.c_str(),
+                                                  exec,
+                                                  portName.c_str() );
+  }
+
+  // execute the DFG command.
+  try
+  {
+    cmd->doit();
+  }
+  catch(FabricCore::Exception e)
+  {
+    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+  }
+
+  return DFGUICmd_Finish( ctxt, cmd );
+}
+
+SICALLBACK dfgRemovePort_Undo( CRef &ctxt )
+{
+  return DFGUICmd_Undo( ctxt );
+}
+
+SICALLBACK dfgRemovePort_Redo( CRef &ctxt )
+{
+  return DFGUICmd_Redo( ctxt );
+}
+
+SICALLBACK dfgRemovePort_TermUndoRedo( CRef &ctxt )
+{
+  return DFGUICmd_TermUndoRedo( ctxt );
+}
+
 void DFGUICmdHandlerXSI::dfgDoRemovePort(
   FabricCore::DFGBinding const &binding,
   FTL::CStrRef execPath,
@@ -1549,7 +1629,11 @@ void DFGUICmdHandlerXSI::dfgDoRemovePort(
   CString cmdName(FabricUI::DFG::DFGUICmd_RemovePort::CmdName().c_str());
   CValueArray args;
 
-  Application().LogMessage(L"not yet implemented", siWarningMsg);
+  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
+  args.Add(execPath.c_str());                             // execPath.
+  args.Add(portName.c_str());                      // desiredNodeName.
+
+  executeCommand(cmdName, args, CValue());
 }
 
 // ---
@@ -2453,6 +2537,98 @@ void DFGUICmdHandlerXSI::dfgDoSetCode(
   args.Add(code.c_str());                                 // code.
 
   executeCommand(cmdName, args, CValue());
+}
+
+// ---
+// command "dfgRenamePort"
+// ---
+
+SICALLBACK dfgRenamePort_Init(CRef &in_ctxt)
+{
+  Context ctxt(in_ctxt);
+  Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.EnableReturnValue(true);
+
+  ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",     CString());
+  oArgs.Add(L"execPath",    CString());
+  oArgs.Add(L"oldPortName",  CString());
+  oArgs.Add(L"desiredNewPortName",  CString());
+
+  return CStatus::OK;
+}
+
+SICALLBACK dfgRenamePort_Execute(CRef &in_ctxt)
+{
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgRenamePort_Execute()", siCommentMsg);
+
+  // init.
+  Context ctxt(in_ctxt);
+  CValueArray args = ctxt.GetAttribute(L"Arguments");
+
+  // create the DFG command.
+  FabricUI::DFG::DFGUICmd_RenamePort *cmd = NULL;
+  {
+    unsigned int ai = 0;
+
+    FabricCore::DFGBinding binding;
+    std::string execPath;
+    FabricCore::DFGExec exec;
+    CStatus execStatus = DecodeExec( args, ai, binding, execPath, exec );
+    if ( execStatus != CStatus::OK )
+      return execStatus;
+
+    std::string oldPortName;
+    CStatus oldPortNameStatus = DecodeString( args, ai, oldPortName );
+    if ( oldPortNameStatus != CStatus::OK )
+      return oldPortNameStatus;
+
+    std::string desiredNewPortName;
+    CStatus desiredNewPortNameStatus =
+      DecodeString( args, ai, desiredNewPortName );
+    if ( desiredNewPortNameStatus != CStatus::OK )
+      return desiredNewPortNameStatus;
+
+    cmd = new FabricUI::DFG::DFGUICmd_RenamePort( binding,
+                                                  execPath.c_str(),
+                                                  exec,
+                                                  oldPortName.c_str(),
+                                                  desiredNewPortName.c_str() );
+  }
+
+  // execute the DFG command.
+  try
+  {
+    cmd->doit();
+  }
+  catch(FabricCore::Exception e)
+  {
+    feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+  }
+
+  // store return value.
+  CValue returnValue(CString(cmd->getActualNewPortName().c_str()));
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue.GetAsText() + L"\"", siCommentMsg);
+  ctxt.PutAttribute(L"ReturnValue", returnValue);
+
+  return DFGUICmd_Finish( ctxt, cmd );
+}
+
+SICALLBACK dfgRenamePort_Undo( CRef &ctxt )
+{
+  return DFGUICmd_Undo( ctxt );
+}
+
+SICALLBACK dfgRenamePort_Redo( CRef &ctxt )
+{
+  return DFGUICmd_Redo( ctxt );
+}
+
+SICALLBACK dfgRenamePort_TermUndoRedo( CRef &ctxt )
+{
+  return DFGUICmd_TermUndoRedo( ctxt );
 }
 
 std::string DFGUICmdHandlerXSI::dfgDoRenamePort(
