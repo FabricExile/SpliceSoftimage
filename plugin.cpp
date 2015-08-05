@@ -20,23 +20,33 @@ using namespace XSI;
 // load plugin.
 SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
 {
-  // check if the environment variable FABRIC_DFG_PATH exists.
+  // check if the Fabric environment variables are set.
+  const int numEnvVars = 3;
+  std::string envVarNames   [numEnvVars];
+  std::string envVarExamples[numEnvVars];
+  envVarNames   [0] = "FABRIC_DIR";
+  envVarNames   [1] = "FABRIC_DFG_PATH";
+  envVarNames   [2] = "FABRIC_EXTS_PATH";
+#ifdef _WIN32
+  envVarExamples[0] = "<Fabric-Installation-Path>";
+  envVarExamples[1] = "<Fabric-Installation-Path>\\Presets\\DFG";
+  envVarExamples[2] = "<Fabric-Installation-Path>\\Exts";
+#else
+  envVarExamples[0] = "<Fabric-Installation-Path>";
+  envVarExamples[1] = "<Fabric-Installation-Path>/Presets/DFG";
+  envVarExamples[2] = "<Fabric-Installation-Path>/Exts";
+#endif
+  for (int i=0;i<numEnvVars;i++)
   {
     // get the environment variable's value.
-    CString envVarName = L"FABRIC_DFG_PATH";
-    char *envVarValue  = envVarValue = getenv(envVarName.GetAsciiString());
+    char *envVarValue  = getenv(envVarNames[i].c_str());
 
     // no value found?
     if (!envVarValue || envVarValue[0] == '\0')
     {
       // log error.
-      #ifdef _WIN32
-        CString fabric_dfg_path = L"<Fabric-Installation-Path>\\DFG\\Presets";
-      #else
-        CString fabric_dfg_path = L"<Fabric-Installation-Path>/DFG/Presets";
-      #endif
-      CString t1 = L"The environment variable " + envVarName + L" is not set!";
-      CString t2 = L"Please make sure that " + envVarName + L" is set and points to \"" + fabric_dfg_path + L"\".";
+      CString t1 = L"The environment variable " + CString(envVarNames[i].c_str()) + L" is not set.";
+      CString t2 = L"Please make sure that " + CString(envVarNames[i].c_str()) + L" is set and points to \"" + CString(envVarExamples[i].c_str()) + L"\".";
       Application().LogMessage(L"[Fabric]: " + t1, siErrorMsg);
       Application().LogMessage(L"[Fabric]: " + t2, siErrorMsg);
     }
