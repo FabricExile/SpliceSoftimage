@@ -38,15 +38,15 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
   envVarNames   [0] = "FABRIC_DIR";
   envVarNames   [1] = "FABRIC_DFG_PATH";
   envVarNames   [2] = "FABRIC_EXTS_PATH";
-#ifdef _WIN32
-  envVarExamples[0] = "<Fabric-Installation-Path>";
-  envVarExamples[1] = "<Fabric-Installation-Path>\\Presets\\DFG";
-  envVarExamples[2] = "<Fabric-Installation-Path>\\Exts";
-#else
-  envVarExamples[0] = "<Fabric-Installation-Path>";
-  envVarExamples[1] = "<Fabric-Installation-Path>/Presets/DFG";
-  envVarExamples[2] = "<Fabric-Installation-Path>/Exts";
-#endif
+  #ifdef _WIN32
+    envVarExamples[0] = "<Fabric-Installation-Path>";
+    envVarExamples[1] = "<Fabric-Installation-Path>\\Presets\\DFG";
+    envVarExamples[2] = "<Fabric-Installation-Path>\\Exts";
+  #else
+    envVarExamples[0] = "<Fabric-Installation-Path>";
+    envVarExamples[1] = "<Fabric-Installation-Path>/Presets/DFG";
+    envVarExamples[2] = "<Fabric-Installation-Path>/Exts";
+  #endif
   for (int i=0;i<numEnvVars;i++)
   {
     // get the environment variable's value.
@@ -56,10 +56,8 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     if (!envVarValue || envVarValue[0] == '\0')
     {
       // log error.
-      CString t1 = L"The environment variable " + CString(envVarNames[i].c_str()) + L" is not set.";
-      CString t2 = L"Please make sure that " + CString(envVarNames[i].c_str()) + L" is set and points to \"" + CString(envVarExamples[i].c_str()) + L"\".";
-      Application().LogMessage(L"[Fabric]: " + t1, siErrorMsg);
-      Application().LogMessage(L"[Fabric]: " + t2, siErrorMsg);
+      std::string t = "The environment variable " + envVarNames[i] + " is not set. Please make sure that " + envVarNames[i] + " is set and points to \"" + envVarExamples[i] + "\".";
+      Application().LogMessage(L"[Fabric]: " + CString(t.c_str()), siErrorMsg);
     }
   }
 
