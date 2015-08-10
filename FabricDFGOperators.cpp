@@ -493,9 +493,15 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
           }
         }
 
-        dfgTools::ExecuteCommand3(L"dfgSoftimageOpApply", op.GetParent3DObject().GetFullName(), dfgJSON, true);
+        CValueArray args;
+        args.Add(op.GetParent3DObject().GetFullName());
+        args.Add(dfgJSON);
+        args.Add(true);
+        Application().ExecuteCommand(L"dfgSoftimageOpApply", args, CValue());
 
-        dfgTools::ExecuteCommand1(L"DeleteObj", op.GetFullName());
+        args.Clear();
+        args.Add(op.GetFullName());
+        Application().ExecuteCommand(L"DeleteObj", args, CValue());
       }
     }
     else if (   btnName == L"BtnPortConnectPick"
@@ -663,15 +669,24 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     }
     else if (btnName == L"BtnSelConnectAll")
     {
-      dfgTools::ExecuteCommand2(L"dfgSelectConnected", op.GetUniqueName(), (LONG)0);
+      CValueArray args;
+      args.Add(op.GetUniqueName());
+      args.Add((LONG)0);
+      Application().ExecuteCommand(L"dfgSelectConnected", args, CValue());
     }
     else if (btnName == L"BtnSelConnectIn")
     {
-      dfgTools::ExecuteCommand2(L"dfgSelectConnected", op.GetUniqueName(), (LONG)-1);
+      CValueArray args;
+      args.Add(op.GetUniqueName());
+      args.Add((LONG)-1);
+      Application().ExecuteCommand(L"dfgSelectConnected", args, CValue());
     }
     else if (btnName == L"BtnSelConnectOut")
     {
-      dfgTools::ExecuteCommand2(L"dfgSelectConnected", op.GetUniqueName(), (LONG)+1);
+      CValueArray args;
+      args.Add(op.GetUniqueName());
+      args.Add((LONG)+1);
+      Application().ExecuteCommand(L"dfgSelectConnected", args, CValue());
     }
     else if (btnName == L"BtnImportJSON")
     {
@@ -682,12 +697,17 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
         return CStatus::OK; }
 
       // execute command.
-      dfgTools::ExecuteCommand2(L"dfgImportJSON", op.GetUniqueName(), fileName);
-
-      //
-      PPGLayout oLayout = op.GetPPGLayout();
-      dfgSoftimageOp_DefineLayout(oLayout, op);
-      ctxt.PutAttribute(L"Refresh", true);
+      CValue opWasRecreated = false;
+      CValueArray args;
+      args.Add(op.GetUniqueName());
+      args.Add(fileName);
+      if (Application().ExecuteCommand(L"dfgImportJSON", args, opWasRecreated) == CStatus::OK)
+        if (opWasRecreated == false)
+        {
+          PPGLayout oLayout = op.GetPPGLayout();
+          dfgSoftimageOp_DefineLayout(oLayout, op);
+          ctxt.PutAttribute(L"Refresh", true);
+        }
     }
     else if (btnName == L"BtnExportJSON")
     {
@@ -698,7 +718,10 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
         return CStatus::OK; }
 
       // export.
-      dfgTools::ExecuteCommand2(L"dfgExportJSON", op.GetUniqueName(), fileName);
+      CValueArray args;
+      args.Add(op.GetUniqueName());
+      args.Add(fileName);
+      Application().ExecuteCommand(L"dfgExportJSON", args, CValue());
     }
     else if (btnName == L"BtnUpdatePPG")
     {
@@ -799,7 +822,10 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     }
     else if (btnName == L"BtnLogDFGJSON")
     {
-      dfgTools::ExecuteCommand2(L"dfgExportJSON", op.GetUniqueName(), L"console");
+      CValueArray args;
+      args.Add(op.GetUniqueName());
+      args.Add(L"console");
+      Application().ExecuteCommand(L"dfgExportJSON", args, CValue());
     }
   }
   else if (eventID == PPGEventContext::siTabChange)

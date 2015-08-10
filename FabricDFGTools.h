@@ -16,15 +16,6 @@ class dfgTools
 {
  public:
 
-  // execute an XSI command.
-  // params:  commandName   name of the command to execute.
-  //          arg1234..     command arguments.
-  static XSI::CStatus ExecuteCommand0(XSI::CString commandName);
-  static XSI::CStatus ExecuteCommand1(XSI::CString commandName, XSI::CValue arg1);
-  static XSI::CStatus ExecuteCommand2(XSI::CString commandName, XSI::CValue arg1, XSI::CValue arg2);
-  static XSI::CStatus ExecuteCommand3(XSI::CString commandName, XSI::CValue arg1, XSI::CValue arg2, XSI::CValue arg3);
-  static XSI::CStatus ExecuteCommand4(XSI::CString commandName, XSI::CValue arg1, XSI::CValue arg2, XSI::CValue arg3, XSI::CValue arg4);
-
   // opens a file browser for "*.dfg.json" files.
   // params:  isSave        true: save file browser, false: load file browser.
   //          out_filepath  complete filepath or "" on abort or error.

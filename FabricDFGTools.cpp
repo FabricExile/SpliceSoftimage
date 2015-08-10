@@ -47,47 +47,6 @@
 using namespace XSI;
 using namespace XSI::MATH;
 
-XSI::CStatus dfgTools::ExecuteCommand0(XSI::CString commandName)
-{
-  CValueArray args;
-  CValue value;
-  return Application().ExecuteCommand(commandName, args, value);
-}
-XSI::CStatus dfgTools::ExecuteCommand1(XSI::CString commandName, XSI::CValue arg1)
-{
-  CValueArray args;
-  args.Add(arg1);
-  CValue value;
-  return Application().ExecuteCommand(commandName, args, value);
-}
-XSI::CStatus dfgTools::ExecuteCommand2(XSI::CString commandName, XSI::CValue arg1, XSI::CValue arg2)
-{
-  CValueArray args;
-  args.Add(arg1);
-  args.Add(arg2);
-  CValue value;
-  return Application().ExecuteCommand(commandName, args, value);
-}
-XSI::CStatus dfgTools::ExecuteCommand3(XSI::CString commandName, XSI::CValue arg1, XSI::CValue arg2, XSI::CValue arg3)
-{
-  CValueArray args;
-  args.Add(arg1);
-  args.Add(arg2);
-  args.Add(arg3);
-  CValue value;
-  return Application().ExecuteCommand(commandName, args, value);
-}
-XSI::CStatus dfgTools::ExecuteCommand4(XSI::CString commandName, XSI::CValue arg1, XSI::CValue arg2, XSI::CValue arg3, XSI::CValue arg4)
-{
-  CValueArray args;
-  args.Add(arg1);
-  args.Add(arg2);
-  args.Add(arg3);
-  args.Add(arg4);
-  CValue value;
-  return Application().ExecuteCommand(commandName, args, value);
-}
-
 bool dfgTools::FileBrowserJSON(bool isSave, XSI::CString &out_filepath)
 {
   // init output.

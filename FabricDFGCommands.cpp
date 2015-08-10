@@ -91,7 +91,10 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
   if (    createSpliceOp == 1
       || (createSpliceOp == 2 && dfgTools::GetRefsAtOps(obj, CString(L"SpliceOp"), XSI::CRefArray()) == 0)  )
   {
-    dfgTools::ExecuteCommand2(L"fabricSplice", L"newSplice", L"{\"targets\":\"" + objectName + L".kine.global\", \"portName\":\"matrix\", \"portMode\":\"io\"}");
+    CValueArray args;
+    args.Add(L"newSplice");
+    args.Add(L"{\"targets\":\"" + objectName + L".kine.global\", \"portName\":\"matrix\", \"portMode\":\"io\"}");
+    Application().ExecuteCommand(L"fabricSplice", args, CValue());
   }
 
   // create the dfgSoftimageOp operator
@@ -207,7 +210,11 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
 
   // display operator's property page?
   if (openPPG)
-    dfgTools::ExecuteCommand1(L"InspectObj", newOp.GetUniqueName());
+  {
+    CValueArray args;
+    args.Add(newOp.GetUniqueName());
+    Application().ExecuteCommand(L"InspectObj", args, CValue());
+  }
 
   // done.
   portmap.clear();
@@ -226,7 +233,7 @@ SICALLBACK dfgImportJSON_Init(CRef &in_ctxt)
   oCmd = ctxt.GetSource();
   oCmd.PutDescription(L"imports a dfg.json file.");
   oCmd.SetFlag(siNoLogging, false);
-  oCmd.EnableReturnValue(false) ;
+  oCmd.EnableReturnValue(true);     // if L"ReturnValue" is true then the operator was recreated.
 
   ArgumentArray oArgs = oCmd.GetArguments();
   oArgs.Add(L"OperatorName", CString());
@@ -239,6 +246,7 @@ SICALLBACK dfgImportJSON_Execute(CRef &in_ctxt)
 {
   // init.
   Context ctxt(in_ctxt);
+  ctxt.PutAttribute(L"ReturnValue", false); // store return value in context.
   CValueArray args = ctxt.GetAttribute(L"Arguments");
   if (args.GetCount() < 2 || CString(args[0]).IsEmpty())
   { Application().LogMessage(L"import json failed: empty or missing argument(s)", siErrorMsg);
@@ -369,10 +377,20 @@ SICALLBACK dfgImportJSON_Execute(CRef &in_ctxt)
     {
       // create a new operator based on the imported JSON file and portmap_new.
       _opUserData::s_portmap_newOp = portmap_new;
-      dfgTools::ExecuteCommand3(L"dfgSoftimageOpApply", op.GetParent3DObject().GetFullName(), CString(json.c_str()), true);
+      CValueArray args;
+      args.Add(op.GetParent3DObject().GetFullName());
+      args.Add(CString(json.c_str()));
+      args.Add(true);
+      if (Application().ExecuteCommand(L"dfgSoftimageOpApply", args, CValue()) == CStatus::OK)
+      {
+        // store return value in context, "true" meaning that the operator was recreated.
+        ctxt.PutAttribute(L"ReturnValue", true);
 
-      // delete the old operator.
-      dfgTools::ExecuteCommand1(L"DeleteObj", op.GetFullName());
+        // delete the old operator.
+        CValueArray args;
+        args.Add(op.GetFullName());
+        Application().ExecuteCommand(L"DeleteObj", args, CValue());
+      }
     }
   }
 

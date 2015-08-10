@@ -78,7 +78,13 @@ SICALLBACK FabricDFG_Menu_CreateDFGOp(XSI::CRef&)
 
   // execute command for all elements in targetObjects.
   for (int i=0;i<targetObjects.GetCount();i++)
-    dfgTools::ExecuteCommand3(L"dfgSoftimageOpApply", targetObjects[i], L"", true);
+  {
+    CValueArray args;
+    args.Add(targetObjects[i]);
+    args.Add(L"");
+    args.Add(true);
+    Application().ExecuteCommand(L"dfgSoftimageOpApply", args, CValue());
+  }
 
   // done.
   return CStatus::OK;
@@ -98,7 +104,11 @@ SICALLBACK FabricDFG_Menu_CreateNullWithOp(XSI::CRef&)
   sel.Add(obj.GetRef());
 
   // execute command.
-  dfgTools::ExecuteCommand3(L"dfgSoftimageOpApply", obj.GetFullName(), L"", true);
+  CValueArray args;
+  args.Add(obj.GetFullName());
+  args.Add(L"");
+  args.Add(true);
+  Application().ExecuteCommand(L"dfgSoftimageOpApply", args, CValue());
 
   // done.
   return CStatus::OK;
@@ -118,7 +128,11 @@ SICALLBACK FabricDFG_Menu_CreatePolymeshWithOp(XSI::CRef&)
   sel.Add(obj.GetRef());
 
   // execute command.
-  dfgTools::ExecuteCommand3(L"dfgSoftimageOpApply", obj.GetFullName(), L"", true);
+  CValueArray args;
+  args.Add(obj.GetFullName());
+  args.Add(L"");
+  args.Add(true);
+  Application().ExecuteCommand(L"dfgSoftimageOpApply", args, CValue());
 
   // done.
   return CStatus::OK;
@@ -126,7 +140,11 @@ SICALLBACK FabricDFG_Menu_CreatePolymeshWithOp(XSI::CRef&)
 
 SICALLBACK FabricDFG_Menu_OnlineHelp(XSI::CRef&)
 {
-  dfgTools::ExecuteCommand3(L"OpenNetView",L"http://docs.fabric-engine.com/FabricEngine/latest/HTML/" ,true ,(LONG)1);
+  CValueArray args;
+  args.Add(L"http://docs.fabric-engine.com/FabricEngine/latest/HTML/");
+  args.Add(true);
+  args.Add((LONG)1);
+  Application().ExecuteCommand(L"OpenNetView", args, CValue());
   return CStatus::OK;
 }
 
@@ -185,7 +203,10 @@ SICALLBACK FabricDFG_Menu_ImportJSON(XSI::CRef&)
     return CStatus::OK; }
 
   // execute command.
-  dfgTools::ExecuteCommand2(L"dfgImportJSON", op.GetUniqueName(), fileName);
+  CValueArray args;
+  args.Add(op.GetUniqueName());
+  args.Add(fileName);
+  Application().ExecuteCommand(L"dfgImportJSON", args, CValue());
 
   // done.
   return CStatus::OK;
@@ -246,7 +267,10 @@ SICALLBACK FabricDFG_Menu_ExportJSON(XSI::CRef&)
     return CStatus::OK; }
 
   // execute command.
-  dfgTools::ExecuteCommand2(L"dfgExportJSON", op.GetUniqueName(), fileName);
+  CValueArray args;
+  args.Add(op.GetUniqueName());
+  args.Add(fileName);
+  Application().ExecuteCommand(L"dfgExportJSON", args, CValue());
 
   // done.
   return CStatus::OK;
@@ -254,7 +278,8 @@ SICALLBACK FabricDFG_Menu_ExportJSON(XSI::CRef&)
 
 SICALLBACK FabricDFG_Menu_LogStatus(XSI::CRef&)
 {
-  dfgTools::ExecuteCommand0(L"dfgLogStatus");
+  CValueArray args;
+  Application().ExecuteCommand(L"dfgLogStatus", args, CValue());
   return CStatus::OK;
 }
 
