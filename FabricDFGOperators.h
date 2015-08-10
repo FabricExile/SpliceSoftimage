@@ -52,6 +52,15 @@ struct _portMapping
     mapType          = DFG_PORT_MAPTYPE_INTERNAL;
     mapTarget       .Clear();
   }
+  bool isEqual(_portMapping &m, bool ignoreMapTarget)
+  {
+    return (    dfgPortName     == m.dfgPortName
+            &&  dfgPortType     == m.dfgPortType
+            &&  dfgPortDataType == m.dfgPortDataType
+            &&  mapType         == m.mapType
+            && (ignoreMapTarget || mapTarget == m.mapTarget)
+           );
+  }
 };
 
 // _____________________________________
@@ -68,6 +77,9 @@ struct _opUserData
   long int updateCounter;
 
   // this is used by the functions that create new operators.
+  // note: we need to make this a global thing, because we cannot access
+  //       things such as the user data and the operator in the
+  //       dfgSoftimageOp_Define() function.
   static std::vector<_portMapping> s_portmap_newOp;
 
   // constructor.

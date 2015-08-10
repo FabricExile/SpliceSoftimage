@@ -243,8 +243,8 @@ SICALLBACK dfgImportJSON_Execute(CRef &in_ctxt)
   if (args.GetCount() < 2 || CString(args[0]).IsEmpty())
   { Application().LogMessage(L"import json failed: empty or missing argument(s)", siErrorMsg);
     return CStatus::OK; }
-  CString operatorName(args[0]);
-  CString filePath = args[1];
+  CString operatorName          ( args[0] );
+  CString filePath              = args[1];
 
   // log.
   Application().LogMessage(L"importing JSON file \"" + filePath + L"\" into \"" + operatorName + L"\"", siVerboseMsg);
@@ -272,6 +272,15 @@ SICALLBACK dfgImportJSON_Execute(CRef &in_ctxt)
     Application().LogMessage(L"... operator perhaps not dfgSoftimageOp?", siErrorMsg);
     return CStatus::OK; }
 
+  // get the current port mapping.
+  std::vector <_portMapping> portmap_old;
+  {
+    CString err;
+    if (!dfgTools::GetOperatorPortMapping(op, portmap_old, err))
+    { Application().LogMessage(L"dfgTools::GetOperatorPortMapping() failed, err = \"" + err + L"\"", siWarningMsg);
+      portmap_old.clear(); }
+  }
+
   // read JSON file.
   std::ifstream t(filePath.GetAsciiString(), std::ios::binary);
   if (!t.good())
@@ -284,7 +293,7 @@ SICALLBACK dfgImportJSON_Execute(CRef &in_ctxt)
   json.assign((std::istreambuf_iterator<char>(t)),
                std::istreambuf_iterator<char>());
 
-  // do it.
+  // set from JSON.
   try
   {
     if (!pud->GetBaseInterface())
@@ -295,41 +304,76 @@ SICALLBACK dfgImportJSON_Execute(CRef &in_ctxt)
   catch (FabricCore::Exception e)
   {
     feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+    return CStatus::OK;
   }
 
-  // see if we have any meta data regarding port mapping and if we need to re-create the operator.
-  bool recreateOp = false;
+  // get new port mapping.
+  std::vector <_portMapping> portmap_new;
   try
   {
     FabricCore::DFGExec exec = pud->GetBaseInterface()->getBinding().getExec();
+    portmap_new.resize(exec.getExecPortCount());
     for (int i=0;i<exec.getExecPortCount();i++)
     {
-      // mapType.
+      // init port mapping.
+      portmap_new[i].clear();
+
+      // get port name, type and data type.
+      portmap_new[i].dfgPortName = exec.getExecPortName(i);
+      if      (exec.getExecPortType(i) == FabricCore::DFGPortType_In)   portmap_new[i].dfgPortType = DFG_PORT_TYPE_IN;
+      else if (exec.getExecPortType(i) == FabricCore::DFGPortType_Out)  portmap_new[i].dfgPortType = DFG_PORT_TYPE_OUT;
+      portmap_new[i].dfgPortDataType = exec.getExecPortResolvedType(i);
+
+      // get mapType.
       const char *data = exec.getExecPortMetadata(exec.getExecPortName(i), "XSI_mapType");
-      if (data)
-      {
-        LONG mapType = atoi(data);
-        Application().LogMessage(CString(exec.getExecPortName(i)) + L" has mapType " + CString(mapType));
-        recreateOp |= (mapType == DFG_PORT_MAPTYPE_XSI_PARAMETER);
-        recreateOp |= (mapType == DFG_PORT_MAPTYPE_XSI_PORT);
-        recreateOp |= (mapType == DFG_PORT_MAPTYPE_XSI_ICE_PORT);
-      }
+      if (data) portmap_new[i].mapType = (DFG_PORT_MAPTYPE)atoi(data);
     }
   }
   catch (FabricCore::Exception e)
   {
-    recreateOp = false;
     feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
   }
 
-  // if we have some port mapping we need to re-create the operator.
-  if (recreateOp)
+  // compare portmap_old and portmap_new to determine if
+  // we need to recreate the operator or not.
   {
-    Application().LogMessage(L"we need to create a new operator.");
-  }
-  else
-  {
-    Application().LogMessage(L"no need to create a new operator.");
+    // for things to be cool we need to find a perfectly matching port in portmap_new/old for each exposed
+    // port in portmap_old/new. Furthermore the order of the exposed input/output ports must be the same.
+    bool recreateOp = false;
+    for (int pass=0;pass<4;pass++)
+    {
+      std::vector <_portMapping> &a = ((pass & 0x01) == 0 ? portmap_old : portmap_new);
+      std::vector <_portMapping> &b = ((pass & 0x01) == 0 ? portmap_new : portmap_old);
+      int ib = 0;
+      for (int ia=0;ia<a.size();ia++)
+      {
+        if (a[ia].mapType == DFG_PORT_MAPTYPE_INTERNAL)
+          continue;
+        if (   pass <= 1 && a[ia].dfgPortType == DFG_PORT_TYPE_IN
+            || pass >= 2 && a[ia].dfgPortType == DFG_PORT_TYPE_OUT)
+        {
+          bool foundMatch = false;
+          while (!foundMatch && ib < b.size())
+            foundMatch = a[ia].isEqual(b[ib++], true);
+          if (!foundMatch)
+          {
+            recreateOp = true;
+            break;
+          }
+        }
+      }
+    }
+
+    // recreate operator.
+    if (recreateOp)
+    {
+      // create a new operator based on the imported JSON file and portmap_new.
+      _opUserData::s_portmap_newOp = portmap_new;
+      dfgTools::ExecuteCommand3(L"dfgSoftimageOpApply", op.GetParent3DObject().GetFullName(), CString(json.c_str()), true);
+
+      // delete the old operator.
+      dfgTools::ExecuteCommand1(L"DeleteObj", op.GetFullName());
+    }
   }
 
   // done.
