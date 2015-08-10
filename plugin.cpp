@@ -233,13 +233,14 @@ CStatus helpFnct_siEventOpenSave(CRef &ctxt, int openSave)
       }
     }
 
-    // store JSON in parameter persistenceData.
+    // set DFG JSON from parameter persistenceData.
     else if (openSave == 1)
     {
       Application().LogMessage(L"setting DFG JSON from dfgSoftimageOp(opObjID = " + CString(op.GetObjectID()) + L")");
       try
       {
         CString dfgJSON = op.GetParameterValue(L"persistenceData");
+
         if (dfgJSON.IsEmpty())
         { Application().LogMessage(L"op.GetParameterValue(L\"persistenceData\") returned an empty value.", siWarningMsg);
           continue; }
