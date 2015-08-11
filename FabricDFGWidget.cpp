@@ -45,6 +45,32 @@ class FabricDFGWidget : public DFG::DFGCombinedWidget
   {
     feLog(userData, message, length);
   }
+
+  bool eventFilter(QObject *watched, QEvent *event)
+  {
+    if (event->type() == QEvent::KeyPress)
+    {
+      QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
+      switch (keyEvent->key())
+      {
+        case 89:  // redo.
+        {
+          Application().ExecuteCommand(L"Redo", CValueArray(), CValue());
+          return true;
+        } 
+        case 90:  // undo.
+        {
+          Application().ExecuteCommand(L"Undo", CValueArray(), CValue());
+          return true;
+        } 
+        default:
+        {
+          break;
+        }
+      }
+    }
+    return false;
+  }
 };
 
 struct _windowData
@@ -113,6 +139,7 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
     winData.qtLayout      = new QVBoxLayout     (winData.qtDialog);
 
     winData.qtDialog->setWindowTitle(winTitle ? winTitle : "Canvas");
+    winData.qtDialog->installEventFilter(winData.qtDFGWidget);
     winData.qtLayout->addWidget(winData.qtDFGWidget); 
     winData.qtLayout->setContentsMargins(0, 0, 0, 0);
 
