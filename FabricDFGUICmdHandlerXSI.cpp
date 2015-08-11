@@ -3005,7 +3005,7 @@ void DFGUICmdHandlerXSI::dfgDoSetArgValue(
 
   args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
   args.Add(argName.c_str());                              // argName.
-  args.Add(value.getTypeNameCStr());                              // argName.
+  args.Add(value.getTypeNameCStr());                      // typeName.
   args.Add(value.getJSON().getStringCString());           // value.
 
   executeCommand(cmdName, args, CValue());
@@ -3128,6 +3128,7 @@ void DFGUICmdHandlerXSI::dfgDoSetPortDefaultValue(
   args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
   args.Add(execPath.c_str());                             // execPath.
   args.Add(portPath.c_str());                             // portPath.
+  args.Add(value.getTypeNameCStr());                      // typeName.
   args.Add(value.getJSON().getStringCString());           // value.
 
   executeCommand(cmdName, args, CValue());
