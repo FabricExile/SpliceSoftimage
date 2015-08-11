@@ -149,13 +149,14 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
     // parenting the qtDialog to the Softimage main window results in a weird mouse position offset
     /*SetParent((HWND)winData.qtDialog->winId(), (HWND)Application().GetDesktop().GetApplicationWindowHandle());*/
 
-    // init the DFG widget.
+    // set config (i.e. colors and stuff) for the DFG widget.
     DFG::DFGConfig config;
-    float f = 0.8f / 255.0f;
     config.graphConfig.useOpenGL                = false;
-    config.graphConfig.headerBackgroundColor    . setRgbF(f * 113, f * 112, f * 111);
-    config.graphConfig.mainPanelBackgroundColor . setRgbF(f * 127, f * 127, f * 127);
-    config.graphConfig.sidePanelBackgroundColor . setRgbF(f * 171, f * 168, f * 166);
+    config.graphConfig.headerBackgroundColor    . setRgb(157, 156, 155);
+    config.graphConfig.mainPanelBackgroundColor . setRgb(107, 107, 107);
+    config.graphConfig.sidePanelBackgroundColor . setRgb(137, 136, 135);
+
+    // init the DFG widget.
     winData.qtDFGWidget->init(*pud->GetBaseInterface()->getClient(),
                                pud->GetBaseInterface()->getManager(),
                                pud->GetBaseInterface()->getHost(),
@@ -166,6 +167,15 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
                                false,
                                config
                              );
+
+    // adjust some colors that can't be set using DFG::DFGConfig.
+    winData.qtDFGWidget->getTreeWidget()    ->setStyleSheet("background-color: rgb(172,171,170); border: 1px solid black;");
+    winData.qtDFGWidget->getDfgValueEditor()->setStyleSheet("background-color: rgb(182,181,180);");
+    winData.qtDFGWidget->getDfgLogWidget()  ->setStyleSheet("background-color: rgb(160,160,160); border: 1px solid black;");
+  }
+  catch(std::exception &e)
+  {
+    feLogError(e.what() ? e.what() : "\"\"");
   }
   catch(FabricCore::Exception e)
   {
