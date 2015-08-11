@@ -135,9 +135,14 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
       else if (pmap.dfgPortDataType == L"SInt32")   dt = CValue::siInt4;
       else if (pmap.dfgPortDataType == L"SInt64")   dt = CValue::siInt8;
 
+      else if (pmap.dfgPortDataType == L"Byte")     dt = CValue::siUInt1;
       else if (pmap.dfgPortDataType == L"UInt8")    dt = CValue::siUInt1;
       else if (pmap.dfgPortDataType == L"UInt16")   dt = CValue::siUInt2;
+      else if (pmap.dfgPortDataType == L"Count")    dt = CValue::siUInt4;
+      else if (pmap.dfgPortDataType == L"Index")    dt = CValue::siUInt4;
+      else if (pmap.dfgPortDataType == L"Size")     dt = CValue::siUInt4;
       else if (pmap.dfgPortDataType == L"UInt32")   dt = CValue::siUInt4;
+      else if (pmap.dfgPortDataType == L"DataSize") dt = CValue::siUInt8;
       else if (pmap.dfgPortDataType == L"UInt64")   dt = CValue::siUInt8;
 
       else if (pmap.dfgPortDataType == L"String")   dt = CValue::siString;
@@ -1002,9 +1007,14 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
                                                               int val = (int)(LONG)xsiValue;
                                                               BaseInterface::SetValueOfArgSInt(*client, binding, portName.GetAsciiString(), val);
                                                             }
-            else if (   portResolvedType == "UInt8"
+            else if (   portResolvedType == "Byte"
+                     || portResolvedType == "UInt8"
                      || portResolvedType == "UInt16"
+                     || portResolvedType == "Count"
+                     || portResolvedType == "Index"
+                     || portResolvedType == "Size"
                      || portResolvedType == "UInt32"
+                     || portResolvedType == "DataSize"
                      || portResolvedType == "UInt64" )    {
                                                               unsigned int val = (unsigned int)(ULONG)xsiValue;
                                                               BaseInterface::SetValueOfArgUInt(*client, binding, portName.GetAsciiString(), val);
@@ -1259,9 +1269,14 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
                   || pmap.dfgPortDataType == L"SInt32"
                   || pmap.dfgPortDataType == L"SInt64"
 
+                  || pmap.dfgPortDataType == L"Byte"
                   || pmap.dfgPortDataType == L"UInt8"
                   || pmap.dfgPortDataType == L"UInt16"
+                  || pmap.dfgPortDataType == L"Count"
+                  || pmap.dfgPortDataType == L"Index"
+                  || pmap.dfgPortDataType == L"Size"
                   || pmap.dfgPortDataType == L"UInt32"
+                  || pmap.dfgPortDataType == L"DataSize"
                   || pmap.dfgPortDataType == L"UInt64"
 
                   || pmap.dfgPortDataType == L"String")
@@ -1281,9 +1296,14 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
                   || pmap.dfgPortDataType == L"SInt32"
                   || pmap.dfgPortDataType == L"SInt64"
 
+                  || pmap.dfgPortDataType == L"Byte"
                   || pmap.dfgPortDataType == L"UInt8"
                   || pmap.dfgPortDataType == L"UInt16"
+                  || pmap.dfgPortDataType == L"Count"
+                  || pmap.dfgPortDataType == L"Index"
+                  || pmap.dfgPortDataType == L"Size"
                   || pmap.dfgPortDataType == L"UInt32"
+                  || pmap.dfgPortDataType == L"DataSize"
                   || pmap.dfgPortDataType == L"UInt64"
 
                   || pmap.dfgPortDataType == L"Mat44"
@@ -1308,9 +1328,14 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
                   || pmap.dfgPortDataType == L"SInt32"
                   || pmap.dfgPortDataType == L"SInt64"
 
+                  || pmap.dfgPortDataType == L"Byte"
                   || pmap.dfgPortDataType == L"UInt8"
                   || pmap.dfgPortDataType == L"UInt16"
+                  || pmap.dfgPortDataType == L"Count"
+                  || pmap.dfgPortDataType == L"Index"
+                  || pmap.dfgPortDataType == L"Size"
                   || pmap.dfgPortDataType == L"UInt32"
+                  || pmap.dfgPortDataType == L"DataSize"
                   || pmap.dfgPortDataType == L"UInt64"
 
                   || pmap.dfgPortDataType == L"Mat44"

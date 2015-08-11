@@ -336,9 +336,14 @@ int BaseInterface::GetArgValueBoolean(FabricCore::DFGBinding &binding, char cons
       else if (resolvedType == "SInt32")    out = (0 != rtval.getSInt32());
       else if (resolvedType == "SInt64")    out = (0 != rtval.getSInt64());
 
+      else if (resolvedType == "Byte")      out = (0 != rtval.getUInt8());
       else if (resolvedType == "UInt8")     out = (0 != rtval.getUInt8());
       else if (resolvedType == "UInt16")    out = (0 != rtval.getUInt16());
+      else if (resolvedType == "Count")     out = (0 != rtval.getUInt32());
+      else if (resolvedType == "Index")     out = (0 != rtval.getUInt32());
+      else if (resolvedType == "Size")      out = (0 != rtval.getUInt32());
       else if (resolvedType == "UInt32")    out = (0 != rtval.getUInt32());
+      else if (resolvedType == "DataSize")  out = (0 != rtval.getUInt64());
       else if (resolvedType == "UInt64")    out = (0 != rtval.getUInt64());
 
       else return -1;
@@ -378,9 +383,14 @@ int BaseInterface::GetArgValueInteger(FabricCore::DFGBinding &binding, char cons
     else if (resolvedType == "SInt32")      out = (int)rtval.getSInt32();
     else if (resolvedType == "SInt64")      out = (int)rtval.getSInt64();
 
+    else if (resolvedType == "Byte")        out = (int)rtval.getUInt8();
     else if (resolvedType == "UInt8")       out = (int)rtval.getUInt8();
     else if (resolvedType == "UInt16")      out = (int)rtval.getUInt16();
+    else if (resolvedType == "Count")       out = (int)rtval.getUInt32();
+    else if (resolvedType == "Index")       out = (int)rtval.getUInt32();
+    else if (resolvedType == "Size")        out = (int)rtval.getUInt32();
     else if (resolvedType == "UInt32")      out = (int)rtval.getUInt32();
+    else if (resolvedType == "DataSize")    out = (int)rtval.getUInt64();
     else if (resolvedType == "UInt64")      out = (int)rtval.getUInt64();
 
     else if (!strict)
@@ -436,9 +446,14 @@ int BaseInterface::GetArgValueFloat(FabricCore::DFGBinding &binding, char const 
       else if (resolvedType == "SInt32")    out = (double)rtval.getSInt32();
       else if (resolvedType == "SInt64")    out = (double)rtval.getSInt64();
 
+      else if (resolvedType == "Byte")      out = (double)rtval.getUInt8();
       else if (resolvedType == "UInt8")     out = (double)rtval.getUInt8();
       else if (resolvedType == "UInt16")    out = (double)rtval.getUInt16();
+      else if (resolvedType == "Count")     out = (double)rtval.getUInt32();
+      else if (resolvedType == "Index")     out = (double)rtval.getUInt32();
+      else if (resolvedType == "Size")      out = (double)rtval.getUInt32();
       else if (resolvedType == "UInt32")    out = (double)rtval.getUInt32();
+      else if (resolvedType == "DataSize")  out = (double)rtval.getUInt64();
       else if (resolvedType == "UInt64")    out = (double)rtval.getUInt64();
 
       else return -1;
@@ -1098,10 +1113,15 @@ void BaseInterface::SetValueOfArgUInt(FabricCore::Client &client, FabricCore::DF
   {
     FabricCore::RTVal rtval;
     std::string resolvedType = binding.getExec().getExecPortResolvedType(argName);
-    if      (resolvedType == "UInt8")   rtval = FabricCore::RTVal::ConstructUInt8 (client, val);
-    else if (resolvedType == "UInt16")  rtval = FabricCore::RTVal::ConstructUInt16(client, val);
-    else if (resolvedType == "UInt32")  rtval = FabricCore::RTVal::ConstructUInt32(client, val);
-    else if (resolvedType == "UInt64")  rtval = FabricCore::RTVal::ConstructUInt64(client, val);
+    if      (resolvedType == "Byte")      rtval = FabricCore::RTVal::ConstructUInt8 (client, val);
+    else if (resolvedType == "UInt8")     rtval = FabricCore::RTVal::ConstructUInt16(client, val);
+    else if (resolvedType == "UInt16")    rtval = FabricCore::RTVal::ConstructUInt16(client, val);
+    else if (resolvedType == "Count")     rtval = FabricCore::RTVal::ConstructUInt32(client, val);
+    else if (resolvedType == "Index")     rtval = FabricCore::RTVal::ConstructUInt32(client, val);
+    else if (resolvedType == "Size")      rtval = FabricCore::RTVal::ConstructUInt32(client, val);
+    else if (resolvedType == "UInt32")    rtval = FabricCore::RTVal::ConstructUInt32(client, val);
+    else if (resolvedType == "DataSize")  rtval = FabricCore::RTVal::ConstructUInt64(client, val);
+    else if (resolvedType == "UInt64")    rtval = FabricCore::RTVal::ConstructUInt64(client, val);
     binding.setArgValue(argName, rtval);
   }
   catch (FabricCore::Exception e)

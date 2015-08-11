@@ -268,9 +268,14 @@ XSI::siClassID dfgTools::GetSiClassIdFromResolvedDataType(const XSI::CString &re
       || resDataType == L"SInt32"
       || resDataType == L"SInt64"
 
+      || resDataType == L"Byte"
       || resDataType == L"UInt8"
       || resDataType == L"UInt16"
+      || resDataType == L"Count"
+      || resDataType == L"Index"
+      || resDataType == L"Size"
       || resDataType == L"UInt32"
+      || resDataType == L"DataSize"
       || resDataType == L"UInt64")    return siParameterID;
 
   if (resDataType == L"Mat44")        return siKinematicStateID;
