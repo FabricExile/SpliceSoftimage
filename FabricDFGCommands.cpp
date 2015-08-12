@@ -548,8 +548,8 @@ SICALLBACK dfgOpenCanvas_Init(CRef &in_ctxt)
   oCmd = ctxt.GetSource();
   oCmd.PutDescription(L"open Canvas.");
   oCmd.SetFlag(siNoLogging, false);
-  oCmd.EnableReturnValue(false) ;
-
+  oCmd.EnableReturnValue(false);
+  
   ArgumentArray oArgs = oCmd.GetArguments();
   oArgs.Add(L"OperatorName", CString());
 

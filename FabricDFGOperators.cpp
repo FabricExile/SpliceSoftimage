@@ -462,13 +462,9 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     }
     else if (btnName == L"BtnOpenCanvas")
     {
-      CString title = L"Canvas - " + op.GetParent3DObject().GetName();
-      OPENCANVAS_RETURN_VALS ocRet = OpenCanvas(_opUserData::GetUserData(op.GetObjectID()), title.GetAsciiString());
-      if (ocRet != OPENCANVAS_RETURN_VALS::SUCCESS)
-      {
-        LONG ret;
-        toolkit.MsgBox(CString(GetOpenCanvasErrorDescription(ocRet)), siMsgOkOnly, "dfgSoftimageOp (Open Canvas)", ret);
-      }
+      CValueArray args;
+      args.Add(op.GetFullName());
+      Application().ExecuteCommand(L"dfgOpenCanvas", args, CValue());
     }
     else if (btnName == L"BtnPortsDefineTT")
     {
