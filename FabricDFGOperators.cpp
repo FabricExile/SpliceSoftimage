@@ -207,8 +207,8 @@ int dfgSoftimageOp_UpdateGridData_dfgPorts(CustomOperator &op)
     CString mode;
     switch (pmap[i].dfgPortType)
     {
-      case DFG_PORT_TYPE_IN:   mode = L"In";         break;
-      case DFG_PORT_TYPE_OUT:  mode = L"Out";        break;
+      case DFG_PORT_TYPE_IN:    mode = L"In";         break;
+      case DFG_PORT_TYPE_OUT:   mode = L"Out";        break;
       default:                  mode = L"undefined";  break;
     }
 
@@ -219,11 +219,11 @@ int dfgSoftimageOp_UpdateGridData_dfgPorts(CustomOperator &op)
       case DFG_PORT_MAPTYPE_INTERNAL:        target = L"Internal";       break;
       case DFG_PORT_MAPTYPE_XSI_PARAMETER:   target = L"XSI Parameter";  break;
       case DFG_PORT_MAPTYPE_XSI_PORT:      { target = L"XSI Port";
-                                              if (pmap[i].mapTarget.IsEmpty())  target += "  ( - )";
-                                              else                              target += L" ( -> " + pmap[i].mapTarget + L" )";
-                                            }                             break;
+                                             if (pmap[i].mapTarget.IsEmpty())  target += "  ( - )";
+                                             else                              target += L" ( -> " + pmap[i].mapTarget + L" )";
+                                           }                             break;
       case DFG_PORT_MAPTYPE_XSI_ICE_PORT:    target = L"XSI ICE Port";   break;
-      default:                                target = L"unknown";        break;
+      default:                               target = L"unknown";        break;
     }
     
     // set grid data.
@@ -1284,29 +1284,7 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
                 cvaMapType.Add( L"XSI Parameter" );
                 cvaMapType.Add( DFG_PORT_MAPTYPE_XSI_PARAMETER );
               }
-              if (   pmap.dfgPortDataType == L"Boolean"
-
-                  || pmap.dfgPortDataType == L"Scalar"
-                  || pmap.dfgPortDataType == L"Float32"
-                  || pmap.dfgPortDataType == L"Float64"
-
-                  || pmap.dfgPortDataType == L"Integer"
-                  || pmap.dfgPortDataType == L"SInt8"
-                  || pmap.dfgPortDataType == L"SInt16"
-                  || pmap.dfgPortDataType == L"SInt32"
-                  || pmap.dfgPortDataType == L"SInt64"
-
-                  || pmap.dfgPortDataType == L"Byte"
-                  || pmap.dfgPortDataType == L"UInt8"
-                  || pmap.dfgPortDataType == L"UInt16"
-                  || pmap.dfgPortDataType == L"Count"
-                  || pmap.dfgPortDataType == L"Index"
-                  || pmap.dfgPortDataType == L"Size"
-                  || pmap.dfgPortDataType == L"UInt32"
-                  || pmap.dfgPortDataType == L"DataSize"
-                  || pmap.dfgPortDataType == L"UInt64"
-
-                  || pmap.dfgPortDataType == L"Mat44"
+              if (   pmap.dfgPortDataType == L"Mat44"
 
                   || pmap.dfgPortDataType == L"PolygonMesh")
               {
@@ -1316,29 +1294,7 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
             }
             else if (pmap.dfgPortType == DFG_PORT_TYPE_OUT)
             {
-              if (   pmap.dfgPortDataType == L"Boolean"
-
-                  || pmap.dfgPortDataType == L"Scalar"
-                  || pmap.dfgPortDataType == L"Float32"
-                  || pmap.dfgPortDataType == L"Float64"
-
-                  || pmap.dfgPortDataType == L"Integer"
-                  || pmap.dfgPortDataType == L"SInt8"
-                  || pmap.dfgPortDataType == L"SInt16"
-                  || pmap.dfgPortDataType == L"SInt32"
-                  || pmap.dfgPortDataType == L"SInt64"
-
-                  || pmap.dfgPortDataType == L"Byte"
-                  || pmap.dfgPortDataType == L"UInt8"
-                  || pmap.dfgPortDataType == L"UInt16"
-                  || pmap.dfgPortDataType == L"Count"
-                  || pmap.dfgPortDataType == L"Index"
-                  || pmap.dfgPortDataType == L"Size"
-                  || pmap.dfgPortDataType == L"UInt32"
-                  || pmap.dfgPortDataType == L"DataSize"
-                  || pmap.dfgPortDataType == L"UInt64"
-
-                  || pmap.dfgPortDataType == L"Mat44"
+              if (   pmap.dfgPortDataType == L"Mat44"
 
                   || pmap.dfgPortDataType == L"PolygonMesh")
               {
