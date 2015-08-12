@@ -78,12 +78,14 @@ struct _windowData
   QBoxLayout      *qtLayout;
   FabricDFGWidget *qtDFGWidget;
   QDialog         *qtDialog;
+  QDialog         *qtDock;
 
   _windowData(void)
   {
-    qtDialog      = NULL;
-    qtDFGWidget   = NULL;
     qtLayout      = NULL;
+    qtDFGWidget   = NULL;
+    qtDialog      = NULL;
+    qtDock        = NULL;
   }
 };
 
@@ -134,7 +136,8 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
   _windowData winData;
   try
   {
-    winData.qtDialog      = new QDialog         (NULL);
+    winData.qtDock        = new QDialog         (NULL);
+    winData.qtDialog      = new QDialog         (winData.qtDock);
     winData.qtDFGWidget   = new FabricDFGWidget (winData.qtDialog);
     winData.qtLayout      = new QVBoxLayout     (winData.qtDialog);
 
@@ -143,11 +146,18 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
     winData.qtLayout->addWidget(winData.qtDFGWidget); 
     winData.qtLayout->setContentsMargins(0, 0, 0, 0);
 
+    // parent the qtDock dialog to the Softimage main window.
+    #ifdef _WIN32
+      SetParent((HWND)winData.qtDock->winId(), (HWND)Application().GetDesktop().GetApplicationWindowHandle());
+    #endif
+
+    // disable mouse and keyboard input of the Softimage main window.
+    #ifdef _WIN32
+      EnableWindow((HWND)Application().GetDesktop().GetApplicationWindowHandle(), false);
+    #endif
+
     // for some reason setting the qtDialog to modal doesn't work.
     /*winData.qtDialog->setWindowModality(Qt::WindowModal);*/
-
-    // parenting the qtDialog to the Softimage main window results in a weird mouse position offset
-    /*SetParent((HWND)winData.qtDialog->winId(), (HWND)Application().GetDesktop().GetApplicationWindowHandle());*/
 
     // set config (i.e. colors and stuff) for the DFG widget.
     DFG::DFGConfig config;
@@ -182,31 +192,14 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
     feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
   }
 
-  // show/execute Qt dialog.
+  // show/execute qtDialog (without showing the dock dialog qtDock).
   try
   {
-    const bool useExec = true;
-
-    // use the widget's exec() function.
-    if (useExec)
-    {
-      winData.qtDialog->exec();
-    }
-
-    // use a manual loop.
-    else
-    {
-      winData.qtDialog->show();
-      while (winData.qtDialog->isVisible())
-      {
-        qApp->processEvents();
-      }
-    }
+    winData.qtDialog->exec();
   }
   catch(std::exception &e)
   {
     feLogError(e.what() ? e.what() : "\"\"");
-    winData.qtDialog->close();
   }
   catch(FabricCore::Exception e)
   {
@@ -214,12 +207,13 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
   }
 
   // clean up.
-  s_canvasIsOpen = false;
+  winData.qtDock->close();
   try
   {
     delete winData.qtDFGWidget;
     delete winData.qtLayout;
     delete winData.qtDialog;
+    delete winData.qtDock;
   }
   catch(std::exception &e)
   {
@@ -229,6 +223,14 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
   {
     feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
   }
+
+  // enable mouse and keyboard input of the Softimage main window.
+  #ifdef _WIN32
+    EnableWindow((HWND)Application().GetDesktop().GetApplicationWindowHandle(), true);
+  #endif
+
+  // reset or flag.
+  s_canvasIsOpen = false;
 
   // done.
   return OPENCANVAS_RETURN_VALS::SUCCESS;

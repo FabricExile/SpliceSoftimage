@@ -35,6 +35,9 @@
 #include <xsi_value.h>
 #include <xsi_matrix4f.h>
 #include <xsi_primitive.h>
+#include <xsi_iceattribute.h>
+#include <xsi_iceattributedataarray.h>
+#include <xsi_iceattributedataarray2D.h>
 
 #include "FabricDFGPlugin.h"
 #include "FabricDFGOperators.h"
@@ -1138,10 +1141,60 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
                     *dst = *src;
                 }
                 if (xsiPolymesh.Set(vertices, polygons) != CStatus::OK)
+                {
                   Application().LogMessage(L"xsiPolymesh.Set(vertices, polygons) failed", siErrorMsg);
+                }
                 else
                 {
 
+
+                  // store colors per vertex into ICE data.
+                  /*
+
+                  THIS IS NOT WORKING.
+                  See JIRA ticket's comment for more details and possible workaround: FE-4539
+
+                  */
+                  if (false)
+                  {
+                    CString                 name          = L"dfgColorPerPoint";
+                    siICENodeDataType       typeData      = siICENodeDataType::siICENodeDataColor4;
+                    siICENodeStructureType  typeStructure = siICENodeStructureType::siICENodeStructureSingle;
+                    siICENodeContextType    typeContext   = siICENodeContextType::siICENodeContextComponent0D;
+                    ICEAttribute            attr          = xsiPolymesh.GetICEAttributeFromName(name);
+                    if (!attr.IsValid())    attr          = xsiPolymesh.AddICEAttribute(name, typeData, typeStructure, typeContext);
+                    if (!attr.IsValid())
+                    {
+                      Application().LogMessage(L"failed to get or create ICE attribute \"" + name + L"\"", siErrorMsg);
+                    }
+                    else if (   attr.GetDataType()      != typeData
+                             || attr.GetStructureType() != typeStructure
+                             || attr.GetContextType()   != typeContext)
+                    {
+                      Application().LogMessage(L"the ICE attribute \"" + name + L"\" already exists, but has the wrong type or context", siErrorMsg);
+                    }
+                    else if (attr.IsReadonly())
+                    {
+                      Application().LogMessage(L"the ICE attribute \"" + name + L"\" is read-only", siErrorMsg);
+                    }
+                    else
+                    {
+                      CICEAttributeDataArrayColor4f data;
+                      if (attr.GetDataArray(data) != CStatus::OK)
+                      {
+                        Application().LogMessage(L"failed to get the ICE data \"" + name + L"\"", siErrorMsg);
+                      }
+                      else if (attr.GetElementCount() != polymesh.numVertices)
+                      {
+                        Application().LogMessage(L"vertex count mismatch: data.GetCount() = " + CString(data.GetCount()) + L" and polymesh.numVertices = " + CString((ULONG)polymesh.numVertices), siErrorMsg);
+                      }
+                      else
+                      {
+                        for (ULONG i=0;i<data.GetCount();i++)
+                          data[i].Set(1, (float)(i&1), 0, 1);
+                      }
+                    }
+                  }
                 }
               }
             }
