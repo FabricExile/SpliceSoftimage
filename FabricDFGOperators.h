@@ -37,13 +37,18 @@ struct _portMapping
   DFG_PORT_MAPTYPE mapType;       // specifies how the DFG port is to be mapped/exposed.
   XSI::CString mapTarget;         // if mapType == "XSIPort" then the full name of the target (or L"" for no target).
 
+  // constructor.
   _portMapping(void)
   {
     clear();
   }
+
+  // destructor.
   ~_portMapping()
   {
   }
+
+  // clear all members.
   void clear(void)
   {
     dfgPortName     . Clear();
@@ -52,14 +57,25 @@ struct _portMapping
     mapType          = DFG_PORT_MAPTYPE_INTERNAL;
     mapTarget       .Clear();
   }
-  bool isEqual(_portMapping &m, bool ignoreMapTarget)
+
+  // returns true if the two port mappings match (same name, type, etc.).
+  static bool areMatching(const _portMapping &a, const _portMapping &b)
   {
-    return (    dfgPortName     == m.dfgPortName
-            &&  dfgPortType     == m.dfgPortType
-            &&  dfgPortDataType == m.dfgPortDataType
-            &&  mapType         == m.mapType
-            && (ignoreMapTarget || mapTarget == m.mapTarget)
+    return (    a.dfgPortName     == b.dfgPortName
+            &&  a.dfgPortType     == b.dfgPortType
+            &&  a.dfgPortDataType == b.dfgPortDataType
+            &&  a.mapType         == b.mapType
            );
+  }
+
+  // search for a matching port mapping a in b and returns
+  // the index in b if found, else -1.
+  static int findMatching(const _portMapping &a, const std::vector <_portMapping> &b)
+  {
+    for (int i=0;i<b.size();i++)
+      if (areMatching(a, b[i]))
+        return i;
+    return -1;
   }
 };
 

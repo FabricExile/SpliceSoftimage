@@ -462,25 +462,55 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     }
     else if (btnName == L"BtnOpenCanvas")
     {
+      // get the current port mapping.
+      std::vector <_portMapping> portmap_old;
+      dfgTools::GetOperatorPortMapping(op, portmap_old, CString());
+
+      // open canvas.
       CValueArray args;
       args.Add(op.GetFullName());
       Application().ExecuteCommand(L"dfgOpenCanvas", args, CValue());
+
+      // get the current port mapping.
+      std::vector <_portMapping> portmap_new;
+      dfgTools::GetOperatorPortMapping(op, portmap_new, CString());
+
+      // refresh, if necessary, the PPG.
+      bool refresh = (portmap_old.size() != portmap_new.size());
+      if (!refresh)
+      {
+        for (int i=0;i<portmap_old.size();i++)
+          if (_portMapping::areMatching(portmap_old[i], portmap_new[i]))
+          {
+            refresh = true;
+            break;
+          }
+      }
+      if (refresh)
+      {
+        PPGLayout oLayout = op.GetPPGLayout();
+        dfgSoftimageOp_DefineLayout(oLayout, op);
+        ctxt.PutAttribute(L"Refresh", true);
+      }
     }
     else if (btnName == L"BtnPortsDefineTT")
     {
+      // get the current port mapping.
       CString err;
       if (!dfgTools::GetOperatorPortMapping(op, portmap, err))
       { Application().LogMessage(L"dfgTools::GetOperatorPortMapping() failed, err = \"" + err + L"\"", siErrorMsg);
         portmap.clear();
         return CStatus::OK; }
+
+      // anything there?
       if (portmap.size())
       {
-        //
+        // open the port mapping dialog.
         if (Dialog_DefinePortMapping(portmap) <= 0)
         { portmap.clear();
           return CStatus::OK; }
 
-        //
+        // get the current graph as JSON.
         CString dfgJSON;
         _opUserData *pud = _opUserData::GetUserData(op.GetObjectID());
         if (   pud
@@ -497,12 +527,14 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
           }
         }
 
+        // create a new operator.
         CValueArray args;
         args.Add(op.GetParent3DObject().GetFullName());
         args.Add(dfgJSON);
         args.Add(true);
         Application().ExecuteCommand(L"dfgSoftimageOpApply", args, CValue());
 
+        // delete the old operator.
         args.Clear();
         args.Add(op.GetFullName());
         Application().ExecuteCommand(L"DeleteObj", args, CValue());
@@ -706,7 +738,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
       args.Add(op.GetUniqueName());
       args.Add(fileName);
       if (Application().ExecuteCommand(L"dfgImportJSON", args, opWasRecreated) == CStatus::OK)
-        if (opWasRecreated == false)
+        if (!opWasRecreated)
         {
           PPGLayout oLayout = op.GetPPGLayout();
           dfgSoftimageOp_DefineLayout(oLayout, op);

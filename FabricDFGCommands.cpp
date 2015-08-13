@@ -246,7 +246,7 @@ SICALLBACK dfgImportJSON_Execute(CRef &in_ctxt)
 {
   // init.
   Context ctxt(in_ctxt);
-  ctxt.PutAttribute(L"ReturnValue", false); // store return value in context.
+  ctxt.PutAttribute(L"ReturnValue", false); // init return value.
   CValueArray args = ctxt.GetAttribute(L"Arguments");
   if (args.GetCount() < 2 || CString(args[0]).IsEmpty())
   { Application().LogMessage(L"import json failed: empty or missing argument(s)", siErrorMsg);
@@ -342,8 +342,7 @@ SICALLBACK dfgImportJSON_Execute(CRef &in_ctxt)
     feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
   }
 
-  // compare portmap_old and portmap_new to determine if
-  // we need to recreate the operator or not.
+  // compare portmap_old and portmap_new to determine if we need to recreate the operator or not.
   {
     // for things to be cool we need to find a perfectly matching port in portmap_new/old for each exposed
     // port in portmap_old/new. Furthermore the order of the exposed input/output ports must be the same.
@@ -362,7 +361,7 @@ SICALLBACK dfgImportJSON_Execute(CRef &in_ctxt)
         {
           bool foundMatch = false;
           while (!foundMatch && ib < b.size())
-            foundMatch = a[ia].isEqual(b[ib++], true);
+            foundMatch = _portMapping::areMatching(a[ia], b[ib++]);
           if (!foundMatch)
           {
             recreateOp = true;
