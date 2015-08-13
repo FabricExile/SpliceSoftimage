@@ -156,9 +156,6 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
       EnableWindow((HWND)Application().GetDesktop().GetApplicationWindowHandle(), false);
     #endif
 
-    // for some reason setting the qtDialog to modal doesn't work.
-    /*winData.qtDialog->setWindowModality(Qt::WindowModal);*/
-
     // set config (i.e. colors and stuff) for the DFG widget.
     DFG::DFGConfig config;
     config.graphConfig.useOpenGL                = false;
