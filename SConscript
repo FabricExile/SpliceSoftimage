@@ -163,6 +163,7 @@ installedModule = env.Install(os.path.join(STAGE_DIR.abspath, 'Application', 'Pl
 softimageFiles.append(installedModule)
 
 softimageFiles.append(env.Install(os.path.join(STAGE_DIR.abspath, 'Application', 'UI'), os.path.join('UI', 'FE_logo.bmp')))
+softimageFiles.append(env.Install(os.path.join(STAGE_DIR.abspath, 'Application', 'UI'), os.path.join('UI', 'FE_exclamation.bmp')))
 
 softimageFiles.append(env.Install(STAGE_DIR, env.File('license.txt')))
 

@@ -50,6 +50,8 @@ std::vector<_portMapping>               _opUserData::s_portmap_newOp;
 
 using namespace XSI;
 
+CString xsiGetWorkgroupPath();
+
 XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Init(CRef &in_ctxt)
 {
   // beta log.
@@ -110,6 +112,8 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
   oPDef = oFactory.CreateParamDef(L"persistenceData",     CValue::siString, siPersistable | siReadOnly,               L"", L"", "", "", "", "", "");
   op.AddParameter(oPDef, emptyParam);
   oPDef = oFactory.CreateParamDef(L"verbose",             CValue::siBool,   siPersistable,                            L"", L"", false, CValue(), CValue(), CValue(), CValue());
+  op.AddParameter(oPDef, emptyParam);
+  oPDef = oFactory.CreateParamDef(L"myBitmapWidget",      CValue::siInt4, siClassifMetaData, siPersistable,           L"", L"", CValue(), CValue(), CValue(), 0, 1);
   op.AddParameter(oPDef, emptyParam);
 
   // create grid parameter for the list of DFG ports.
@@ -270,6 +274,9 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
   // get the names of all DFG ports that are available as XSI parameters.
   CStringArray exposedDFGParams = CString(op.GetParameterValue(L"exposedDFGParams")).Split(L";");
 
+  // set the "sync" flag.
+  bool outOfSync = false;
+
   // Tab "Main"
   {
     oLayout.AddTab(L"Main");
@@ -350,6 +357,18 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
               pi.PutAttribute(siUIButtonDisable, dfgPortsNumRows == 0);
               pi.PutAttribute(siUICX, btnTx);
               pi.PutAttribute(siUICY, btnTy);
+              oLayout.AddSpacer(0, btnTy);
+              oLayout.AddRow();
+                pi = oLayout.AddButton(L"BtnRecreateOpInfo", L" ? ");
+                pi.PutAttribute(siUICX, 20);
+                pi.PutAttribute(siUICY, btnTy);
+                pi = oLayout.AddButton(L"BtnRecreateOp", L"Sync Op");
+                pi.PutAttribute(siUICX, btnTx - 32);
+                pi.PutAttribute(siUICY, btnTy);
+                pi = oLayout.AddItem(L"myBitmapWidget", L"myBitmapWidget", siControlBitmap);
+                pi.PutAttribute(siUINoLabel, true);
+                pi.PutAttribute(siUIFilePath, xsiGetWorkgroupPath() + CUtils::Slash() + L"Application" + CUtils::Slash() + L"UI" + CUtils::Slash() + "FE_exclamation.bmp");
+              oLayout.EndRow();
             oLayout.EndGroup();
             oLayout.AddGroup(L"", false);
               pi = oLayout.AddButton(L"BtnPortConnectPick", L"Connect (Pick)");
@@ -540,6 +559,58 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
         args.Add(op.GetFullName());
         Application().ExecuteCommand(L"DeleteObj", args, CValue());
       }
+    }
+    else if (btnName == L"BtnRecreateOp")
+    {
+      // get the current port mapping.
+      CString err;
+      if (!dfgTools::GetOperatorPortMapping(op, portmap, err))
+      { Application().LogMessage(L"dfgTools::GetOperatorPortMapping() failed, err = \"" + err + L"\"", siErrorMsg);
+        portmap.clear();
+        return CStatus::OK; }
+
+      // get the current graph as JSON.
+      CString dfgJSON;
+      _opUserData *pud = _opUserData::GetUserData(op.GetObjectID());
+      if (   pud
+          && pud->GetBaseInterface())
+      {
+        try
+        {
+          std::string json = pud->GetBaseInterface()->getJSON();
+          dfgJSON = json.c_str();
+        }
+        catch (FabricCore::Exception e)
+        {
+          feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+        }
+      }
+
+      // create a new operator.
+      CValueArray args;
+      args.Add(op.GetParent3DObject().GetFullName());
+      args.Add(dfgJSON);
+      args.Add(true);
+      args.Add(op.GetFullName());
+      Application().ExecuteCommand(L"dfgSoftimageOpApply", args, CValue());
+
+      // delete the old operator.
+      args.Clear();
+      args.Add(op.GetFullName());
+      Application().ExecuteCommand(L"DeleteObj", args, CValue());
+    }
+    else if (btnName == L"BtnRecreateOpInfo")
+    {
+      LONG    r;
+      CString s = L"Synchronizes the Softimage operator with the Fabric graph\n"
+                  L"by re-creating the operator based on the current graph.\n"
+                  L"\n"
+                  L"Softimage and Fabric can sometime become \"out of sync\"\n"
+                  L"after making modifications in Canvas, for example when\n"
+                  L"making changes to exposed input and output ports.\n"
+                  L"Pressing the \"Sync Op\" button fixes that.\n"
+                  ;
+      toolkit.MsgBox(s, siMsgOkOnly | siMsgInformation, L"dfgSoftimage", r);
     }
     else if (   btnName == L"BtnPortConnectPick"
              || btnName == L"BtnPortConnectSelf"
