@@ -59,21 +59,20 @@ struct _portMapping
   }
 
   // returns true if the two port mappings match (same name, type, etc.).
-  static bool areMatching(const _portMapping &a, const _portMapping &b)
+  static bool areMatching(const _portMapping &a, const _portMapping &b, bool considerPortDataType = true)
   {
     return (    a.dfgPortName     == b.dfgPortName
             &&  a.dfgPortType     == b.dfgPortType
-            &&  a.dfgPortDataType == b.dfgPortDataType
+            && (a.dfgPortDataType == b.dfgPortDataType || considerPortDataType == false)
             &&  a.mapType         == b.mapType
            );
   }
 
-  // search for a matching port mapping a in b and returns
-  // the index in b if found, else -1.
-  static int findMatching(const _portMapping &a, const std::vector <_portMapping> &b)
+  // search for a matching port mapping a in b and returns the index in b or -1 if no match was found.
+  static int findMatching(const _portMapping &a, const std::vector <_portMapping> &b, bool considerPortDataType = true)
   {
     for (int i=0;i<b.size();i++)
-      if (areMatching(a, b[i]))
+      if (areMatching(a, b[i], considerPortDataType))
         return i;
     return -1;
   }

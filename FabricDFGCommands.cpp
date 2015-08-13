@@ -17,6 +17,8 @@
 #include <xsi_vector2f.h>
 #include <xsi_x3dobject.h>
 #include <xsi_kinematics.h>
+#include <xsi_fcurve.h>
+#include <xsi_expression.h>
 
 #include "FabricDFGPlugin.h"
 #include "FabricDFGOperators.h"
@@ -46,10 +48,11 @@ SICALLBACK dfgSoftimageOpApply_Init(CRef &in_ctxt)
   oCmd.EnableReturnValue(false) ;
 
   ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"ObjectName", CString());
-  oArgs.Add(L"dfgJSON", CString());
-  oArgs.Add(L"OpenPPG", false);
-  oArgs.Add(L"CreateSpliceOp", 2L);  // 0: no, 1: yes, 2: yes, but only if the object has no SpliceOp yet.
+  oArgs.Add(L"ObjectName",     CString());    // 
+  oArgs.Add(L"dfgJSON",        CString());    // JSON string for the new op's graph.
+  oArgs.Add(L"OpenPPG",        false);        // true: open PPG after creation.
+  oArgs.Add(L"otherOpName",    CString());    // optional name of a dfgSoftimage operator. If set then the parameter values, animations, etc. are copied to the new operator's parameters.
+  oArgs.Add(L"CreateSpliceOp", 2L);           // 0: no, 1: yes, 2: yes, but only if the object has no SpliceOp yet.
 
   return CStatus::OK;
 }
@@ -62,14 +65,15 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
   // init.
   Context ctxt(in_ctxt);
   CValueArray args = ctxt.GetAttribute(L"Arguments");
-  if (args.GetCount() < 2 || CString(args[0]).IsEmpty())
+  if (args.GetCount() < 5 || CString(args[0]).IsEmpty())
   { Application().LogMessage(L"apply dfgSoftimageOp operator failed: empty or missing argument(s)", siErrorMsg);
     portmap.clear();
     return CStatus::OK; }
-  CString objectName(args[0]);
-  CString dfgJSON(args[1]);
-  bool openPPG = args[2];
-  LONG createSpliceOp = args[3];
+  CString objectName      (args[0]);
+  CString dfgJSON         (args[1]);
+  bool    openPPG =        args[2];
+  CString otherOpName     (args[3]);
+  LONG    createSpliceOp = args[4];
 
   // log.
   Application().LogMessage(L"applying a  \"dfgSoftimageOp\" custom operator to \"" + objectName + L"\"", siVerboseMsg);
@@ -144,8 +148,6 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
       return CStatus::OK; }
   }
 
-
-
   // create exposed DFG output ports.
   for (int i=0;i<portmap.size();i++)
   {
@@ -207,6 +209,139 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
   { Application().LogMessage(L"newOp.Connect() failed.",siErrorMsg);
     portmap.clear();
     return CStatus::OK; }
+
+  // copy exposed values, animations etc. from otherOpName.
+  if (!otherOpName.IsEmpty())
+  {
+    CRef ref;
+    ref.Set(otherOpName);
+    if (!ref.IsValid())
+      Application().LogMessage(L"failed to find an object called \"" + otherOpName + L"\"", siWarningMsg);
+    else if (ref.GetClassID() != siCustomOperatorID)
+      Application().LogMessage(L"not a custom operator: \"" + otherOpName + L"\"", siWarningMsg);
+    else
+    {
+      CustomOperator otherOp(ref);
+      if (!otherOp.IsValid())
+        Application().LogMessage(L"failed to set custom operator from \"" + otherOpName + L"\"", siWarningMsg);
+      else
+      {
+        CString err;
+        std::vector <_portMapping> otherPortmap;
+        if (!dfgTools::GetOperatorPortMapping(otherOp, otherPortmap, err))
+          Application().LogMessage(L"dfgTools::GetOperatorPortMapping() failed, err = \"" + err + L"\"", siWarningMsg);
+        else
+        {
+          // go through the new op's port mapping and search for a match in the other port mapping.
+          for (int ni=0;ni<portmap.size();ni++)
+          {
+            // find a match for portmap[ni] in otherPortmap.
+            int oi = _portMapping::findMatching(portmap[ni], otherPortmap, false /* <- ignore the port data type for this search */);
+            if (oi < 0)  continue;
+            _portMapping &o = otherPortmap[oi];
+            _portMapping &n = portmap[ni];
+
+            // transfer whatever we can from o to n.
+            {
+              // do we have a connected XSI port?
+              if (o.mapType == DFG_PORT_MAPTYPE_XSI_PORT && !o.mapTarget.IsEmpty() && o.dfgPortDataType == n.dfgPortDataType)
+              {
+                // find the port group.
+                PortGroup portgroup;
+                CRefArray pgRef = newOp.GetPortGroups();
+                for (int i=0;i<pgRef.GetCount();i++)
+                {
+                  PortGroup pg(pgRef[i]);
+                  if (   pg.IsValid()
+                      && pg.GetName() == o.dfgPortName)
+                    {
+                      portgroup.SetObject(pgRef[i]);
+                      break;
+                    }
+                }
+                if (!portgroup.IsValid())
+                  Application().LogMessage(L"unable to find matching port group for \"" + o.dfgPortName + L"\"", siWarningMsg);
+                else
+                {
+                  // set target ref.
+                  CRef targetRef;
+                  if (targetRef.Set(o.mapTarget) != CStatus::OK)
+                    Application().LogMessage(L"failed to set target ref for \"" + o.mapTarget + L"\"", siWarningMsg);
+                  else
+                  {
+                    // connect.
+                    LONG instance;
+                    if (newOp.ConnectToGroup(portgroup.GetIndex(), targetRef, instance) != CStatus::OK)
+                      Application().LogMessage(L"failed to connect \"" + targetRef.GetAsText() + "\"", siWarningMsg);
+                  }
+                }
+              }
+
+              // do we have an input port that is exposed as a XSI parameter?
+              if (o.dfgPortType == DFG_PORT_TYPE_IN && o.mapType == DFG_PORT_MAPTYPE_XSI_PARAMETER)
+              {
+                Parameter otherParam = otherOp.GetParameter(o.dfgPortName);
+                Parameter newParam   = newOp  .GetParameter(n.dfgPortName);
+                if (otherParam.IsValid() && newParam.IsValid())
+                {
+                  // copy the value.
+                  newParam.PutValue(otherParam.GetValue());
+
+                  // is the port animated via a fcurve?
+                  if (otherParam.GetSource().GetClassIDName() == L"FCurve")
+                  {
+                    // we only transfer the fcurve if the data types match.
+                    if (o.dfgPortDataType == n.dfgPortDataType)
+                    {
+                      // get the fcurve from otherParam.
+                      FCurve otherFCurve(otherParam.GetSource());
+                      if (!otherFCurve.IsValid())
+                        Application().LogMessage(L"failed get FCurve from \"" + o.dfgPortName + L"\"", siWarningMsg);
+                      else
+                      {
+                        // add a fcurve to newParam.
+                        FCurve newFCurve;
+                        if (newParam.AddFCurve(otherFCurve.GetFCurveType(), newFCurve) != CStatus::OK)
+                          Application().LogMessage(L"failed to add FCurve to \"" + o.dfgPortName + L"\"", siWarningMsg);
+                        else
+                        {
+                          // copy otherFCurve into newFCurve.
+                          if (newFCurve.Set(otherFCurve) != CStatus::OK)
+                            Application().LogMessage(L"failed to set the FCurve for \"" + o.dfgPortName + L"\"", siWarningMsg);
+                        }
+                      }
+                    }
+                  }
+
+                  // is the port animated via an expression?
+                  else if (otherParam.GetSource().GetClassIDName() == L"Expression")
+                  {
+                    // get the expression from otherParam.
+                    Expression otherExpression(otherParam.GetSource());
+                    if (!otherExpression.IsValid())
+                      Application().LogMessage(L"failed get expression from \"" + o.dfgPortName + L"\"", siWarningMsg);
+                    else
+                    {
+                      // copy expression to newParam.
+
+                      /*
+                        For some reason this doesn't work, possibly a limitation or a bug in the XSI SDK.
+                        Note: also tried to use the command "AddExpr", but without success.
+                      */
+
+                      //Expression newExpression = newParam.AddExpression(otherExpression.GetParameter(L"definition").GetValue().GetAsText());
+                      //if (!newExpression.IsValid())
+                      //  Application().LogMessage(L"failed to set the expression for \"" + o.dfgPortName + L"\"", siWarningMsg);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 
   // display operator's property page?
   if (openPPG)
@@ -380,6 +515,7 @@ SICALLBACK dfgImportJSON_Execute(CRef &in_ctxt)
       args.Add(op.GetParent3DObject().GetFullName());
       args.Add(CString(json.c_str()));
       args.Add(true);
+      args.Add(op.GetFullName());
       if (Application().ExecuteCommand(L"dfgSoftimageOpApply", args, CValue()) == CStatus::OK)
       {
         // store return value in context, "true" meaning that the operator was recreated.
