@@ -632,6 +632,7 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
       oLayout.AddItem(L"alwaysevaluate",      L"Always Evaluate");
       oLayout.AddItem(L"debug",               L"Debug");
       oLayout.AddItem(L"Name",                L"Name");
+      oLayout.AddButton(L"BtnDebug", L" - ");
     }
   }
 }
@@ -1102,6 +1103,24 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
       args.Add(op.GetUniqueName());
       args.Add(L"console");
       Application().ExecuteCommand(L"dfgExportJSON", args, CValue());
+    }
+    else if (btnName == L"BtnDebug")
+    {
+      _opUserData *pud = _opUserData::GetUserData(op.GetObjectID());
+      if (pud)
+        if (pud->GetBaseInterface())
+        {
+          FabricCore::DFGExec graph = pud->GetBaseInterface()->getBinding().getExec();
+          if (graph.isValid())
+          {
+            static ULONG i = 0;
+            feLog(CString(L"BtnDebug #" + CString(i++)).GetAsciiString());
+
+            {
+              // put your code here to execute when pressing the " - " button in the tab "Advanced".
+            }
+          }
+        }
     }
   }
   else if (eventID == PPGEventContext::siTabChange)
