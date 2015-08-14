@@ -609,7 +609,7 @@ SICALLBACK dfgExportJSON_Execute(CRef &in_ctxt)
   { Application().LogMessage(L"no base interface found!", siErrorMsg);
     return CStatus::OK; }
 
-  // store the ports' exposure types and default values in the ports meta data.
+  // store the ports' exposure types and current values in the ports' meta data.
   {
     // get op's port mapping.
     CString pmap_err;
@@ -625,7 +625,10 @@ SICALLBACK dfgExportJSON_Execute(CRef &in_ctxt)
       for (int i=0;i<exec.getExecPortCount();i++)
       {
         // mapType.
-        exec.setExecPortMetadata(exec.getExecPortName(i), "XSI_mapType", hasValidPortMap ? CString((LONG)pmap[i].mapType).GetAsciiString() : NULL, false);
+        exec.setExecPortMetadata(exec.getExecPortName(i), "XSI_mapType",  hasValidPortMap ? CString((LONG)pmap[i].mapType).GetAsciiString() : NULL,   false);
+
+        // value.
+        exec.setExecPortMetadata(exec.getExecPortName(i), "XSI_value",    op.GetParameterValue(pmap[i].dfgPortName).GetAsText().GetAsciiString(),     false);
       }
     }
     catch (FabricCore::Exception e)
