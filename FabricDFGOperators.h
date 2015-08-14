@@ -76,6 +76,15 @@ struct _portMapping
         return i;
     return -1;
   }
+
+  // search for a port mapping in b that has dfgPortName == portName and returns the index in b or -1 if no match was found.
+  static int findByPortName(const XSI::CString &in_portName, const std::vector <_portMapping> &b)
+  {
+    for (int i=0;i<b.size();i++)
+      if (b[i].dfgPortName == in_portName)
+        return i;
+    return -1;
+  }
 };
 
 // _____________________________________

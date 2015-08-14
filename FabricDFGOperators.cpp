@@ -117,6 +117,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
   op.AddParameter(oPDef, emptyParam);
 
   // create grid parameter for the list of DFG ports.
+  // NOTE: this port MUST come JST BEFORE the exposed DFG parameters!
   op.AddParameter(oFactory.CreateGridParamDef("dfgPorts"), emptyParam);
 
   // create exposed DFG parameters.
@@ -167,6 +168,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
 
   // add internal string parameter with all the exposed DFG port names.
   // (this is used in the layout function).
+  // NOTE: this port MUST come RIGHT AFTER the exposed DFG parameters!
   oPDef = oFactory.CreateParamDef(L"exposedDFGParams", CValue::siString, siReadOnly + siPersistable, L"", L"", exposedDFGParams, "", "", "", "");
   op.AddParameter(oPDef, emptyParam);
 
@@ -276,6 +278,100 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
 
   // set the "sync" flag.
   bool outOfSync = false;
+  {
+    // get the current port mapping.
+    std::vector <_portMapping> portmap;
+    if (dfgTools::GetOperatorPortMapping(op, portmap, CString()))
+    {
+      // check if all the DFG input ports have a corresponding XSI parameter.
+      if (!outOfSync)
+      {
+        for (int i=0;i<portmap.size();i++)
+        {
+          // get ref and check if we can skip this port.
+          _portMapping &pmap = portmap[i];
+          if (pmap.dfgPortType != DFG_PORT_TYPE_IN)                continue;
+          if (pmap.mapType     != DFG_PORT_MAPTYPE_XSI_PARAMETER)  continue;
+
+          // does a XSI parameter for pmap exist?
+          Parameter xsiParam = op.GetParameter(pmap.dfgPortName);
+          if (!xsiParam.IsValid())
+          {
+            outOfSync = true;
+            break;
+          }
+
+          // check if pmap' data type doesn't match the XSI parameter's data type.
+          CValue::DataType  dt = xsiParam.GetValue().m_t;
+          {
+            if      (pmap.dfgPortDataType == L"Boolean")  outOfSync = (dt != CValue::siBool);
+
+            else if (pmap.dfgPortDataType == L"Scalar")   outOfSync = (dt != CValue::siFloat);
+            else if (pmap.dfgPortDataType == L"Float32")  outOfSync = (dt != CValue::siFloat);
+            else if (pmap.dfgPortDataType == L"Float64")  outOfSync = (dt != CValue::siDouble);
+
+            else if (pmap.dfgPortDataType == L"Integer")  outOfSync = (dt != CValue::siInt4);
+            else if (pmap.dfgPortDataType == L"SInt8")    outOfSync = (dt != CValue::siInt1);
+            else if (pmap.dfgPortDataType == L"SInt16")   outOfSync = (dt != CValue::siInt2);
+            else if (pmap.dfgPortDataType == L"SInt32")   outOfSync = (dt != CValue::siInt4);
+            else if (pmap.dfgPortDataType == L"SInt64")   outOfSync = (dt != CValue::siInt8);
+
+            else if (pmap.dfgPortDataType == L"Byte")     outOfSync = (dt != CValue::siUInt1);
+            else if (pmap.dfgPortDataType == L"UInt8")    outOfSync = (dt != CValue::siUInt1);
+            else if (pmap.dfgPortDataType == L"UInt16")   outOfSync = (dt != CValue::siUInt2);
+            else if (pmap.dfgPortDataType == L"Count")    outOfSync = (dt != CValue::siUInt4);
+            else if (pmap.dfgPortDataType == L"Index")    outOfSync = (dt != CValue::siUInt4);
+            else if (pmap.dfgPortDataType == L"Size")     outOfSync = (dt != CValue::siUInt4);
+            else if (pmap.dfgPortDataType == L"UInt32")   outOfSync = (dt != CValue::siUInt4);
+            else if (pmap.dfgPortDataType == L"DataSize") outOfSync = (dt != CValue::siUInt8);
+            else if (pmap.dfgPortDataType == L"UInt64")   outOfSync = (dt != CValue::siUInt8);
+
+            else if (pmap.dfgPortDataType == L"String")   outOfSync = (dt != CValue::siString);
+
+            if (outOfSync)
+              break;
+          }
+        }
+      }
+
+      // check if all the XSI parameters have a corresponding DFG input port.
+      if (!outOfSync)
+      {
+        bool startChecking = false;
+        CParameterRefArray pRef = op.GetParameters();
+        for (LONG i=0;i<pRef.GetCount();i++)
+        {
+          // ref at parameter.
+          Parameter p(pRef[i]);
+
+          // get parameter name.
+          CString pName = p.GetName();
+
+          // take care of startChecking flag.
+          if (!startChecking)
+          {
+            startChecking = (pName == L"dfgPorts");
+            continue;
+          }
+          else
+          {
+            if (pName == L"exposedDFGParams")
+              break;
+          }
+
+          // no matching DFG port?
+          int idx = _portMapping::findByPortName(pName, portmap);
+          if (   idx < 0
+              || portmap[idx].dfgPortType != DFG_PORT_TYPE_IN
+              || portmap[idx].mapType     != DFG_PORT_MAPTYPE_XSI_PARAMETER)
+          {
+            outOfSync = true;
+            break;
+          }
+        }
+      }
+    }
+  }
 
   // Tab "Main"
   {
@@ -291,6 +387,30 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
         oLayout.EndRow();
       oLayout.EndGroup();
       oLayout.AddSpacer(0, 12);
+
+      if (outOfSync)
+      {
+        oLayout.AddGroup(L"", false);
+          oLayout.AddRow();
+            oLayout.AddGroup(L"", false);
+              oLayout.AddRow();
+                pi = oLayout.AddButton(L"BtnRecreateOpInfo", L" ? ");
+                pi.PutAttribute(siUICX, 20);
+                pi.PutAttribute(siUICY, btnTy);
+                pi = oLayout.AddButton(L"BtnRecreateOp", L"Sync Op");
+                pi.PutAttribute(siUICX, btnTx - 32);
+                pi.PutAttribute(siUICY, btnTy);
+                pi = oLayout.AddItem(L"myBitmapWidget", L"myBitmapWidget", siControlBitmap);
+                pi.PutAttribute(siUINoLabel, true);
+                pi.PutAttribute(siUIFilePath, xsiGetWorkgroupPath() + CUtils::Slash() + L"Application" + CUtils::Slash() + L"UI" + CUtils::Slash() + "FE_exclamation.bmp");
+              oLayout.EndRow();
+            oLayout.EndGroup();
+            oLayout.AddGroup(L"", false);
+            oLayout.EndGroup();
+          oLayout.EndRow();
+        oLayout.EndGroup();
+        oLayout.AddSpacer(0, 12);
+      }
 
       oLayout.AddGroup(L"Parameters");
         bool hasParams = (exposedDFGParams.GetCount() > 0);
@@ -365,9 +485,12 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
                 pi = oLayout.AddButton(L"BtnRecreateOp", L"Sync Op");
                 pi.PutAttribute(siUICX, btnTx - 32);
                 pi.PutAttribute(siUICY, btnTy);
-                pi = oLayout.AddItem(L"myBitmapWidget", L"myBitmapWidget", siControlBitmap);
-                pi.PutAttribute(siUINoLabel, true);
-                pi.PutAttribute(siUIFilePath, xsiGetWorkgroupPath() + CUtils::Slash() + L"Application" + CUtils::Slash() + L"UI" + CUtils::Slash() + "FE_exclamation.bmp");
+                if (outOfSync)
+                {
+                  pi = oLayout.AddItem(L"myBitmapWidget", L"myBitmapWidget", siControlBitmap);
+                  pi.PutAttribute(siUINoLabel, true);
+                  pi.PutAttribute(siUIFilePath, xsiGetWorkgroupPath() + CUtils::Slash() + L"Application" + CUtils::Slash() + L"UI" + CUtils::Slash() + "FE_exclamation.bmp");
+                }
               oLayout.EndRow();
             oLayout.EndGroup();
             oLayout.AddGroup(L"", false);
