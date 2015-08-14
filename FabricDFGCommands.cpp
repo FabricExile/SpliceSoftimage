@@ -469,6 +469,8 @@ SICALLBACK dfgImportJSON_Execute(CRef &in_ctxt)
     portmap_new.resize(exec.getExecPortCount());
     for (int i=0;i<exec.getExecPortCount();i++)
     {
+      const char *data = NULL;
+
       // init port mapping.
       portmap_new[i].clear();
 
@@ -479,8 +481,12 @@ SICALLBACK dfgImportJSON_Execute(CRef &in_ctxt)
       portmap_new[i].dfgPortDataType = exec.getExecPortResolvedType(i);
 
       // get mapType.
-      const char *data = exec.getExecPortMetadata(exec.getExecPortName(i), "XSI_mapType");
+      data = exec.getExecPortMetadata(exec.getExecPortName(i), "XSI_mapType");
       if (data) portmap_new[i].mapType = (DFG_PORT_MAPTYPE)atoi(data);
+
+      // get xsi default value.
+      data = exec.getExecPortMetadata(exec.getExecPortName(i), "XSI_defaultValue");
+      if (data) portmap_new[i].xsiDefaultValue = CValue(data);
     }
   }
   catch (FabricCore::Exception e)
@@ -502,8 +508,8 @@ SICALLBACK dfgImportJSON_Execute(CRef &in_ctxt)
       {
         if (a[ia].mapType == DFG_PORT_MAPTYPE_INTERNAL)
           continue;
-        if (   pass <= 1 && a[ia].dfgPortType == DFG_PORT_TYPE_IN
-            || pass >= 2 && a[ia].dfgPortType == DFG_PORT_TYPE_OUT)
+        if (   (pass <= 1 && a[ia].dfgPortType == DFG_PORT_TYPE_IN )
+            || (pass >= 2 && a[ia].dfgPortType == DFG_PORT_TYPE_OUT) )
         {
           bool foundMatch = false;
           while (!foundMatch && ib < b.size())
@@ -625,10 +631,10 @@ SICALLBACK dfgExportJSON_Execute(CRef &in_ctxt)
       for (int i=0;i<exec.getExecPortCount();i++)
       {
         // mapType.
-        exec.setExecPortMetadata(exec.getExecPortName(i), "XSI_mapType",  hasValidPortMap ? CString((LONG)pmap[i].mapType).GetAsciiString() : NULL,   false);
+        exec.setExecPortMetadata(exec.getExecPortName(i), "XSI_mapType",      hasValidPortMap ? CString((LONG)pmap[i].mapType).GetAsciiString()       : NULL, false);
 
         // value.
-        exec.setExecPortMetadata(exec.getExecPortName(i), "XSI_value",    op.GetParameterValue(pmap[i].dfgPortName).GetAsText().GetAsciiString(),     false);
+        exec.setExecPortMetadata(exec.getExecPortName(i), "XSI_defaultValue", hasValidPortMap ? pmap[i].xsiDefaultValue.GetAsText().GetAsciiString()  : NULL, false);
       }
     }
     catch (FabricCore::Exception e)

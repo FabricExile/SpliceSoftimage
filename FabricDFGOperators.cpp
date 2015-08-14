@@ -182,36 +182,50 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
         continue;
 
       CValue::DataType dt = CValue::siIUnknown;
-      if      (pmap.dfgPortDataType == L"Boolean")  dt = CValue::siBool;
+      bool isBool    = false;
+      bool isInteger = false;
+      bool isScalar  = false;
+      bool isString  = false;
+      if      (pmap.dfgPortDataType == L"Boolean")  { dt = CValue::siBool;    isBool    = true;  }
 
-      else if (pmap.dfgPortDataType == L"Scalar")   dt = CValue::siFloat;
-      else if (pmap.dfgPortDataType == L"Float32")  dt = CValue::siFloat;
-      else if (pmap.dfgPortDataType == L"Float64")  dt = CValue::siDouble;
+      else if (pmap.dfgPortDataType == L"Scalar")   { dt = CValue::siFloat;   isScalar  = true;  }
+      else if (pmap.dfgPortDataType == L"Float32")  { dt = CValue::siFloat;   isScalar  = true;  }
+      else if (pmap.dfgPortDataType == L"Float64")  { dt = CValue::siDouble;  isScalar  = true;  }
 
-      else if (pmap.dfgPortDataType == L"Integer")  dt = CValue::siInt4;
-      else if (pmap.dfgPortDataType == L"SInt8")    dt = CValue::siInt1;
-      else if (pmap.dfgPortDataType == L"SInt16")   dt = CValue::siInt2;
-      else if (pmap.dfgPortDataType == L"SInt32")   dt = CValue::siInt4;
-      else if (pmap.dfgPortDataType == L"SInt64")   dt = CValue::siInt8;
+      else if (pmap.dfgPortDataType == L"Integer")  { dt = CValue::siInt4;    isInteger = true;  }
+      else if (pmap.dfgPortDataType == L"SInt8")    { dt = CValue::siInt1;    isInteger = true;  }
+      else if (pmap.dfgPortDataType == L"SInt16")   { dt = CValue::siInt2;    isInteger = true;  }
+      else if (pmap.dfgPortDataType == L"SInt32")   { dt = CValue::siInt4;    isInteger = true;  }
+      else if (pmap.dfgPortDataType == L"SInt64")   { dt = CValue::siInt8;    isInteger = true;  }
 
-      else if (pmap.dfgPortDataType == L"Byte")     dt = CValue::siUInt1;
-      else if (pmap.dfgPortDataType == L"UInt8")    dt = CValue::siUInt1;
-      else if (pmap.dfgPortDataType == L"UInt16")   dt = CValue::siUInt2;
-      else if (pmap.dfgPortDataType == L"Count")    dt = CValue::siUInt4;
-      else if (pmap.dfgPortDataType == L"Index")    dt = CValue::siUInt4;
-      else if (pmap.dfgPortDataType == L"Size")     dt = CValue::siUInt4;
-      else if (pmap.dfgPortDataType == L"UInt32")   dt = CValue::siUInt4;
-      else if (pmap.dfgPortDataType == L"DataSize") dt = CValue::siUInt8;
-      else if (pmap.dfgPortDataType == L"UInt64")   dt = CValue::siUInt8;
+      else if (pmap.dfgPortDataType == L"Byte")     { dt = CValue::siUInt1;   isInteger = true;  }
+      else if (pmap.dfgPortDataType == L"UInt8")    { dt = CValue::siUInt1;   isInteger = true;  }
+      else if (pmap.dfgPortDataType == L"UInt16")   { dt = CValue::siUInt2;   isInteger = true;  }
+      else if (pmap.dfgPortDataType == L"Count")    { dt = CValue::siUInt4;   isInteger = true;  }
+      else if (pmap.dfgPortDataType == L"Index")    { dt = CValue::siUInt4;   isInteger = true;  }
+      else if (pmap.dfgPortDataType == L"Size")     { dt = CValue::siUInt4;   isInteger = true;  }
+      else if (pmap.dfgPortDataType == L"UInt32")   { dt = CValue::siUInt4;   isInteger = true;  }
+      else if (pmap.dfgPortDataType == L"DataSize") { dt = CValue::siUInt8;   isInteger = true;  }
+      else if (pmap.dfgPortDataType == L"UInt64")   { dt = CValue::siUInt8;   isInteger = true;  }
 
-      else if (pmap.dfgPortDataType == L"String")   dt = CValue::siString;
+      else if (pmap.dfgPortDataType == L"String")   { dt = CValue::siString;  isString  = true;  }
 
       if (dt == CValue::siIUnknown)
       { Application().LogMessage(L"The DFG port \"" + pmap.dfgPortName + "\" cannot be exposed as a XSI Parameter (data type \"" + pmap.dfgPortDataType + "\" not yet supported)" , siWarningMsg);
         continue; }
 
+      // build the parameter's default value.
+      // (note: we do this semi-manually because CValue doesn't properly convert strings into floats)
+      CValue dv;
+      if      (isBool)    dv = (bool)      (pmap.xsiDefaultValue.GetAsText() == L"true");
+      else if (isScalar)  dv = (double)atof(pmap.xsiDefaultValue.GetAsText().GetAsciiString());
+      else if (isInteger) dv = (LLONG) atol(pmap.xsiDefaultValue.GetAsText().GetAsciiString());
+      else if (isString)  dv =              pmap.xsiDefaultValue.GetAsText();
+      dv.ChangeType(dt);
+
+      // create the parameter definition and add the parameter to the operator.
       Application().LogMessage(L"adding parameter \"" + pmap.dfgPortName + "\"" , siInfoMsg);
-      oPDef = oFactory.CreateParamDef(pmap.dfgPortName, dt, siPersistable | siAnimatable | siKeyable, L"", L"", CValue(), CValue(), CValue(), 0, 1);
+      oPDef = oFactory.CreateParamDef(pmap.dfgPortName, dt, siPersistable | siAnimatable | siKeyable, L"", L"", dv, CValue(), CValue(), 0, 1);
       op.AddParameter(oPDef, emptyParam);
       exposedDFGParams += pmap.dfgPortName + L";";
     }

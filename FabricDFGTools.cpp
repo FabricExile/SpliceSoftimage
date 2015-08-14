@@ -179,7 +179,9 @@ bool dfgTools::GetOperatorPortMapping(XSI::CRef &in_op, std::vector<_portMapping
         Parameter p = op.GetParameter(pmap.dfgPortName);
         if (p.IsValid())
         {
-          pmap.mapType = DFG_PORT_MAPTYPE_XSI_PARAMETER;
+          // found one.
+          pmap.mapType         = DFG_PORT_MAPTYPE_XSI_PARAMETER;
+          pmap.xsiDefaultValue = p.GetValue();
         }
 
         // check if the operator has a XSI input port group with the same name as the port.
