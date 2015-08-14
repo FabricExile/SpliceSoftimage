@@ -60,11 +60,12 @@ SICALLBACK dfgSoftimageOpApply_Init(CRef &in_ctxt)
 SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
 {
   // ref at global _opUserData::s_portmap_newOp.
-  std::vector <_portMapping> &portmap = _opUserData::s_portmap_newOp;
+  std::vector <_portMapping> &portmap = _opUserData::s_newOp_portmap;
 
   // init.
   Context ctxt(in_ctxt);
   ctxt.PutAttribute(L"ReturnValue", CRef()); // init return value.
+  _opUserData::s_newOp_expressions.clear();
   CValueArray args = ctxt.GetAttribute(L"Arguments");
   if (args.GetCount() < 5 || CString(args[0]).IsEmpty())
   { Application().LogMessage(L"apply dfgSoftimageOp operator failed: empty or missing argument(s)", siErrorMsg);
@@ -135,6 +136,7 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
     CRef pgReservedRef = newOp.AddPortGroup(L"reservedGroup", 1, 1);
     if (!pgReservedRef.IsValid())
     { Application().LogMessage(L"failed to create reserved port group.", siErrorMsg);
+      portmap.clear();
       return CStatus::OK; }
 
     // create the default output port "reservedMatrixOut" and connect the object's global kinematics to it.
@@ -326,16 +328,21 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
                       Application().LogMessage(L"failed get expression from \"" + o.dfgPortName + L"\"", siWarningMsg);
                     else
                     {
-                      // copy expression to newParam.
-
                       /*
-                        For some reason this doesn't work, possibly a limitation or a bug in the XSI SDK.
-                        Note: also tried to use the command "AddExpr", but without success.
+                        Expression newExpression = newParam.AddExpression(otherExpression.GetParameter(L"definition").GetValue().GetAsText());
+                        if (!newExpression.IsValid())
+                          Application().LogMessage(L"failed to set the expression for \"" + o.dfgPortName + L"\"", siWarningMsg);
+
+                        For some reason the above code doesn't work, possibly a limitation or a bug in the XSI SDK.
+                        Also tried to use the command "AddExpr" here, but without success.
+
+                        Therefore the workaround consists of storing the parameter name and expression into _opUserData::s_newOp_expressions
+                        and then to add the expressions manually later on.
                       */
 
-                      //Expression newExpression = newParam.AddExpression(otherExpression.GetParameter(L"definition").GetValue().GetAsText());
-                      //if (!newExpression.IsValid())
-                      //  Application().LogMessage(L"failed to set the expression for \"" + o.dfgPortName + L"\"", siWarningMsg);
+                      // add newParam's name and expression to _opUserData::s_newOp_expressions.
+                      _opUserData::s_newOp_expressions.push_back(newParam.GetName().GetAsciiString());
+                      _opUserData::s_newOp_expressions.push_back(otherExpression.GetParameter(L"definition").GetValue().GetAsText().GetAsciiString());
                     }
                   }
                 }
@@ -514,7 +521,7 @@ SICALLBACK dfgImportJSON_Execute(CRef &in_ctxt)
     if (recreateOp)
     {
       // create a new operator based on the imported JSON file and portmap_new.
-      _opUserData::s_portmap_newOp = portmap_new;
+      _opUserData::s_newOp_portmap = portmap_new;
       CValueArray args;
       args.Add(op.GetParent3DObject().GetFullName());
       args.Add(CString(json.c_str()));

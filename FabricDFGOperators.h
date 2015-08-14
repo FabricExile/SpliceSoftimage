@@ -104,7 +104,13 @@ struct _opUserData
   // note: we need to make this a global thing, because we cannot access
   //       things such as the user data and the operator in the
   //       dfgSoftimageOp_Define() function.
-  static std::vector<_portMapping> s_portmap_newOp;
+  static std::vector<_portMapping> s_newOp_portmap;
+
+  // this is used by the command dfgSoftimageOpApply to store
+  // the expressions of parameters.
+  // note: this is a workaround to transfer expressions when
+  //       recreating an operator.
+  static std::vector<std::string> s_newOp_expressions;
 
   // constructor.
   _opUserData(unsigned int operatorObjectID)

@@ -35,6 +35,7 @@
 #include <xsi_value.h>
 #include <xsi_matrix4f.h>
 #include <xsi_primitive.h>
+#include <xsi_expression.h>
 #include <xsi_iceattribute.h>
 #include <xsi_iceattributedataarray.h>
 #include <xsi_iceattributedataarray2D.h>
@@ -46,11 +47,61 @@
 #include "FabricDFGWidget.h"
 
 std::map <unsigned int, _opUserData *>  _opUserData::s_instances;
-std::vector<_portMapping>               _opUserData::s_portmap_newOp;
+std::vector<_portMapping>               _opUserData::s_newOp_portmap;
+std::vector<std::string>                _opUserData::s_newOp_expressions;
 
 using namespace XSI;
 
 CString xsiGetWorkgroupPath();
+
+CRef recreateOperator(CustomOperator op, CString &dfgJSON)
+{
+  CValue newOpRef;
+
+  CValueArray args;
+  args.Add(op.GetParent3DObject().GetFullName());
+  args.Add(dfgJSON);
+  args.Add(true);
+  args.Add(op.GetFullName());
+  Application().ExecuteCommand(L"dfgSoftimageOpApply", args, newOpRef);
+  if (CRef(newOpRef).IsValid())
+  {
+    // delete the old operator.
+    args.Clear();
+    args.Add(op.GetFullName());
+    Application().ExecuteCommand(L"DeleteObj", args, CValue());
+
+    // transfer expressions, if any, from old operator to new one.
+    if ((_opUserData::s_newOp_expressions.size() & 0x0001) == 0)
+    {
+      bool useSDKinsteadOfCommands = true;
+      for (LONG i=0;i<_opUserData::s_newOp_expressions.size();i+=2)
+      {
+        if (useSDKinsteadOfCommands)
+        {
+          CustomOperator op(newOpRef);
+          if (op.IsValid())
+          {
+            CString pName(_opUserData::s_newOp_expressions[i + 0].c_str());
+            Parameter p = op.GetParameter(pName);
+            if (!p.IsValid() || !p.AddExpression(CString(_opUserData::s_newOp_expressions[i + 1].c_str())).IsValid())
+              Application().LogMessage(L"failed to add expression for parameter \"" + pName + L"\"", siWarningMsg);
+          }
+        }
+        else
+        {
+          args.Clear();
+          args.Add(CustomOperator(newOpRef).GetUniqueName() + L"." + CString(_opUserData::s_newOp_expressions[i + 0].c_str()));
+          args.Add(CString(_opUserData::s_newOp_expressions[i + 1].c_str()));
+          args.Add(true);
+          Application().ExecuteCommand(L"AddExpr", args, CValue());
+        }
+      }
+    }
+  }
+
+  return newOpRef;
+}
 
 XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Init(CRef &in_ctxt)
 {
@@ -104,7 +155,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
   Parameter emptyParam;
 
   // ref at global _opUserData::s_portmap_newOp.
-  std::vector <_portMapping> &portmap = _opUserData::s_portmap_newOp;
+  std::vector <_portMapping> &portmap = _opUserData::s_newOp_portmap;
 
   // create default parameter(s).
   oPDef = oFactory.CreateParamDef(L"FabricActive",        CValue::siBool,   siPersistable | siAnimatable | siKeyable, L"", L"", true, CValue(), CValue(), CValue(), CValue());
@@ -587,7 +638,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
   UIToolkit toolkit = Application().GetUIToolkit();
 
   // ref at global _opUserData::s_portmap_newOp.
-  std::vector <_portMapping> &portmap = _opUserData::s_portmap_newOp;
+  std::vector <_portMapping> &portmap = _opUserData::s_newOp_portmap;
 
   // process event.
   if (eventID == PPGEventContext::siOnInit)
@@ -669,18 +720,8 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
           }
         }
 
-        // create a new operator.
-        CValueArray args;
-        args.Add(op.GetParent3DObject().GetFullName());
-        args.Add(dfgJSON);
-        args.Add(true);
-        args.Add(op.GetFullName());
-        Application().ExecuteCommand(L"dfgSoftimageOpApply", args, CValue());
-
-        // delete the old operator.
-        args.Clear();
-        args.Add(op.GetFullName());
-        Application().ExecuteCommand(L"DeleteObj", args, CValue());
+        // re-create operator.
+        recreateOperator(op, dfgJSON);
       }
     }
     else if (btnName == L"BtnRecreateOp")
@@ -709,19 +750,8 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
         }
       }
 
-      // create a new operator.
-      CValueArray args;
-      args.Add(op.GetParent3DObject().GetFullName());
-      args.Add(dfgJSON);
-      args.Add(true);
-      args.Add(op.GetFullName());
-      CValue newOpRef;
-      Application().ExecuteCommand(L"dfgSoftimageOpApply", args, newOpRef);
-
-      // delete the old operator.
-      args.Clear();
-      args.Add(op.GetFullName());
-      Application().ExecuteCommand(L"DeleteObj", args, CValue());
+      // re-create operator.
+      recreateOperator(op, dfgJSON);
     }
     else if (btnName == L"BtnRecreateOpInfo")
     {
