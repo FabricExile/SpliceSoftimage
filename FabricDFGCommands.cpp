@@ -45,7 +45,7 @@ SICALLBACK dfgSoftimageOpApply_Init(CRef &in_ctxt)
   oCmd = ctxt.GetSource();
   oCmd.PutDescription(L"applies a dfgSoftimageOp operator.");
   oCmd.SetFlag(siNoLogging, false);
-  oCmd.EnableReturnValue(false) ;
+  oCmd.EnableReturnValue(true);     // L"ReturnValue" will contain the CRef of the new operator.
 
   ArgumentArray oArgs = oCmd.GetArguments();
   oArgs.Add(L"ObjectName",     CString());    // 
@@ -64,6 +64,7 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
 
   // init.
   Context ctxt(in_ctxt);
+  ctxt.PutAttribute(L"ReturnValue", CRef()); // init return value.
   CValueArray args = ctxt.GetAttribute(L"Arguments");
   if (args.GetCount() < 5 || CString(args[0]).IsEmpty())
   { Application().LogMessage(L"apply dfgSoftimageOp operator failed: empty or missing argument(s)", siErrorMsg);
@@ -104,6 +105,9 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
   // create the dfgSoftimageOp operator
   CString opName = L"dfgSoftimageOp";
   CustomOperator newOp = Application().GetFactory().CreateObject(opName);
+
+  // store operator's CRef in result.
+  ctxt.PutAttribute(L"ReturnValue", newOp.GetRef());
 
   // set from JSON.
   if (!dfgJSON.IsEmpty())

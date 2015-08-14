@@ -715,7 +715,8 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
       args.Add(dfgJSON);
       args.Add(true);
       args.Add(op.GetFullName());
-      Application().ExecuteCommand(L"dfgSoftimageOpApply", args, CValue());
+      CValue newOpRef;
+      Application().ExecuteCommand(L"dfgSoftimageOpApply", args, newOpRef);
 
       // delete the old operator.
       args.Clear();
