@@ -181,6 +181,7 @@ if FABRIC_BUILD_OS == 'Windows':
         env.Glob(os.path.join(qtDir.abspath, 'lib', 'QtGui*.dll')),
         env.Glob(os.path.join(qtDir.abspath, 'lib', 'QtOpenGL*.dll')),
         os.path.join(FABRIC_DIR, 'bin', 'tbb.dll'),
+        os.path.join(FABRIC_DIR, 'bin', 'tbbmalloc.dll'),
       ]
       )
     )
