@@ -43,7 +43,8 @@ class FabricDFGWidget : public DFG::DFGCombinedWidget
 
   static void log(void *userData, const char *message, unsigned int length)
   {
-    feLog(userData, message, length);
+    std::string mess = std::string("[CANVAS] ") + (message ? message : "");
+    feLog(userData, mess.c_str(), mess.length());
   }
 
   bool eventFilter(QObject *watched, QEvent *event)

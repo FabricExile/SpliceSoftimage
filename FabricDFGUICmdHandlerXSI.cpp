@@ -296,51 +296,60 @@ static inline CStatus DecodeNames(
   return CStatus::OK;
 }
 
-static inline CStatus DFGUICmd_Finish(
-  Context &ctxt,
-  FabricUI::DFG::DFGUICmd *cmd
-  )
+static inline CStatus DFGUICmd_Finish(Context &ctxt, FabricUI::DFG::DFGUICmd *cmd)
 {
   // store or delete the DFG command, depending on XSI's current undo preferences.
   if ((bool)ctxt.GetAttribute(L"UndoRequired") == true)
+  {
+    if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] Finish, store cmd in UndoRedoData", siCommentMsg);
     ctxt.PutAttribute(L"UndoRedoData", (CValue::siPtrType)cmd);
-  else
+  }
+  else if (cmd)
+  {
+    if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] Finish, delete cmd", siCommentMsg);
     delete cmd;
+  }
 
   // done.
   return CStatus::OK;
 }
 
-static inline CStatus DFGUICmd_Undo( CRef &in_ctxt )
+static inline CStatus DFGUICmd_Undo(CRef &in_ctxt)
 {
-  Context ctxt( in_ctxt );
-  if ( DFGUICmdHandlerLOG )
-    Application().LogMessage(L"[DFGUICmd] Undo", siCommentMsg);
-  FabricUI::DFG::DFGUICmd *cmd =
-    (FabricUI::DFG::DFGUICmd *)(CValue::siPtrType)ctxt.GetAttribute(L"UndoRedoData");
-  if (cmd)  cmd->undo();
+  Context ctxt(in_ctxt);
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] Undo", siCommentMsg);
+  FabricUI::DFG::DFGUICmd *cmd = (FabricUI::DFG::DFGUICmd *)(CValue::siPtrType)ctxt.GetAttribute(L"UndoRedoData");
+  if (cmd)
+  {
+    if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] cmd->undo() \"" + CString(cmd->getDesc().c_str()) + L"\"", siCommentMsg);
+    cmd->undo();
+  }
   return CStatus::OK;
 }
 
-static inline CStatus DFGUICmd_Redo( CRef &in_ctxt )
+static inline CStatus DFGUICmd_Redo(CRef &in_ctxt)
 {
-  Context ctxt( in_ctxt );
-  if ( DFGUICmdHandlerLOG )
-    Application().LogMessage(L"[DFGUICmd] Redo", siCommentMsg);
-  FabricUI::DFG::DFGUICmd *cmd =
-    (FabricUI::DFG::DFGUICmd *)(CValue::siPtrType)ctxt.GetAttribute(L"UndoRedoData");
-  if (cmd)  cmd->redo();
+  Context ctxt(in_ctxt);
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] Redo", siCommentMsg);
+  FabricUI::DFG::DFGUICmd *cmd = (FabricUI::DFG::DFGUICmd *)(CValue::siPtrType)ctxt.GetAttribute(L"UndoRedoData");
+  if (cmd)
+  {
+    if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] cmd->redo() \"" + CString(cmd->getDesc().c_str()) + L"\"", siCommentMsg);
+    cmd->redo();
+  }
   return CStatus::OK;
 }
 
 static inline CStatus DFGUICmd_TermUndoRedo(CRef &in_ctxt)
 {
-  Context ctxt( in_ctxt );
-  if ( DFGUICmdHandlerLOG )
-    Application().LogMessage(L"[DFGUICmd] TermUndoRedo", siCommentMsg);
-  FabricUI::DFG::DFGUICmd *cmd =
-    (FabricUI::DFG::DFGUICmd *)(CValue::siPtrType)ctxt.GetAttribute(L"UndoRedoData");
-  if (cmd)  delete cmd;
+  Context ctxt(in_ctxt);
+  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] TermUndoRedo", siCommentMsg);
+  FabricUI::DFG::DFGUICmd *cmd = (FabricUI::DFG::DFGUICmd *)(CValue::siPtrType)ctxt.GetAttribute(L"UndoRedoData");
+  if (cmd)
+  {
+    if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] delete cmd", siCommentMsg);
+    delete cmd;
+  }
   return CStatus::OK;
 }
 
@@ -410,15 +419,7 @@ SICALLBACK dfgRemoveNodes_Execute(CRef &in_ctxt)
     feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
   }
 
-  // return DFGUICmd_Finish(ctxt, cmd);
-  // store or delete the DFG command, depending on XSI's current undo preferences.
-  if ((bool)ctxt.GetAttribute(L"UndoRequired") == true)
-    ctxt.PutAttribute(L"UndoRedoData", (CValue::siPtrType)cmd);
-  else
-    delete cmd;
-
-  // done.
-  return CStatus::OK;
+  return DFGUICmd_Finish(ctxt, cmd);
 }
 
 SICALLBACK dfgRemoveNodes_Undo(CRef &ctxt)
@@ -468,8 +469,8 @@ SICALLBACK dfgConnect_Init(CRef &in_ctxt)
   ArgumentArray oArgs = oCmd.GetArguments();
   oArgs.Add(L"binding",     CString());
   oArgs.Add(L"execPath",    CString());
-  oArgs.Add(L"srcPortPath",  CString());
-  oArgs.Add(L"dstPortPath",   CString());
+  oArgs.Add(L"srcPortPath", CString());
+  oArgs.Add(L"dstPortPath", CString());
 
   return CStatus::OK;
 }
@@ -2076,7 +2077,7 @@ SICALLBACK dfgExplodeNode_Execute(CRef &in_ctxt)
     explodedNodeNamesString += *it;
   }
 
-  CString returnValue( explodedNodeNamesString.c_str() );
+  CString returnValue(explodedNodeNamesString.c_str());
   if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] storing return value", siCommentMsg);
   ctxt.PutAttribute(L"ReturnValue", returnValue);
 
@@ -2744,7 +2745,7 @@ SICALLBACK dfgPaste_Execute(CRef &in_ctxt)
     pastedNodeNamesString += *it;
   }
 
-  CString returnValue( pastedNodeNamesString.c_str() );
+  CString returnValue(pastedNodeNamesString.c_str());
   if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] storing return value", siCommentMsg);
   ctxt.PutAttribute(L"ReturnValue", returnValue);
 

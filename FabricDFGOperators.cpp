@@ -314,6 +314,10 @@ int dfgSoftimageOp_UpdateGridData_dfgPorts(CustomOperator &op)
 
 void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
 {
+  // debug log.
+  if (false)
+    Application().LogMessage(L"dfgSoftimageOp_DefineLayout() called");
+
   // init.
   oLayout.Clear();
   oLayout.PutAttribute(siUIDictionary, L"None");
@@ -675,7 +679,6 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
       dfgTools::GetOperatorPortMapping(op, portmap_old, CString());
 
       // open canvas.
-      // (note: do not use the command dfgOpenCanvas or else the undi/redo won't work)
       CString title = L"Canvas - " + op.GetParent3DObject().GetName();
       if (OpenCanvas(_opUserData::GetUserData(op.GetObjectID()), title.GetAsciiString()) == OPENCANVAS_RETURN_VALS::SUCCESS)
       {
