@@ -675,30 +675,31 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
       dfgTools::GetOperatorPortMapping(op, portmap_old, CString());
 
       // open canvas.
-      CValueArray args;
-      args.Add(op.GetFullName());
-      Application().ExecuteCommand(L"dfgOpenCanvas", args, CValue());
-
-      // get the current port mapping.
-      std::vector <_portMapping> portmap_new;
-      dfgTools::GetOperatorPortMapping(op, portmap_new, CString());
-
-      // refresh, if necessary, the PPG.
-      bool refresh = (portmap_old.size() != portmap_new.size());
-      if (!refresh)
+      // (note: do not use the command dfgOpenCanvas or else the undi/redo won't work)
+      CString title = L"Canvas - " + op.GetParent3DObject().GetName();
+      if (OpenCanvas(_opUserData::GetUserData(op.GetObjectID()), title.GetAsciiString()) == OPENCANVAS_RETURN_VALS::SUCCESS)
       {
-        for (int i=0;i<portmap_old.size();i++)
-          if (_portMapping::areMatching(portmap_old[i], portmap_new[i]))
-          {
-            refresh = true;
-            break;
-          }
-      }
-      if (refresh)
-      {
-        PPGLayout oLayout = op.GetPPGLayout();
-        dfgSoftimageOp_DefineLayout(oLayout, op);
-        ctxt.PutAttribute(L"Refresh", true);
+        // get the current port mapping.
+        std::vector <_portMapping> portmap_new;
+        dfgTools::GetOperatorPortMapping(op, portmap_new, CString());
+
+        // refresh, if necessary, the PPG.
+        bool refresh = (portmap_old.size() != portmap_new.size());
+        if (!refresh)
+        {
+          for (int i=0;i<portmap_old.size();i++)
+            if (_portMapping::areMatching(portmap_old[i], portmap_new[i]))
+            {
+              refresh = true;
+              break;
+            }
+        }
+        if (refresh)
+        {
+          PPGLayout oLayout = op.GetPPGLayout();
+          dfgSoftimageOp_DefineLayout(oLayout, op);
+          ctxt.PutAttribute(L"Refresh", true);
+        }
       }
     }
     else if (btnName == L"BtnPortsDefineTT")
