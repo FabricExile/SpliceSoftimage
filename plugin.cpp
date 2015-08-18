@@ -221,7 +221,6 @@ CStatus helpFnct_siEventOpenSave(CRef &ctxt, int openSave)
       try
       {
         CString dfgJSON = pud->GetBaseInterface()->getJSON().c_str();
-
         if (op.PutParameterValue(L"persistenceData", dfgJSON) != CStatus::OK)
         { Application().LogMessage(L"op.PutParameterValue(L\"persistenceData\") failed!", siWarningMsg);
           continue; }
