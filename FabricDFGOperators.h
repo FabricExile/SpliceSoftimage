@@ -9,6 +9,8 @@
 #include <algorithm>
 #include <math.h>
 
+#define opLOG  false  // log some info for debugging.
+
 // constants (port mapping).
 typedef enum DFG_PORT_TYPE
 {

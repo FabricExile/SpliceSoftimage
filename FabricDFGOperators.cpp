@@ -315,8 +315,7 @@ int dfgSoftimageOp_UpdateGridData_dfgPorts(CustomOperator &op)
 void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
 {
   // debug log.
-  if (false)
-    Application().LogMessage(L"dfgSoftimageOp_DefineLayout() called");
+  if (opLOG)  Application().LogMessage(L"dfgSoftimageOp_DefineLayout() called");
 
   // init.
   oLayout.Clear();
@@ -682,23 +681,17 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
       CString title = L"Canvas - " + op.GetParent3DObject().GetName();
       if (OpenCanvas(_opUserData::GetUserData(op.GetObjectID()), title.GetAsciiString()) == OPENCANVAS_RETURN_VALS::SUCCESS)
       {
-        // get the current port mapping.
+        // get the new port mapping.
         std::vector <_portMapping> portmap_new;
         dfgTools::GetOperatorPortMapping(op, portmap_new, CString());
 
         // refresh, if necessary, the PPG.
         bool refresh = (portmap_old.size() != portmap_new.size());
-        if (!refresh)
-        {
-          for (int i=0;i<portmap_old.size();i++)
-            if (_portMapping::areMatching(portmap_old[i], portmap_new[i]))
-            {
-              refresh = true;
-              break;
-            }
-        }
+        for (int i=0;i<portmap_old.size() && !refresh;i++)
+          refresh = !_portMapping::areMatching(portmap_old[i], portmap_new[i]);
         if (refresh)
         {
+          if (opLOG)  Application().LogMessage(L"refreshing PPG after closing Canvas");
           PPGLayout oLayout = op.GetPPGLayout();
           dfgSoftimageOp_DefineLayout(oLayout, op);
           ctxt.PutAttribute(L"Refresh", true);
