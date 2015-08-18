@@ -10,7 +10,6 @@
 
 // includes.
 #include <ASTWrapper/KLASTManager.h>
-#include <Commands/CommandStack.h>
 #include <map>
 
 struct _polymesh;
@@ -37,7 +36,6 @@ class BaseInterface
   static FabricCore::DFGHost                       getHost();
   FabricCore::DFGBinding                           getBinding();
   static FabricServices::ASTWrapper::KLASTManager *getManager();
-  static FabricServices::Commands::CommandStack   *getStack();
   DFGUICmdHandlerXSI                              *getCmdHandler();
 
   // persistence
@@ -65,7 +63,6 @@ class BaseInterface
   static FabricCore::Client                        s_client;
   static FabricCore::DFGHost                       s_host;
   static FabricServices::ASTWrapper::KLASTManager *s_manager;
-  static FabricServices::Commands::CommandStack    s_stack;
   FabricCore::DFGBinding                           m_binding;
   DFGUICmdHandlerXSI                              *m_cmdHandler;
   static std::map<unsigned int, BaseInterface*>    s_instances;
