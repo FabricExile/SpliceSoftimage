@@ -1112,10 +1112,13 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
           {
             static ULONG i = 0;
             feLog(CString(L"BtnDebug #" + CString(i++)).GetAsciiString());
-
+            Application().LogMessage(L"------- debug output start -------");
             {
-              // put your code here to execute when pressing the " - " button in the tab "Advanced".
+
+              // add code to be executed when pressing the " - " button in the tab "Advanced".
+
             }
+            Application().LogMessage(L"------- debug output end -------");
           }
         }
     }
