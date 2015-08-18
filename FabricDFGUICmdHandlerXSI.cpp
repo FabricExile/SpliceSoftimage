@@ -22,41 +22,6 @@ using namespace XSI;
   helper functions.
 */
 
-std::string DFGUICmdHandlerXSI::getOperatorNameFromBinding(FabricCore::DFGBinding const &binding)
-{
-  // try to get the operator's name for this binding.
-  if (m_parentBaseInterface && m_parentBaseInterface->getBinding() == binding)
-  {
-    unsigned int opObjID = _opUserData::GetOperatorObjectID(m_parentBaseInterface);
-    if (opObjID != UINT_MAX)
-    {
-      CRef opRef = Application().GetObjectFromID(opObjID).GetRef();
-      if (opRef.IsValid())
-      {
-        // got it.
-        return opRef.GetAsText().GetAsciiString();
-      }
-    }
-  }
-
-  // not found.
-  return "";
-}
-
-FabricCore::DFGBinding DFGUICmdHandlerXSI::getBindingFromOperatorName(std::string operatorName)
-{
-  // try to get the binding from the operator's name.
-  CRef opRef;
-  opRef.Set(CString(operatorName.c_str()));
-  CustomOperator op(opRef);
-  BaseInterface *baseInterface = _opUserData::GetBaseInterface(op.GetObjectID());
-  if (baseInterface)
-    return baseInterface->getBinding();
-
-  // not found.
-  return FabricCore::DFGBinding();
-}
-
 // execute a XSI command.
 // return values: on success: true and io_result contains the command's return value.
 //                on failure: false and io_result has no type.
@@ -3235,3 +3200,39 @@ void DFGUICmdHandlerXSI::dfgDoSetRefVarPath(
 
   executeCommand(cmdName, args, CValue());
 }
+
+std::string DFGUICmdHandlerXSI::getOperatorNameFromBinding(FabricCore::DFGBinding const &binding)
+{
+  // try to get the operator's name for this binding.
+  if (m_parentBaseInterface && m_parentBaseInterface->getBinding() == binding)
+  {
+    unsigned int opObjID = _opUserData::GetOperatorObjectID(m_parentBaseInterface);
+    if (opObjID != UINT_MAX)
+    {
+      CRef opRef = Application().GetObjectFromID(opObjID).GetRef();
+      if (opRef.IsValid())
+      {
+        // got it.
+        return opRef.GetAsText().GetAsciiString();
+      }
+    }
+  }
+
+  // not found.
+  return "";
+}
+
+FabricCore::DFGBinding DFGUICmdHandlerXSI::getBindingFromOperatorName(std::string operatorName)
+{
+  // try to get the binding from the operator's name.
+  CRef opRef;
+  opRef.Set(CString(operatorName.c_str()));
+  CustomOperator op(opRef);
+  BaseInterface *baseInterface = _opUserData::GetBaseInterface(op.GetObjectID());
+  if (baseInterface)
+    return baseInterface->getBinding();
+
+  // not found.
+  return FabricCore::DFGBinding();
+}
+
