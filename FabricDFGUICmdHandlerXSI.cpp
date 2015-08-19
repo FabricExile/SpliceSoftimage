@@ -16,30 +16,45 @@
 
 #include <sstream>
 
-using namespace XSI;
+
 
 /*----------------
   helper functions.
 */
 
-// execute a XSI command.
-// return values: on success: true and io_result contains the command's return value.
-//                on failure: false and io_result has no type.
-bool executeCommand(const CString &cmdName, const CValueArray &args, CValue &io_result)
+
+
+bool execCmd(const std::string &in_cmdName, const std::vector<std::string> &in_args, std::string &io_result)
 {
+  /*
+    executes a DCC command.
+
+    return values: on success: true and io_result contains the command's return value.
+                   on failure: false and io_result is empty.
+  */
+
   // init result.
-  io_result.Clear();
+  io_result = "";
+
+  // convert inputs.
+  XSI::CString cmdName = in_cmdName.c_str();
+  XSI::CValueArray args;
+  for (int i=0;i<in_args.size();i++)
+    args.Add(XSI::CString(in_args[i].c_str()));
 
   // log.
   if (DFGUICmdHandlerLOG)
   {
-    Application().LogMessage(L"[DFGUICmd] about to execute \"" + cmdName + L"\" with the following array of arguments:", siCommentMsg);
+    XSI::Application().LogMessage(L"[DFGUICmd] about to execute \"" + cmdName + L"\" with the following array of arguments:", XSI::siCommentMsg);
     for (LONG i=0;i<args.GetCount();i++)
-      Application().LogMessage(L"[DFGUICmd]     \"" + args[i].GetAsText() + L"\"", siCommentMsg);
+      XSI::Application().LogMessage(L"[DFGUICmd]     \"" + args[i].GetAsText() + L"\"", XSI::siCommentMsg);
   }
 
   // execute command.
-  if (Application().ExecuteCommand(cmdName, args, io_result) == CStatus::OK)
+  XSI::CValue  result;
+  XSI::CStatus ret = XSI::Application().ExecuteCommand(cmdName, args, result);
+  io_result = XSI::CString(result).GetAsciiString();
+  if (ret  == XSI::CStatus::OK)
   {
     // success.
     return true;
@@ -47,10 +62,20 @@ bool executeCommand(const CString &cmdName, const CValueArray &args, CValue &io_
   else
   {
     // failed: log some info about this command and return false.
-    Application().LogMessage(L"failed to execute \"" + cmdName + L"\" with the following array of arguments:", siWarningMsg);
+    XSI::Application().LogMessage(L"failed to execute \"" + cmdName + L"\" with the following array of arguments:", XSI::siWarningMsg);
     for (LONG i=0;i<args.GetCount();i++)
-      Application().LogMessage(L"    \"" + args[i].GetAsText() + L"\"", siWarningMsg);
+      XSI::Application().LogMessage(L"    \"" + args[i].GetAsText() + L"\"", XSI::siWarningMsg);
     return false;
+  }
+}
+
+static inline void argsToStdVector(XSI::CValueArray &inArgs, std::vector<std::string> &outArgs)
+{
+  outArgs.clear();
+  for (int i=0;i<inArgs.GetCount();i++)
+  {
+    if (inArgs[i].m_t != XSI::CValue::siString)  XSI::Application().LogMessage(L"[DFGUICmd] argsToStdArgs(): inArgs[i] is not of type CValue::siString.", XSI::siWarningMsg);
+    outArgs.push_back(XSI::CString(inArgs[i]).GetAsciiString());
   }
 }
 
@@ -59,7 +84,7 @@ static inline bool HandleFabricCoreException(FabricCore::Exception const &e)
   std::wstring msg = L"[DFGUICmd] Fabric Core exception: ";
   FTL::CStrRef desc = e.getDesc_cstr();
   msg.insert(msg.end(), desc.begin(), desc.end());
-  Application().LogMessage(msg.c_str(), siErrorMsg);
+  XSI::Application().LogMessage(msg.c_str(), XSI::siErrorMsg);
   return false;
 }
 
@@ -100,66 +125,66 @@ static inline std::string EncodeYPoss(FTL::ArrayRef<QPointF> poss)
   return yPosSS.str();
 }
 
-static inline void EncodePosition(QPointF const &position, CValueArray &args)
+static inline void EncodePosition(QPointF const &position, std::vector<std::string> &args)
 {
   {
     std::stringstream ss;
     ss << position.x();
-    args.Add( CString( ss.str().c_str() ) );
+    args.push_back(ss.str());
   }
   {
     std::stringstream ss;
     ss << position.y();
-    args.Add( CString( ss.str().c_str() ) );
+    args.push_back(ss.str());
   }
 }
 
-static inline void EncodeSize(QSizeF const &size, CValueArray &args)
+static inline void EncodeSize(QSizeF const &size, std::vector<std::string> &args)
 {
   {
     std::stringstream ss;
     ss << size.width();
-    args.Add( CString( ss.str().c_str() ) );
+    args.push_back(ss.str());
   }
   {
     std::stringstream ss;
     ss << size.height();
-    args.Add( CString( ss.str().c_str() ) );
+    args.push_back(ss.str());
   }
 }
 
-static inline bool DecodeString(CValueArray const &args, unsigned &ai, std::string &value)
+static inline bool DecodeString(std::vector<std::string> const &args, unsigned &ai, std::string &value)
 {
-  value = CString(args[ai++]).GetAsciiString();
+  value = args[ai++];
   return true;
 }
 
-static inline bool DecodePosition(CValueArray const &args, unsigned &ai, QPointF &position)
+static inline bool DecodePosition(std::vector<std::string> const &args, unsigned &ai, QPointF &position)
 {
-  position.setX(FTL::CStrRef(CString(args[ai++]).GetAsciiString()).toFloat64());
-  position.setY(FTL::CStrRef(CString(args[ai++]).GetAsciiString()).toFloat64());
+  position.setX(FTL::CStrRef(args[ai++]).toFloat64());
+  position.setY(FTL::CStrRef(args[ai++]).toFloat64());
   return true;
 }
 
-static inline bool DecodeSize(CValueArray const &args, unsigned &ai, QSizeF &size)
+static inline bool DecodeSize(std::vector<std::string> const &args, unsigned &ai, QSizeF &size)
 {
-  size.setWidth (FTL::CStrRef(CString(args[ai++]).GetAsciiString()).toFloat64());
-  size.setHeight(FTL::CStrRef(CString(args[ai++]).GetAsciiString()).toFloat64());
+  size.setWidth (FTL::CStrRef(args[ai++]).toFloat64());
+  size.setHeight(FTL::CStrRef(args[ai++]).toFloat64());
   return true;
 }
 
-static inline bool DecodeBinding(CValueArray const &args, unsigned &ai, FabricCore::DFGBinding &binding)
+static inline bool DecodeBinding(std::vector<std::string> const &args, unsigned &ai, FabricCore::DFGBinding &binding)
 {
-  binding = DFGUICmdHandlerXSI::getBindingFromOperatorName(CString(args[ai++]).GetAsciiString());
+  binding = DFGUICmdHandlerXSI::getBindingFromOperatorName(args[ai++]);
   if (!binding.isValid())
   {
-    Application().LogMessage(L"[DFGUICmd] invalid binding!", siErrorMsg);
+    XSI::Application().LogMessage(L"[DFGUICmd] invalid binding!", XSI::siErrorMsg);
     return false;
   }
   return true;
 }
 
-static inline bool DecodeExec(CValueArray const &args, unsigned &ai, FabricCore::DFGBinding &binding, std::string &execPath, FabricCore::DFGExec &exec)
+static inline bool DecodeExec(std::vector<std::string> const &args, unsigned &ai, FabricCore::DFGBinding &binding, std::string &execPath, FabricCore::DFGExec &exec)
 {
   if (!DecodeBinding(args, ai, binding))
     return false;
@@ -179,12 +204,12 @@ static inline bool DecodeExec(CValueArray const &args, unsigned &ai, FabricCore:
   return true;
 }
 
-static inline bool DecodeName(CValueArray const &args, unsigned &ai, std::string &value)
+static inline bool DecodeName(std::vector<std::string> const &args, unsigned &ai, std::string &value)
 {
   return DecodeString(args, ai, value);
 }
 
-static inline bool DecodeNames(CValueArray const &args, unsigned &ai, std::string &namesString, std::vector<FTL::StrRef> &names)
+static inline bool DecodeNames(std::vector<std::string> const &args, unsigned &ai, std::string &namesString, std::vector<FTL::StrRef> &names)
 {
   if (!DecodeString(args, ai, namesString))
     return false;
@@ -201,88 +226,666 @@ static inline bool DecodeNames(CValueArray const &args, unsigned &ai, std::strin
   return true;
 }
 
-static inline void DFGUICmd_Finish(Context &ctxt, FabricUI::DFG::DFGUICmd *cmd)
+static inline void DFGUICmd_Finish(XSI::Context &ctxt, FabricUI::DFG::DFGUICmd *cmd)
 {
   // store or delete the DFG command, depending on XSI's current undo preferences.
   if ((bool)ctxt.GetAttribute(L"UndoRequired") == true)
   {
-    if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] Finish, store cmd in UndoRedoData", siCommentMsg);
-    ctxt.PutAttribute(L"UndoRedoData", (CValue::siPtrType)cmd);
+    if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] Finish, store cmd in UndoRedoData", XSI::siCommentMsg);
+    ctxt.PutAttribute(L"UndoRedoData", (XSI::CValue::siPtrType)cmd);
   }
   else if (cmd)
   {
-    if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] Finish, delete cmd", siCommentMsg);
+    if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] Finish, delete cmd", XSI::siCommentMsg);
     delete cmd;
   }
 }
 
-static inline void DFGUICmd_Undo(CRef &in_ctxt)
+static inline void DFGUICmd_Undo(XSI::CRef &in_ctxt)
 {
-  Context ctxt(in_ctxt);
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] Undo", siCommentMsg);
-  FabricUI::DFG::DFGUICmd *cmd = (FabricUI::DFG::DFGUICmd *)(CValue::siPtrType)ctxt.GetAttribute(L"UndoRedoData");
+  XSI::Context ctxt(in_ctxt);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] Undo", XSI::siCommentMsg);
+  FabricUI::DFG::DFGUICmd *cmd = (FabricUI::DFG::DFGUICmd *)(XSI::CValue::siPtrType)ctxt.GetAttribute(L"UndoRedoData");
   if (cmd)
   {
-    if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] cmd->undo() \"" + CString(cmd->getDesc().c_str()) + L"\"", siCommentMsg);
+    if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] cmd->undo() \"" + XSI::CString(cmd->getDesc().c_str()) + L"\"", XSI::siCommentMsg);
     cmd->undo();
   }
 }
 
-static inline void DFGUICmd_Redo(CRef &in_ctxt)
+static inline void DFGUICmd_Redo(XSI::CRef &in_ctxt)
 {
-  Context ctxt(in_ctxt);
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] Redo", siCommentMsg);
-  FabricUI::DFG::DFGUICmd *cmd = (FabricUI::DFG::DFGUICmd *)(CValue::siPtrType)ctxt.GetAttribute(L"UndoRedoData");
+  XSI::Context ctxt(in_ctxt);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] Redo", XSI::siCommentMsg);
+  FabricUI::DFG::DFGUICmd *cmd = (FabricUI::DFG::DFGUICmd *)(XSI::CValue::siPtrType)ctxt.GetAttribute(L"UndoRedoData");
   if (cmd)
   {
-    if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] cmd->redo() \"" + CString(cmd->getDesc().c_str()) + L"\"", siCommentMsg);
+    if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] cmd->redo() \"" + XSI::CString(cmd->getDesc().c_str()) + L"\"", XSI::siCommentMsg);
     cmd->redo();
   }
 }
 
-static inline void DFGUICmd_TermUndoRedo(CRef &in_ctxt)
+static inline void DFGUICmd_TermUndoRedo(XSI::CRef &in_ctxt)
 {
-  Context ctxt(in_ctxt);
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] TermUndoRedo", siCommentMsg);
-  FabricUI::DFG::DFGUICmd *cmd = (FabricUI::DFG::DFGUICmd *)(CValue::siPtrType)ctxt.GetAttribute(L"UndoRedoData");
+  XSI::Context ctxt(in_ctxt);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] TermUndoRedo", XSI::siCommentMsg);
+  FabricUI::DFG::DFGUICmd *cmd = (FabricUI::DFG::DFGUICmd *)(XSI::CValue::siPtrType)ctxt.GetAttribute(L"UndoRedoData");
   if (cmd)
   {
-    if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] delete cmd", siCommentMsg);
+    if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] delete cmd", XSI::siCommentMsg);
     delete cmd;
   }
 }
 
-/*-----------------------------------------------------
-  implementation of DFGUICmdHandlerXSI member functions.
+
+
+/*---------------------------------------------------
+  implementation of DFGUICmdHandler member functions.
 */
 
-// ---
-// command "dfgRemoveNodes"
-// ---
 
-SICALLBACK dfgRemoveNodes_Init(CRef &in_ctxt)
+
+void DFGUICmdHandlerXSI::dfgDoRemoveNodes(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::ArrayRef<FTL::CStrRef> nodeNames
+  )
 {
-  Context ctxt(in_ctxt);
-  Command oCmd;
+  std::string cmdName(FabricUI::DFG::DFGUICmd_RemoveNodes::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getOperatorNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(EncodeNames(nodeNames));
+
+  execCmd(cmdName, args, std::string());
+}
+
+void DFGUICmdHandlerXSI::dfgDoConnect(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef srcPort, 
+  FTL::CStrRef dstPort
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_Connect::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getOperatorNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(srcPort);
+  args.push_back(dstPort);
+
+  execCmd(cmdName, args, std::string());
+}
+
+void DFGUICmdHandlerXSI::dfgDoDisconnect(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef srcPort, 
+  FTL::CStrRef dstPort
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_Disconnect::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getOperatorNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(srcPort);
+  args.push_back(dstPort);
+
+  execCmd(cmdName, args, std::string());
+}
+
+std::string DFGUICmdHandlerXSI::dfgDoAddGraph(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef title,
+  QPointF pos
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_AddGraph::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getOperatorNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(title);
+  EncodePosition(pos, args);
+
+  std::string result;
+  execCmd(cmdName, args, result);
+  return result;
+}
+
+std::string DFGUICmdHandlerXSI::dfgDoAddFunc(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef title,
+  FTL::CStrRef initialCode,
+  QPointF pos
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_AddFunc::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getOperatorNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(title);
+  args.push_back(initialCode);
+  EncodePosition(pos, args);
+
+  std::string result;
+  execCmd(cmdName, args, result);
+  return result;
+}
+
+std::string DFGUICmdHandlerXSI::dfgDoInstPreset(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef presetPath,
+  QPointF pos
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_InstPreset::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getOperatorNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(presetPath);
+  EncodePosition(pos, args);
+
+  std::string result;
+  execCmd(cmdName, args, result);
+  return result;
+}
+
+std::string DFGUICmdHandlerXSI::dfgDoAddVar(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef desiredNodeName,
+  FTL::CStrRef dataType,
+  FTL::CStrRef extDep,
+  QPointF pos
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_AddVar::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getOperatorNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(desiredNodeName);
+  args.push_back(dataType);
+  args.push_back(extDep);
+  EncodePosition(pos, args);
+
+  std::string result;
+  execCmd(cmdName, args, result);
+  return result;
+}
+
+std::string DFGUICmdHandlerXSI::dfgDoAddGet(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef desiredNodeName,
+  FTL::CStrRef varPath,
+  QPointF pos
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_AddGet::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getOperatorNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(desiredNodeName);
+  args.push_back(varPath);
+  EncodePosition(pos, args);
+
+  std::string result;
+  execCmd(cmdName, args, result);
+  return result;
+}
+
+std::string DFGUICmdHandlerXSI::dfgDoAddSet(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef desiredNodeName,
+  FTL::CStrRef varPath,
+  QPointF pos
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_AddSet::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getOperatorNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(desiredNodeName);
+  args.push_back(varPath);
+  EncodePosition(pos, args);
+
+  std::string result;
+  execCmd(cmdName, args, result);
+  return result;
+}
+
+std::string DFGUICmdHandlerXSI::dfgDoAddPort(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef desiredPortName,
+  FabricCore::DFGPortType portType,
+  FTL::CStrRef typeSpec,
+  FTL::CStrRef portToConnect
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_AddPort::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getOperatorNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(desiredPortName);
+  FTL::CStrRef portTypeStr;
+  switch ( portType )
+  {
+    case FabricCore::DFGPortType_In:
+      portTypeStr = FTL_STR("In");
+      break;
+    case FabricCore::DFGPortType_IO:
+      portTypeStr = FTL_STR("IO");
+      break;
+    case FabricCore::DFGPortType_Out:
+      portTypeStr = FTL_STR("Out");
+      break;
+  }
+  args.push_back(portTypeStr);
+  args.push_back(typeSpec);
+  args.push_back(portToConnect);
+
+  std::string result;
+  execCmd(cmdName, args, result);
+  return result;
+}
+
+void DFGUICmdHandlerXSI::dfgDoRemovePort(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef portName
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_RemovePort::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getOperatorNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(portName);
+
+  execCmd(cmdName, args, std::string());
+}
+
+void DFGUICmdHandlerXSI::dfgDoMoveNodes(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::ArrayRef<FTL::CStrRef> nodeNames,
+  FTL::ArrayRef<QPointF> poss
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_MoveNodes::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getOperatorNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(EncodeNames(nodeNames));
+  args.push_back(EncodeXPoss(poss));
+  args.push_back(EncodeYPoss(poss));
+
+  execCmd(cmdName, args, std::string());
+}
+
+void DFGUICmdHandlerXSI::dfgDoResizeBackDrop(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef backDropName,
+  QPointF pos,
+  QSizeF size
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_ResizeBackDrop::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getOperatorNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(backDropName);
+  EncodePosition(pos, args);
+  EncodeSize(size, args);
+
+  execCmd(cmdName, args, std::string());
+}
+
+std::string DFGUICmdHandlerXSI::dfgDoImplodeNodes(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::ArrayRef<FTL::CStrRef> nodeNames,
+  FTL::CStrRef desiredNodeName
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_ImplodeNodes::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getOperatorNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(EncodeNames(nodeNames));
+  args.push_back(desiredNodeName);
+
+  std::string result;
+  execCmd(cmdName, args, result);
+  return result;
+}
+
+std::vector<std::string> DFGUICmdHandlerXSI::dfgDoExplodeNode(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef nodeName
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_ExplodeNode::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getOperatorNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(nodeName);
+
+  std::string resultValue;
+  execCmd(cmdName, args, resultValue);
+  FTL::StrRef explodedNodeNamesStr = resultValue;
+  std::vector<std::string> result;
+  while (!explodedNodeNamesStr.empty())
+  {
+    FTL::StrRef::Split split = explodedNodeNamesStr.split('|');
+    result.push_back(split.first);
+    explodedNodeNamesStr = split.second;
+  }
+  return result;
+}
+
+void DFGUICmdHandlerXSI::dfgDoAddBackDrop(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef title,
+  QPointF pos
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_AddBackDrop::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getOperatorNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(title);
+  EncodePosition(pos, args);
+
+  execCmd(cmdName, args, std::string());
+}
+
+void DFGUICmdHandlerXSI::dfgDoSetNodeTitle(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef nodeName,
+  FTL::CStrRef title
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_SetNodeTitle::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getOperatorNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(nodeName);
+  args.push_back(title);
+
+  execCmd(cmdName, args, std::string());
+}
+
+void DFGUICmdHandlerXSI::dfgDoSetNodeComment(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef nodeName,
+  FTL::CStrRef comment
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_SetNodeComment::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getOperatorNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(nodeName);
+  args.push_back(comment);
+
+  execCmd(cmdName, args, std::string());
+}
+
+void DFGUICmdHandlerXSI::dfgDoSetCode(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef code
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_SetCode::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getOperatorNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(code);
+
+  execCmd(cmdName, args, std::string());
+}
+
+std::string DFGUICmdHandlerXSI::dfgDoRenamePort(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef oldPortName,
+  FTL::CStrRef desiredNewPortName
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_RenamePort::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getOperatorNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(oldPortName);
+  args.push_back(desiredNewPortName);
+
+  std::string result;
+  execCmd(cmdName, args, result);
+  return result;
+}
+
+std::vector<std::string> DFGUICmdHandlerXSI::dfgDoPaste(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef text,
+  QPointF cursorPos
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_Paste::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getOperatorNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(text);
+  EncodePosition(cursorPos, args);
+
+  std::string resultValue;
+  execCmd(cmdName, args, resultValue);
+  FTL::StrRef pastedNodeNamesStr = resultValue;
+  std::vector<std::string> result;
+  while (!pastedNodeNamesStr.empty())
+  {
+    FTL::StrRef::Split split = pastedNodeNamesStr.split('|');
+    result.push_back(split.first);
+    pastedNodeNamesStr = split.second;
+  }
+  return result;
+}
+
+void DFGUICmdHandlerXSI::dfgDoSetArgType(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef argName,
+  FTL::CStrRef typeName
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_SetArgType::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getOperatorNameFromBinding(binding));
+  args.push_back(argName);
+  args.push_back(typeName);
+
+  execCmd(cmdName, args, std::string());
+}
+
+void DFGUICmdHandlerXSI::dfgDoSetArgValue(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef argName,
+  FabricCore::RTVal const &value
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_SetArgValue::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getOperatorNameFromBinding(binding));
+  args.push_back(argName);
+  args.push_back(value.getTypeNameCStr());
+  args.push_back(value.getJSON().getStringCString());
+
+  execCmd(cmdName, args, std::string());
+}
+
+void DFGUICmdHandlerXSI::dfgDoSetPortDefaultValue(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef portPath,
+  FabricCore::RTVal const &value
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_SetPortDefaultValue::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getOperatorNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(portPath);
+  args.push_back(value.getTypeNameCStr());
+  args.push_back(value.getJSON().getStringCString());
+
+  execCmd(cmdName, args, std::string());
+}
+
+void DFGUICmdHandlerXSI::dfgDoSetRefVarPath(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::CStrRef refName,
+  FTL::CStrRef varPath
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_SetRefVarPath::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getOperatorNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(refName);
+  args.push_back(varPath);
+
+  execCmd(cmdName, args, std::string());
+}
+
+std::string DFGUICmdHandlerXSI::getOperatorNameFromBinding(FabricCore::DFGBinding const &binding)
+{
+  // try to get the operator's name for this binding.
+  if (m_parentBaseInterface && m_parentBaseInterface->getBinding() == binding)
+  {
+    unsigned int opObjID = _opUserData::GetOperatorObjectID(m_parentBaseInterface);
+    if (opObjID != UINT_MAX)
+    {
+      XSI::CRef opRef = XSI::Application().GetObjectFromID(opObjID).GetRef();
+      if (opRef.IsValid())
+      {
+        // got it.
+        return opRef.GetAsText().GetAsciiString();
+      }
+    }
+  }
+
+  // not found.
+  return "";
+}
+
+FabricCore::DFGBinding DFGUICmdHandlerXSI::getBindingFromOperatorName(std::string operatorName)
+{
+  // try to get the binding from the operator's name.
+  XSI::CRef opRef;
+  opRef.Set(XSI::CString(operatorName.c_str()));
+  XSI::CustomOperator op(opRef);
+  BaseInterface *baseInterface = _opUserData::GetBaseInterface(op.GetObjectID());
+  if (baseInterface)
+    return baseInterface->getBinding();
+
+  // not found.
+  return FabricCore::DFGBinding();
+}
+
+
+
+/*-------------------------------
+  implementation of XSI commands.
+*/
+
+
+
+//        "dfgRemoveNodes"
+
+SICALLBACK dfgRemoveNodes_Init(XSI::CRef &in_ctxt)
+{
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
 
   oCmd = ctxt.GetSource();
   oCmd.EnableReturnValue(false);
 
-  ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",   CString());
-  oArgs.Add(L"execPath",  CString());
-  oArgs.Add(L"nodeNames", CString());
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",   XSI::CString());
+  oArgs.Add(L"execPath",  XSI::CString());
+  oArgs.Add(L"nodeNames", XSI::CString());
 
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgRemoveNodes_Execute(CRef &in_ctxt)
+SICALLBACK dfgRemoveNodes_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgRemoveNodes_Execute()", siCommentMsg);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgRemoveNodes_Execute()", XSI::siCommentMsg);
 
   // init.
-  Context ctxt(in_ctxt);
-  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  argsToStdVector(tmp, args);
 
   // create the DFG command.
   FabricUI::DFG::DFGUICmd_RemoveNodes *cmd = NULL;
@@ -293,12 +896,12 @@ SICALLBACK dfgRemoveNodes_Execute(CRef &in_ctxt)
     std::string execPath;
     FabricCore::DFGExec exec;
     if (!DecodeExec(args, ai, binding, execPath, exec))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string nodeNamesString;
     std::vector<FTL::StrRef> nodeNames;
     if (!DecodeNames(args, ai, nodeNamesString, nodeNames))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
     
     cmd = new FabricUI::DFG::DFGUICmd_RemoveNodes(binding,
                                                   execPath.c_str(),
@@ -317,72 +920,55 @@ SICALLBACK dfgRemoveNodes_Execute(CRef &in_ctxt)
   }
 
   DFGUICmd_Finish(ctxt, cmd);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgRemoveNodes_Undo(CRef &ctxt)
+SICALLBACK dfgRemoveNodes_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgRemoveNodes_Redo(CRef &ctxt)
+SICALLBACK dfgRemoveNodes_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgRemoveNodes_TermUndoRedo(CRef &ctxt)
+SICALLBACK dfgRemoveNodes_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-void DFGUICmdHandlerXSI::dfgDoRemoveNodes(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::ArrayRef<FTL::CStrRef> nodeNames
-  )
+//        "dfgConnect"
+
+SICALLBACK dfgConnect_Init(XSI::CRef &in_ctxt)
 {
-  CString cmdName(FabricUI::DFG::DFGUICmd_RemoveNodes::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());
-  args.Add(EncodeNames(nodeNames).c_str());
-
-  executeCommand(cmdName, args, CValue());
-}
-
-// ---
-// command "dfgConnect"
-// ---
-
-SICALLBACK dfgConnect_Init(CRef &in_ctxt)
-{
-  Context ctxt(in_ctxt);
-  Command oCmd;
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
 
   oCmd = ctxt.GetSource();
   oCmd.EnableReturnValue(false);
 
-  ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",     CString());
-  oArgs.Add(L"execPath",    CString());
-  oArgs.Add(L"srcPortPath", CString());
-  oArgs.Add(L"dstPortPath", CString());
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",     XSI::CString());
+  oArgs.Add(L"execPath",    XSI::CString());
+  oArgs.Add(L"srcPortPath", XSI::CString());
+  oArgs.Add(L"dstPortPath", XSI::CString());
 
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgConnect_Execute(CRef &in_ctxt)
+SICALLBACK dfgConnect_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgConnect_Execute()", siCommentMsg);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgConnect_Execute()", XSI::siCommentMsg);
 
   // init.
-  Context ctxt(in_ctxt);
-  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  argsToStdVector(tmp, args);
 
   // create the DFG command.
   FabricUI::DFG::DFGUICmd_Connect *cmd = NULL;
@@ -393,15 +979,15 @@ SICALLBACK dfgConnect_Execute(CRef &in_ctxt)
     std::string execPath;
     FabricCore::DFGExec exec;
     if (!DecodeExec(args, ai, binding, execPath, exec))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string srcPortPath;
     if (!DecodeName(args, ai, srcPortPath))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string dstPortPath;
     if (!DecodeName(args, ai, dstPortPath))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
     
     cmd = new FabricUI::DFG::DFGUICmd_Connect(binding,
                                               execPath.c_str(),
@@ -421,74 +1007,55 @@ SICALLBACK dfgConnect_Execute(CRef &in_ctxt)
   }
 
   DFGUICmd_Finish(ctxt, cmd);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgConnect_Undo(CRef &ctxt)
+SICALLBACK dfgConnect_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgConnect_Redo(CRef &ctxt)
+SICALLBACK dfgConnect_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgConnect_TermUndoRedo(CRef &ctxt)
+SICALLBACK dfgConnect_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-void DFGUICmdHandlerXSI::dfgDoConnect(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef srcPort, 
-  FTL::CStrRef dstPort
-  )
+//        "dfgDisconnect"
+
+SICALLBACK dfgDisconnect_Init(XSI::CRef &in_ctxt)
 {
-  CString cmdName(FabricUI::DFG::DFGUICmd_Connect::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());
-  args.Add( srcPort.c_str() );
-  args.Add( dstPort.c_str() );
-
-  executeCommand(cmdName, args, CValue());
-}
-
-// ---
-// command "dfgDisconnect"
-// ---
-
-SICALLBACK dfgDisconnect_Init(CRef &in_ctxt)
-{
-  Context ctxt(in_ctxt);
-  Command oCmd;
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
 
   oCmd = ctxt.GetSource();
   oCmd.EnableReturnValue(false);
 
-  ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",     CString());
-  oArgs.Add(L"execPath",    CString());
-  oArgs.Add(L"srcPortPath", CString());
-  oArgs.Add(L"dstPortPath", CString());
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",     XSI::CString());
+  oArgs.Add(L"execPath",    XSI::CString());
+  oArgs.Add(L"srcPortPath", XSI::CString());
+  oArgs.Add(L"dstPortPath", XSI::CString());
 
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgDisconnect_Execute(CRef &in_ctxt)
+SICALLBACK dfgDisconnect_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgDisconnect_Execute()", siCommentMsg);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgDisconnect_Execute()", XSI::siCommentMsg);
 
   // init.
-  Context ctxt(in_ctxt);
-  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  argsToStdVector(tmp, args);
 
   // create the DFG command.
   FabricUI::DFG::DFGUICmd_Disconnect *cmd = NULL;
@@ -499,21 +1066,21 @@ SICALLBACK dfgDisconnect_Execute(CRef &in_ctxt)
     std::string execPath;
     FabricCore::DFGExec exec;
     if (!DecodeExec(args, ai, binding, execPath, exec))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string srcPortPath;
     if (!DecodeName(args, ai, srcPortPath))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string dstPortPath;
     if (!DecodeName(args, ai, dstPortPath))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
     
     cmd = new FabricUI::DFG::DFGUICmd_Disconnect(binding,
                                                  execPath.c_str(),
                                                  exec,
                                                  srcPortPath.c_str(),
-                                                 dstPortPath.c_str() );
+                                                 dstPortPath.c_str());
   }
 
   // execute the DFG command.
@@ -527,75 +1094,56 @@ SICALLBACK dfgDisconnect_Execute(CRef &in_ctxt)
   }
 
   DFGUICmd_Finish(ctxt, cmd);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgDisconnect_Undo(CRef &ctxt)
+SICALLBACK dfgDisconnect_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgDisconnect_Redo(CRef &ctxt)
+SICALLBACK dfgDisconnect_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgDisconnect_TermUndoRedo(CRef &ctxt)
+SICALLBACK dfgDisconnect_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-void DFGUICmdHandlerXSI::dfgDoDisconnect(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef srcPort, 
-  FTL::CStrRef dstPort
-  )
+//        "dfgAddGraph"
+
+SICALLBACK dfgAddGraph_Init(XSI::CRef &in_ctxt)
 {
-  CString cmdName(FabricUI::DFG::DFGUICmd_Disconnect::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());
-  args.Add( srcPort.c_str() );
-  args.Add( dstPort.c_str() );
-
-  executeCommand(cmdName, args, CValue());
-}
-
-// ---
-// command "dfgAddGraph"
-// ---
-
-SICALLBACK dfgAddGraph_Init(CRef &in_ctxt)
-{
-  Context ctxt(in_ctxt);
-  Command oCmd;
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
 
   oCmd = ctxt.GetSource();
   oCmd.EnableReturnValue(true);
 
-  ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",     CString());
-  oArgs.Add(L"execPath",    CString());
-  oArgs.Add(L"title",  CString());
-  oArgs.Add(L"xPos",   CString());
-  oArgs.Add(L"yPos",   CString());
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",  XSI::CString());
+  oArgs.Add(L"execPath", XSI::CString());
+  oArgs.Add(L"title",    XSI::CString());
+  oArgs.Add(L"xPos",     XSI::CString());
+  oArgs.Add(L"yPos",     XSI::CString());
 
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddGraph_Execute(CRef &in_ctxt)
+SICALLBACK dfgAddGraph_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgAddGraph_Execute()", siCommentMsg);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgAddGraph_Execute()", XSI::siCommentMsg);
 
   // init.
-  Context ctxt(in_ctxt);
-  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  argsToStdVector(tmp, args);
 
   // create the DFG command.
   FabricUI::DFG::DFGUICmd_AddGraph *cmd = NULL;
@@ -606,15 +1154,15 @@ SICALLBACK dfgAddGraph_Execute(CRef &in_ctxt)
     std::string execPath;
     FabricCore::DFGExec exec;
     if (!DecodeExec(args, ai, binding, execPath, exec))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string title;
     if (!DecodeString(args, ai, title))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     QPointF position;
     if (!DecodePosition(args, ai, position))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     cmd = new FabricUI::DFG::DFGUICmd_AddGraph(binding,
                                                execPath.c_str(),
@@ -634,83 +1182,62 @@ SICALLBACK dfgAddGraph_Execute(CRef &in_ctxt)
   }
 
   // store return value.
-  CString returnValue = cmd->getActualNodeName().c_str();
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", siCommentMsg);
+  XSI::CString returnValue = cmd->getActualNodeName().c_str();
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", XSI::siCommentMsg);
   ctxt.PutAttribute(L"ReturnValue", returnValue);
 
   DFGUICmd_Finish(ctxt, cmd);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddGraph_Undo(CRef &ctxt)
+SICALLBACK dfgAddGraph_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddGraph_Redo(CRef &ctxt)
+SICALLBACK dfgAddGraph_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddGraph_TermUndoRedo(CRef &ctxt)
+SICALLBACK dfgAddGraph_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-std::string DFGUICmdHandlerXSI::dfgDoAddGraph(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef title,
-  QPointF pos
-  )
+//        "dfgAddFunc"
+
+SICALLBACK dfgAddFunc_Init(XSI::CRef &in_ctxt)
 {
-  CString cmdName(FabricUI::DFG::DFGUICmd_AddGraph::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // execPath.
-  args.Add(title.c_str());                                // title.
-  EncodePosition( pos, args );
-
-  CValue result;
-  executeCommand(cmdName, args, result);
-  return result.GetAsText().GetAsciiString();
-}
-
-// ---
-// command "dfgAddFunc"
-// ---
-
-SICALLBACK dfgAddFunc_Init(CRef &in_ctxt)
-{
-  Context ctxt(in_ctxt);
-  Command oCmd;
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
 
   oCmd = ctxt.GetSource();
   oCmd.EnableReturnValue(true);
 
-  ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",     CString());
-  oArgs.Add(L"execPath",    CString());
-  oArgs.Add(L"title",       CString());
-  oArgs.Add(L"initialCode", CString());
-  oArgs.Add(L"xPos",        CString());
-  oArgs.Add(L"yPos",        CString());
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",     XSI::CString());
+  oArgs.Add(L"execPath",    XSI::CString());
+  oArgs.Add(L"title",       XSI::CString());
+  oArgs.Add(L"initialCode", XSI::CString());
+  oArgs.Add(L"xPos",        XSI::CString());
+  oArgs.Add(L"yPos",        XSI::CString());
 
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddFunc_Execute(CRef &in_ctxt)
+SICALLBACK dfgAddFunc_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgAddFunc_Execute()", siCommentMsg);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgAddFunc_Execute()", XSI::siCommentMsg);
 
   // init.
-  Context ctxt(in_ctxt);
-  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  argsToStdVector(tmp, args);
 
   // create the DFG command.
   FabricUI::DFG::DFGUICmd_AddFunc *cmd = NULL;
@@ -721,19 +1248,19 @@ SICALLBACK dfgAddFunc_Execute(CRef &in_ctxt)
     std::string execPath;
     FabricCore::DFGExec exec;
     if (!DecodeExec(args, ai, binding, execPath, exec))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string title;
     if (!DecodeString(args, ai, title))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string initialCode;
     if (!DecodeString(args, ai, initialCode))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     QPointF position;
     if (!DecodePosition(args, ai, position))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     cmd = new FabricUI::DFG::DFGUICmd_AddFunc(binding,
                                               execPath.c_str(),
@@ -754,84 +1281,61 @@ SICALLBACK dfgAddFunc_Execute(CRef &in_ctxt)
   }
 
   // store return value.
-  CString returnValue = cmd->getActualNodeName().c_str();
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", siCommentMsg);
+  XSI::CString returnValue = cmd->getActualNodeName().c_str();
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", XSI::siCommentMsg);
   ctxt.PutAttribute(L"ReturnValue", returnValue);
 
   DFGUICmd_Finish(ctxt, cmd);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddFunc_Undo(CRef &ctxt)
+SICALLBACK dfgAddFunc_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddFunc_Redo(CRef &ctxt)
+SICALLBACK dfgAddFunc_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddFunc_TermUndoRedo(CRef &ctxt)
+SICALLBACK dfgAddFunc_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-std::string DFGUICmdHandlerXSI::dfgDoAddFunc(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef title,
-  FTL::CStrRef initialCode,
-  QPointF pos
-  )
+//        "dfgInstPreset"
+
+SICALLBACK dfgInstPreset_Init(XSI::CRef &in_ctxt)
 {
-  CString cmdName(FabricUI::DFG::DFGUICmd_AddFunc::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // execPath.
-  args.Add(title.c_str());                                // title.
-  args.Add(initialCode.c_str());                          // initialCode.
-  EncodePosition(pos, args);
-
-  CValue result;
-  executeCommand(cmdName, args, result);
-  return result.GetAsText().GetAsciiString();
-}
-
-// ---
-// command "dfgInstPreset"
-// ---
-
-SICALLBACK dfgInstPreset_Init(CRef &in_ctxt)
-{
-  Context ctxt(in_ctxt);
-  Command oCmd;
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
 
   oCmd = ctxt.GetSource();
   oCmd.EnableReturnValue(true);
 
-  ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",    CString());
-  oArgs.Add(L"execPath",   CString());
-  oArgs.Add(L"presetPath", CString());
-  oArgs.Add(L"xPos",       CString());
-  oArgs.Add(L"yPos",       CString());
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",    XSI::CString());
+  oArgs.Add(L"execPath",   XSI::CString());
+  oArgs.Add(L"presetPath", XSI::CString());
+  oArgs.Add(L"xPos",       XSI::CString());
+  oArgs.Add(L"yPos",       XSI::CString());
 
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgInstPreset_Execute(CRef &in_ctxt)
+SICALLBACK dfgInstPreset_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgInstPreset_Execute()", siCommentMsg);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgInstPreset_Execute()", XSI::siCommentMsg);
 
   // init.
-  Context ctxt(in_ctxt);
-  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  argsToStdVector(tmp, args);
 
   // create the DFG command.
   FabricUI::DFG::DFGUICmd_InstPreset *cmd = NULL;
@@ -842,15 +1346,15 @@ SICALLBACK dfgInstPreset_Execute(CRef &in_ctxt)
     std::string execPath;
     FabricCore::DFGExec exec;
     if (!DecodeExec(args, ai, binding, execPath, exec))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string presetPath;
     if (!DecodeString(args, ai, presetPath))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     QPointF position;
     if (!DecodePosition(args, ai, position))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     cmd = new FabricUI::DFG::DFGUICmd_InstPreset(binding,
                                                  execPath.c_str(),
@@ -870,84 +1374,63 @@ SICALLBACK dfgInstPreset_Execute(CRef &in_ctxt)
   }
 
   // store return value.
-  CString returnValue = cmd->getActualNodeName().c_str();
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", siCommentMsg);
+  XSI::CString returnValue = cmd->getActualNodeName().c_str();
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", XSI::siCommentMsg);
   ctxt.PutAttribute(L"ReturnValue", returnValue);
 
   DFGUICmd_Finish(ctxt, cmd);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgInstPreset_Undo(CRef &ctxt)
+SICALLBACK dfgInstPreset_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgInstPreset_Redo(CRef &ctxt)
+SICALLBACK dfgInstPreset_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgInstPreset_TermUndoRedo(CRef &ctxt)
+SICALLBACK dfgInstPreset_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-std::string DFGUICmdHandlerXSI::dfgDoInstPreset(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef presetPath,
-  QPointF pos
-  )
+//        "dfgAddVar"
+
+SICALLBACK dfgAddVar_Init(XSI::CRef &in_ctxt)
 {
-  CString cmdName(FabricUI::DFG::DFGUICmd_InstPreset::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // execPath.
-  args.Add(presetPath.c_str());                           // presetPath.
-  EncodePosition( pos, args );
-
-  CValue result;
-  executeCommand(cmdName, args, result);
-  return result.GetAsText().GetAsciiString();
-}
-
-// ---
-// command "dfgAddVar"
-// ---
-
-SICALLBACK dfgAddVar_Init(CRef &in_ctxt)
-{
-  Context ctxt(in_ctxt);
-  Command oCmd;
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
 
   oCmd = ctxt.GetSource();
   oCmd.EnableReturnValue(true);
 
-  ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",         CString());
-  oArgs.Add(L"execPath",        CString());
-  oArgs.Add(L"desiredNodeName", CString());
-  oArgs.Add(L"dataType",        CString());
-  oArgs.Add(L"extDep",          CString());
-  oArgs.Add(L"xPos",            CString());
-  oArgs.Add(L"yPos",            CString());
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",         XSI::CString());
+  oArgs.Add(L"execPath",        XSI::CString());
+  oArgs.Add(L"desiredNodeName", XSI::CString());
+  oArgs.Add(L"dataType",        XSI::CString());
+  oArgs.Add(L"extDep",          XSI::CString());
+  oArgs.Add(L"xPos",            XSI::CString());
+  oArgs.Add(L"yPos",            XSI::CString());
 
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddVar_Execute(CRef &in_ctxt)
+SICALLBACK dfgAddVar_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgAddVar_Execute()", siCommentMsg);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgAddVar_Execute()", XSI::siCommentMsg);
 
   // init.
-  Context ctxt(in_ctxt);
-  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  argsToStdVector(tmp, args);
 
   // create the DFG command.
   FabricUI::DFG::DFGUICmd_AddVar *cmd = NULL;
@@ -958,23 +1441,23 @@ SICALLBACK dfgAddVar_Execute(CRef &in_ctxt)
     std::string execPath;
     FabricCore::DFGExec exec;
     if (!DecodeExec(args, ai, binding, execPath, exec))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string desiredNodeName;
     if (!DecodeString(args, ai, desiredNodeName))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string dataType;
     if (!DecodeString(args, ai, dataType))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string extDep;
     if (!DecodeString(args, ai, extDep))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     QPointF position;
     if (!DecodePosition(args, ai, position))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     cmd = new FabricUI::DFG::DFGUICmd_AddVar(binding,
                                              execPath.c_str(),
@@ -996,87 +1479,62 @@ SICALLBACK dfgAddVar_Execute(CRef &in_ctxt)
   }
 
   // store return value.
-  CString returnValue = cmd->getActualNodeName().c_str();
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", siCommentMsg);
+  XSI::CString returnValue = cmd->getActualNodeName().c_str();
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", XSI::siCommentMsg);
   ctxt.PutAttribute(L"ReturnValue", returnValue);
 
   DFGUICmd_Finish(ctxt, cmd);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddVar_Undo(CRef &ctxt)
+SICALLBACK dfgAddVar_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddVar_Redo(CRef &ctxt)
+SICALLBACK dfgAddVar_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddVar_TermUndoRedo(CRef &ctxt)
+SICALLBACK dfgAddVar_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-std::string DFGUICmdHandlerXSI::dfgDoAddVar(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef desiredNodeName,
-  FTL::CStrRef dataType,
-  FTL::CStrRef extDep,
-  QPointF pos
-  )
+//        "dfgAddGet"
+
+SICALLBACK dfgAddGet_Init(XSI::CRef &in_ctxt)
 {
-  CString cmdName(FabricUI::DFG::DFGUICmd_AddVar::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // execPath.
-  args.Add(desiredNodeName.c_str());                      // desiredNodeName.
-  args.Add(dataType.c_str());                             // dataType.
-  args.Add(extDep.c_str());                               // extDep.
-  EncodePosition( pos, args );
-
-  CValue result;
-  executeCommand(cmdName, args, result);
-  return result.GetAsText().GetAsciiString();
-}
-
-// ---
-// command "dfgAddGet"
-// ---
-
-SICALLBACK dfgAddGet_Init(CRef &in_ctxt)
-{
-  Context ctxt(in_ctxt);
-  Command oCmd;
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
 
   oCmd = ctxt.GetSource();
   oCmd.EnableReturnValue(true);
 
-  ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",         CString());
-  oArgs.Add(L"execPath",        CString());
-  oArgs.Add(L"desiredNodeName", CString());
-  oArgs.Add(L"varPath",         CString());
-  oArgs.Add(L"xPos",            CString());
-  oArgs.Add(L"yPos",            CString());
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",         XSI::CString());
+  oArgs.Add(L"execPath",        XSI::CString());
+  oArgs.Add(L"desiredNodeName", XSI::CString());
+  oArgs.Add(L"varPath",         XSI::CString());
+  oArgs.Add(L"xPos",            XSI::CString());
+  oArgs.Add(L"yPos",            XSI::CString());
 
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddGet_Execute(CRef &in_ctxt)
+SICALLBACK dfgAddGet_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgAddGet_Execute()", siCommentMsg);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgAddGet_Execute()", XSI::siCommentMsg);
 
   // init.
-  Context ctxt(in_ctxt);
-  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  argsToStdVector(tmp, args);
 
   // create the DFG command.
   FabricUI::DFG::DFGUICmd_AddGet *cmd = NULL;
@@ -1087,19 +1545,19 @@ SICALLBACK dfgAddGet_Execute(CRef &in_ctxt)
     std::string execPath;
     FabricCore::DFGExec exec;
     if (!DecodeExec(args, ai, binding, execPath, exec))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string desiredNodeName;
     if (!DecodeString(args, ai, desiredNodeName))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string varPath;
     if (!DecodeString(args, ai, varPath))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     QPointF position;
     if (!DecodePosition(args, ai, position))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     cmd = new FabricUI::DFG::DFGUICmd_AddGet(binding,
                                              execPath.c_str(),
@@ -1120,85 +1578,62 @@ SICALLBACK dfgAddGet_Execute(CRef &in_ctxt)
   }
 
   // store return value.
-  CString returnValue = cmd->getActualNodeName().c_str();
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", siCommentMsg);
+  XSI::CString returnValue = cmd->getActualNodeName().c_str();
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", XSI::siCommentMsg);
   ctxt.PutAttribute(L"ReturnValue", returnValue);
 
   DFGUICmd_Finish(ctxt, cmd);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddGet_Undo(CRef &ctxt)
+SICALLBACK dfgAddGet_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddGet_Redo(CRef &ctxt)
+SICALLBACK dfgAddGet_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddGet_TermUndoRedo(CRef &ctxt)
+SICALLBACK dfgAddGet_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-std::string DFGUICmdHandlerXSI::dfgDoAddGet(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef desiredNodeName,
-  FTL::CStrRef varPath,
-  QPointF pos
-  )
+//        "dfgAddSet"
+
+SICALLBACK dfgAddSet_Init(XSI::CRef &in_ctxt)
 {
-  CString cmdName(FabricUI::DFG::DFGUICmd_AddGet::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // execPath.
-  args.Add(desiredNodeName.c_str());                      // desiredNodeName.
-  args.Add(varPath.c_str());                              // varPath.
-  EncodePosition( pos, args );
-
-  CValue result;
-  executeCommand(cmdName, args, result);
-  return result.GetAsText().GetAsciiString();
-}
-
-// ---
-// command "dfgAddSet"
-// ---
-
-SICALLBACK dfgAddSet_Init(CRef &in_ctxt)
-{
-  Context ctxt(in_ctxt);
-  Command oCmd;
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
 
   oCmd = ctxt.GetSource();
   oCmd.EnableReturnValue(true);
 
-  ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",         CString());
-  oArgs.Add(L"execPath",        CString());
-  oArgs.Add(L"desiredNodeName", CString());
-  oArgs.Add(L"varPath",         CString());
-  oArgs.Add(L"xPos",            CString());
-  oArgs.Add(L"yPos",            CString());
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",         XSI::CString());
+  oArgs.Add(L"execPath",        XSI::CString());
+  oArgs.Add(L"desiredNodeName", XSI::CString());
+  oArgs.Add(L"varPath",         XSI::CString());
+  oArgs.Add(L"xPos",            XSI::CString());
+  oArgs.Add(L"yPos",            XSI::CString());
 
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddSet_Execute(CRef &in_ctxt)
+SICALLBACK dfgAddSet_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgAddSet_Execute()", siCommentMsg);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgAddSet_Execute()", XSI::siCommentMsg);
 
   // init.
-  Context ctxt(in_ctxt);
-  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  argsToStdVector(tmp, args);
 
   // create the DFG command.
   FabricUI::DFG::DFGUICmd_AddSet *cmd = NULL;
@@ -1209,19 +1644,19 @@ SICALLBACK dfgAddSet_Execute(CRef &in_ctxt)
     std::string execPath;
     FabricCore::DFGExec exec;
     if (!DecodeExec(args, ai, binding, execPath, exec))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string desiredNodeName;
     if (!DecodeString(args, ai, desiredNodeName))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string varPath;
     if (!DecodeString(args, ai, varPath))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     QPointF position;
     if (!DecodePosition(args, ai, position))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     cmd = new FabricUI::DFG::DFGUICmd_AddSet(binding,
                                              execPath.c_str(),
@@ -1242,85 +1677,62 @@ SICALLBACK dfgAddSet_Execute(CRef &in_ctxt)
   }
 
   // store return value.
-  CString returnValue = cmd->getActualNodeName().c_str();
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", siCommentMsg);
+  XSI::CString returnValue = cmd->getActualNodeName().c_str();
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", XSI::siCommentMsg);
   ctxt.PutAttribute(L"ReturnValue", returnValue);
 
   DFGUICmd_Finish(ctxt, cmd);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddSet_Undo(CRef &ctxt)
+SICALLBACK dfgAddSet_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddSet_Redo(CRef &ctxt)
+SICALLBACK dfgAddSet_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddSet_TermUndoRedo(CRef &ctxt)
+SICALLBACK dfgAddSet_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-std::string DFGUICmdHandlerXSI::dfgDoAddSet(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef desiredNodeName,
-  FTL::CStrRef varPath,
-  QPointF pos
-  )
+//        "dfgAddPort"
+
+SICALLBACK dfgAddPort_Init(XSI::CRef &in_ctxt)
 {
-  CString cmdName(FabricUI::DFG::DFGUICmd_AddSet::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // execPath.
-  args.Add(desiredNodeName.c_str());                      // desiredNodeName.
-  args.Add(varPath.c_str());                              // varPath.
-  EncodePosition( pos, args );
-
-  CValue result;
-  executeCommand(cmdName, args, result);
-  return result.GetAsText().GetAsciiString();
-}
-
-// ---
-// command "dfgAddPort"
-// ---
-
-SICALLBACK dfgAddPort_Init(CRef &in_ctxt)
-{
-  Context ctxt(in_ctxt);
-  Command oCmd;
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
 
   oCmd = ctxt.GetSource();
   oCmd.EnableReturnValue(true);
 
-  ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",         CString());
-  oArgs.Add(L"execPath",        CString());
-  oArgs.Add(L"desiredPortName", CString());
-  oArgs.Add(L"portType",        CString());
-  oArgs.Add(L"typeSpec",        CString());
-  oArgs.Add(L"portToConnect",   CString());
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",         XSI::CString());
+  oArgs.Add(L"execPath",        XSI::CString());
+  oArgs.Add(L"desiredPortName", XSI::CString());
+  oArgs.Add(L"portType",        XSI::CString());
+  oArgs.Add(L"typeSpec",        XSI::CString());
+  oArgs.Add(L"portToConnect",   XSI::CString());
 
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddPort_Execute(CRef &in_ctxt)
+SICALLBACK dfgAddPort_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgAddPort_Execute()", siCommentMsg);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgAddPort_Execute()", XSI::siCommentMsg);
 
   // init.
-  Context ctxt(in_ctxt);
-  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  argsToStdVector(tmp, args);
 
   // create the DFG command.
   FabricUI::DFG::DFGUICmd_AddPort *cmd = NULL;
@@ -1331,39 +1743,36 @@ SICALLBACK dfgAddPort_Execute(CRef &in_ctxt)
     std::string execPath;
     FabricCore::DFGExec exec;
     if (!DecodeExec(args, ai, binding, execPath, exec))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string desiredPortName;
     if (!DecodeString(args, ai, desiredPortName))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string portTypeString;
     if (!DecodeString(args, ai, portTypeString))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
     FabricCore::DFGPortType portType;
-    if ( portTypeString == "In" || portTypeString == "in" )
-      portType = FabricCore::DFGPortType_In;
-    else if ( portTypeString == "IO" || portTypeString == "io" )
-      portType = FabricCore::DFGPortType_IO;
-    else if ( portTypeString == "Out" || portTypeString == "out" )
-      portType = FabricCore::DFGPortType_Out;
+    if      (portTypeString == "In"  || portTypeString == "in" )  portType = FabricCore::DFGPortType_In;
+    else if (portTypeString == "IO"  || portTypeString == "io" )  portType = FabricCore::DFGPortType_IO;
+    else if (portTypeString == "Out" || portTypeString == "out")  portType = FabricCore::DFGPortType_Out;
     else
     {
       std::wstring msg;
       msg += L"[DFGUICmd] Unrecognize port type '";
       msg.insert( msg.end(), portTypeString.begin(), portTypeString.end() );
       msg += L'\'';
-      Application().LogMessage( msg.c_str(), siErrorMsg );
-      return CStatus::Fail;
+      XSI::Application().LogMessage(msg.c_str(), XSI::siErrorMsg);
+      return XSI::CStatus::Fail;
     }
 
     std::string typeSpec;
     if (!DecodeString(args, ai, typeSpec))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string portToConnectWith;
     if (!DecodeString(args, ai, portToConnectWith))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     cmd = new FabricUI::DFG::DFGUICmd_AddPort(binding,
                                               execPath.c_str(),
@@ -1385,97 +1794,59 @@ SICALLBACK dfgAddPort_Execute(CRef &in_ctxt)
   }
 
   // store return value.
-  CString returnValue = cmd->getActualPortName().c_str();
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", siCommentMsg);
+  XSI::CString returnValue = cmd->getActualPortName().c_str();
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", XSI::siCommentMsg);
   ctxt.PutAttribute(L"ReturnValue", returnValue);
 
   DFGUICmd_Finish(ctxt, cmd);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddPort_Undo(CRef &ctxt)
+SICALLBACK dfgAddPort_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddPort_Redo(CRef &ctxt)
+SICALLBACK dfgAddPort_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddPort_TermUndoRedo(CRef &ctxt)
+SICALLBACK dfgAddPort_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-std::string DFGUICmdHandlerXSI::dfgDoAddPort(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef desiredPortName,
-  FabricCore::DFGPortType portType,
-  FTL::CStrRef typeSpec,
-  FTL::CStrRef portToConnect
-  )
+//        "dfgRemovePort"
+
+SICALLBACK dfgRemovePort_Init(XSI::CRef &in_ctxt)
 {
-  CString cmdName(FabricUI::DFG::DFGUICmd_AddPort::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // execPath.
-  args.Add(desiredPortName.c_str());                      // desiredNodeName.
-  FTL::CStrRef portTypeStr;
-  switch ( portType )
-  {
-    case FabricCore::DFGPortType_In:
-      portTypeStr = FTL_STR("In");
-      break;
-    case FabricCore::DFGPortType_IO:
-      portTypeStr = FTL_STR("IO");
-      break;
-    case FabricCore::DFGPortType_Out:
-      portTypeStr = FTL_STR("Out");
-      break;
-  }
-  args.Add(portTypeStr.c_str());                      // desiredNodeName.
-  args.Add(typeSpec.c_str());                      // desiredNodeName.
-  args.Add(portToConnect.c_str());                      // desiredNodeName.
-
-  CValue result;
-  executeCommand(cmdName, args, result);
-  return result.GetAsText().GetAsciiString();
-}
-
-// ---
-// command "dfgRemovePort"
-// ---
-
-SICALLBACK dfgRemovePort_Init(CRef &in_ctxt)
-{
-  Context ctxt(in_ctxt);
-  Command oCmd;
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
 
   oCmd = ctxt.GetSource();
   oCmd.EnableReturnValue(false);
 
-  ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",     CString());
-  oArgs.Add(L"execPath",    CString());
-  oArgs.Add(L"portName",   CString());
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",  XSI::CString());
+  oArgs.Add(L"execPath", XSI::CString());
+  oArgs.Add(L"portName", XSI::CString());
 
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgRemovePort_Execute(CRef &in_ctxt)
+SICALLBACK dfgRemovePort_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgRemovePort_Execute()", siCommentMsg);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgRemovePort_Execute()", XSI::siCommentMsg);
 
   // init.
-  Context ctxt(in_ctxt);
-  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  argsToStdVector(tmp, args);
 
   // create the DFG command.
   FabricUI::DFG::DFGUICmd_RemovePort *cmd = NULL;
@@ -1486,11 +1857,11 @@ SICALLBACK dfgRemovePort_Execute(CRef &in_ctxt)
     std::string execPath;
     FabricCore::DFGExec exec;
     if (!DecodeExec(args, ai, binding, execPath, exec))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string portName;
     if (!DecodeName(args, ai, portName))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     cmd = new FabricUI::DFG::DFGUICmd_RemovePort(binding,
                                                  execPath.c_str(),
@@ -1509,73 +1880,56 @@ SICALLBACK dfgRemovePort_Execute(CRef &in_ctxt)
   }
 
   DFGUICmd_Finish(ctxt, cmd);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgRemovePort_Undo(CRef &ctxt)
+SICALLBACK dfgRemovePort_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgRemovePort_Redo(CRef &ctxt)
+SICALLBACK dfgRemovePort_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgRemovePort_TermUndoRedo(CRef &ctxt)
+SICALLBACK dfgRemovePort_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-void DFGUICmdHandlerXSI::dfgDoRemovePort(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef portName
-  )
+//        "dfgMoveNodes"
+
+SICALLBACK dfgMoveNodes_Init(XSI::CRef &in_ctxt)
 {
-  CString cmdName(FabricUI::DFG::DFGUICmd_RemovePort::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // execPath.
-  args.Add(portName.c_str());                      // desiredNodeName.
-
-  executeCommand(cmdName, args, CValue());
-}
-
-// ---
-// command "dfgMoveNodes"
-// ---
-
-SICALLBACK dfgMoveNodes_Init(CRef &in_ctxt)
-{
-  Context ctxt(in_ctxt);
-  Command oCmd;
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
 
   oCmd = ctxt.GetSource();
   oCmd.EnableReturnValue(false);
 
-  ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",   CString());
-  oArgs.Add(L"execPath",  CString());
-  oArgs.Add(L"nodeNames", CString());
-  oArgs.Add(L"xPoss",     CString());
-  oArgs.Add(L"yPoss",     CString());
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",   XSI::CString());
+  oArgs.Add(L"execPath",  XSI::CString());
+  oArgs.Add(L"nodeNames", XSI::CString());
+  oArgs.Add(L"xPoss",     XSI::CString());
+  oArgs.Add(L"yPoss",     XSI::CString());
 
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgMoveNodes_Execute(CRef &in_ctxt)
+SICALLBACK dfgMoveNodes_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgMoveNodes_Execute()", siCommentMsg);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgMoveNodes_Execute()", XSI::siCommentMsg);
 
   // init.
-  Context ctxt(in_ctxt);
-  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  argsToStdVector(tmp, args);
 
   // create the DFG command.
   FabricUI::DFG::DFGUICmd_MoveNodes *cmd = NULL;
@@ -1586,17 +1940,17 @@ SICALLBACK dfgMoveNodes_Execute(CRef &in_ctxt)
     std::string execPath;
     FabricCore::DFGExec exec;
     if (!DecodeExec(args, ai, binding, execPath, exec))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string nodeNamesString;
     std::vector<FTL::StrRef> nodeNames;
     if (!DecodeNames(args, ai, nodeNamesString, nodeNames))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::vector<QPointF> poss;
-    std::string xPosString = CString(args[ai++]).GetAsciiString();
+    std::string xPosString = args[ai++];
     FTL::StrRef xPosStr = xPosString;
-    std::string yPosString = CString(args[ai++]).GetAsciiString();
+    std::string yPosString = args[ai++];
     FTL::StrRef yPosStr = yPosString;
     while ( !xPosStr.empty() && !yPosStr.empty() )
     {
@@ -1630,78 +1984,58 @@ SICALLBACK dfgMoveNodes_Execute(CRef &in_ctxt)
   }
 
   DFGUICmd_Finish(ctxt, cmd);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgMoveNodes_Undo(CRef &ctxt)
+SICALLBACK dfgMoveNodes_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgMoveNodes_Redo(CRef &ctxt)
+SICALLBACK dfgMoveNodes_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgMoveNodes_TermUndoRedo(CRef &ctxt)
+SICALLBACK dfgMoveNodes_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-void DFGUICmdHandlerXSI::dfgDoMoveNodes(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::ArrayRef<FTL::CStrRef> nodeNames,
-  FTL::ArrayRef<QPointF> poss
-  )
+//        "dfgResizeBackDrop"
+
+SICALLBACK dfgResizeBackDrop_Init(XSI::CRef &in_ctxt)
 {
-  CString cmdName(FabricUI::DFG::DFGUICmd_MoveNodes::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());
-  args.Add(EncodeNames(nodeNames).c_str());
-  args.Add( EncodeXPoss( poss ).c_str() );
-  args.Add( EncodeYPoss( poss ).c_str() );
-
-  executeCommand(cmdName, args, CValue());
-}
-
-// ---
-// command "dfgResizeBackDrop"
-// ---
-
-SICALLBACK dfgResizeBackDrop_Init(CRef &in_ctxt)
-{
-  Context ctxt(in_ctxt);
-  Command oCmd;
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
 
   oCmd = ctxt.GetSource();
   oCmd.EnableReturnValue(false);
 
-  ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",     CString());
-  oArgs.Add(L"execPath",    CString());
-  oArgs.Add(L"backDropName",   CString());
-  oArgs.Add(L"xPos",   CString());
-  oArgs.Add(L"yPos",   CString());
-  oArgs.Add(L"width",   CString());
-  oArgs.Add(L"height",   CString());
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",      XSI::CString());
+  oArgs.Add(L"execPath",     XSI::CString());
+  oArgs.Add(L"backDropName", XSI::CString());
+  oArgs.Add(L"xPos",         XSI::CString());
+  oArgs.Add(L"yPos",         XSI::CString());
+  oArgs.Add(L"width",        XSI::CString());
+  oArgs.Add(L"height",       XSI::CString());
 
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgResizeBackDrop_Execute(CRef &in_ctxt)
+SICALLBACK dfgResizeBackDrop_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgResizeBackDrop_Execute()", siCommentMsg);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgResizeBackDrop_Execute()", XSI::siCommentMsg);
 
   // init.
-  Context ctxt(in_ctxt);
-  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  argsToStdVector(tmp, args);
 
   // create the DFG command.
   FabricUI::DFG::DFGUICmd_ResizeBackDrop *cmd = NULL;
@@ -1712,19 +2046,19 @@ SICALLBACK dfgResizeBackDrop_Execute(CRef &in_ctxt)
     std::string execPath;
     FabricCore::DFGExec exec;
     if (!DecodeExec(args, ai, binding, execPath, exec))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string backDropName;
     if (!DecodeName(args, ai, backDropName))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     QPointF position;
     if (!DecodePosition(args, ai, position))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     QSizeF size;
     if (!DecodeSize(args, ai, size))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     cmd = new FabricUI::DFG::DFGUICmd_ResizeBackDrop(binding,
                                                      execPath.c_str(),
@@ -1745,77 +2079,55 @@ SICALLBACK dfgResizeBackDrop_Execute(CRef &in_ctxt)
   }
 
   DFGUICmd_Finish(ctxt, cmd);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgResizeBackDrop_Undo(CRef &ctxt)
+SICALLBACK dfgResizeBackDrop_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgResizeBackDrop_Redo(CRef &ctxt)
+SICALLBACK dfgResizeBackDrop_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgResizeBackDrop_TermUndoRedo(CRef &ctxt)
+SICALLBACK dfgResizeBackDrop_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
+//        "dfgImplodeNodes"
 
-void DFGUICmdHandlerXSI::dfgDoResizeBackDrop(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef backDropName,
-  QPointF pos,
-  QSizeF size
-  )
+SICALLBACK dfgImplodeNodes_Init(XSI::CRef &in_ctxt)
 {
-  CString cmdName(FabricUI::DFG::DFGUICmd_ResizeBackDrop::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());
-  args.Add( backDropName.c_str() );
-  EncodePosition( pos, args );
-  EncodeSize( size, args );
-
-  executeCommand(cmdName, args, CValue());
-}
-
-// ---
-// command "dfgImplodeNodes"
-// ---
-
-SICALLBACK dfgImplodeNodes_Init(CRef &in_ctxt)
-{
-  Context ctxt(in_ctxt);
-  Command oCmd;
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
 
   oCmd = ctxt.GetSource();
   oCmd.EnableReturnValue(true);
 
-  ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",     CString());
-  oArgs.Add(L"execPath",    CString());
-  oArgs.Add(L"nodeNames",    CString());
-  oArgs.Add(L"desiredImplodedNodeName",  CString());
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",                 XSI::CString());
+  oArgs.Add(L"execPath",                XSI::CString());
+  oArgs.Add(L"nodeNames",               XSI::CString());
+  oArgs.Add(L"desiredImplodedNodeName", XSI::CString());
 
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgImplodeNodes_Execute(CRef &in_ctxt)
+SICALLBACK dfgImplodeNodes_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgImplodeNodes_Execute()", siCommentMsg);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgImplodeNodes_Execute()", XSI::siCommentMsg);
 
   // init.
-  Context ctxt(in_ctxt);
-  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  argsToStdVector(tmp, args);
 
   // create the DFG command.
   FabricUI::DFG::DFGUICmd_ImplodeNodes *cmd = NULL;
@@ -1826,16 +2138,16 @@ SICALLBACK dfgImplodeNodes_Execute(CRef &in_ctxt)
     std::string execPath;
     FabricCore::DFGExec exec;
     if (!DecodeExec(args, ai, binding, execPath, exec))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string nodeNamesString;
     std::vector<FTL::StrRef> nodeNames;
     if (!DecodeNames(args, ai, nodeNamesString, nodeNames))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string desiredImplodedNodeName;
     if (!DecodeString(args, ai, desiredImplodedNodeName))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     cmd = new FabricUI::DFG::DFGUICmd_ImplodeNodes(binding,
                                                    execPath.c_str(),
@@ -1855,80 +2167,59 @@ SICALLBACK dfgImplodeNodes_Execute(CRef &in_ctxt)
   }
 
   // store return value.
-  CString returnValue = cmd->getActualImplodedNodeName().c_str();
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", siCommentMsg);
+  XSI::CString returnValue = cmd->getActualImplodedNodeName().c_str();
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", XSI::siCommentMsg);
   ctxt.PutAttribute(L"ReturnValue", returnValue);
 
   DFGUICmd_Finish(ctxt, cmd);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgImplodeNodes_Undo(CRef &ctxt)
+SICALLBACK dfgImplodeNodes_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgImplodeNodes_Redo(CRef &ctxt)
+SICALLBACK dfgImplodeNodes_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgImplodeNodes_TermUndoRedo(CRef &ctxt)
+SICALLBACK dfgImplodeNodes_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-std::string DFGUICmdHandlerXSI::dfgDoImplodeNodes(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::ArrayRef<FTL::CStrRef> nodeNames,
-  FTL::CStrRef desiredNodeName
-  )
+//        "dfgExplodeNode"
+
+SICALLBACK dfgExplodeNode_Init(XSI::CRef &in_ctxt)
 {
-  CString cmdName(FabricUI::DFG::DFGUICmd_ImplodeNodes::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());
-  args.Add(EncodeNames(nodeNames).c_str());
-  args.Add(desiredNodeName.c_str());
-
-  CValue result;
-  executeCommand(cmdName, args, result);
-  return result.GetAsText().GetAsciiString();
-}
-
-// ---
-// command "dfgExplodeNode"
-// ---
-
-SICALLBACK dfgExplodeNode_Init(CRef &in_ctxt)
-{
-  Context ctxt(in_ctxt);
-  Command oCmd;
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
 
   oCmd = ctxt.GetSource();
   oCmd.EnableReturnValue(true);
 
-  ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",     CString());
-  oArgs.Add(L"execPath",    CString());
-  oArgs.Add(L"nodeName",    CString());
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",  XSI::CString());
+  oArgs.Add(L"execPath", XSI::CString());
+  oArgs.Add(L"nodeName", XSI::CString());
 
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgExplodeNode_Execute(CRef &in_ctxt)
+SICALLBACK dfgExplodeNode_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgExplodeNode_Execute()", siCommentMsg);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgExplodeNode_Execute()", XSI::siCommentMsg);
 
   // init.
-  Context ctxt(in_ctxt);
-  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  argsToStdVector(tmp, args);
 
   // create the DFG command.
   FabricUI::DFG::DFGUICmd_ExplodeNode *cmd = NULL;
@@ -1939,11 +2230,11 @@ SICALLBACK dfgExplodeNode_Execute(CRef &in_ctxt)
     std::string execPath;
     FabricCore::DFGExec exec;
     if (!DecodeExec(args, ai, binding, execPath, exec))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string nodeName;
     if (!DecodeName(args, ai, nodeName))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     cmd = new FabricUI::DFG::DFGUICmd_ExplodeNode(binding,
                                                   execPath.c_str(),
@@ -1962,8 +2253,7 @@ SICALLBACK dfgExplodeNode_Execute(CRef &in_ctxt)
   }
 
   // store return value.
-  FTL::ArrayRef<std::string> explodedNodeNames =
-    cmd->getExplodedNodeNames();
+  FTL::ArrayRef<std::string> explodedNodeNames = cmd->getExplodedNodeNames();
   std::string explodedNodeNamesString;
   for ( FTL::ArrayRef<std::string>::IT it = explodedNodeNames.begin();
     it != explodedNodeNames.end(); ++it )
@@ -1973,90 +2263,61 @@ SICALLBACK dfgExplodeNode_Execute(CRef &in_ctxt)
     explodedNodeNamesString += *it;
   }
 
-  CString returnValue = explodedNodeNamesString.c_str();
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", siCommentMsg);
+  XSI::CString returnValue = explodedNodeNamesString.c_str();
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", XSI::siCommentMsg);
   ctxt.PutAttribute(L"ReturnValue", returnValue);
 
   DFGUICmd_Finish(ctxt, cmd);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgExplodeNode_Undo(CRef &ctxt)
+SICALLBACK dfgExplodeNode_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgExplodeNode_Redo(CRef &ctxt)
+SICALLBACK dfgExplodeNode_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgExplodeNode_TermUndoRedo(CRef &ctxt)
+SICALLBACK dfgExplodeNode_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-std::vector<std::string> DFGUICmdHandlerXSI::dfgDoExplodeNode(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef nodeName
-  )
+//        "dfgAddBackDrop"
+
+SICALLBACK dfgAddBackDrop_Init(XSI::CRef &in_ctxt)
 {
-  CString cmdName(FabricUI::DFG::DFGUICmd_ExplodeNode::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());
-  args.Add( nodeName.c_str() );
-
-  CValue resultValue;
-  executeCommand(cmdName, args, resultValue);
-  CString resultString( resultValue );
-  std::string explodedNodeNamesString = resultString.GetAsciiString();
-  FTL::StrRef explodedNodeNamesStr = explodedNodeNamesString;
-  std::vector<std::string> result;
-  while ( !explodedNodeNamesStr.empty() )
-  {
-    FTL::StrRef::Split split = explodedNodeNamesStr.split('|');
-    result.push_back( split.first );
-    explodedNodeNamesStr = split.second;
-  }
-  return result;
-}
-
-// ---
-// command "dfgAddBackDrop"
-// ---
-
-SICALLBACK dfgAddBackDrop_Init(CRef &in_ctxt)
-{
-  Context ctxt(in_ctxt);
-  Command oCmd;
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
 
   oCmd = ctxt.GetSource();
   oCmd.EnableReturnValue(true);
 
-  ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",  CString());
-  oArgs.Add(L"execPath", CString());
-  oArgs.Add(L"title",    CString());
-  oArgs.Add(L"xPos",     CString());
-  oArgs.Add(L"yPos",     CString());
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",  XSI::CString());
+  oArgs.Add(L"execPath", XSI::CString());
+  oArgs.Add(L"title",    XSI::CString());
+  oArgs.Add(L"xPos",     XSI::CString());
+  oArgs.Add(L"yPos",     XSI::CString());
 
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddBackDrop_Execute(CRef &in_ctxt)
+SICALLBACK dfgAddBackDrop_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgAddBackDrop_Execute()", siCommentMsg);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgAddBackDrop_Execute()", XSI::siCommentMsg);
 
   // init.
-  Context ctxt(in_ctxt);
-  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  argsToStdVector(tmp, args);
 
   // create the DFG command.
   FabricUI::DFG::DFGUICmd_AddBackDrop *cmd = NULL;
@@ -2067,15 +2328,15 @@ SICALLBACK dfgAddBackDrop_Execute(CRef &in_ctxt)
     std::string execPath;
     FabricCore::DFGExec exec;
     if (!DecodeExec(args, ai, binding, execPath, exec))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string title;
     if (!DecodeString(args, ai, title))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     QPointF position;
     if (!DecodePosition(args, ai, position))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     cmd = new FabricUI::DFG::DFGUICmd_AddBackDrop(binding,
                                                   execPath.c_str(),
@@ -2095,79 +2356,60 @@ SICALLBACK dfgAddBackDrop_Execute(CRef &in_ctxt)
   }
 
   // store return value.
-  CString returnValue = cmd->getActualNodeName().c_str();
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", siCommentMsg);
+  XSI::CString returnValue = cmd->getActualNodeName().c_str();
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", XSI::siCommentMsg);
   ctxt.PutAttribute(L"ReturnValue", returnValue);
 
   DFGUICmd_Finish(ctxt, cmd);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddBackDrop_Undo(CRef &ctxt)
+SICALLBACK dfgAddBackDrop_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddBackDrop_Redo(CRef &ctxt)
+SICALLBACK dfgAddBackDrop_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddBackDrop_TermUndoRedo(CRef &ctxt)
+SICALLBACK dfgAddBackDrop_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-void DFGUICmdHandlerXSI::dfgDoAddBackDrop(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef title,
-  QPointF pos
-  )
+//        "dfgSetNodeTitle"
+
+SICALLBACK dfgSetNodeTitle_Init(XSI::CRef &in_ctxt)
 {
-  CString cmdName(FabricUI::DFG::DFGUICmd_AddBackDrop::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // execPath.
-  args.Add(title.c_str());                                // title.
-  EncodePosition( pos, args );
-
-  executeCommand(cmdName, args, CValue());
-}
-
-// ---
-// command "dfgSetNodeTitle"
-// ---
-
-SICALLBACK dfgSetNodeTitle_Init(CRef &in_ctxt)
-{
-  Context ctxt(in_ctxt);
-  Command oCmd;
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
 
   oCmd = ctxt.GetSource();
   oCmd.EnableReturnValue(false);
 
-  ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",     CString());
-  oArgs.Add(L"execPath",    CString());
-  oArgs.Add(L"nodeName",   CString());
-  oArgs.Add(L"title",   CString());
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",  XSI::CString());
+  oArgs.Add(L"execPath", XSI::CString());
+  oArgs.Add(L"nodeName", XSI::CString());
+  oArgs.Add(L"title",    XSI::CString());
 
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetNodeTitle_Execute(CRef &in_ctxt)
+SICALLBACK dfgSetNodeTitle_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgSetNodeTitle_Execute()", siCommentMsg);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgSetNodeTitle_Execute()", XSI::siCommentMsg);
 
   // init.
-  Context ctxt(in_ctxt);
-  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  argsToStdVector(tmp, args);
 
   // create the DFG command.
   FabricUI::DFG::DFGUICmd_SetNodeTitle *cmd = NULL;
@@ -2178,15 +2420,15 @@ SICALLBACK dfgSetNodeTitle_Execute(CRef &in_ctxt)
     std::string execPath;
     FabricCore::DFGExec exec;
     if (!DecodeExec(args, ai, binding, execPath, exec))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string nodeName;
     if (!DecodeName(args, ai, nodeName))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string title;
     if (!DecodeName(args, ai, title))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     cmd = new FabricUI::DFG::DFGUICmd_SetNodeTitle(binding,
                                                    execPath.c_str(),
@@ -2206,74 +2448,55 @@ SICALLBACK dfgSetNodeTitle_Execute(CRef &in_ctxt)
   }
 
   DFGUICmd_Finish(ctxt, cmd);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetNodeTitle_Undo(CRef &ctxt)
+SICALLBACK dfgSetNodeTitle_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetNodeTitle_Redo(CRef &ctxt)
+SICALLBACK dfgSetNodeTitle_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetNodeTitle_TermUndoRedo(CRef &ctxt)
+SICALLBACK dfgSetNodeTitle_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-void DFGUICmdHandlerXSI::dfgDoSetNodeTitle(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef nodeName,
-  FTL::CStrRef title
-  )
+//        "dfgSetNodeComment"
+
+SICALLBACK dfgSetNodeComment_Init(XSI::CRef &in_ctxt)
 {
-  CString cmdName(FabricUI::DFG::DFGUICmd_SetNodeTitle::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // execPath.
-  args.Add(nodeName.c_str());                             // nodeName.
-  args.Add(title.c_str());                                // title.
-
-  executeCommand(cmdName, args, CValue());
-}
-
-// ---
-// command "dfgSetNodeComment"
-// ---
-
-SICALLBACK dfgSetNodeComment_Init(CRef &in_ctxt)
-{
-  Context ctxt(in_ctxt);
-  Command oCmd;
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
 
   oCmd = ctxt.GetSource();
   oCmd.EnableReturnValue(false);
 
-  ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",     CString());
-  oArgs.Add(L"execPath",    CString());
-  oArgs.Add(L"nodeName",   CString());
-  oArgs.Add(L"comment",   CString());
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",  XSI::CString());
+  oArgs.Add(L"execPath", XSI::CString());
+  oArgs.Add(L"nodeName", XSI::CString());
+  oArgs.Add(L"comment",  XSI::CString());
 
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetNodeComment_Execute(CRef &in_ctxt)
+SICALLBACK dfgSetNodeComment_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgSetNodeComment_Execute()", siCommentMsg);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgSetNodeComment_Execute()", XSI::siCommentMsg);
 
   // init.
-  Context ctxt(in_ctxt);
-  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  argsToStdVector(tmp, args);
 
   // create the DFG command.
   FabricUI::DFG::DFGUICmd_SetNodeComment *cmd = NULL;
@@ -2284,15 +2507,15 @@ SICALLBACK dfgSetNodeComment_Execute(CRef &in_ctxt)
     std::string execPath;
     FabricCore::DFGExec exec;
     if (!DecodeExec(args, ai, binding, execPath, exec))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string nodeName;
     if (!DecodeName(args, ai, nodeName))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string comment;
     if (!DecodeName(args, ai, comment))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     cmd = new FabricUI::DFG::DFGUICmd_SetNodeComment(binding,
                                                      execPath.c_str(),
@@ -2312,73 +2535,54 @@ SICALLBACK dfgSetNodeComment_Execute(CRef &in_ctxt)
   }
 
   DFGUICmd_Finish(ctxt, cmd);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetNodeComment_Undo(CRef &ctxt)
+SICALLBACK dfgSetNodeComment_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetNodeComment_Redo(CRef &ctxt)
+SICALLBACK dfgSetNodeComment_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetNodeComment_TermUndoRedo(CRef &ctxt)
+SICALLBACK dfgSetNodeComment_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-void DFGUICmdHandlerXSI::dfgDoSetNodeComment(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef nodeName,
-  FTL::CStrRef comment
-  )
+//        "dfgSetCode"
+
+SICALLBACK dfgSetCode_Init(XSI::CRef &in_ctxt)
 {
-  CString cmdName(FabricUI::DFG::DFGUICmd_SetNodeComment::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // execPath.
-  args.Add(nodeName.c_str());                             // nodeName.
-  args.Add(comment.c_str());                              // comment.
-
-  executeCommand(cmdName, args, CValue());
-}
-
-// ---
-// command "dfgSetCode"
-// ---
-
-SICALLBACK dfgSetCode_Init(CRef &in_ctxt)
-{
-  Context ctxt(in_ctxt);
-  Command oCmd;
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
 
   oCmd = ctxt.GetSource();
   oCmd.EnableReturnValue(false);
 
-  ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",     CString());
-  oArgs.Add(L"execPath",    CString());
-  oArgs.Add(L"code",   CString());
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",  XSI::CString());
+  oArgs.Add(L"execPath", XSI::CString());
+  oArgs.Add(L"code",     XSI::CString());
 
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetCode_Execute(CRef &in_ctxt)
+SICALLBACK dfgSetCode_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgSetCode_Execute()", siCommentMsg);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgSetCode_Execute()", XSI::siCommentMsg);
 
   // init.
-  Context ctxt(in_ctxt);
-  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  argsToStdVector(tmp, args);
 
   // create the DFG command.
   FabricUI::DFG::DFGUICmd_SetCode *cmd = NULL;
@@ -2389,11 +2593,11 @@ SICALLBACK dfgSetCode_Execute(CRef &in_ctxt)
     std::string execPath;
     FabricCore::DFGExec exec;
     if (!DecodeExec(args, ai, binding, execPath, exec))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string code;
     if (!DecodeName(args, ai, code))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     cmd = new FabricUI::DFG::DFGUICmd_SetCode(binding,
                                               execPath.c_str(),
@@ -2412,72 +2616,55 @@ SICALLBACK dfgSetCode_Execute(CRef &in_ctxt)
   }
 
   DFGUICmd_Finish(ctxt, cmd);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetCode_Undo(CRef &ctxt)
+SICALLBACK dfgSetCode_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetCode_Redo(CRef &ctxt)
+SICALLBACK dfgSetCode_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetCode_TermUndoRedo(CRef &ctxt)
+SICALLBACK dfgSetCode_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-void DFGUICmdHandlerXSI::dfgDoSetCode(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef code
-  )
+//        "dfgRenamePort"
+
+SICALLBACK dfgRenamePort_Init(XSI::CRef &in_ctxt)
 {
-  CString cmdName(FabricUI::DFG::DFGUICmd_SetCode::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // execPath.
-  args.Add(code.c_str());                                 // code.
-
-  executeCommand(cmdName, args, CValue());
-}
-
-// ---
-// command "dfgRenamePort"
-// ---
-
-SICALLBACK dfgRenamePort_Init(CRef &in_ctxt)
-{
-  Context ctxt(in_ctxt);
-  Command oCmd;
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
 
   oCmd = ctxt.GetSource();
   oCmd.EnableReturnValue(true);
 
-  ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",     CString());
-  oArgs.Add(L"execPath",    CString());
-  oArgs.Add(L"oldPortName",  CString());
-  oArgs.Add(L"desiredNewPortName",  CString());
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",            XSI::CString());
+  oArgs.Add(L"execPath",           XSI::CString());
+  oArgs.Add(L"oldPortName",        XSI::CString());
+  oArgs.Add(L"desiredNewPortName", XSI::CString());
 
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgRenamePort_Execute(CRef &in_ctxt)
+SICALLBACK dfgRenamePort_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgRenamePort_Execute()", siCommentMsg);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgRenamePort_Execute()", XSI::siCommentMsg);
 
   // init.
-  Context ctxt(in_ctxt);
-  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  argsToStdVector(tmp, args);
 
   // create the DFG command.
   FabricUI::DFG::DFGUICmd_RenamePort *cmd = NULL;
@@ -2488,15 +2675,15 @@ SICALLBACK dfgRenamePort_Execute(CRef &in_ctxt)
     std::string execPath;
     FabricCore::DFGExec exec;
     if (!DecodeExec(args, ai, binding, execPath, exec))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string oldPortName;
     if (!DecodeString(args, ai, oldPortName))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string desiredNewPortName;
     if (!DecodeString(args, ai, desiredNewPortName))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     cmd = new FabricUI::DFG::DFGUICmd_RenamePort(binding,
                                                  execPath.c_str(),
@@ -2516,82 +2703,61 @@ SICALLBACK dfgRenamePort_Execute(CRef &in_ctxt)
   }
 
   // store return value.
-  CString returnValue = cmd->getActualNewPortName().c_str();
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", siCommentMsg);
+  XSI::CString returnValue = cmd->getActualNewPortName().c_str();
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", XSI::siCommentMsg);
   ctxt.PutAttribute(L"ReturnValue", returnValue);
 
   DFGUICmd_Finish(ctxt, cmd);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgRenamePort_Undo(CRef &ctxt)
+SICALLBACK dfgRenamePort_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgRenamePort_Redo(CRef &ctxt)
+SICALLBACK dfgRenamePort_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgRenamePort_TermUndoRedo(CRef &ctxt)
+SICALLBACK dfgRenamePort_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-std::string DFGUICmdHandlerXSI::dfgDoRenamePort(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef oldPortName,
-  FTL::CStrRef desiredNewPortName
-  )
+//        "dfgPaste"
+
+SICALLBACK dfgPaste_Init(XSI::CRef &in_ctxt)
 {
-  CString cmdName(FabricUI::DFG::DFGUICmd_RenamePort::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // execPath.
-  args.Add(oldPortName.c_str());                          // oldPortName.
-  args.Add(desiredNewPortName.c_str());                   // desiredNewPortName.
-
-  CValue result;
-  executeCommand(cmdName, args, result);
-  return result.GetAsText().GetAsciiString();
-}
-
-// ---
-// command "dfgPaste"
-// ---
-
-SICALLBACK dfgPaste_Init(CRef &in_ctxt)
-{
-  Context ctxt(in_ctxt);
-  Command oCmd;
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
 
   oCmd = ctxt.GetSource();
   oCmd.EnableReturnValue(true);
 
-  ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",     CString());
-  oArgs.Add(L"execPath",    CString());
-  oArgs.Add(L"text",    CString());
-  oArgs.Add(L"xPos",    CString());
-  oArgs.Add(L"yPos",    CString());
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",  XSI::CString());
+  oArgs.Add(L"execPath", XSI::CString());
+  oArgs.Add(L"text",     XSI::CString());
+  oArgs.Add(L"xPos",     XSI::CString());
+  oArgs.Add(L"yPos",     XSI::CString());
 
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgPaste_Execute(CRef &in_ctxt)
+SICALLBACK dfgPaste_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgPaste_Execute()", siCommentMsg);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgPaste_Execute()", XSI::siCommentMsg);
 
   // init.
-  Context ctxt(in_ctxt);
-  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  argsToStdVector(tmp, args);
 
   // create the DFG command.
   FabricUI::DFG::DFGUICmd_Paste *cmd = NULL;
@@ -2602,15 +2768,15 @@ SICALLBACK dfgPaste_Execute(CRef &in_ctxt)
     std::string execPath;
     FabricCore::DFGExec exec;
     if (!DecodeExec(args, ai, binding, execPath, exec))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string text;
     if (!DecodeName(args, ai, text))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     QPointF position;
     if (!DecodePosition(args, ai, position))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     cmd = new FabricUI::DFG::DFGUICmd_Paste(binding,
                                             execPath.c_str(),
@@ -2641,90 +2807,59 @@ SICALLBACK dfgPaste_Execute(CRef &in_ctxt)
     pastedNodeNamesString += *it;
   }
 
-  CString returnValue = pastedNodeNamesString.c_str();
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", siCommentMsg);
+  XSI::CString returnValue = pastedNodeNamesString.c_str();
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", XSI::siCommentMsg);
   ctxt.PutAttribute(L"ReturnValue", returnValue);
 
   DFGUICmd_Finish(ctxt, cmd);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgPaste_Undo(CRef &ctxt)
+SICALLBACK dfgPaste_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgPaste_Redo(CRef &ctxt)
+SICALLBACK dfgPaste_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgPaste_TermUndoRedo(CRef &ctxt)
+SICALLBACK dfgPaste_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-std::vector<std::string> DFGUICmdHandlerXSI::dfgDoPaste(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef text,
-  QPointF cursorPos
-  )
+//        "dfgSetArgType"
+
+SICALLBACK dfgSetArgType_Init(XSI::CRef &in_ctxt)
 {
-  CString cmdName(FabricUI::DFG::DFGUICmd_Paste::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());
-  args.Add( text.c_str() );
-  EncodePosition( cursorPos, args );
-
-  CValue resultValue;
-  executeCommand(cmdName, args, resultValue);
-  CString resultString( resultValue );
-  std::string pastedNodeNamesString = resultString.GetAsciiString();
-  FTL::StrRef pastedNodeNamesStr = pastedNodeNamesString;
-  std::vector<std::string> result;
-  while ( !pastedNodeNamesStr.empty() )
-  {
-    FTL::StrRef::Split split = pastedNodeNamesStr.split('|');
-    result.push_back( split.first );
-    pastedNodeNamesStr = split.second;
-  }
-  return result;
-}
-
-// ---
-// command "dfgSetArgType"
-// ---
-
-SICALLBACK dfgSetArgType_Init(CRef &in_ctxt)
-{
-  Context ctxt(in_ctxt);
-  Command oCmd;
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
 
   oCmd = ctxt.GetSource();
   oCmd.EnableReturnValue(false);
 
-  ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",     CString());
-  oArgs.Add(L"argName",  CString());
-  oArgs.Add(L"typeName",   CString());
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",  XSI::CString());
+  oArgs.Add(L"argName",  XSI::CString());
+  oArgs.Add(L"typeName", XSI::CString());
 
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetArgType_Execute(CRef &in_ctxt)
+SICALLBACK dfgSetArgType_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgSetArgType_Execute()", siCommentMsg);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgSetArgType_Execute()", XSI::siCommentMsg);
 
   // init.
-  Context ctxt(in_ctxt);
-  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  argsToStdVector(tmp, args);
 
   // create the DFG command.
   FabricUI::DFG::DFGUICmd_SetArgType *cmd = NULL;
@@ -2733,15 +2868,15 @@ SICALLBACK dfgSetArgType_Execute(CRef &in_ctxt)
 
     FabricCore::DFGBinding binding;
     if (!DecodeBinding(args, ai, binding))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string argName;
     if (!DecodeName(args, ai, argName))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string typeName;
     if (!DecodeName(args, ai, typeName))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
     
     cmd = new FabricUI::DFG::DFGUICmd_SetArgType(binding,
                                                  argName.c_str(),
@@ -2759,71 +2894,55 @@ SICALLBACK dfgSetArgType_Execute(CRef &in_ctxt)
   }
 
   DFGUICmd_Finish(ctxt, cmd);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetArgType_Undo(CRef &ctxt)
+SICALLBACK dfgSetArgType_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetArgType_Redo(CRef &ctxt)
+SICALLBACK dfgSetArgType_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetArgType_TermUndoRedo(CRef &ctxt)
+SICALLBACK dfgSetArgType_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-void DFGUICmdHandlerXSI::dfgDoSetArgType(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef argName,
-  FTL::CStrRef typeName
-  )
+//        "dfgSetArgValue"
+
+SICALLBACK dfgSetArgValue_Init(XSI::CRef &in_ctxt)
 {
-  CString cmdName(FabricUI::DFG::DFGUICmd_SetArgType::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(argName.c_str());                              // argName.
-  args.Add(typeName.c_str());                             // typeName.
-
-  executeCommand(cmdName, args, CValue());
-}
-
-// ---
-// command "dfgSetArgValue"
-// ---
-
-SICALLBACK dfgSetArgValue_Init(CRef &in_ctxt)
-{
-  Context ctxt(in_ctxt);
-  Command oCmd;
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
 
   oCmd = ctxt.GetSource();
   oCmd.EnableReturnValue(false);
 
-  ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",     CString());
-  oArgs.Add(L"argName",  CString());
-  oArgs.Add(L"typeName",   CString());
-  oArgs.Add(L"valueJSON",   CString());
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",   XSI::CString());
+  oArgs.Add(L"argName",   XSI::CString());
+  oArgs.Add(L"typeName",  XSI::CString());
+  oArgs.Add(L"valueJSON", XSI::CString());
 
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetArgValue_Execute(CRef &in_ctxt)
+SICALLBACK dfgSetArgValue_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgSetArgValue_Execute()", siCommentMsg);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgSetArgValue_Execute()", XSI::siCommentMsg);
 
   // init.
-  Context ctxt(in_ctxt);
-  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  argsToStdVector(tmp, args);
 
   // create the DFG command.
   FabricUI::DFG::DFGUICmd_SetArgValue *cmd = NULL;
@@ -2832,23 +2951,23 @@ SICALLBACK dfgSetArgValue_Execute(CRef &in_ctxt)
 
     FabricCore::DFGBinding binding;
     if (!DecodeBinding(args, ai, binding))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string argName;
     if (!DecodeName(args, ai, argName))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string typeName;
     if (!DecodeName(args, ai, typeName))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
   
     std::string valueJSON;
     if (!DecodeString(args, ai, valueJSON))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
     FabricCore::DFGHost host    = binding.getHost();
     FabricCore::Context context = host.getContext();
     FabricCore::RTVal   value   = FabricCore::RTVal::Construct( context, typeName.c_str(), 0, NULL );
-    value.setJSON( valueJSON.c_str() );
+    value.setJSON(valueJSON.c_str());
 
     cmd = new FabricUI::DFG::DFGUICmd_SetArgValue(binding,
                                                   argName.c_str(),
@@ -2866,73 +2985,56 @@ SICALLBACK dfgSetArgValue_Execute(CRef &in_ctxt)
   }
 
   DFGUICmd_Finish(ctxt, cmd);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetArgValue_Undo(CRef &ctxt)
+SICALLBACK dfgSetArgValue_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetArgValue_Redo(CRef &ctxt)
+SICALLBACK dfgSetArgValue_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetArgValue_TermUndoRedo(CRef &ctxt)
+SICALLBACK dfgSetArgValue_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-void DFGUICmdHandlerXSI::dfgDoSetArgValue(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef argName,
-  FabricCore::RTVal const &value
-  )
+//        "dfgSetPortDefaultValue"
+
+SICALLBACK dfgSetPortDefaultValue_Init(XSI::CRef &in_ctxt)
 {
-  CString cmdName(FabricUI::DFG::DFGUICmd_SetArgValue::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(argName.c_str());                              // argName.
-  args.Add(value.getTypeNameCStr());                      // typeName.
-  args.Add(value.getJSON().getStringCString());           // value.
-
-  executeCommand(cmdName, args, CValue());
-}
-
-// ---
-// command "dfgSetPortDefaultValue"
-// ---
-
-SICALLBACK dfgSetPortDefaultValue_Init(CRef &in_ctxt)
-{
-  Context ctxt(in_ctxt);
-  Command oCmd;
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
 
   oCmd = ctxt.GetSource();
   oCmd.EnableReturnValue(false);
 
-  ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",     CString());
-  oArgs.Add(L"execPath",    CString());
-  oArgs.Add(L"portPath",  CString());
-  oArgs.Add(L"typeName",   CString());
-  oArgs.Add(L"valueJSON",   CString());
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",   XSI::CString());
+  oArgs.Add(L"execPath",  XSI::CString());
+  oArgs.Add(L"portPath",  XSI::CString());
+  oArgs.Add(L"typeName",  XSI::CString());
+  oArgs.Add(L"valueJSON", XSI::CString());
 
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetPortDefaultValue_Execute(CRef &in_ctxt)
+SICALLBACK dfgSetPortDefaultValue_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgSetPortDefaultValue_Execute()", siCommentMsg);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgSetPortDefaultValue_Execute()", XSI::siCommentMsg);
 
   // init.
-  Context ctxt(in_ctxt);
-  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  argsToStdVector(tmp, args);
 
   // create the DFG command.
   FabricUI::DFG::DFGUICmd_SetPortDefaultValue *cmd = NULL;
@@ -2943,23 +3045,23 @@ SICALLBACK dfgSetPortDefaultValue_Execute(CRef &in_ctxt)
     std::string execPath;
     FabricCore::DFGExec exec;
     if (!DecodeExec(args, ai, binding, execPath, exec))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string portPath;
     if (!DecodeName(args, ai, portPath))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string typeName;
     if (!DecodeName(args, ai, typeName))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
   
     std::string valueJSON;
     if (!DecodeString(args, ai, valueJSON))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
     FabricCore::DFGHost host    = binding.getHost();
     FabricCore::Context context = host.getContext();
     FabricCore::RTVal value     = FabricCore::RTVal::Construct( context, typeName.c_str(), 0, NULL );
-    value.setJSON( valueJSON.c_str() );
+    value.setJSON(valueJSON.c_str());
 
     cmd = new FabricUI::DFG::DFGUICmd_SetPortDefaultValue(binding,
                                                           execPath.c_str(),
@@ -2979,75 +3081,55 @@ SICALLBACK dfgSetPortDefaultValue_Execute(CRef &in_ctxt)
   }
 
   DFGUICmd_Finish(ctxt, cmd);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetPortDefaultValue_Undo(CRef &ctxt)
+SICALLBACK dfgSetPortDefaultValue_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetPortDefaultValue_Redo(CRef &ctxt)
+SICALLBACK dfgSetPortDefaultValue_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetPortDefaultValue_TermUndoRedo(CRef &ctxt)
+SICALLBACK dfgSetPortDefaultValue_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-void DFGUICmdHandlerXSI::dfgDoSetPortDefaultValue(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef portPath,
-  FabricCore::RTVal const &value
-  )
+//        "dfgSetRefVarPath"
+
+SICALLBACK dfgSetRefVarPath_Init(XSI::CRef &in_ctxt)
 {
-  CString cmdName(FabricUI::DFG::DFGUICmd_SetPortDefaultValue::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // execPath.
-  args.Add(portPath.c_str());                             // portPath.
-  args.Add(value.getTypeNameCStr());                      // typeName.
-  args.Add(value.getJSON().getStringCString());           // value.
-
-  executeCommand(cmdName, args, CValue());
-}
-
-// ---
-// command "dfgSetRefVarPath"
-// ---
-
-SICALLBACK dfgSetRefVarPath_Init(CRef &in_ctxt)
-{
-  Context ctxt(in_ctxt);
-  Command oCmd;
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
 
   oCmd = ctxt.GetSource();
   oCmd.EnableReturnValue(false);
 
-  ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",     CString());
-  oArgs.Add(L"execPath",    CString());
-  oArgs.Add(L"refName",   CString());
-  oArgs.Add(L"varPath",   CString());
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",  XSI::CString());
+  oArgs.Add(L"execPath", XSI::CString());
+  oArgs.Add(L"refName",  XSI::CString());
+  oArgs.Add(L"varPath",  XSI::CString());
 
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetRefVarPath_Execute(CRef &in_ctxt)
+SICALLBACK dfgSetRefVarPath_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) Application().LogMessage(L"[DFGUICmd] calling dfgSetRefVarPath_Execute()", siCommentMsg);
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgSetRefVarPath_Execute()", XSI::siCommentMsg);
 
   // init.
-  Context ctxt(in_ctxt);
-  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  argsToStdVector(tmp, args);
 
   // create the DFG command.
   FabricUI::DFG::DFGUICmd_SetRefVarPath *cmd = NULL;
@@ -3058,15 +3140,15 @@ SICALLBACK dfgSetRefVarPath_Execute(CRef &in_ctxt)
     std::string execPath;
     FabricCore::DFGExec exec;
     if (!DecodeExec(args, ai, binding, execPath, exec))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string refName;
     if (!DecodeName(args, ai, refName))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     std::string varPath;
     if (!DecodeName(args, ai, varPath))
-      return CStatus::Fail;
+      return XSI::CStatus::Fail;
 
     cmd = new FabricUI::DFG::DFGUICmd_SetRefVarPath(binding,
                                                     execPath.c_str(),
@@ -3086,78 +3168,24 @@ SICALLBACK dfgSetRefVarPath_Execute(CRef &in_ctxt)
   }
 
   DFGUICmd_Finish(ctxt, cmd);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetRefVarPath_Undo(CRef &ctxt)
+SICALLBACK dfgSetRefVarPath_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetRefVarPath_Redo(CRef &ctxt)
+SICALLBACK dfgSetRefVarPath_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
-  return CStatus::OK;
+  return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetRefVarPath_TermUndoRedo(CRef &ctxt)
+SICALLBACK dfgSetRefVarPath_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
-  return CStatus::OK;
-}
-
-void DFGUICmdHandlerXSI::dfgDoSetRefVarPath(
-  FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::CStrRef refName,
-  FTL::CStrRef varPath
-  )
-{
-  CString cmdName(FabricUI::DFG::DFGUICmd_SetRefVarPath::CmdName().c_str());
-  CValueArray args;
-
-  args.Add(getOperatorNameFromBinding(binding).c_str());  // binding.
-  args.Add(execPath.c_str());                             // execPath.
-  args.Add(refName.c_str());                              // refName.
-  args.Add(varPath.c_str());                              // varPath.
-
-  executeCommand(cmdName, args, CValue());
-}
-
-std::string DFGUICmdHandlerXSI::getOperatorNameFromBinding(FabricCore::DFGBinding const &binding)
-{
-  // try to get the operator's name for this binding.
-  if (m_parentBaseInterface && m_parentBaseInterface->getBinding() == binding)
-  {
-    unsigned int opObjID = _opUserData::GetOperatorObjectID(m_parentBaseInterface);
-    if (opObjID != UINT_MAX)
-    {
-      CRef opRef = Application().GetObjectFromID(opObjID).GetRef();
-      if (opRef.IsValid())
-      {
-        // got it.
-        return opRef.GetAsText().GetAsciiString();
-      }
-    }
-  }
-
-  // not found.
-  return "";
-}
-
-FabricCore::DFGBinding DFGUICmdHandlerXSI::getBindingFromOperatorName(std::string operatorName)
-{
-  // try to get the binding from the operator's name.
-  CRef opRef;
-  opRef.Set(CString(operatorName.c_str()));
-  CustomOperator op(opRef);
-  BaseInterface *baseInterface = _opUserData::GetBaseInterface(op.GetObjectID());
-  if (baseInterface)
-    return baseInterface->getBinding();
-
-  // not found.
-  return FabricCore::DFGBinding();
+  return XSI::CStatus::OK;
 }
 
