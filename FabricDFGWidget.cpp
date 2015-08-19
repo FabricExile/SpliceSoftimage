@@ -6,7 +6,7 @@
 #include "FabricDFGPlugin.h"
 #include "FabricDFGWidget.h"
 #include "FabricDFGOperators.h"
-#include "FabricDFGUICmdHandlerXSI.h"
+#include "FabricDFGUICmdHandlerDCC.h"
 
 #include <QtGui/QApplication>
 #include <QtGui/QDialog>

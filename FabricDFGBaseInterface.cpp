@@ -1,4 +1,4 @@
-#include "FabricDFGUICmdHandlerXSI.h"
+#include "FabricDFGUICmdHandlerDCC.h"
 #include "FabricDFGBaseInterface.h"
 #include "FabricDFGPlugin.h"
 #include "FabricDFGOperators.h"
@@ -89,7 +89,7 @@ BaseInterface::BaseInterface(void (*in_logFunc)     (void *, const char *, unsig
     m_binding.setNotificationCallback(bindingNotificationCallback, this);
 
     // command handler.
-    m_cmdHandler = new DFGUICmdHandlerXSI(this);
+    m_cmdHandler = new DFGUICmdHandlerDCC(this);
   }
   catch (FabricCore::Exception e)
   {
@@ -173,7 +173,7 @@ FabricServices::ASTWrapper::KLASTManager *BaseInterface::getManager()
   return s_manager;
 }
 
-DFGUICmdHandlerXSI *BaseInterface::getCmdHandler()
+DFGUICmdHandlerDCC *BaseInterface::getCmdHandler()
 {
   return m_cmdHandler;
 }

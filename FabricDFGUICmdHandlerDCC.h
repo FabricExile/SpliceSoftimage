@@ -1,7 +1,7 @@
 // Copyright 2010-2015 Fabric Software Inc. All rights reserved.
 
-#ifndef _FabricDFGUICmdHandlerXSI_H_
-#define _FabricDFGUICmdHandlerXSI_H_
+#ifndef _FabricDFGUICmdHandlerDCC_H_
+#define _FabricDFGUICmdHandlerDCC_H_
 
 #include <FabricUI/DFG/DFGUICmdHandler.h>
 
@@ -9,16 +9,16 @@
 
 class BaseInterface;
 
-class DFGUICmdHandlerXSI : public FabricUI::DFG::DFGUICmdHandler
+class DFGUICmdHandlerDCC : public FabricUI::DFG::DFGUICmdHandler
 {
 public:
 
-  DFGUICmdHandlerXSI(void)
+  DFGUICmdHandlerDCC(void)
   {
     m_parentBaseInterface = NULL;
   }
 
-  DFGUICmdHandlerXSI(BaseInterface *parentBaseInterface)
+  DFGUICmdHandlerDCC(BaseInterface *parentBaseInterface)
   {
     m_parentBaseInterface = parentBaseInterface;
   }
