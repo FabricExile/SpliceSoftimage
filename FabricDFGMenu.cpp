@@ -19,13 +19,13 @@ XSIPLUGINCALLBACK CStatus FabricDFG_Init( CRef &in_ctxt )
   Menu menu = Context(in_ctxt).GetSource();
   MenuItem item;
 
-  menu.AddCallbackItem("Create DFG Operator",                 "FabricDFG_Menu_CreateDFGOp",           item);
+  menu.AddCallbackItem("Create Graph",                        "FabricDFG_Menu_CreateDFGOp",           item);
   menu.AddSeparatorItem();
-  menu.AddCallbackItem("Create Null with DFG Operator",       "FabricDFG_Menu_CreateNullWithOp",      item);
-  menu.AddCallbackItem("Create Polymesh with DFG Operator",   "FabricDFG_Menu_CreatePolymeshWithOp",  item);
+  menu.AddCallbackItem("Create Null with Graph",              "FabricDFG_Menu_CreateNullWithOp",      item);
+  menu.AddCallbackItem("Create Polymesh with Graph",          "FabricDFG_Menu_CreatePolymeshWithOp",  item);
   menu.AddSeparatorItem();
-  menu.AddCallbackItem("Import JSON",                         "FabricDFG_Menu_ImportJSON",            item);
-  menu.AddCallbackItem("Export JSON",                         "FabricDFG_Menu_ExportJSON",            item);
+  menu.AddCallbackItem("Load Graph",                          "FabricDFG_Menu_ImportJSON",            item);
+  menu.AddCallbackItem("Save Graph",                          "FabricDFG_Menu_ExportJSON",            item);
   menu.AddSeparatorItem();
   menu.AddCallbackItem("Online Help",                         "FabricDFG_Menu_OnlineHelp",            item);
   menu.AddCallbackItem("Log Status",                          "FabricDFG_Menu_LogStatus",             item);
