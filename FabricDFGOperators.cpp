@@ -1147,7 +1147,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
   if (!pud->GetBaseInterface()->getBinding())   { Application().LogMessage(L"no binding found!", siErrorMsg);
                                                   return CStatus::OK; }
 
-  // init log.
+  // log.
   CString functionName = L"dfgSoftimageOp_Update(opObjID = " + CString(op.GetObjectID()) + L")";
   const bool verbose = (bool)ctxt.GetParameterValue(L"verbose");
   if (verbose)  Application().LogMessage(functionName + L" called #" + CString((LONG)pud->updateCounter), siInfoMsg);
@@ -1155,11 +1155,55 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
 
   // check the FabricActive parameter.
   if (!(bool)ctxt.GetParameterValue(L"FabricActive"))
+  {
+    pud->execFabricStep12 = false;
     return CStatus::OK;
+  }
 
-  // get the output port that is currently being evaluated.
+  // get the currently evaluated output port and its target.
   OutputPort outputPort(ctxt.GetOutputPort());
-  if (verbose) Application().LogMessage(functionName + L": evaluating output port \"" + outputPort.GetName() + L"\"");
+  CRef       outputPortTarget = outputPort.GetTarget();
+  if (verbose) Application().LogMessage(functionName + L": evaluating output port \"" + outputPort.GetName() + L"\" (target = \"" + outputPortTarget.GetAsText() + L"\")");
+
+  // get the total amount of connected output ports.
+  int numConnectedOutputPorts = 0;
+  {
+    CRefArray opPortsOutput = op.GetOutputPorts();
+    for (int i=0;i<opPortsOutput.GetCount();i++)
+      if (OutputPort(opPortsOutput[i]).IsConnected())
+        numConnectedOutputPorts++;
+    if (verbose) Application().LogMessage(functionName + L": amount of connected output ports = " + CString((LONG)numConnectedOutputPorts));
+  }
+
+  // set the execFabric flags (i.e. check if we need to execute the Fabric steps 1 and 2).
+  bool activateExecFlagsForNextUpdate = false;
+  {
+    // CASE 1: this is the port reservedMatrixOut.
+    if (outputPort.GetName() == L"reservedMatrixOut")
+    {
+      if (numConnectedOutputPorts == 1)
+      {
+        // only the port reservedMatrixOut is connected, so we need to execute the Fabric steps 1 and 2 now.
+        pud->execFabricStep12 = true;
+      }
+      else
+      {
+        // aside from the port reservedMatrixOut we have at least one further connected port, so we will
+        // execute the Fabric steps 1 and 2 the next time this operator gets evaluated.
+        pud->execFabricStep12          = false;
+        activateExecFlagsForNextUpdate = true;
+      }
+    }
+
+    // case 2: this is not the port reservedMatrixOut.
+    else
+    {
+      // the only interesting case here is to check whether the port being currently evaluated has the same target
+      // as the reserved port (note: the reserved port's target is equal the operator's parent).
+      if (outputPortTarget.GetAsText() == op.GetParent().GetAsText())
+        pud->execFabricStep12 = true;
+    }
+  }
 
   // get pointers/refs at binding, graph & co.
   BaseInterface                                   *baseInterface  = pud->GetBaseInterface();
@@ -1169,7 +1213,9 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
 
   // Fabric Engine (step 1): loop through all the DFG's input ports and set
   //                         their values from the matching XSI ports or parameters.
+  if (pud->execFabricStep12)
   {
+    if (verbose) Application().LogMessage(L"------- SET DFG EXEC PORTS FROM XSI PARAMS/PORTS.");
     try
     {
       for (int i=0;i<exec.getExecPortCount();i++)
@@ -1335,7 +1381,10 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
   }
 
   // Fabric Engine (step 2): execute the DFG.
+  if (pud->execFabricStep12)
   {
+    if (verbose) Application().LogMessage(L"------- EXECUTE DFG.");
+    pud->execFabricStep12 = false;
     try
     {
       binding.execute();
@@ -1356,6 +1405,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
     {
       if (baseInterface->HasOutputPort(outputPort.GetName().GetAsciiString()))
       {
+        if (verbose) Application().LogMessage(L"------- SET XSI PORT FROM DFG EXEC PORT.");
         if (verbose) Application().LogMessage(functionName + L": transfer dfg port data to xsi port \"" + outputPort.GetName() + L"\"");
         if (!exec.haveExecPort(portName.GetAsciiString()))
           Application().LogMessage(functionName + L": graph->getExecPort() == NULL", siWarningMsg);
@@ -1501,6 +1551,12 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
     }
   }
   
+  // activate exec flags?
+  if (activateExecFlagsForNextUpdate)
+  {
+    pud->execFabricStep12 = true;
+  }
+
   // done.
   return CStatus::OK;
 }

@@ -220,8 +220,11 @@ void BaseInterface::bindingNotificationCallback(void *userData, char const *json
   if (!userData || !jsonCString)
     return;
 
-  // wip.
-  // NOTHING HERE YET.
+  //
+  // NOTHING HERE.
+  //
+  // we ignore the notifications, because Canvas in Softimage is (pseudo) modal dialog.
+  //
 }
 
 void BaseInterface::logFunc(void *userData, const char *message, unsigned int length)
