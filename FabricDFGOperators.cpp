@@ -734,6 +734,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
 
         // re-create operator.
         recreateOperator(op, dfgJSON);
+        dfgTools::ClearUndoHistory();
       }
     }
     else if (btnName == L"BtnRecreateOp")

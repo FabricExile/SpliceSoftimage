@@ -81,6 +81,15 @@ class dfgTools
   //          out_wrnmsg            ref at CString that will contain a warning if this functions returns true, or L"" if no warning.
   // returns: true on success else false (with an error description in out_errmsg).
   static bool GetGeometryFromX3DObject(const XSI::X3DObject &in_x3DObj, double in_currFrame, _polymesh &out_polymesh, XSI::CString &out_errmsg, XSI::CString &out_wrnmsg);
+
+  // returns the current amount of undo levels of the Softimage preferences or -1 if an error occurred.
+  static LONG GetUndoLevels(void);
+
+  // sets the amount of undo levels of the Softimage preferences and returns true on success.
+  static bool SetUndoLevels(LONG undoLevels);
+
+  // clears the Softimage undo/redo history and returns true on success.
+  static bool ClearUndoHistory(void);
 };
 
 #endif

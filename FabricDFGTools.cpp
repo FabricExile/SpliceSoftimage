@@ -18,6 +18,7 @@
 #include <xsi_parameter.h>
 #include <xsi_x3dobject.h>
 #include <xsi_application.h>
+#include <xsi_preferences.h>
 #include <xsi_doublearray.h>
 #include <xsi_factory.h>
 #include <xsi_geometryaccessor.h>
@@ -1195,4 +1196,28 @@ bool dfgTools::GetGeometryFromX3DObject(const XSI::X3DObject &in_x3DObj, double 
   return true;
 }
 
+LONG dfgTools::GetUndoLevels(void)
+{
+  CValue undoLevels;
+  if (Application().GetPreferences().GetPreferenceValue(L"General.undo", undoLevels) == CStatus::OK)
+    return (LONG)undoLevels;
+  Application().LogMessage(L"failed to get the current amount of undo levels.", siWarningMsg);
+  return -1;
+}
+
+bool dfgTools::SetUndoLevels(LONG undoLevels)
+{
+  bool ret = (Application().GetPreferences().SetPreferenceValue(L"General.undo", CValue(undoLevels)) == CStatus::OK);
+  if (!ret) Application().LogMessage(L"failed to set the current amount of undo levels to " + CString(undoLevels) + L".", siWarningMsg);
+  return ret;
+}
+
+bool dfgTools::ClearUndoHistory(void)
+{
+  LONG n = GetUndoLevels();
+  if (n < 0)              return false;
+  if (!SetUndoLevels(0))  return false;
+  if (!SetUndoLevels(n))  return false;
+  return true;
+}
 
