@@ -223,7 +223,7 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
       portmap.clear();
       break; }
 
-    // copy exposed values, animations etc. from otherOpName.
+    // copy parameters, exposed values, animations etc. from otherOpName.
     if (!otherOpName.IsEmpty())
     {
       CRef ref;
@@ -239,6 +239,31 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
           Application().LogMessage(L"failed to set custom operator from \"" + otherOpName + L"\"", siWarningMsg);
         else
         {
+          // first we transfer the fixed set of parameters.
+          {
+            // built-in.
+            newOp.PutMute          (otherOp.GetMute());
+            newOp.PutName          (otherOp.GetName());
+            newOp.PutDebug         (otherOp.GetDebug());
+            newOp.PutAlwaysEvaluate(otherOp.GetAlwaysEvaluate());
+
+            // custom.
+            CStringArray paramNames;
+            paramNames.Add(L"FabricActive");
+            paramNames.Add(L"verbose");
+            paramNames.Add(L"dfgExecMode");
+            for (LONG i=0;i<paramNames.GetCount();i++)
+            {
+              Parameter otherParam = otherOp.GetParameter(paramNames[i]);
+              Parameter newParam   = newOp  .GetParameter(paramNames[i]);
+              if (otherParam.IsValid() && newParam.IsValid())
+                newParam.PutValue(otherParam.GetValue());
+              else
+                Application().LogMessage(L"dfgTools::GetOperatorPortMapping() failed to transfer value of parameter \"" + paramNames[i] + L"\"", siWarningMsg);
+            }
+          }
+
+          // now take care of the others.
           CString err;
           std::vector <_portMapping> otherPortmap;
           if (!dfgTools::GetOperatorPortMapping(otherOp, otherPortmap, err))
