@@ -58,7 +58,6 @@ CString xsiGetWorkgroupPath();
 CRef recreateOperator(CustomOperator op, CString &dfgJSON)
 {
   // memorize current undo levels and then set them to zero.
-  // NOTE: from now on use "goto _done;" to exit the function!
   const LONG memUndoLevels = dfgTools::GetUndoLevels();
   dfgTools::SetUndoLevels(0);
 
@@ -107,7 +106,6 @@ CRef recreateOperator(CustomOperator op, CString &dfgJSON)
   }
 
   // done.
-  _done:
   dfgTools::SetUndoLevels(memUndoLevels);
   return newOpRef;
 }
@@ -183,7 +181,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
   // NOTE: this port MUST come JUST BEFORE the exposed DFG parameters!
   op.AddParameter(oFactory.CreateGridParamDef("dfgPorts"), emptyParam);
 
-  // create exposed DFG parameters.
+  // create exposed DFG parameter.
   CString exposedDFGParams = L"";
   {
     for (int i=0;i<portmap.size();i++)

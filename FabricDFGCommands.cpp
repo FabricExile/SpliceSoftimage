@@ -93,261 +93,264 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
     return CStatus::OK; }
 
   // memorize current undo levels and then set them to zero.
-  // NOTE: from now on use "goto _done;" to exit the function!
   const LONG memUndoLevels = dfgTools::GetUndoLevels();
   dfgTools::SetUndoLevels(0);
 
-  // create a SpliceOp before creating the dfgSoftimageOp?
-  // (note: adding a SpliceOp to the object prevents things from going wrong when loading a scene into XSI that has one or more dfgSoftimageOp.)
-  if (    createSpliceOp == 1
-      || (createSpliceOp == 2 && dfgTools::GetRefsAtOps(obj, CString(L"SpliceOp"), XSI::CRefArray()) == 0)  )
+  // go.
+  do
   {
-    CValueArray args;
-    args.Add(L"newSplice");
-    args.Add(L"{\"targets\":\"" + objectName + L".kine.global\", \"portName\":\"matrix\", \"portMode\":\"io\"}");
-    Application().ExecuteCommand(L"fabricSplice", args, CValue());
-  }
-
-  // create the dfgSoftimageOp operator
-  CString opName = L"dfgSoftimageOp";
-  CustomOperator newOp = Application().GetFactory().CreateObject(opName);
-
-  // store operator's CRef in result.
-  ctxt.PutAttribute(L"ReturnValue", newOp.GetRef());
-
-  // set from JSON.
-  if (!dfgJSON.IsEmpty())
-  {
-    _opUserData *pud = _opUserData::GetUserData(newOp.GetObjectID());
-    if (  pud
-        && pud->GetBaseInterface())
+    // create a SpliceOp before creating the dfgSoftimageOp?
+    // (note: adding a SpliceOp to the object prevents things from going wrong when loading a scene into XSI that has one or more dfgSoftimageOp.)
+    if (    createSpliceOp == 1
+        || (createSpliceOp == 2 && dfgTools::GetRefsAtOps(obj, CString(L"SpliceOp"), XSI::CRefArray()) == 0)  )
     {
-      try
+      CValueArray args;
+      args.Add(L"newSplice");
+      args.Add(L"{\"targets\":\"" + objectName + L".kine.global\", \"portName\":\"matrix\", \"portMode\":\"io\"}");
+      Application().ExecuteCommand(L"fabricSplice", args, CValue());
+    }
+
+    // create the dfgSoftimageOp operator
+    CString opName = L"dfgSoftimageOp";
+    CustomOperator newOp = Application().GetFactory().CreateObject(opName);
+
+    // store operator's CRef in result.
+    ctxt.PutAttribute(L"ReturnValue", newOp.GetRef());
+
+    // set from JSON.
+    if (!dfgJSON.IsEmpty())
+    {
+      _opUserData *pud = _opUserData::GetUserData(newOp.GetObjectID());
+      if (  pud
+          && pud->GetBaseInterface())
       {
-        pud->GetBaseInterface()->setFromJSON(dfgJSON.GetAsciiString());
-      }
-      catch (FabricCore::Exception e)
-      {
-        feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+        try
+        {
+          pud->GetBaseInterface()->setFromJSON(dfgJSON.GetAsciiString());
+        }
+        catch (FabricCore::Exception e)
+        {
+          feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+        }
       }
     }
-  }
 
-  // the reserved ports.
-  {
-    CStatus returnStatus;
-
-    // create port group.
-    CRef pgReservedRef = newOp.AddPortGroup(L"reservedGroup", 1, 1);
-    if (!pgReservedRef.IsValid())
-    { Application().LogMessage(L"failed to create reserved port group.", siErrorMsg);
-      portmap.clear();
-      goto _done; }
-
-    // create the default output port "reservedMatrixOut" and connect the object's global kinematics to it.
-    newOp.AddOutputPort(obj.GetKinematics().GetGlobal().GetRef(), L"reservedMatrixOut", PortGroup(pgReservedRef).GetIndex(), -1,  siDefaultPort, &returnStatus);
-    if (returnStatus != CStatus::OK)
-    { Application().LogMessage(L"failed to create default output port for the global kinematics", siErrorMsg);
-      portmap.clear();
-      goto _done; }
-
-    // create the default input port "reservedMatrixIn" and connect the object's global kinematics to it.
-    newOp.AddInputPort(obj.GetKinematics().GetGlobal().GetRef(), L"reservedMatrixIn", PortGroup(pgReservedRef).GetIndex(), -1,  siDefaultPort, &returnStatus);
-    if (returnStatus != CStatus::OK)
-    { Application().LogMessage(L"failed to create default input port for the global kinematics", siErrorMsg);
-      portmap.clear();
-      goto _done; }
-  }
-
-  // create exposed DFG output ports.
-  for (int i=0;i<portmap.size();i++)
-  {
-    _portMapping &pmap = portmap[i];
-    if (   pmap.dfgPortType != DFG_PORT_TYPE_OUT
-        || pmap.mapType     != DFG_PORT_MAPTYPE_XSI_PORT)
-      continue;
-    Application().LogMessage(L"create port group and port for output port \"" + pmap.dfgPortName + L"\"", siInfoMsg);
-
-    // get classID for the port.
-    siClassID classID = dfgTools::GetSiClassIdFromResolvedDataType(pmap.dfgPortDataType);
-    if (classID == siUnknownClassID)
-    { Application().LogMessage(L"The DFG port \"" + pmap.dfgPortName + "\" cannot be exposed as a XSI Port (data type \"" + pmap.dfgPortDataType + "\" not yet supported)" , siWarningMsg);
-      continue; }
-
-    // create port group.
-    CRef pgRef = newOp.AddPortGroup(pmap.dfgPortName, 0, 1);
-    if (!pgRef.IsValid())
-    { Application().LogMessage(L"failed to create port group for \"" + pmap.dfgPortName + "\"", siErrorMsg);
-      continue; }
-
-    // create port.
-    CRef pRef = newOp.AddOutputPortByClassID(classID, pmap.dfgPortName, PortGroup(pgRef).GetIndex(), 0, siOptionalInputPort);
-    if (!pRef.IsValid())
-    { Application().LogMessage(L"failed to create port \"" + pmap.dfgPortName + "\"", siErrorMsg);
-      continue; }
-  }
-
-  // create exposed DFG input ports.
-  for (int i=0;i<portmap.size();i++)
-  {
-    _portMapping &pmap = portmap[i];
-    if (   pmap.dfgPortType != DFG_PORT_TYPE_IN
-        || pmap.mapType     != DFG_PORT_MAPTYPE_XSI_PORT)
-      continue;
-    Application().LogMessage(L"create port group and port for input port \"" + pmap.dfgPortName + L"\"", siInfoMsg);
-
-    // get classID for the port.
-    siClassID classID = dfgTools::GetSiClassIdFromResolvedDataType(pmap.dfgPortDataType);
-    if (classID == siUnknownClassID)
-    { Application().LogMessage(L"The DFG port \"" + pmap.dfgPortName + "\" cannot be exposed as a XSI Port (data type \"" + pmap.dfgPortDataType + "\" not yet supported)" , siWarningMsg);
-      continue; }
-
-    // create port group.
-    CRef pgRef = newOp.AddPortGroup(pmap.dfgPortName, 0, 1);
-    if (!pgRef.IsValid())
-    { Application().LogMessage(L"failed to create port group for \"" + pmap.dfgPortName + "\"", siErrorMsg);
-      continue; }
-
-    // create port.
-    CRef pRef = newOp.AddInputPortByClassID(classID, pmap.dfgPortName, PortGroup(pgRef).GetIndex(), 0, siOptionalInputPort);
-    if (!pRef.IsValid())
-    { Application().LogMessage(L"failed to create port \"" + pmap.dfgPortName + "\"", siErrorMsg);
-      continue; }
-  }
-
-  // connect the operator.
-  if (newOp.Connect() != CStatus::OK)
-  { Application().LogMessage(L"newOp.Connect() failed.",siErrorMsg);
-    portmap.clear();
-    goto _done; }
-
-  // copy exposed values, animations etc. from otherOpName.
-  if (!otherOpName.IsEmpty())
-  {
-    CRef ref;
-    ref.Set(otherOpName);
-    if (!ref.IsValid())
-      Application().LogMessage(L"failed to find an object called \"" + otherOpName + L"\"", siWarningMsg);
-    else if (ref.GetClassID() != siCustomOperatorID)
-      Application().LogMessage(L"not a custom operator: \"" + otherOpName + L"\"", siWarningMsg);
-    else
+    // the reserved ports.
     {
-      CustomOperator otherOp(ref);
-      if (!otherOp.IsValid())
-        Application().LogMessage(L"failed to set custom operator from \"" + otherOpName + L"\"", siWarningMsg);
+      CStatus returnStatus;
+
+      // create port group.
+      CRef pgReservedRef = newOp.AddPortGroup(L"reservedGroup", 1, 1);
+      if (!pgReservedRef.IsValid())
+      { Application().LogMessage(L"failed to create reserved port group.", siErrorMsg);
+        portmap.clear();
+        break; }
+
+      // create the default output port "reservedMatrixOut" and connect the object's global kinematics to it.
+      newOp.AddOutputPort(obj.GetKinematics().GetGlobal().GetRef(), L"reservedMatrixOut", PortGroup(pgReservedRef).GetIndex(), -1,  siDefaultPort, &returnStatus);
+      if (returnStatus != CStatus::OK)
+      { Application().LogMessage(L"failed to create default output port for the global kinematics", siErrorMsg);
+        portmap.clear();
+        break; }
+
+      // create the default input port "reservedMatrixIn" and connect the object's global kinematics to it.
+      newOp.AddInputPort(obj.GetKinematics().GetGlobal().GetRef(), L"reservedMatrixIn", PortGroup(pgReservedRef).GetIndex(), -1,  siDefaultPort, &returnStatus);
+      if (returnStatus != CStatus::OK)
+      { Application().LogMessage(L"failed to create default input port for the global kinematics", siErrorMsg);
+        portmap.clear();
+        break; }
+    }
+
+    // create exposed DFG output ports.
+    for (int i=0;i<portmap.size();i++)
+    {
+      _portMapping &pmap = portmap[i];
+      if (   pmap.dfgPortType != DFG_PORT_TYPE_OUT
+          || pmap.mapType     != DFG_PORT_MAPTYPE_XSI_PORT)
+        continue;
+      Application().LogMessage(L"create port group and port for output port \"" + pmap.dfgPortName + L"\"", siInfoMsg);
+
+      // get classID for the port.
+      siClassID classID = dfgTools::GetSiClassIdFromResolvedDataType(pmap.dfgPortDataType);
+      if (classID == siUnknownClassID)
+      { Application().LogMessage(L"The DFG port \"" + pmap.dfgPortName + "\" cannot be exposed as a XSI Port (data type \"" + pmap.dfgPortDataType + "\" not yet supported)" , siWarningMsg);
+        continue; }
+
+      // create port group.
+      CRef pgRef = newOp.AddPortGroup(pmap.dfgPortName, 0, 1);
+      if (!pgRef.IsValid())
+      { Application().LogMessage(L"failed to create port group for \"" + pmap.dfgPortName + "\"", siErrorMsg);
+        continue; }
+
+      // create port.
+      CRef pRef = newOp.AddOutputPortByClassID(classID, pmap.dfgPortName, PortGroup(pgRef).GetIndex(), 0, siOptionalInputPort);
+      if (!pRef.IsValid())
+      { Application().LogMessage(L"failed to create port \"" + pmap.dfgPortName + "\"", siErrorMsg);
+        continue; }
+    }
+
+    // create exposed DFG input ports.
+    for (int i=0;i<portmap.size();i++)
+    {
+      _portMapping &pmap = portmap[i];
+      if (   pmap.dfgPortType != DFG_PORT_TYPE_IN
+          || pmap.mapType     != DFG_PORT_MAPTYPE_XSI_PORT)
+        continue;
+      Application().LogMessage(L"create port group and port for input port \"" + pmap.dfgPortName + L"\"", siInfoMsg);
+
+      // get classID for the port.
+      siClassID classID = dfgTools::GetSiClassIdFromResolvedDataType(pmap.dfgPortDataType);
+      if (classID == siUnknownClassID)
+      { Application().LogMessage(L"The DFG port \"" + pmap.dfgPortName + "\" cannot be exposed as a XSI Port (data type \"" + pmap.dfgPortDataType + "\" not yet supported)" , siWarningMsg);
+        continue; }
+
+      // create port group.
+      CRef pgRef = newOp.AddPortGroup(pmap.dfgPortName, 0, 1);
+      if (!pgRef.IsValid())
+      { Application().LogMessage(L"failed to create port group for \"" + pmap.dfgPortName + "\"", siErrorMsg);
+        continue; }
+
+      // create port.
+      CRef pRef = newOp.AddInputPortByClassID(classID, pmap.dfgPortName, PortGroup(pgRef).GetIndex(), 0, siOptionalInputPort);
+      if (!pRef.IsValid())
+      { Application().LogMessage(L"failed to create port \"" + pmap.dfgPortName + "\"", siErrorMsg);
+        continue; }
+    }
+
+    // connect the operator.
+    if (newOp.Connect() != CStatus::OK)
+    { Application().LogMessage(L"newOp.Connect() failed.",siErrorMsg);
+      portmap.clear();
+      break; }
+
+    // copy exposed values, animations etc. from otherOpName.
+    if (!otherOpName.IsEmpty())
+    {
+      CRef ref;
+      ref.Set(otherOpName);
+      if (!ref.IsValid())
+        Application().LogMessage(L"failed to find an object called \"" + otherOpName + L"\"", siWarningMsg);
+      else if (ref.GetClassID() != siCustomOperatorID)
+        Application().LogMessage(L"not a custom operator: \"" + otherOpName + L"\"", siWarningMsg);
       else
       {
-        CString err;
-        std::vector <_portMapping> otherPortmap;
-        if (!dfgTools::GetOperatorPortMapping(otherOp, otherPortmap, err))
-          Application().LogMessage(L"dfgTools::GetOperatorPortMapping() failed, err = \"" + err + L"\"", siWarningMsg);
+        CustomOperator otherOp(ref);
+        if (!otherOp.IsValid())
+          Application().LogMessage(L"failed to set custom operator from \"" + otherOpName + L"\"", siWarningMsg);
         else
         {
-          // go through the new op's port mapping and search for a match in the other port mapping.
-          for (int ni=0;ni<portmap.size();ni++)
+          CString err;
+          std::vector <_portMapping> otherPortmap;
+          if (!dfgTools::GetOperatorPortMapping(otherOp, otherPortmap, err))
+            Application().LogMessage(L"dfgTools::GetOperatorPortMapping() failed, err = \"" + err + L"\"", siWarningMsg);
+          else
           {
-            // find a match for portmap[ni] in otherPortmap.
-            int oi = _portMapping::findMatching(portmap[ni], otherPortmap, false /* <- ignore the port data type for this search */);
-            if (oi < 0)  continue;
-            _portMapping &o = otherPortmap[oi];
-            _portMapping &n = portmap[ni];
-
-            // transfer whatever we can from o to n.
+            // go through the new op's port mapping and search for a match in the other port mapping.
+            for (int ni=0;ni<portmap.size();ni++)
             {
-              // do we have a connected XSI port?
-              if (o.mapType == DFG_PORT_MAPTYPE_XSI_PORT && !o.mapTarget.IsEmpty() && o.dfgPortDataType == n.dfgPortDataType)
+              // find a match for portmap[ni] in otherPortmap.
+              int oi = _portMapping::findMatching(portmap[ni], otherPortmap, false /* <- ignore the port data type for this search */);
+              if (oi < 0)  continue;
+              _portMapping &o = otherPortmap[oi];
+              _portMapping &n = portmap[ni];
+
+              // transfer whatever we can from o to n.
               {
-                // find the port group.
-                PortGroup portgroup;
-                CRefArray pgRef = newOp.GetPortGroups();
-                for (int i=0;i<pgRef.GetCount();i++)
+                // do we have a connected XSI port?
+                if (o.mapType == DFG_PORT_MAPTYPE_XSI_PORT && !o.mapTarget.IsEmpty() && o.dfgPortDataType == n.dfgPortDataType)
                 {
-                  PortGroup pg(pgRef[i]);
-                  if (   pg.IsValid()
-                      && pg.GetName() == o.dfgPortName)
-                    {
-                      portgroup.SetObject(pgRef[i]);
-                      break;
-                    }
-                }
-                if (!portgroup.IsValid())
-                  Application().LogMessage(L"unable to find matching port group for \"" + o.dfgPortName + L"\"", siWarningMsg);
-                else
-                {
-                  // set target ref.
-                  CRef targetRef;
-                  if (targetRef.Set(o.mapTarget) != CStatus::OK)
-                    Application().LogMessage(L"failed to set target ref for \"" + o.mapTarget + L"\"", siWarningMsg);
+                  // find the port group.
+                  PortGroup portgroup;
+                  CRefArray pgRef = newOp.GetPortGroups();
+                  for (int i=0;i<pgRef.GetCount();i++)
+                  {
+                    PortGroup pg(pgRef[i]);
+                    if (   pg.IsValid()
+                        && pg.GetName() == o.dfgPortName)
+                      {
+                        portgroup.SetObject(pgRef[i]);
+                        break;
+                      }
+                  }
+                  if (!portgroup.IsValid())
+                    Application().LogMessage(L"unable to find matching port group for \"" + o.dfgPortName + L"\"", siWarningMsg);
                   else
                   {
-                    // connect.
-                    LONG instance;
-                    if (newOp.ConnectToGroup(portgroup.GetIndex(), targetRef, instance) != CStatus::OK)
-                      Application().LogMessage(L"failed to connect \"" + targetRef.GetAsText() + "\"", siWarningMsg);
+                    // set target ref.
+                    CRef targetRef;
+                    if (targetRef.Set(o.mapTarget) != CStatus::OK)
+                      Application().LogMessage(L"failed to set target ref for \"" + o.mapTarget + L"\"", siWarningMsg);
+                    else
+                    {
+                      // connect.
+                      LONG instance;
+                      if (newOp.ConnectToGroup(portgroup.GetIndex(), targetRef, instance) != CStatus::OK)
+                        Application().LogMessage(L"failed to connect \"" + targetRef.GetAsText() + "\"", siWarningMsg);
+                    }
                   }
                 }
-              }
 
-              // do we have an input port that is exposed as a XSI parameter?
-              if (o.dfgPortType == DFG_PORT_TYPE_IN && o.mapType == DFG_PORT_MAPTYPE_XSI_PARAMETER)
-              {
-                Parameter otherParam = otherOp.GetParameter(o.dfgPortName);
-                Parameter newParam   = newOp  .GetParameter(n.dfgPortName);
-                if (otherParam.IsValid() && newParam.IsValid())
+                // do we have an input port that is exposed as a XSI parameter?
+                if (o.dfgPortType == DFG_PORT_TYPE_IN && o.mapType == DFG_PORT_MAPTYPE_XSI_PARAMETER)
                 {
-                  // copy the value.
-                  newParam.PutValue(otherParam.GetValue());
-
-                  // is the port animated via a fcurve?
-                  if (otherParam.GetSource().GetClassIDName() == L"FCurve")
+                  Parameter otherParam = otherOp.GetParameter(o.dfgPortName);
+                  Parameter newParam   = newOp  .GetParameter(n.dfgPortName);
+                  if (otherParam.IsValid() && newParam.IsValid())
                   {
-                    // we only transfer the fcurve if the data types match.
-                    if (o.dfgPortDataType == n.dfgPortDataType)
+                    // copy the value.
+                    newParam.PutValue(otherParam.GetValue());
+
+                    // is the port animated via a fcurve?
+                    if (otherParam.GetSource().GetClassIDName() == L"FCurve")
                     {
-                      // get the fcurve from otherParam.
-                      FCurve otherFCurve(otherParam.GetSource());
-                      if (!otherFCurve.IsValid())
-                        Application().LogMessage(L"failed get FCurve from \"" + o.dfgPortName + L"\"", siWarningMsg);
-                      else
+                      // we only transfer the fcurve if the data types match.
+                      if (o.dfgPortDataType == n.dfgPortDataType)
                       {
-                        // add a fcurve to newParam.
-                        FCurve newFCurve;
-                        if (newParam.AddFCurve(otherFCurve.GetFCurveType(), newFCurve) != CStatus::OK)
-                          Application().LogMessage(L"failed to add FCurve to \"" + o.dfgPortName + L"\"", siWarningMsg);
+                        // get the fcurve from otherParam.
+                        FCurve otherFCurve(otherParam.GetSource());
+                        if (!otherFCurve.IsValid())
+                          Application().LogMessage(L"failed get FCurve from \"" + o.dfgPortName + L"\"", siWarningMsg);
                         else
                         {
-                          // copy otherFCurve into newFCurve.
-                          if (newFCurve.Set(otherFCurve) != CStatus::OK)
-                            Application().LogMessage(L"failed to set the FCurve for \"" + o.dfgPortName + L"\"", siWarningMsg);
+                          // add a fcurve to newParam.
+                          FCurve newFCurve;
+                          if (newParam.AddFCurve(otherFCurve.GetFCurveType(), newFCurve) != CStatus::OK)
+                            Application().LogMessage(L"failed to add FCurve to \"" + o.dfgPortName + L"\"", siWarningMsg);
+                          else
+                          {
+                            // copy otherFCurve into newFCurve.
+                            if (newFCurve.Set(otherFCurve) != CStatus::OK)
+                              Application().LogMessage(L"failed to set the FCurve for \"" + o.dfgPortName + L"\"", siWarningMsg);
+                          }
                         }
                       }
                     }
-                  }
 
-                  // is the port animated via an expression?
-                  else if (otherParam.GetSource().GetClassIDName() == L"Expression")
-                  {
-                    // get the expression from otherParam.
-                    Expression otherExpression(otherParam.GetSource());
-                    if (!otherExpression.IsValid())
-                      Application().LogMessage(L"failed get expression from \"" + o.dfgPortName + L"\"", siWarningMsg);
-                    else
+                    // is the port animated via an expression?
+                    else if (otherParam.GetSource().GetClassIDName() == L"Expression")
                     {
-                      /*
-                        Expression newExpression = newParam.AddExpression(otherExpression.GetParameter(L"definition").GetValue().GetAsText());
-                        if (!newExpression.IsValid())
-                          Application().LogMessage(L"failed to set the expression for \"" + o.dfgPortName + L"\"", siWarningMsg);
+                      // get the expression from otherParam.
+                      Expression otherExpression(otherParam.GetSource());
+                      if (!otherExpression.IsValid())
+                        Application().LogMessage(L"failed get expression from \"" + o.dfgPortName + L"\"", siWarningMsg);
+                      else
+                      {
+                        /*
+                          Expression newExpression = newParam.AddExpression(otherExpression.GetParameter(L"definition").GetValue().GetAsText());
+                          if (!newExpression.IsValid())
+                            Application().LogMessage(L"failed to set the expression for \"" + o.dfgPortName + L"\"", siWarningMsg);
 
-                        For some reason the above code doesn't work, possibly a limitation or a bug in the XSI SDK.
-                        Also tried to use the command "AddExpr" here, but without success.
+                          For some reason the above code doesn't work, possibly a limitation or a bug in the XSI SDK.
+                          Also tried to use the command "AddExpr" here, but without success.
 
-                        Therefore the workaround consists of storing the parameter name and expression into _opUserData::s_newOp_expressions
-                        and then to add the expressions manually later on.
-                      */
+                          Therefore the workaround consists of storing the parameter name and expression into _opUserData::s_newOp_expressions
+                          and then to add the expressions manually later on.
+                        */
 
-                      // add newParam's name and expression to _opUserData::s_newOp_expressions.
-                      _opUserData::s_newOp_expressions.push_back(newParam.GetName().GetAsciiString());
-                      _opUserData::s_newOp_expressions.push_back(otherExpression.GetParameter(L"definition").GetValue().GetAsText().GetAsciiString());
+                        // add newParam's name and expression to _opUserData::s_newOp_expressions.
+                        _opUserData::s_newOp_expressions.push_back(newParam.GetName().GetAsciiString());
+                        _opUserData::s_newOp_expressions.push_back(otherExpression.GetParameter(L"definition").GetValue().GetAsText().GetAsciiString());
+                      }
                     }
                   }
                 }
@@ -357,18 +360,17 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
         }
       }
     }
-  }
 
-  // display operator's property page?
-  if (openPPG)
-  {
-    CValueArray args;
-    args.Add(newOp.GetUniqueName());
-    Application().ExecuteCommand(L"InspectObj", args, CValue());
-  }
+    // display operator's property page?
+    if (openPPG)
+    {
+      CValueArray args;
+      args.Add(newOp.GetUniqueName());
+      Application().ExecuteCommand(L"InspectObj", args, CValue());
+    }
+  } while (false);
 
   // done.
-  _done:
   portmap.clear();
   dfgTools::SetUndoLevels(memUndoLevels);
   return CStatus::OK;
