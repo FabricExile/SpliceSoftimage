@@ -40,6 +40,7 @@
 #include <xsi_iceattributedataarray.h>
 #include <xsi_iceattributedataarray2D.h>
 
+#include "plugin.h"
 #include "FabricDFGPlugin.h"
 #include "FabricDFGOperators.h"
 #include "FabricDFGBaseInterface.h"
@@ -56,6 +57,11 @@ CString xsiGetWorkgroupPath();
 
 CRef recreateOperator(CustomOperator op, CString &dfgJSON)
 {
+  // memorize current undo levels and then set them to zero.
+  // NOTE: from now on use "goto _done;" to exit the function!
+  const LONG memUndoLevels = dfgTools::GetUndoLevels();
+  dfgTools::SetUndoLevels(0);
+
   CValue newOpRef;
 
   CValueArray args;
@@ -100,6 +106,9 @@ CRef recreateOperator(CustomOperator op, CString &dfgJSON)
     }
   }
 
+  // done.
+  _done:
+  dfgTools::SetUndoLevels(memUndoLevels);
   return newOpRef;
 }
 
@@ -137,6 +146,9 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Term(CRef &in_ctxt)
     delete pud;
   }
 
+  // set the global flag, so that the Softimage undo history gets cleared when the event siOnEndCommand gets fired.
+  g_clearSoftimageUndoHistory = true;
+
   // done.
   return CStatus::OK;
 }
@@ -164,11 +176,11 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
   op.AddParameter(oPDef, emptyParam);
   oPDef = oFactory.CreateParamDef(L"verbose",             CValue::siBool,   siPersistable,                            L"", L"", false, CValue(), CValue(), CValue(), CValue());
   op.AddParameter(oPDef, emptyParam);
-  oPDef = oFactory.CreateParamDef(L"myBitmapWidget",      CValue::siInt4, siClassifMetaData, siPersistable,           L"", L"", CValue(), CValue(), CValue(), 0, 1);
+  oPDef = oFactory.CreateParamDef(L"myBitmapWidget",      CValue::siInt4,   siClassifMetaData, siPersistable,         L"", L"", CValue(), CValue(), CValue(), 0, 1);
   op.AddParameter(oPDef, emptyParam);
 
   // create grid parameter for the list of DFG ports.
-  // NOTE: this port MUST come JST BEFORE the exposed DFG parameters!
+  // NOTE: this port MUST come JUST BEFORE the exposed DFG parameters!
   op.AddParameter(oFactory.CreateGridParamDef("dfgPorts"), emptyParam);
 
   // create exposed DFG parameters.
@@ -765,6 +777,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
 
       // re-create operator.
       recreateOperator(op, dfgJSON);
+      dfgTools::ClearUndoHistory();
     }
     else if (btnName == L"BtnRecreateOpInfo")
     {
@@ -977,12 +990,15 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
       args.Add(op.GetUniqueName());
       args.Add(fileName);
       if (Application().ExecuteCommand(L"dfgImportJSON", args, opWasRecreated) == CStatus::OK)
+      {
         if (!opWasRecreated)
         {
           PPGLayout oLayout = op.GetPPGLayout();
           dfgSoftimageOp_DefineLayout(oLayout, op);
           ctxt.PutAttribute(L"Refresh", true);
         }
+        dfgTools::ClearUndoHistory();
+      }
     }
     else if (btnName == L"BtnExportJSON")
     {

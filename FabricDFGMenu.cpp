@@ -87,6 +87,7 @@ SICALLBACK FabricDFG_Menu_CreateDFGOp(XSI::CRef&)
   }
 
   // done.
+  dfgTools::ClearUndoHistory();
   return CStatus::OK;
 }
 
@@ -111,6 +112,7 @@ SICALLBACK FabricDFG_Menu_CreateNullWithOp(XSI::CRef&)
   Application().ExecuteCommand(L"dfgSoftimageOpApply", args, CValue());
 
   // done.
+  dfgTools::ClearUndoHistory();
   return CStatus::OK;
 }
 
@@ -135,6 +137,7 @@ SICALLBACK FabricDFG_Menu_CreatePolymeshWithOp(XSI::CRef&)
   Application().ExecuteCommand(L"dfgSoftimageOpApply", args, CValue());
 
   // done.
+  dfgTools::ClearUndoHistory();
   return CStatus::OK;
 }
 
@@ -209,6 +212,7 @@ SICALLBACK FabricDFG_Menu_ImportJSON(XSI::CRef&)
   Application().ExecuteCommand(L"dfgImportJSON", args, CValue());
 
   // done.
+  dfgTools::ClearUndoHistory();
   return CStatus::OK;
 }
 

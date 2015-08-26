@@ -9,6 +9,7 @@
 #include "FabricDFGBaseInterface.h"
 #include "FabricDFGPlugin.h"
 #include "FabricDFGOperators.h"
+#include "FabricDFGTools.h"
 
 #include "FabricSplicePlugin.h"
 #include "FabricSpliceICENodes.h"
@@ -152,6 +153,9 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
 
     // menu.
     in_reg.RegisterMenu(siMenuMainTopLevelID,       L"Fabric:DFG", true, true);
+
+    // events.
+    in_reg.RegisterEvent(L"FabricDFGsiOnEndCommand", siOnEndCommand);
   }
 
   // done.
@@ -173,9 +177,9 @@ SICALLBACK XSIUnloadPlugin(const PluginRegistrar& in_reg)
   return CStatus::OK;
 }
 
-// _________________________
-// siEvent helper functions.
-// -------------------------
+// __________________________________
+// siEvent + event  helper functions.
+// ----------------------------------
 
 CStatus helpFnct_siEventOpenSave(CRef &ctxt, int openSave)
 {
@@ -251,6 +255,7 @@ CStatus helpFnct_siEventOpenSave(CRef &ctxt, int openSave)
         std::string s = std::string("failed: ") + (e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
         feLogError(s);
       }
+      dfgTools::ClearUndoHistory();
     }
 
     // do nothing.
@@ -265,4 +270,18 @@ CStatus helpFnct_siEventOpenSave(CRef &ctxt, int openSave)
   return 1;
 }
 
+bool g_clearSoftimageUndoHistory = false;
+XSIPLUGINCALLBACK CStatus FabricDFGsiOnEndCommand_OnEvent(CRef &ctxt)
+{
+  // if the global flag g_clearSoftimageUndoHistory is set then we clear Softimage's undo history and reset the flag.
+  if (g_clearSoftimageUndoHistory)
+  {
+    if (!dfgTools::ClearUndoHistory())
+      Application().LogMessage(L"failed to clear undo history", siWarningMsg);
+    g_clearSoftimageUndoHistory = false;
+  }
 
+  // done.
+  // /note: we return 1 (i.e. "true") instead of CStatus::OK or else the event gets aborted).
+  return 1;
+}

@@ -92,6 +92,11 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
     portmap.clear();
     return CStatus::OK; }
 
+  // memorize current undo levels and then set them to zero.
+  // NOTE: from now on use "goto _done;" to exit the function!
+  const LONG memUndoLevels = dfgTools::GetUndoLevels();
+  dfgTools::SetUndoLevels(0);
+
   // create a SpliceOp before creating the dfgSoftimageOp?
   // (note: adding a SpliceOp to the object prevents things from going wrong when loading a scene into XSI that has one or more dfgSoftimageOp.)
   if (    createSpliceOp == 1
@@ -137,21 +142,21 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
     if (!pgReservedRef.IsValid())
     { Application().LogMessage(L"failed to create reserved port group.", siErrorMsg);
       portmap.clear();
-      return CStatus::OK; }
+      goto _done; }
 
     // create the default output port "reservedMatrixOut" and connect the object's global kinematics to it.
     newOp.AddOutputPort(obj.GetKinematics().GetGlobal().GetRef(), L"reservedMatrixOut", PortGroup(pgReservedRef).GetIndex(), -1,  siDefaultPort, &returnStatus);
     if (returnStatus != CStatus::OK)
     { Application().LogMessage(L"failed to create default output port for the global kinematics", siErrorMsg);
       portmap.clear();
-      return CStatus::OK; }
+      goto _done; }
 
     // create the default input port "reservedMatrixIn" and connect the object's global kinematics to it.
     newOp.AddInputPort(obj.GetKinematics().GetGlobal().GetRef(), L"reservedMatrixIn", PortGroup(pgReservedRef).GetIndex(), -1,  siDefaultPort, &returnStatus);
     if (returnStatus != CStatus::OK)
     { Application().LogMessage(L"failed to create default input port for the global kinematics", siErrorMsg);
       portmap.clear();
-      return CStatus::OK; }
+      goto _done; }
   }
 
   // create exposed DFG output ports.
@@ -214,7 +219,7 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
   if (newOp.Connect() != CStatus::OK)
   { Application().LogMessage(L"newOp.Connect() failed.",siErrorMsg);
     portmap.clear();
-    return CStatus::OK; }
+    goto _done; }
 
   // copy exposed values, animations etc. from otherOpName.
   if (!otherOpName.IsEmpty())
@@ -363,7 +368,9 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
   }
 
   // done.
+  _done:
   portmap.clear();
+  dfgTools::SetUndoLevels(memUndoLevels);
   return CStatus::OK;
 }
 
@@ -458,6 +465,7 @@ SICALLBACK dfgImportJSON_Execute(CRef &in_ctxt)
   catch (FabricCore::Exception e)
   {
     feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+    dfgTools::ClearUndoHistory();
     return CStatus::OK;
   }
 
@@ -547,6 +555,7 @@ SICALLBACK dfgImportJSON_Execute(CRef &in_ctxt)
   }
 
   // done.
+    dfgTools::ClearUndoHistory();
   return CStatus::OK;
 }
 
