@@ -174,6 +174,8 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
   op.AddParameter(oPDef, emptyParam);
   oPDef = oFactory.CreateParamDef(L"verbose",             CValue::siBool,   siPersistable,                            L"", L"", false, CValue(), CValue(), CValue(), CValue());
   op.AddParameter(oPDef, emptyParam);
+  oPDef = oFactory.CreateParamDef(L"dfgExecMode",         CValue::siInt4,   siPersistable,                            L"", L"", 1, 0, 99999, 0, 10);
+  op.AddParameter(oPDef, emptyParam);
   oPDef = oFactory.CreateParamDef(L"myBitmapWidget",      CValue::siInt4,   siClassifMetaData, siPersistable,         L"", L"", CValue(), CValue(), CValue(), 0, 1);
   op.AddParameter(oPDef, emptyParam);
 
@@ -331,6 +333,7 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
   oLayout.Clear();
   oLayout.PutAttribute(siUIDictionary, L"None");
   PPGItem pi;
+	CValueArray lv_enum;
 
   // button size (Open Canvas).
   const LONG btnCx = 100;
@@ -639,7 +642,13 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
   {
     oLayout.AddTab(L"Advanced");
     {
-      oLayout.AddItem(L"verbose",             L"Verbose");
+      oLayout.AddItem(L"verbose", L"Verbose");
+			lv_enum.Clear();
+			lv_enum.Add( L"always execute DFG" );
+			lv_enum.Add( 0 );
+			lv_enum.Add( L"execute DFG only when necessary" );
+			lv_enum.Add( 1 );
+			oLayout.AddEnumControl(L"dfgExecMode", lv_enum, L"DFG Exec Modo", siControlCombo);
       oLayout.AddItem(L"persistenceData",     L"persistenceData");
       oLayout.AddItem(L"mute",                L"Mute");
       oLayout.AddItem(L"alwaysevaluate",      L"Always Evaluate");
@@ -1192,7 +1201,17 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
 
   // set the execFabric flags (i.e. check if we need to execute the Fabric steps 1 and 2).
   bool activateExecFlagsForNextUpdate = false;
+  if ((LONG)ctxt.GetParameterValue(L"dfgExecMode") == 0)
   {
+    /* "always execute DFG" */
+
+    // execute the Fabric steps 1 and 2 now, regardless of how things are connected.
+    pud->execFabricStep12 = true;
+  }
+  else
+  {
+    /* dfgExecMode is "execute DFG only when necessary" */
+
     // CASE 1: this is the port reservedMatrixOut.
     if (outputPort.GetName() == L"reservedMatrixOut")
     {
