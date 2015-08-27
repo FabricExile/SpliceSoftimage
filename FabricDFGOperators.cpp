@@ -259,6 +259,14 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
 
 int dfgSoftimageOp_UpdateGridData_dfgPorts(CustomOperator &op)
 {
+  /*
+     Here we set the data of the grid parameter "dfgPorts".
+
+     Note that we only set dat if it is different from the existing one in
+     order to avoid unnecessary updates of the dfgSoftimage operator each
+     time the PPG is displayed or updated.
+  */
+
   // get grid object.
   GridData grid((CRef)op.GetParameter("dfgPorts").GetValue());
 
