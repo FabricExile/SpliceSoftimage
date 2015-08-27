@@ -273,12 +273,12 @@ int dfgSoftimageOp_UpdateGridData_dfgPorts(CustomOperator &op)
   }
 
   // set amount, name and type of the grid columns.
-  grid.PutRowCount(pmap.size());
-  grid.PutColumnCount(4);
-  grid.PutColumnLabel(0, "Name");         grid.PutColumnType(0, siColumnStandard);
-  grid.PutColumnLabel(1, "Type");         grid.PutColumnType(1, siColumnStandard);
-  grid.PutColumnLabel(2, "Mode");         grid.PutColumnType(2, siColumnStandard);
-  grid.PutColumnLabel(3, "Type/Target");  grid.PutColumnType(3, siColumnStandard);
+  if (grid.GetRowCount()     != pmap.size())      grid.PutRowCount(pmap.size());
+  if (grid.GetColumnCount()  != 4)                grid.PutColumnCount(4);
+  if (grid.GetColumnLabel(0) != L"Name")        { grid.PutColumnLabel(0, L"Name");         grid.PutColumnType(0, siColumnStandard); }
+  if (grid.GetColumnLabel(1) != L"Type")        { grid.PutColumnLabel(1, L"Type");         grid.PutColumnType(1, siColumnStandard); }
+  if (grid.GetColumnLabel(2) != L"Mode")        { grid.PutColumnLabel(2, L"Mode");         grid.PutColumnType(2, siColumnStandard); }
+  if (grid.GetColumnLabel(3) != L"Type/Target") { grid.PutColumnLabel(3, L"Type/Target");  grid.PutColumnType(3, siColumnStandard); }
 
   // set data.
   for (int i=0;i<pmap.size();i++)
@@ -313,11 +313,12 @@ int dfgSoftimageOp_UpdateGridData_dfgPorts(CustomOperator &op)
     }
     
     // set grid data.
-    grid.PutRowLabel( i, L"  " + CString(i) + L"  ");
-    grid.PutCell(0,   i, name);
-    grid.PutCell(1,   i, type);
-    grid.PutCell(2,   i, mode);
-    grid.PutCell(3,   i, target);
+    CString label = L"  " + CString(i) + L"  ";
+    if (grid.GetRowLabel(i) != label)   grid.PutRowLabel(i, label);
+    if (grid.GetCell(0,  i) != name)    grid.PutCell(0,  i, name);
+    if (grid.GetCell(1,  i) != type)    grid.PutCell(1,  i, type);
+    if (grid.GetCell(2,  i) != mode)    grid.PutCell(2,  i, mode);
+    if (grid.GetCell(3,  i) != target)  grid.PutCell(3,  i, target);
   }
 
   // return amount of rows.
