@@ -210,14 +210,33 @@ struct _opUserData
 // polymesh structure.
 struct _polymesh
 {
+  /*
+    a valid polygon mesh will always have the following arrays set:
+        vertPositions;
+        vertNormals;
+        polyNumVertices;
+        polyVertices;
+        polyNodeNormals;
+
+    the following arrays are optional (use hasUVWs() and hasColors() to see if the data is available):
+        vertUVWs;
+        vertColors;
+        polyNodeUVWs;
+        polyNodeColors;
+  */
+
   unsigned int            numVertices;
   unsigned int            numPolygons;
   unsigned int            numSamples;
   std::vector <float>     vertPositions;
   std::vector <float>     vertNormals;
+  std::vector <float>     vertUVWs;
+  std::vector <float>     vertColors;
   std::vector <uint32_t>  polyNumVertices;
   std::vector <uint32_t>  polyVertices;
   std::vector <float>     polyNodeNormals;
+  std::vector <float>     polyNodeUVWs;
+  std::vector <float>     polyNodeColors;
 
   // mesh bounding box.
   float bbox[6];
@@ -234,9 +253,13 @@ struct _polymesh
     numSamples      = -1;
     vertPositions   .clear();
     vertNormals     .clear();
+    vertUVWs        .clear();
+    vertColors      .clear();
     polyNumVertices .clear();
     polyVertices    .clear();
     polyNodeNormals .clear();
+    polyNodeUVWs    .clear();
+    polyNodeColors  .clear();
     for (int i = 0; i < 6; i++)
       bbox[i] = 0;
   }
@@ -249,9 +272,13 @@ struct _polymesh
     numSamples     = inMesh.numSamples;
     vertPositions  .resize(inMesh.vertPositions  .size());  memcpy(vertPositions  .data(), inMesh.vertPositions  .data(), vertPositions  .size() * sizeof(float)   );
     vertNormals    .resize(inMesh.vertNormals    .size());  memcpy(vertNormals    .data(), inMesh.vertNormals    .data(), vertNormals    .size() * sizeof(float)   );
+    vertUVWs       .resize(inMesh.vertUVWs       .size());  memcpy(vertUVWs       .data(), inMesh.vertUVWs       .data(), vertUVWs       .size() * sizeof(float)   );
+    vertColors     .resize(inMesh.vertColors     .size());  memcpy(vertColors     .data(), inMesh.vertColors     .data(), vertColors     .size() * sizeof(float)   );
     polyNumVertices.resize(inMesh.polyNumVertices.size());  memcpy(polyNumVertices.data(), inMesh.polyNumVertices.data(), polyNumVertices.size() * sizeof(uint32_t));
     polyVertices   .resize(inMesh.polyVertices   .size());  memcpy(polyVertices   .data(), inMesh.polyVertices   .data(), polyVertices   .size() * sizeof(uint32_t));
     polyNodeNormals.resize(inMesh.polyNodeNormals.size());  memcpy(polyNodeNormals.data(), inMesh.polyNodeNormals.data(), polyNodeNormals.size() * sizeof(float)   );
+    polyNodeUVWs   .resize(inMesh.polyNodeUVWs   .size());  memcpy(polyNodeUVWs   .data(), inMesh.polyNodeUVWs   .data(), polyNodeUVWs   .size() * sizeof(float)   );
+    polyNodeColors .resize(inMesh.polyNodeColors .size());  memcpy(polyNodeColors .data(), inMesh.polyNodeColors .data(), polyNodeColors .size() * sizeof(float)   );
     for (int i = 0; i < 6; i++)
       bbox[i] = inMesh.bbox[i];
   }
@@ -278,13 +305,25 @@ struct _polymesh
             && polyNodeNormals.size() == 3 * numSamples
            );
   }
-    
+
   // returns true if this is an empty mesh.
   bool isEmpty(void) const
   {
     return (numVertices == 0);
   }
-    
+
+  // returns true if this mesh has UVWs.
+  bool hasUVWs(void) const
+  {
+    return (vertUVWs.size() == 3 * numVertices && polyNodeUVWs.size() == 3 * numSamples);
+  }
+
+  // returns true if this mesh has Colors.
+  bool hasColors(void) const
+  {
+    return (vertColors.size() == 4 * numVertices && polyNodeColors.size() == 4 * numSamples);
+  }
+
   // calculate bounding box (i.e. set member bbox).
   void calcBBox(void)
   {
@@ -331,7 +370,9 @@ struct _polymesh
                                                        &polyNumVertices,
                                                        &polyVertices,
                                                        &polyNodeNormals
-                                                       );
+                                                       &polyNodeUVWs
+                                                       &polyNodeColors
+                                                      );
     // error?
     if (retGet)
     { clear();
@@ -378,6 +419,49 @@ struct _polymesh
       }
     }
 
+    // create vertex UVWs from the polygon node UVWs.
+    if (numPolygons > 0 && polyNodeUVWs.size() > 0)
+    {
+      // resize and zero-out.
+      vertUVWs.resize       (3 * numVertices, 0.0f);
+      if (vertUVWs.size() != 3 * numVertices)
+      { clear();
+        return -3;  }
+
+      // fill.
+      uint32_t *pvi = polyVertices.data();
+      float    *pnu = polyNodeUVWs.data();
+      for (unsigned int i=0;i<numSamples;i++,pvi++,pnu+=3)
+      {
+        float *vn = vertUVWs.data() + (*pvi) * 3;
+        vn[0] += pnu[0];
+        vn[1] += pnu[1];
+        vn[2] += pnu[2];
+      }
+    }
+
+    // create vertex colors from the polygon node colors.
+    if (numPolygons > 0 && polyNodeColors.size() > 0)
+    {
+      // resize and zero-out.
+      vertColors.resize       (4 * numVertices, 0.0f);
+      if (vertColors.size() != 4 * numVertices)
+      { clear();
+        return -3;  }
+
+      // fill.
+      uint32_t *pvi = polyVertices.data();
+      float    *pnc = polyNodeColors.data();
+      for (unsigned int i=0;i<numSamples;i++,pvi++,pnc+=4)
+      {
+        float *vn = vertColors.data() + (*pvi) * 4;
+        vn[0] += pnc[0];
+        vn[1] += pnc[1];
+        vn[2] += pnc[2];
+        vn[3] += pnc[3];
+      }
+    }
+
     // calc bbox.
     calcBBox();
 
@@ -391,6 +475,10 @@ struct _polymesh
                         const unsigned int   in_vertPositions_size,   // size of array in_vertPositions.
                         const float         *in_nodeNormals,          // array of node normals (this may be NULL).
                         const unsigned int   in_nodeNormals_size,     // size of array in_nodeNormals.
+                        const float         *in_nodeUVWs,             // array of node UVWs (this may be NULL).
+                        const unsigned int   in_nodeUVWs_size,        // size of array in_nodeUVWs.
+                        const float         *in_nodeColors,           // array of node colors (this may be NULL).
+                        const unsigned int   in_nodeColors_size,      // size of array in_nodeColors.
                         const unsigned int  *in_polyNumVertices,      // array of polygon vertex amounts.
                         const unsigned int   in_polyNumVertices_size, // size of array in_polyNumVertices.
                         const unsigned int  *in_polyVertices,         // array of polygon vertex indices.
@@ -403,6 +491,8 @@ struct _polymesh
     // check.
     if (!in_vertPositions   && in_vertPositions_size    > 0)   return -1;
     if (!in_nodeNormals     && in_nodeNormals_size      > 0)   return -1;
+    if (!in_nodeUVWs        && in_nodeUVWs_size         > 0)   return -1;
+    if (!in_nodeColors      && in_nodeColors_size       > 0)   return -1;
     if (!in_polyNumVertices && in_polyNumVertices_size  > 0)   return -1;
     if (!in_polyVertices    && in_polyVertices_size     > 0)   return -1;
 
@@ -413,7 +503,9 @@ struct _polymesh
 
     // check.
     if (    numVertices * 3 != in_vertPositions_size
-        || (numSamples  * 3 != in_nodeNormals_size && in_nodeNormals_size > 0))
+        || (numSamples  * 3 != in_nodeNormals_size && in_nodeNormals_size > 0)
+        || (numSamples  * 3 != in_nodeUVWs_size    && in_nodeUVWs_size    > 0)
+        || (numSamples  * 3 != in_nodeColors_size  && in_nodeColors_size  > 0))
     {
       clear();
       return -2;
@@ -433,6 +525,28 @@ struct _polymesh
     {
       clear();
       return -2;
+    }
+    if (in_nodeUVWs_size > 0)
+    {
+      vertUVWs              .resize(3 * numVertices, 0.0f);
+      polyNodeUVWs          .resize(3 * numSamples);
+      if (   vertUVWs    .size() != 3 * numVertices
+          || polyNodeUVWs.size() != 3 * numSamples)
+      {
+        clear();
+        return -2;
+      }
+    }
+    if (in_nodeColors_size > 0)
+    {
+      vertColors              .resize(4 * numVertices, 0.0f);
+      polyNodeColors          .resize(4 * numSamples);
+      if (   vertColors    .size() != 4 * numVertices
+          || polyNodeColors.size() != 4 * numSamples)
+      {
+        clear();
+        return -2;
+      }
     }
 
     // fill member arrays from input arrays.
@@ -524,6 +638,14 @@ struct _polymesh
           pi += *pn;
         }
       }
+
+      // polygon node UVWs.
+      if (polyNodeUVWs.size() == in_nodeUVWs_size)
+        memcpy(polyNodeUVWs.data(), in_nodeUVWs, polyNodeUVWs.size() * sizeof(float));
+
+      // polygon node colors.
+      if (polyNodeColors.size() == in_nodeColors_size)
+        memcpy(polyNodeColors.data(), in_nodeColors, polyNodeColors.size() * sizeof(float));
     }
 
     // create vertex normals from the polygon node normals.
@@ -557,6 +679,39 @@ struct _polymesh
           vn[0] = 0;
           vn[1] = 1.0f;
           vn[2] = 0;
+        }
+      }
+    }
+
+    // create vertex UVWs from the polygon node UVWs.
+    if (numPolygons > 0 && polyNodeUVWs.size() > 0)
+    {
+      // init temporary array of amounts of node values per vertex value.
+      std::vector<short int> tmp;
+      tmp.resize(numVertices, 0);
+
+      // fill.
+      uint32_t *pvi = polyVertices.data();
+      float    *pnu = polyNodeUVWs.data();
+      for (unsigned int i=0;i<numSamples;i++,pvi++,pnu+=3)
+      {
+        float *vu = vertUVWs.data() + (*pvi) * 3;
+        vu[0] += pnu[0];
+        vu[1] += pnu[1];
+        vu[2] += pnu[2];
+        tmp[*pvi]++;
+      }
+
+      // average.
+      float *vu = vertUVWs.data();
+      for (unsigned int i=0;i<numVertices;i++,vu+=3)
+      {
+        if (tmp[i] > 0)
+        {
+          float f = 1.0f / (float)tmp[i];
+          vu[0] *= f;
+          vu[1] *= f;
+          vu[2] *= f;
         }
       }
     }
