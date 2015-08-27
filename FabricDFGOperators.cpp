@@ -39,6 +39,7 @@
 #include <xsi_iceattribute.h>
 #include <xsi_iceattributedataarray.h>
 #include <xsi_iceattributedataarray2D.h>
+#include <xsi_color4f.h>
 
 #include "plugin.h"
 #include "FabricDFGPlugin.h"
@@ -1439,7 +1440,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
     }
   }
 
-  // Fabric Engine (step 3): set the current XSI output port from the matching DFG output port.
+  // Fabric Engine (step 3): set the XSI output port from the matching DFG output port and/or set the ICE data.
   {
     CString portName = outputPort.GetName();
     FabricCore::DFGExec exec = binding.getExec();
@@ -1526,21 +1527,20 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
                 }
                 else
                 {
+                  // store vertex colors and UVs as ICE data.
+                  //
+                  // note: attempting to directly set "per point" or "per node" ICE data fails, because attributes added
+                  //       via XSI::Geometry::AddICEAttribute() be constant (ICEAttribute::IsConstant() == true) and there
+                  //       seems no way to get around this.
+                  //       Therefore the data (colros, Uvs, ..) is stored as an "array per object" which must then be
+                  //       converted to "per point" or "per node" in ICE.
 
-
-                  // store colors per vertex into ICE data.
-                  /*
-
-                  THIS IS NOT WORKING.
-                  See JIRA ticket's comment for more details and possible workaround: FE-4539
-
-                  */
-                  if (false)
+                  // array of colors per polygon node.
                   {
-                    CString                 name          = L"dfgColorPerPoint";
+                    CString                 name          = L"dfgDataArrayColorPerNode";
                     siICENodeDataType       typeData      = siICENodeDataType::siICENodeDataColor4;
-                    siICENodeStructureType  typeStructure = siICENodeStructureType::siICENodeStructureSingle;
-                    siICENodeContextType    typeContext   = siICENodeContextType::siICENodeContextComponent0D;
+                    siICENodeStructureType  typeStructure = siICENodeStructureType::siICENodeStructureArray;
+                    siICENodeContextType    typeContext   = siICENodeContextType::siICENodeContextSingleton;
                     ICEAttribute            attr          = xsiPolymesh.GetICEAttributeFromName(name);
                     if (!attr.IsValid())    attr          = xsiPolymesh.AddICEAttribute(name, typeData, typeStructure, typeContext);
                     if (!attr.IsValid())
@@ -1559,19 +1559,36 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
                     }
                     else
                     {
-                      CICEAttributeDataArrayColor4f data;
-                      if (attr.GetDataArray(data) != CStatus::OK)
+                      CICEAttributeDataArray2DColor4f data2D;
+                      if (attr.GetDataArray2D(data2D) != CStatus::OK)
                       {
                         Application().LogMessage(L"failed to get the ICE data \"" + name + L"\"", siErrorMsg);
                       }
-                      else if (attr.GetElementCount() != polymesh.numVertices)
+                      else if (data2D.GetCount() != 1)
                       {
-                        Application().LogMessage(L"vertex count mismatch: data.GetCount() = " + CString(data.GetCount()) + L" and polymesh.numVertices = " + CString((ULONG)polymesh.numVertices), siErrorMsg);
+                        Application().LogMessage(L"something's wrong with the ICE data \"" + name + L"\", data2D.GetCount() is " + CString(data2D.GetCount()) + L" but we expected 1.", siErrorMsg);
                       }
                       else
                       {
-                        for (ULONG i=0;i<data.GetCount();i++)
-                          data[i].Set(1, (float)(i&1), 0, 1);
+                        //CICEAttributeDataArrayColor4f data;
+                        //if (data2D.ResizeSubArray(0, polymesh.numSamples, data) != CStatus::OK)
+                        //{
+                        //  Application().LogMessage(L"failed to resize or get the sub-array of ICE data \"" + name + L"\"", siErrorMsg);
+                        //}
+                        //else
+
+                        // build temporary array.
+                        MATH::CColor4f *colors = NULL;
+                        colors = new MATH::CColor4f[polymesh.numSamples];
+                        for (LONG i=0;i<polymesh.numSamples;i++)
+                          colors[i].Set(1, (float)(i&1), 0, 1);
+
+                        // set ICE sub array from temporary array.
+                        if (data2D.SetSubArray(0, colors, polymesh.numSamples) != CStatus::OK)
+                          Application().LogMessage(L"failed to set data in ICE data \"" + name + L"\"", siErrorMsg);
+
+                        // clean up.
+                        delete[] colors;
                       }
                     }
                   }
