@@ -1133,8 +1133,8 @@ bool dfgTools::GetGeometryFromX3DObject(const XSI::X3DObject &in_x3DObj, double 
   LONG          numNodes        = 0;
   bool          useVertMotions  = false;
   bool          useNodeNormals  = true;
-  bool          useNodeUVWs     = false;
-  bool          useNodeColors   = false;
+  bool          useNodeUVWs     = true;
+  bool          useNodeColors   = true;
   CFloatArray   vertMotions      (0);
   CFloatArray   nodeNormals      (0);
   CFloatArray   nodeUVWs         (0);
@@ -1155,7 +1155,7 @@ bool dfgTools::GetGeometryFromX3DObject(const XSI::X3DObject &in_x3DObj, double 
                                 CString(),
                                 CString(),
                                 out_errmsg,
-                                out_wrnmsg  ) )
+                                out_wrnmsg ) )
   {
     return false;
   }
@@ -1168,6 +1168,8 @@ bool dfgTools::GetGeometryFromX3DObject(const XSI::X3DObject &in_x3DObj, double 
   // set out_polymesh from arrays.
   int ret = out_polymesh.SetFromFlatArrays(                      vertexPositions.GetArray(),  vertexPositions.GetCount(),
                                                                  nodeNormals    .GetArray(),  nodeNormals    .GetCount(),
+                                                                 nodeUVWs       .GetArray(),  nodeUVWs       .GetCount(),
+                                                                 nodeColors     .GetArray(),  nodeColors     .GetCount(),
                                            (const unsigned int *)polyVCount     .GetArray(),  polyVCount     .GetCount(),
                                            (const unsigned int *)polyVIndices   .GetArray(),  polyVIndices   .GetCount()
                                           );

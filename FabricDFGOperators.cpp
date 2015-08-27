@@ -1532,10 +1532,11 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
                   // note: attempting to directly set "per point" or "per node" ICE data fails, because attributes added
                   //       via XSI::Geometry::AddICEAttribute() be constant (ICEAttribute::IsConstant() == true) and there
                   //       seems no way to get around this.
-                  //       Therefore the data (colros, Uvs, ..) is stored as an "array per object" which must then be
-                  //       converted to "per point" or "per node" in ICE.
+                  //       Therefore the data (colors, UVs, ..) is stored as an "array per object" which must then be
+                  //       converted to "per point" or "per node" in ICE by the user.
 
                   // array of colors per polygon node.
+                  if (polymesh.hasColors())
                   {
                     CString                 name          = L"dfgDataArrayColorPerNode";
                     siICENodeDataType       typeData      = siICENodeDataType::siICENodeDataColor4;
@@ -1570,18 +1571,14 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
                       }
                       else
                       {
-                        //CICEAttributeDataArrayColor4f data;
-                        //if (data2D.ResizeSubArray(0, polymesh.numSamples, data) != CStatus::OK)
-                        //{
-                        //  Application().LogMessage(L"failed to resize or get the sub-array of ICE data \"" + name + L"\"", siErrorMsg);
-                        //}
-                        //else
-
-                        // build temporary array.
+                        // init temporary array.
                         MATH::CColor4f *colors = NULL;
                         colors = new MATH::CColor4f[polymesh.numSamples];
-                        for (LONG i=0;i<polymesh.numSamples;i++)
-                          colors[i].Set(1, (float)(i&1), 0, 1);
+
+                        // fill temporary array.
+                        float *pnc = polymesh.polyNodeColors.data();
+                        for (LONG i=0;i<polymesh.numSamples;i++,pnc+=4)
+                          colors[i].Set(pnc[0], pnc[1], pnc[2], pnc[3]);
 
                         // set ICE sub array from temporary array.
                         if (data2D.SetSubArray(0, colors, polymesh.numSamples) != CStatus::OK)

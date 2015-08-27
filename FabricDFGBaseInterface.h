@@ -119,6 +119,8 @@ class BaseInterface
                                      std::vector <uint32_t>   *out_polygonNumVertices     = NULL,     // polygon vertex counts.
                                      std::vector <uint32_t>   *out_polygonVertices        = NULL,     // polygon vertex indices.
                                      std::vector <float>      *out_polygonNodeNormals     = NULL,     // polygon node normals.
+                                     std::vector <float>      *out_polygonNodeUVWs        = NULL,     // polygon node UVWs.
+                                     std::vector <float>      *out_polygonNodeColors      = NULL,     // polygon node colors.
                                      bool                      strict                     = false);
 
   // sets the value of an argument (= a port).

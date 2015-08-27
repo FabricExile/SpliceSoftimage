@@ -360,7 +360,7 @@ struct _polymesh
     // get RTVal.
     FabricCore::RTVal rtMesh = binding.getArgValue(argName);
 
-    // get the mesh data (except for the vertex normals).
+    // get the mesh data (except for the vertex normals/UVWs/colors).
     int retGet = BaseInterface::GetArgValuePolygonMesh( binding,
                                                         argName,
                                                         numVertices,
@@ -369,8 +369,8 @@ struct _polymesh
                                                        &vertPositions,
                                                        &polyNumVertices,
                                                        &polyVertices,
-                                                       &polyNodeNormals
-                                                       &polyNodeUVWs
+                                                       &polyNodeNormals,
+                                                       &polyNodeUVWs,
                                                        &polyNodeColors
                                                       );
     // error?
@@ -505,7 +505,7 @@ struct _polymesh
     if (    numVertices * 3 != in_vertPositions_size
         || (numSamples  * 3 != in_nodeNormals_size && in_nodeNormals_size > 0)
         || (numSamples  * 3 != in_nodeUVWs_size    && in_nodeUVWs_size    > 0)
-        || (numSamples  * 3 != in_nodeColors_size  && in_nodeColors_size  > 0))
+        || (numSamples  * 4 != in_nodeColors_size  && in_nodeColors_size  > 0))
     {
       clear();
       return -2;
@@ -702,16 +702,53 @@ struct _polymesh
         tmp[*pvi]++;
       }
 
-      // average.
-      float *vu = vertUVWs.data();
-      for (unsigned int i=0;i<numVertices;i++,vu+=3)
+      // average the vertex values.
+      float     *vu = vertUVWs.data();
+      short int *vt = tmp.data();
+      for (unsigned int i=0;i<numVertices;i++,vu+=3,vt++)
       {
-        if (tmp[i] > 0)
+        if (*vt > 0)
         {
-          float f = 1.0f / (float)tmp[i];
+          float f = 1.0f / (float)(*vt);
           vu[0] *= f;
           vu[1] *= f;
           vu[2] *= f;
+        }
+      }
+    }
+
+    // create vertex colors from the polygon node colors.
+    if (numPolygons > 0 && polyNodeColors.size() > 0)
+    {
+      // init temporary array of amounts of node values per vertex value.
+      std::vector<short int> tmp;
+      tmp.resize(numVertices, 0);
+
+      // fill.
+      uint32_t *pvi = polyVertices.data();
+      float    *pnc = polyNodeColors.data();
+      for (unsigned int i=0;i<numSamples;i++,pvi++,pnc+=4)
+      {
+        float *vc = vertColors.data() + (*pvi) * 4;
+        vc[0] += pnc[0];
+        vc[1] += pnc[1];
+        vc[2] += pnc[2];
+        vc[3] += pnc[3];
+        tmp[*pvi]++;
+      }
+
+      // average the vertex values.
+      float     *vc = vertColors.data();
+      short int *vt = tmp.data();
+      for (unsigned int i=0;i<numVertices;i++,vc+=4,vt++)
+      {
+        if (*vt > 0)
+        {
+          float f = 1.0f / (float)(*vt);
+          vc[0] *= f;
+          vc[1] *= f;
+          vc[2] *= f;
+          vc[3] *= f;
         }
       }
     }
@@ -752,6 +789,42 @@ struct _polymesh
     nThis = polyNumVertices.size(); nIn = inMesh.polyNumVertices.size();  nSum = nThis + nIn; polyNumVertices.resize(nSum); memcpy(polyNumVertices.data() + nThis, inMesh.polyNumVertices.data(), nIn * sizeof(uint32_t));
     nThis = polyVertices   .size(); nIn = inMesh.polyVertices   .size();  nSum = nThis + nIn; polyVertices   .resize(nSum); memcpy(polyVertices   .data() + nThis, inMesh.polyVertices   .data(), nIn * sizeof(uint32_t));
     nThis = polyNodeNormals.size(); nIn = inMesh.polyNodeNormals.size();  nSum = nThis + nIn; polyNodeNormals.resize(nSum); memcpy(polyNodeNormals.data() + nThis, inMesh.polyNodeNormals.data(), nIn * sizeof(float)   );
+    if (hasUVWs() || inMesh.hasUVWs())
+    {
+      if (inMesh.hasUVWs())
+      {
+        if (!hasUVWs())
+        {
+          vertUVWs    .resize(3 * numVertices, 0.0f);
+          polyNodeUVWs.resize(3 * numSamples,  0.0f);
+        }
+        nThis = vertUVWs    .size(); nIn = inMesh.vertUVWs    .size();  nSum = nThis + nIn; vertUVWs    .resize(nSum); memcpy(vertUVWs    .data() + nThis, inMesh.vertUVWs    .data(), nIn * sizeof(float)   );
+        nThis = polyNodeUVWs.size(); nIn = inMesh.polyNodeUVWs.size();  nSum = nThis + nIn; polyNodeUVWs.resize(nSum); memcpy(polyNodeUVWs.data() + nThis, inMesh.polyNodeUVWs.data(), nIn * sizeof(float)   );
+      }
+      else
+      {
+        nThis = vertUVWs    .size(); nIn = 3 * inMesh.numVertices;  nSum = nThis + nIn; vertUVWs    .resize(nSum, 0.0f);
+        nThis = polyNodeUVWs.size(); nIn = 3 * inMesh.numSamples;   nSum = nThis + nIn; polyNodeUVWs.resize(nSum, 0.0f); 
+      }
+    }
+    if (hasColors() || inMesh.hasColors())
+    {
+      if (inMesh.hasColors())
+      {
+        if (!hasColors())
+        {
+          vertColors    .resize(4 * numVertices, 0.0f);
+          polyNodeColors.resize(4 * numSamples,  0.0f);
+        }
+        nThis = vertColors    .size(); nIn = inMesh.vertColors    .size();  nSum = nThis + nIn; vertColors    .resize(nSum); memcpy(vertColors    .data() + nThis, inMesh.vertColors    .data(), nIn * sizeof(float)   );
+        nThis = polyNodeColors.size(); nIn = inMesh.polyNodeColors.size();  nSum = nThis + nIn; polyNodeColors.resize(nSum); memcpy(polyNodeColors.data() + nThis, inMesh.polyNodeColors.data(), nIn * sizeof(float)   );
+      }
+      else
+      {
+        nThis = vertColors    .size(); nIn = 4 * inMesh.numVertices;  nSum = nThis + nIn; vertColors    .resize(nSum, 0.0f);
+        nThis = polyNodeColors.size(); nIn = 4 * inMesh.numSamples;   nSum = nThis + nIn; polyNodeColors.resize(nSum, 0.0f); 
+      }
+    }
 
     // fix vertex indices.
     uint32_t *pi = polyVertices.data() + numSamples;

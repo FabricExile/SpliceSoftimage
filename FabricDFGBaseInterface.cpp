@@ -912,6 +912,8 @@ int BaseInterface::GetArgValuePolygonMesh(FabricCore::DFGBinding &binding,
                                            std::vector <uint32_t>                  *out_polygonNumVertices,
                                            std::vector <uint32_t>                  *out_polygonVertices,
                                            std::vector <float>                     *out_polygonNodeNormals,
+                                           std::vector <float>                     *out_polygonNodeUVWs,
+                                           std::vector <float>                     *out_polygonNodeColors,
                                            bool                                     strict)
 {
   // init output.
@@ -922,6 +924,8 @@ int BaseInterface::GetArgValuePolygonMesh(FabricCore::DFGBinding &binding,
   if (out_polygonNumVertices) out_polygonNumVertices -> clear();
   if (out_polygonVertices)    out_polygonVertices    -> clear();
   if (out_polygonNodeNormals) out_polygonNodeNormals -> clear();
+  if (out_polygonNodeUVWs)    out_polygonNodeUVWs    -> clear();
+  if (out_polygonNodeColors)  out_polygonNodeColors  -> clear();
 
   // set out from port value.
   int errID = 0;
@@ -1022,6 +1026,52 @@ int BaseInterface::GetArgValuePolygonMesh(FabricCore::DFGBinding &binding,
         args[0] = FabricCore::RTVal::ConstructExternalArray(*getClient(), "Float32", data.size(), (void *)data.data());
         rtMesh.callMethod("", "getNormalsAsExternalArray", 1, &args[0]);
       }
+
+      // get polygon node UVWs.
+      if (   out_polygonNodeUVWs    != NULL
+          && out_numPolygons         > 0
+          && out_numSamples          > 0  )
+      {
+        if (rtMesh.callMethod("Boolean", "hasUVs", 0, NULL).getBoolean())
+        {
+          std::vector <float> &data = *out_polygonNodeUVWs;
+
+          // resize output array(s).
+              data.   resize(3 * out_numSamples);
+          if (data.size() != 3 * out_numSamples)
+          { errID = -3;
+            break;  }
+
+          // fill output array(s).
+          std::vector <FabricCore::RTVal> args(2);
+          args[0] = FabricCore::RTVal::ConstructExternalArray(*getClient(), "Float32", data.size(), (void *)data.data());
+          args[1] = FabricCore::RTVal::ConstructUInt32       (*getClient(), 3);  
+          rtMesh.callMethod("", "getUVsAsExternalArray", 2, &args[0]);
+        }
+      }
+
+      // get polygon node colors.
+      if (   out_polygonNodeColors  != NULL
+          && out_numPolygons         > 0
+          && out_numSamples          > 0  )
+      {
+        if (rtMesh.callMethod("Boolean", "hasVertexColors", 0, NULL).getBoolean())
+        {
+          std::vector <float> &data = *out_polygonNodeColors;
+
+          // resize output array(s).
+              data.   resize(4 * out_numSamples);
+          if (data.size() != 4 * out_numSamples)
+          { errID = -3;
+            break;  }
+
+          // fill output array(s).
+          std::vector <FabricCore::RTVal> args(2);
+          args[0] = FabricCore::RTVal::ConstructExternalArray(*getClient(), "Float32", data.size(), (void *)data.data());
+          args[1] = FabricCore::RTVal::ConstructUInt32       (*getClient(), 4);  
+          rtMesh.callMethod("", "getVertexColorsAsExternalArray", 2, &args[0]);
+        }
+      }
     } while (false);
   }
   catch (FabricCore::Exception e)
@@ -1043,6 +1093,8 @@ int BaseInterface::GetArgValuePolygonMesh(FabricCore::DFGBinding &binding,
     if (out_polygonNumVertices) out_polygonNumVertices -> clear();
     if (out_polygonVertices)    out_polygonVertices    -> clear();
     if (out_polygonNodeNormals) out_polygonNodeNormals -> clear();
+    if (out_polygonNodeUVWs)    out_polygonNodeUVWs    -> clear();
+    if (out_polygonNodeColors)  out_polygonNodeColors  -> clear();
   }
 
   // done.
