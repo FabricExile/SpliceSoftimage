@@ -1504,7 +1504,11 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
               else
               {
                 if (verbose)
+                {
                   Application().LogMessage(L"DFG port PolygonMesh: " + CString((LONG)polymesh.numVertices) + L" vertices, " + CString((LONG)polymesh.numPolygons) + L" polygons, " + CString((LONG)polymesh.numSamples) + L" nodes.");
+                  Application().LogMessage(L"                      has UVWs:   " + CString(polymesh.hasUVWs()   ? L"yes" : L"no") + L".");
+                  Application().LogMessage(L"                      has colors: " + CString(polymesh.hasColors() ? L"yes" : L"no") + L".");
+                }
 
                 MATH::CVector3Array vertices(polymesh.numVertices);
                 CLongArray          polygons(polymesh.numPolygons + polymesh.numSamples);
@@ -1527,7 +1531,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
                 }
                 else
                 {
-                  // store vertex colors and UVs as ICE data.
+                  // store UVWs and vertex colors as ICE data.
                   //
                   // note: attempting to directly set "per point" or "per node" ICE data fails, because attributes added
                   //       via XSI::Geometry::AddICEAttribute() be constant (ICEAttribute::IsConstant() == true) and there
@@ -1535,9 +1539,66 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
                   //       Therefore the data (colors, UVs, ..) is stored as an "array per object" which must then be
                   //       converted to "per point" or "per node" in ICE by the user.
 
+                  // array of UVWs per polygon node.
+                  if (polymesh.hasUVWs())
+                  {
+                    typedef                 MATH::CVector3f T;
+                    CString                 name          = L"dfgDataArrayUVWPerNode";
+                    siICENodeDataType       typeData      = siICENodeDataType::siICENodeDataVector3;
+                    siICENodeStructureType  typeStructure = siICENodeStructureType::siICENodeStructureArray;
+                    siICENodeContextType    typeContext   = siICENodeContextType::siICENodeContextSingleton;
+                    ICEAttribute            attr          = xsiPolymesh.GetICEAttributeFromName(name);
+                    if (!attr.IsValid())    attr          = xsiPolymesh.AddICEAttribute(name, typeData, typeStructure, typeContext);
+                    if (!attr.IsValid())
+                    {
+                      Application().LogMessage(L"failed to get or create ICE attribute \"" + name + L"\"", siErrorMsg);
+                    }
+                    else if (   attr.GetDataType()      != typeData
+                             || attr.GetStructureType() != typeStructure
+                             || attr.GetContextType()   != typeContext)
+                    {
+                      Application().LogMessage(L"the ICE attribute \"" + name + L"\" already exists, but has the wrong type or context", siErrorMsg);
+                    }
+                    else if (attr.IsReadonly())
+                    {
+                      Application().LogMessage(L"the ICE attribute \"" + name + L"\" is read-only", siErrorMsg);
+                    }
+                    else
+                    {
+                      CICEAttributeDataArray2DVector3f data2D;
+                      if (attr.GetDataArray2D(data2D) != CStatus::OK)
+                      {
+                        Application().LogMessage(L"failed to get the ICE data \"" + name + L"\"", siErrorMsg);
+                      }
+                      else if (data2D.GetCount() != 1)
+                      {
+                        Application().LogMessage(L"something's wrong with the ICE data \"" + name + L"\", data2D.GetCount() is " + CString(data2D.GetCount()) + L" but we expected 1.", siErrorMsg);
+                      }
+                      else
+                      {
+                        // init temporary array.
+                        T *tmp = NULL;
+                        tmp = new T[polymesh.numSamples];
+
+                        // fill tmp.
+                        float *pnd = polymesh.polyNodeUVWs.data();
+                        for (LONG i=0;i<polymesh.numSamples;i++,pnd+=3)
+                          tmp[i].Set(pnd[0], pnd[1], pnd[2]);
+
+                        // set ICE sub array from tmp.
+                        if (data2D.SetSubArray(0, tmp, polymesh.numSamples) != CStatus::OK)
+                          Application().LogMessage(L"failed to set data in ICE data \"" + name + L"\"", siErrorMsg);
+
+                        // clean up.
+                        delete[] tmp;
+                      }
+                    }
+                  }
+
                   // array of colors per polygon node.
                   if (polymesh.hasColors())
                   {
+                    typedef                 MATH::CColor4f  T;
                     CString                 name          = L"dfgDataArrayColorPerNode";
                     siICENodeDataType       typeData      = siICENodeDataType::siICENodeDataColor4;
                     siICENodeStructureType  typeStructure = siICENodeStructureType::siICENodeStructureArray;
@@ -1572,20 +1633,20 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
                       else
                       {
                         // init temporary array.
-                        MATH::CColor4f *colors = NULL;
-                        colors = new MATH::CColor4f[polymesh.numSamples];
+                        T *tmp = NULL;
+                        tmp = new T[polymesh.numSamples];
 
-                        // fill temporary array.
-                        float *pnc = polymesh.polyNodeColors.data();
-                        for (LONG i=0;i<polymesh.numSamples;i++,pnc+=4)
-                          colors[i].Set(pnc[0], pnc[1], pnc[2], pnc[3]);
+                        // fill tmp.
+                        float *pnd = polymesh.polyNodeColors.data();
+                        for (LONG i=0;i<polymesh.numSamples;i++,pnd+=4)
+                          tmp[i].Set(pnd[0], pnd[1], pnd[2], pnd[3]);
 
-                        // set ICE sub array from temporary array.
-                        if (data2D.SetSubArray(0, colors, polymesh.numSamples) != CStatus::OK)
+                        // set ICE sub array from tmp.
+                        if (data2D.SetSubArray(0, tmp, polymesh.numSamples) != CStatus::OK)
                           Application().LogMessage(L"failed to set data in ICE data \"" + name + L"\"", siErrorMsg);
 
                         // clean up.
-                        delete[] colors;
+                        delete[] tmp;
                       }
                     }
                   }

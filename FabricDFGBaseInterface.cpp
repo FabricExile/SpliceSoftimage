@@ -1476,6 +1476,22 @@ void BaseInterface::SetValueOfArgPolygonMesh(FabricCore::Client &client, FabricC
       // normals.
       args[0] = FabricCore::RTVal::ConstructExternalArray(client, "Float32", val.polyNodeNormals.size(), (void *)val.polyNodeNormals.data());
       rtval.callMethod("", "setNormalsFromExternalArray", 1, &args[0]);
+
+      // UVWs.
+      if (val.hasUVWs())
+      {
+        args[0] = FabricCore::RTVal::ConstructExternalArray(client, "Float32", val.polyNodeUVWs.size(), (void *)val.polyNodeUVWs.data());
+        args[1] = FabricCore::RTVal::ConstructUInt32(client, 3);
+        rtval.callMethod("", "setUVsFromExternalArray", 2, &args[0]);
+      }
+
+      // colors.
+      if (val.hasColors())
+      {
+        args[0] = FabricCore::RTVal::ConstructExternalArray(client, "Float32", val.polyNodeColors.size(), (void *)val.polyNodeColors.data());
+        args[1] = FabricCore::RTVal::ConstructUInt32(client, 4);
+        rtval.callMethod("", "setVertexColorsFromExternalArray", 2, &args[0]);
+      }
     }
     binding.setArgValue(argName, rtval, false);
   }
