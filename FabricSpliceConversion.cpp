@@ -65,27 +65,32 @@ double getFloat64FromRTVal(FabricCore::RTVal rtVal)
   return DBL_MAX;
 }
 
+void getFloatsFromCMatrix4(const XSI::MATH::CMatrix4 & value, float * f)
+{
+  double * doubles = (double*)&value;
+  f[0] = (float)doubles[0];
+  f[4] = (float)doubles[1];
+  f[8] = (float)doubles[2];
+  f[12] = (float)doubles[3];
+  f[1] = (float)doubles[4];
+  f[5] = (float)doubles[5];
+  f[9] = (float)doubles[6];
+  f[13] = (float)doubles[7];
+  f[2] = (float)doubles[8];
+  f[6] = (float)doubles[9];
+  f[10] = (float)doubles[10];
+  f[14] = (float)doubles[11];
+  f[3] = (float)doubles[12];
+  f[7] = (float)doubles[13];
+  f[11] = (float)doubles[14];
+  f[15] = (float)doubles[15];
+}
+
 void getRTValFromCMatrix4(const MATH::CMatrix4 & value, FabricCore::RTVal & rtVal)
 {
   rtVal = FabricSplice::constructRTVal("Mat44");
   float * floats = (float*)rtVal.callMethod("Data", "data", 0, 0).getData();
-  double * doubles = (double*)&value;
-  floats[0] = (float)doubles[0];
-  floats[4] = (float)doubles[1];
-  floats[8] = (float)doubles[2];
-  floats[12] = (float)doubles[3];
-  floats[1] = (float)doubles[4];
-  floats[5] = (float)doubles[5];
-  floats[9] = (float)doubles[6];
-  floats[13] = (float)doubles[7];
-  floats[2] = (float)doubles[8];
-  floats[6] = (float)doubles[9];
-  floats[10] = (float)doubles[10];
-  floats[14] = (float)doubles[11];
-  floats[3] = (float)doubles[12];
-  floats[7] = (float)doubles[13];
-  floats[11] = (float)doubles[14];
-  floats[15] = (float)doubles[15];
+  getFloatsFromCMatrix4(value, floats);
 }
 
 void getCMatrix4FromFloats(float * f, XSI::MATH::CMatrix4 & value)

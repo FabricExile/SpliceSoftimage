@@ -24,6 +24,7 @@
 #define XSISPLICE_MEMORY_FREE() free(values)
 
 double getFloat64FromRTVal(FabricCore::RTVal rtVal);
+void getFloatsFromCMatrix4(const XSI::MATH::CMatrix4 & value, float * f);
 void getRTValFromCMatrix4(const XSI::MATH::CMatrix4 & value, FabricCore::RTVal & rtVal);
 void getCMatrix4FromFloats(float * f, XSI::MATH::CMatrix4 & value);
 void getCMatrix4FromRTVal(FabricCore::RTVal & rtVal, XSI::MATH::CMatrix4 & value);

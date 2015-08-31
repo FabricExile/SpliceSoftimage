@@ -177,6 +177,7 @@ CStatus FabricSpliceBaseInterface::updateXSIOperator()
           if(port.GetPortType() == siPortInput)
             continue;
           it->second.portIndices.Add(port.GetIndex());
+          it->second.portProcessed.Add(0);
         }
       }
     }
@@ -188,6 +189,7 @@ CStatus FabricSpliceBaseInterface::updateXSIOperator()
         Port port(op.AddOutputPort(targetRefs[i], portName+indexStr, group.GetIndex()));
         LONG portIndex = port.GetIndex();
         it->second.portIndices.Add(portIndex);
+        it->second.portProcessed.Add(0);
       }
     }
 
@@ -792,6 +794,31 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
     {
       if(it->second.dataType == "Mat44[]")
       {
+        uint32_t portIndex = xsiPort.GetIndex();
+        uint32_t arrayIndex = UINT_MAX;
+        for(LONG i=0;i<it->second.portIndices.GetCount();i++)
+        {
+          if(it->second.portIndices[i] == portIndex)
+          {
+            arrayIndex = i;
+            break;
+          }
+        }
+
+        // check if we already hit the same port before.
+        // the outPortElementsProcessed counter is not sufficient,
+        // since softimage seem to change port evaluation order sometimes.
+        if(arrayIndex != UINT_MAX && arrayIndex < it->second.portProcessed.GetCount())
+        {
+          if(it->second.portProcessed[arrayIndex] == 1)
+          {
+            for(unsigned int i=0;i<it->second.portProcessed.GetCount();i++)
+              it->second.portProcessed[i] = 0;
+            it->second.outPortElementsProcessed = 0;
+          }
+          it->second.portProcessed[arrayIndex] = 1;
+        }
+
         if(it->second.outPortElementsProcessed > 0)
         {
           return false;
@@ -998,8 +1025,7 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
       {
         FabricCore::RTVal arrayVal = splicePort.getRTVal();
         unsigned int arraySize = arrayVal.getArraySize();
-        it->second.floats.resize(arraySize * 16);
-        memcpy(&it->second.floats[0], arrayVal.callMethod("Data", "data", 0, 0).getData(), sizeof(float) * it->second.floats.size());
+        float * floats = (float*)arrayVal.callMethod("Data", "data", 0, 0).getData();
         for(int i=0; ; i++)
         {
           KinematicState kine((CRef)context.GetInputValue(it->second.realPortName+CString(i)));
@@ -1012,21 +1038,19 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
             FabricCore::RTVal rtVal;
             getRTValFromCMatrix4(matrix, rtVal);
             arrayVal.callMethod("", "push", 1, &rtVal);
+            floats = (float*)arrayVal.callMethod("Data", "data", 0, 0).getData();
             addDirtyInput(portName, evalContext, i);
             result = true;
           }
           else
           {
             unsigned int offset = i * 16;
-            float * f = &it->second.floats[offset];
+            float * f = floats + offset;
             MATH::CMatrix4 current;
             getCMatrix4FromFloats(f, current);
-            if(!matrix.EpsilonEquals(current, 0.001)){
-
-              FabricCore::RTVal rtVal;
-              getRTValFromCMatrix4(matrix, rtVal);
-
-              arrayVal.setArrayElement(i, rtVal);
+            if(!matrix.EpsilonEquals(current, 0.001))
+            {
+              getFloatsFromCMatrix4(matrix, f);
               addDirtyInput(portName, evalContext, i);
               result = true;
             }
@@ -1262,13 +1286,6 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
 
       uint32_t arrayIndex = UINT_MAX;
       uint32_t portIndex = xsiPort.GetIndex();
-
-      // increment the counter for the processed elements
-      // only at count 0 we will perform transfer input
-      it->second.outPortElementsProcessed++;
-      if(it->second.outPortElementsProcessed >= arraySize)
-        it->second.outPortElementsProcessed = 0;
-
       for(LONG i=0;i<it->second.portIndices.GetCount();i++)
       {
         if(it->second.portIndices[i] == portIndex)
@@ -1277,6 +1294,13 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
           break;
         }
       }
+
+      // increment the counter for the processed elements
+      // only at count 0 we will perform transfer input
+      it->second.outPortElementsProcessed++;
+      if(it->second.outPortElementsProcessed >= arraySize)
+        it->second.outPortElementsProcessed = 0;
+
       if(arrayIndex < arraySize)
       {
         // todo: maybe we should be caching this....
@@ -1286,6 +1310,7 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
 
         MATH::CTransformation transform;
         transform.SetMatrix4(matrix);
+
         KinematicState kine(context.GetOutputTarget());
         kine.PutTransform(transform);
       }
@@ -1643,7 +1668,10 @@ CStatus FabricSpliceBaseInterface::restoreFromPersistenceData(CString file)
           continue;
       }
       if(groupPort.GetPortType() == siPortOutput)
+      {
         info.portIndices.Add(groupPort.GetIndex());
+        info.portProcessed.Add(0);
+      }
       targets.Add(xsiPort.GetTarget());
     }
 

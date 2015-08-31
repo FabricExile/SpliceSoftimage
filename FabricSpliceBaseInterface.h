@@ -111,6 +111,7 @@ protected:
     FabricSplice::Port_Mode portMode;
     XSI::CString targets;
     XSI::CLongArray portIndices;
+    XSI::CLongArray portProcessed;
     LONG outPortElementsProcessed;
     std::vector<float> floats;
   };
