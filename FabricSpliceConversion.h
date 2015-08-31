@@ -25,7 +25,8 @@
 
 double getFloat64FromRTVal(FabricCore::RTVal rtVal);
 void getRTValFromCMatrix4(const XSI::MATH::CMatrix4 & value, FabricCore::RTVal & rtVal);
-void getCMatrix4FromRTVal(const FabricCore::RTVal & rtVal, XSI::MATH::CMatrix4 & value);
+void getCMatrix4FromFloats(float * f, XSI::MATH::CMatrix4 & value);
+void getCMatrix4FromRTVal(FabricCore::RTVal & rtVal, XSI::MATH::CMatrix4 & value);
 void getRTValFromActionSource(const XSI::ActionSource & value, FabricCore::RTVal & rtVal);
 void getActionSourceFromRTVal(const FabricCore::RTVal & rtVal, XSI::ActionSource & value);
 

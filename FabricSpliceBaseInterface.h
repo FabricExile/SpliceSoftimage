@@ -112,6 +112,7 @@ protected:
     XSI::CString targets;
     XSI::CLongArray portIndices;
     LONG outPortElementsProcessed;
+    std::vector<float> floats;
   };
 
   std::map<std::string, parameterInfo> _parameters;

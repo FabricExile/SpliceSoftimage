@@ -997,26 +997,35 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
       else if(it->second.dataType == "Mat44[]")
       {
         FabricCore::RTVal arrayVal = splicePort.getRTVal();
+        unsigned int arraySize = arrayVal.getArraySize();
+        it->second.floats.resize(arraySize * 16);
+        memcpy(&it->second.floats[0], arrayVal.callMethod("Data", "data", 0, 0).getData(), sizeof(float) * it->second.floats.size());
         for(int i=0; ; i++)
         {
           KinematicState kine((CRef)context.GetInputValue(it->second.realPortName+CString(i)));
           if(!kine.IsValid())
             break;
           MATH::CMatrix4 matrix = kine.GetTransform().GetMatrix4();
-          FabricCore::RTVal rtVal;
-          getRTValFromCMatrix4(matrix, rtVal);
-
 
           if(arrayVal.getArraySize() <= i)
           {
+            FabricCore::RTVal rtVal;
+            getRTValFromCMatrix4(matrix, rtVal);
             arrayVal.callMethod("", "push", 1, &rtVal);
             addDirtyInput(portName, evalContext, i);
             result = true;
           }
           else
           {
-            FabricCore::RTVal currVal = arrayVal.getArrayElement(i);
-            if(!currVal.callMethod("Boolean", "almostEqual", 1, &rtVal).getBoolean()){
+            unsigned int offset = i * 16;
+            float * f = &it->second.floats[offset];
+            MATH::CMatrix4 current;
+            getCMatrix4FromFloats(f, current);
+            if(!matrix.EpsilonEquals(current, 0.001)){
+
+              FabricCore::RTVal rtVal;
+              getRTValFromCMatrix4(matrix, rtVal);
+
               arrayVal.setArrayElement(i, rtVal);
               addDirtyInput(portName, evalContext, i);
               result = true;
@@ -1238,15 +1247,26 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
     }
     else if(it->second.dataType == "Mat44[]")
     {
-      FabricCore::RTVal rtVal = splicePort.getRTVal();
-      uint32_t arraySize = rtVal.getArraySize();
-      uint32_t portIndex = xsiPort.GetIndex();
+      uint32_t arraySize = 0;
+      if(it->second.outPortElementsProcessed == 0 || it->second.floats.size() == 0)
+      {
+        FabricCore::RTVal rtVal = splicePort.getRTVal();
+        arraySize = rtVal.getArraySize();
+        it->second.floats.resize(arraySize * 16);
+        memcpy(&it->second.floats[0], rtVal.callMethod("Data", "data", 0, 0).getData(), sizeof(float) * it->second.floats.size());
+      }
+      else
+      {
+        arraySize = it->second.floats.size() / 16;
+      }
+
       uint32_t arrayIndex = UINT_MAX;
+      uint32_t portIndex = xsiPort.GetIndex();
 
       // increment the counter for the processed elements
       // only at count 0 we will perform transfer input
       it->second.outPortElementsProcessed++;
-      if(it->second.outPortElementsProcessed == arraySize)
+      if(it->second.outPortElementsProcessed >= arraySize)
         it->second.outPortElementsProcessed = 0;
 
       for(LONG i=0;i<it->second.portIndices.GetCount();i++)
@@ -1261,7 +1281,8 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
       {
         // todo: maybe we should be caching this....
         MATH::CMatrix4 matrix;
-        getCMatrix4FromRTVal(rtVal.getArrayElement(arrayIndex), matrix);
+        float * f = &it->second.floats[arrayIndex * 16];
+        getCMatrix4FromFloats(f, matrix);
 
         MATH::CTransformation transform;
         transform.SetMatrix4(matrix);
