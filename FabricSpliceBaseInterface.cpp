@@ -803,7 +803,7 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
     std::map<std::string, portInfo>::iterator it = _ports.find(outPortName);
     if(it != _ports.end())
     {
-      if(it->second.dataType == "Mat44[]")
+      if(it->second.dataType == "Mat44[]" || it->second.dataType == "Xfo[]")
       {
         if(it->second.outPortElementsProcessed > 0)
         {
