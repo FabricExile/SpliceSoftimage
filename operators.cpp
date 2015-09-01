@@ -97,6 +97,7 @@ XSIPLUGINCALLBACK CStatus SpliceOp_Update(CRef & in_ctxt)
 
   FabricSpliceBaseInterface * interf = p->getInterf();
   CRef opRef = Application().GetObjectFromID(p->getObjectID());
+
   if(interf != NULL)
   {
     // When transfering the input values, we check for changes and only evaluate if

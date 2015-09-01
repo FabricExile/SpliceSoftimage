@@ -128,7 +128,7 @@ CStatus FabricSpliceBaseInterface::updateXSIOperator()
   {
     CString portName = it->first.c_str();
     FabricSplice::Port_Mode portMode = it->second.portMode;
-    it->second.portIndices.Clear();
+    it->second.clearPorts();
     CString targets = it->second.targets;
     CRefArray targetRefs = getCRefArrayFromCString(targets);
 
@@ -169,15 +169,14 @@ CStatus FabricSpliceBaseInterface::updateXSIOperator()
         op.AddIOPort(targetRefs[i], portName+indexStr, group.GetIndex());
         it->second.realPortName = "In"+portName;
 
-        it->second.portIndices.Clear();
+        it->second.clearPorts();
         CRefArray groupPorts = group.GetPorts();
         for(ULONG j=0;j<groupPorts.GetCount();j++)
         {
           Port port(groupPorts[j]);
           if(port.GetPortType() == siPortInput)
             continue;
-          it->second.portIndices.Add(port.GetIndex());
-          it->second.portProcessed.Add(0);
+          it->second.insertPort(port.GetIndex());
         }
       }
     }
@@ -187,9 +186,7 @@ CStatus FabricSpliceBaseInterface::updateXSIOperator()
       {
         CString indexStr(i);
         Port port(op.AddOutputPort(targetRefs[i], portName+indexStr, group.GetIndex()));
-        LONG portIndex = port.GetIndex();
-        it->second.portIndices.Add(portIndex);
-        it->second.portProcessed.Add(0);
+        it->second.insertPort(port.GetIndex());
       }
     }
 
@@ -572,7 +569,7 @@ CStatus FabricSpliceBaseInterface::removeSplicePort(const CString &portName)
   std::map<std::string, portInfo>::iterator portIt = _ports.find(portName.GetAsciiString());
   if(portIt != _ports.end())
   {
-    _nbOutputPorts -= portIt->second.portIndices.GetCount();
+    _nbOutputPorts -= portIt->second.numPorts();
     _ports.erase(portIt);
   }
 
@@ -795,31 +792,19 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
       if(it->second.dataType == "Mat44[]")
       {
         uint32_t portIndex = xsiPort.GetIndex();
-        uint32_t arrayIndex = UINT_MAX;
-        for(LONG i=0;i<it->second.portIndices.GetCount();i++)
-        {
-          if(it->second.portIndices[i] == portIndex)
-          {
-            arrayIndex = i;
-            break;
-          }
-        }
+        uint32_t arrayIndex = it->second.getArrayIndexForPort(portIndex);
 
         // check if we already hit the same port before.
         // the outPortElementsProcessed counter is not sufficient,
         // since softimage seem to change port evaluation order sometimes.
-        if(arrayIndex != UINT_MAX && arrayIndex < it->second.portProcessed.GetCount())
+        if(arrayIndex != UINT_MAX)
         {
-          if(it->second.portProcessed[arrayIndex] == 1)
-          {
-            for(unsigned int i=0;i<it->second.portProcessed.GetCount();i++)
-              it->second.portProcessed[i] = 0;
-            it->second.outPortElementsProcessed = 0;
-          }
-          it->second.portProcessed[arrayIndex] = 1;
+          if(it->second.isPortProcessed(arrayIndex))
+            it->second.resetProcessedPorts();
+          it->second.processPort(arrayIndex);
         }
 
-        if(it->second.outPortElementsProcessed > 0)
+        if(it->second.isPortProcessingOngoing())
         {
           return false;
         }
@@ -841,7 +826,7 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
     std::map<std::string, portInfo>::iterator it = _ports.find(outPortName);
     if(it != _ports.end())
     {
-      unsigned int arraySize = it->second.portIndices.GetCount();
+      unsigned int arraySize = it->second.numPorts();
 
       try
       {
@@ -1241,15 +1226,7 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
       FabricCore::RTVal rtVal = splicePort.getRTVal();
       uint32_t arraySize = rtVal.getArraySize();
       uint32_t portIndex = xsiPort.GetIndex();
-      uint32_t arrayIndex = UINT_MAX;
-      for(LONG i=0;i<it->second.portIndices.GetCount();i++)
-      {
-        if(it->second.portIndices[i] == portIndex)
-        {
-          arrayIndex = i;
-          break;
-        }
-      }
+      uint32_t arrayIndex = it->second.getArrayIndexForPort(portIndex);
       if(arrayIndex < arraySize)
       {
         CValue value;
@@ -1272,7 +1249,7 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
     else if(it->second.dataType == "Mat44[]")
     {
       uint32_t arraySize = 0;
-      if(it->second.outPortElementsProcessed == 0 || it->second.floats.size() == 0)
+      if(!it->second.isPortProcessingOngoing() || it->second.floats.size() == 0)
       {
         FabricCore::RTVal rtVal = splicePort.getRTVal();
         arraySize = rtVal.getArraySize();
@@ -1284,22 +1261,12 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
         arraySize = it->second.floats.size() / 16;
       }
 
-      uint32_t arrayIndex = UINT_MAX;
       uint32_t portIndex = xsiPort.GetIndex();
-      for(LONG i=0;i<it->second.portIndices.GetCount();i++)
-      {
-        if(it->second.portIndices[i] == portIndex)
-        {
-          arrayIndex = i;
-          break;
-        }
-      }
+      uint32_t arrayIndex = it->second.getArrayIndexForPort(portIndex);
 
       // increment the counter for the processed elements
       // only at count 0 we will perform transfer input
-      it->second.outPortElementsProcessed++;
-      if(it->second.outPortElementsProcessed >= arraySize)
-        it->second.outPortElementsProcessed = 0;
+      it->second.processPort(arrayIndex);
 
       if(arrayIndex < arraySize)
       {
@@ -1323,15 +1290,7 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
       {
         FabricCore::RTVal arrayVal = splicePort.getRTVal();
         uint32_t portIndex = xsiPort.GetIndex();
-        uint32_t arrayIndex = UINT_MAX;
-        for(LONG i=0;i<it->second.portIndices.GetCount();i++)
-        {
-          if(it->second.portIndices[i] == portIndex)
-          {
-            arrayIndex = i;
-            break;
-          }
-        }
+        uint32_t arrayIndex = it->second.getArrayIndexForPort(portIndex);
         if(arrayIndex < arrayVal.getArraySize())
         {
           rtVal = arrayVal.getArrayElement(arrayIndex);
@@ -1366,15 +1325,7 @@ CStatus FabricSpliceBaseInterface::transferOutputPort(OperatorContext & context)
       {
         FabricCore::RTVal arrayVal = splicePort.getRTVal();
         uint32_t portIndex = xsiPort.GetIndex();
-        uint32_t arrayIndex = UINT_MAX;
-        for(LONG i=0;i<it->second.portIndices.GetCount();i++)
-        {
-          if(it->second.portIndices[i] == portIndex)
-          {
-            arrayIndex = i;
-            break;
-          }
-        }
+        uint32_t arrayIndex = it->second.getArrayIndexForPort(portIndex);
         if(arrayIndex <  arrayVal.getArraySize())
         {
           rtVal = arrayVal.getArrayElement(arrayIndex);
@@ -1669,8 +1620,7 @@ CStatus FabricSpliceBaseInterface::restoreFromPersistenceData(CString file)
       }
       if(groupPort.GetPortType() == siPortOutput)
       {
-        info.portIndices.Add(groupPort.GetIndex());
-        info.portProcessed.Add(0);
+        info.insertPort(groupPort.GetIndex());
       }
       targets.Add(xsiPort.GetTarget());
     }
@@ -1679,7 +1629,7 @@ CStatus FabricSpliceBaseInterface::restoreFromPersistenceData(CString file)
     _ports.insert(std::pair<std::string, portInfo>(portName.GetAsciiString(), info));
 
     if(port.getMode() != FabricSplice::Port_Mode_IN)
-      _nbOutputPorts += info.portIndices.GetCount();
+      _nbOutputPorts += info.numPorts();
   }
 
   xsiUpdateOp(getObjectID());
@@ -2229,7 +2179,7 @@ bool FabricSpliceBaseInterface::processNameChange(CString prevFullPath, CString 
   {
     CString portName = it->first.c_str();
     FabricSplice::Port_Mode portMode = it->second.portMode;
-    it->second.portIndices.Clear();
+    it->second.clearPorts();
     CString targets = it->second.targets;
     CString newTargets;
     CStringArray parts = targets.Split(L",");
