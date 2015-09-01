@@ -111,7 +111,63 @@ protected:
     FabricSplice::Port_Mode portMode;
     XSI::CString targets;
     XSI::CLongArray portIndices;
+    std::map<unsigned int, unsigned int> portIndexMap;
+    XSI::CLongArray portProcessed;
     LONG outPortElementsProcessed;
+    std::vector<float> floats;
+
+    unsigned int numPorts()
+    {
+      return (unsigned int)portIndices.GetCount();
+    }
+
+    void insertPort(unsigned int portIndex)
+    {
+      portIndexMap.insert(std::pair<unsigned int, unsigned int>(portIndex, portIndices.GetCount()));
+      portIndices.Add(portIndex);
+      portProcessed.Add(0);
+    }
+
+    unsigned int getArrayIndexForPort(unsigned int port)
+    {
+      std::map<unsigned int, unsigned int>::iterator portIt;
+      portIt = portIndexMap.find(port);
+      if(portIt == portIndexMap.end())
+        return UINT_MAX;
+      return portIt->second;
+    }
+
+    void clearPorts()
+    {
+      portIndices.Clear();
+      portIndexMap.clear();
+      portProcessed.Clear();
+    }
+
+    bool isPortProcessed(unsigned int arrayIndex)
+    {
+      return portProcessed[arrayIndex] > 0;
+    }
+
+    void processPort(unsigned int arrayIndex, bool incCount = true)
+    {
+      if(arrayIndex < portProcessed.GetCount())
+        portProcessed[arrayIndex]++;
+      if(incCount)
+        outPortElementsProcessed++;
+    }
+
+    void resetProcessedPorts()
+    {
+      for(unsigned int i=0;i<portProcessed.GetCount();i++)
+        portProcessed[i] = 0;
+      outPortElementsProcessed = 0;
+    }
+
+    bool isPortProcessingOngoing()
+    {
+      return outPortElementsProcessed > 0;
+    }
   };
 
   std::map<std::string, parameterInfo> _parameters;

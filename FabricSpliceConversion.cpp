@@ -65,54 +65,48 @@ double getFloat64FromRTVal(FabricCore::RTVal rtVal)
   return DBL_MAX;
 }
 
+void getFloatsFromCMatrix4(const XSI::MATH::CMatrix4 & value, float * f)
+{
+  double * doubles = (double*)&value;
+  f[0] = (float)doubles[0];
+  f[4] = (float)doubles[1];
+  f[8] = (float)doubles[2];
+  f[12] = (float)doubles[3];
+  f[1] = (float)doubles[4];
+  f[5] = (float)doubles[5];
+  f[9] = (float)doubles[6];
+  f[13] = (float)doubles[7];
+  f[2] = (float)doubles[8];
+  f[6] = (float)doubles[9];
+  f[10] = (float)doubles[10];
+  f[14] = (float)doubles[11];
+  f[3] = (float)doubles[12];
+  f[7] = (float)doubles[13];
+  f[11] = (float)doubles[14];
+  f[15] = (float)doubles[15];
+}
+
 void getRTValFromCMatrix4(const MATH::CMatrix4 & value, FabricCore::RTVal & rtVal)
 {
   rtVal = FabricSplice::constructRTVal("Mat44");
-  FabricCore::RTVal row = FabricSplice::constructRTVal("Vec4");
-  row.setMember("x", FabricSplice::constructFloat64RTVal(value.GetValue(0, 0)));
-  row.setMember("y", FabricSplice::constructFloat64RTVal(value.GetValue(1, 0)));
-  row.setMember("z", FabricSplice::constructFloat64RTVal(value.GetValue(2, 0)));
-  row.setMember("t", FabricSplice::constructFloat64RTVal(value.GetValue(3, 0)));
-  rtVal.setMember("row0", row);
-  row.setMember("x", FabricSplice::constructFloat64RTVal(value.GetValue(0, 1)));
-  row.setMember("y", FabricSplice::constructFloat64RTVal(value.GetValue(1, 1)));
-  row.setMember("z", FabricSplice::constructFloat64RTVal(value.GetValue(2, 1)));
-  row.setMember("t", FabricSplice::constructFloat64RTVal(value.GetValue(3, 1)));
-  rtVal.setMember("row1", row);
-  row.setMember("x", FabricSplice::constructFloat64RTVal(value.GetValue(0, 2)));
-  row.setMember("y", FabricSplice::constructFloat64RTVal(value.GetValue(1, 2)));
-  row.setMember("z", FabricSplice::constructFloat64RTVal(value.GetValue(2, 2)));
-  row.setMember("t", FabricSplice::constructFloat64RTVal(value.GetValue(3, 2)));
-  rtVal.setMember("row2", row);
-  row.setMember("x", FabricSplice::constructFloat64RTVal(value.GetValue(0, 3)));
-  row.setMember("y", FabricSplice::constructFloat64RTVal(value.GetValue(1, 3)));
-  row.setMember("z", FabricSplice::constructFloat64RTVal(value.GetValue(2, 3)));
-  row.setMember("t", FabricSplice::constructFloat64RTVal(value.GetValue(3, 3)));
-  rtVal.setMember("row3", row);
+  float * floats = (float*)rtVal.callMethod("Data", "data", 0, 0).getData();
+  getFloatsFromCMatrix4(value, floats);
 }
 
-void getCMatrix4FromRTVal(const FabricCore::RTVal & rtVal, MATH::CMatrix4 & value)
+void getCMatrix4FromFloats(float * f, XSI::MATH::CMatrix4 & value)
 {
-  FabricCore::RTVal row0 = rtVal.maybeGetMember("row0");
-  FabricCore::RTVal row1 = rtVal.maybeGetMember("row1");
-  FabricCore::RTVal row2 = rtVal.maybeGetMember("row2");
-  FabricCore::RTVal row3 = rtVal.maybeGetMember("row3");
-  value.SetValue(0, 0, getFloat64FromRTVal(row0.maybeGetMember("x")));
-  value.SetValue(1, 0, getFloat64FromRTVal(row0.maybeGetMember("y")));
-  value.SetValue(2, 0, getFloat64FromRTVal(row0.maybeGetMember("z")));
-  value.SetValue(3, 0, getFloat64FromRTVal(row0.maybeGetMember("t")));
-  value.SetValue(0, 1, getFloat64FromRTVal(row1.maybeGetMember("x")));
-  value.SetValue(1, 1, getFloat64FromRTVal(row1.maybeGetMember("y")));
-  value.SetValue(2, 1, getFloat64FromRTVal(row1.maybeGetMember("z")));
-  value.SetValue(3, 1, getFloat64FromRTVal(row1.maybeGetMember("t")));
-  value.SetValue(0, 2, getFloat64FromRTVal(row2.maybeGetMember("x")));
-  value.SetValue(1, 2, getFloat64FromRTVal(row2.maybeGetMember("y")));
-  value.SetValue(2, 2, getFloat64FromRTVal(row2.maybeGetMember("z")));
-  value.SetValue(3, 2, getFloat64FromRTVal(row2.maybeGetMember("t")));
-  value.SetValue(0, 3, getFloat64FromRTVal(row3.maybeGetMember("x")));
-  value.SetValue(1, 3, getFloat64FromRTVal(row3.maybeGetMember("y")));
-  value.SetValue(2, 3, getFloat64FromRTVal(row3.maybeGetMember("z")));
-  value.SetValue(3, 3, getFloat64FromRTVal(row3.maybeGetMember("t")));
+  value = XSI::MATH::CMatrix4(
+    f[0], f[4], f[8], f[12],
+    f[1], f[5], f[9], f[13],
+    f[2], f[6], f[10], f[14],
+    f[3], f[7], f[11], f[15]
+    );
+}
+
+void getCMatrix4FromRTVal(FabricCore::RTVal & rtVal, MATH::CMatrix4 & value)
+{
+  float * f = (float*)rtVal.callMethod("Data", "data", 0, 0).getData();
+  getCMatrix4FromFloats(f, value);
 }
 
 void getRTValFromCTransformation(const MATH::CTransformation & value, FabricCore::RTVal & rtVal)

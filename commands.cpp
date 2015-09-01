@@ -232,7 +232,10 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
     {
       if(interf == NULL)
       {
-        xsiLogErrorFunc("No valid spliceOp specified (arg0).");
+        if(referenceStr.Length() > 0)
+          xsiLogErrorFunc("No valid spliceOp specified ("+referenceStr+").");
+        else
+          xsiLogErrorFunc("No valid spliceOp specified (arg0).");
         return CStatus::InvalidArgument;
       }
       
@@ -242,6 +245,10 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
         status = interf->saveToFile(fileNameStr);
         if(!status.Succeeded())
           return status;
+      }   
+      else if(actionStr.IsEqualNoCase("recreateSplice"))
+      {
+        return interf->updateXSIOperator();
       }   
       else if(actionStr.IsEqualNoCase("addDGNode"))
       {
