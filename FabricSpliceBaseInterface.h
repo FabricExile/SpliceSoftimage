@@ -149,11 +149,12 @@ protected:
       return portProcessed[arrayIndex] > 0;
     }
 
-    void processPort(unsigned int arrayIndex)
+    void processPort(unsigned int arrayIndex, bool incCount = true)
     {
       if(arrayIndex < portProcessed.GetCount())
         portProcessed[arrayIndex]++;
-      outPortElementsProcessed++;
+      if(incCount)
+        outPortElementsProcessed++;
     }
 
     void resetProcessedPorts()

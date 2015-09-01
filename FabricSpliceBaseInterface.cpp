@@ -798,7 +798,7 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
       {
         if(outPortIt->second.isPortProcessed(arrayIndex))
           outPortIt->second.resetProcessedPorts();
-        outPortIt->second.processPort(arrayIndex);
+        outPortIt->second.processPort(arrayIndex, false);
       }
 
       if(outPortIt->second.isPortProcessingOngoing())
@@ -1577,6 +1577,10 @@ CStatus FabricSpliceBaseInterface::restoreFromPersistenceData(CString file)
     if(!port.isValid())
       continue;
 
+    std::map<std::string, portInfo>::iterator it = _ports.find(portName.GetAsciiString());
+    if(it != _ports.end())
+      continue;
+
     portInfo info;
     info.outPortElementsProcessed = 0;
     info.realPortName = portName;
@@ -1585,9 +1589,6 @@ CStatus FabricSpliceBaseInterface::restoreFromPersistenceData(CString file)
     if(info.isArray)
       info.dataType += L"[]";
     info.portMode = port.getMode();
-    std::map<std::string, portInfo>::iterator it = _ports.find(portName.GetAsciiString());
-    if(it != _ports.end())
-      continue;
 
     CRefArray groupPorts = group.GetPorts();
     CRefArray targets;
