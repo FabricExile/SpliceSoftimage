@@ -721,6 +721,9 @@ bool convertBasicOutputParameter(const CString & dataType, CValue & value, Fabri
 
 
 void FabricSpliceBaseInterface::addDirtyInput(std::string portName, FabricCore::RTVal evalContext, int index){
+  if(!_spliceGraph.usesEvalContext())
+    return;
+  
   if(index == -1)
   {
     FabricCore::RTVal input = FabricSplice::constructStringRTVal(portName.c_str());
@@ -775,42 +778,43 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
   // If 'AlwaysEvaluate' is on, then we will evaluate even if no changes have occured.
   // this can be usefull in debugging, or when an operator simply must evaluate even if none of its inputs are dirty.
   CustomOperator op(opRef);
-  bool alwaysEvaluate = bool(op.GetParameterValue("AlwaysEvaluate"));
-  if(alwaysEvaluate)
+
+  // for output mat44 array ports, we should skip the transfer if another
+  // element of that array has already performed conversion.
+  // transferOutputPort will reset the counter once all outputs
+  // have been transfered.
+  std::map<std::string, portInfo>::iterator outPortIt = _ports.find(outPortName);
+  if(outPortIt != _ports.end())
   {
-    result = true;
-  }
-  else
-  {
-    // for output mat44 array ports, we should skip the transfer if another
-    // element of that array has already performed conversion.
-    // transferOutputPort will reset the counter once all outputs
-    // have been transfered.
-    std::map<std::string, portInfo>::iterator it = _ports.find(outPortName);
-    if(it != _ports.end())
+    if(outPortIt->second.dataType == "Mat44[]")
     {
-      if(it->second.dataType == "Mat44[]")
+      uint32_t portIndex = xsiPort.GetIndex();
+      uint32_t arrayIndex = outPortIt->second.getArrayIndexForPort(portIndex);
+
+      // check if we already hit the same port before.
+      // the outPortElementsProcessed counter is not sufficient,
+      // since softimage seem to change port evaluation order sometimes.
+      if(arrayIndex != UINT_MAX)
       {
-        uint32_t portIndex = xsiPort.GetIndex();
-        uint32_t arrayIndex = it->second.getArrayIndexForPort(portIndex);
+        if(outPortIt->second.isPortProcessed(arrayIndex))
+          outPortIt->second.resetProcessedPorts();
+        outPortIt->second.processPort(arrayIndex);
+      }
 
-        // check if we already hit the same port before.
-        // the outPortElementsProcessed counter is not sufficient,
-        // since softimage seem to change port evaluation order sometimes.
-        if(arrayIndex != UINT_MAX)
-        {
-          if(it->second.isPortProcessed(arrayIndex))
-            it->second.resetProcessedPorts();
-          it->second.processPort(arrayIndex);
-        }
-
-        if(it->second.isPortProcessingOngoing())
-        {
-          return false;
-        }
+      if(outPortIt->second.isPortProcessingOngoing())
+      {
+        return false;
       }
     }
   }
+  else
+  {
+    return false;
+  }
+
+  bool alwaysEvaluate = bool(op.GetParameterValue("AlwaysEvaluate"));
+  if(alwaysEvaluate)
+    result = true;
 
   FabricCore::RTVal evalContext = _spliceGraph.getEvalContext();
   evalContext.callMethod("", "_clear", 0, 0);
@@ -821,36 +825,32 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
 
   // make sure that the output array is already of the right size.
   // we need to resize the outputs prior to performing the operators.
-  if(outPortName.length() > 0)
+  if(outPortName.length() > 0 && outPortIt->second.isPortProcessingOngoing())
   {
-    std::map<std::string, portInfo>::iterator it = _ports.find(outPortName);
-    if(it != _ports.end())
-    {
-      unsigned int arraySize = it->second.numPorts();
+    unsigned int arraySize = outPortIt->second.numPorts();
 
-      try
+    try
+    {
+      FabricCore::RTVal rtVal;
+      FabricSplice::DGPort fabricOutPort = _spliceGraph.getDGPort(outPortName.c_str());
+      FabricCore::RTVal arrayVal = fabricOutPort.getRTVal();
+      if(arrayVal.isValid() && arrayVal.isArray())
       {
-        FabricCore::RTVal rtVal;
-        FabricSplice::DGPort port = _spliceGraph.getDGPort(outPortName.c_str());
-        FabricCore::RTVal arrayVal = port.getRTVal();
-        if(arrayVal.isValid() && arrayVal.isArray())
+        if(arrayVal.getArraySize() != arraySize)
         {
-          if(arrayVal.getArraySize() != arraySize)
-          {
-            FabricCore::RTVal countVal = FabricSplice::constructUInt32RTVal(arraySize);
-            arrayVal.callMethod("", "resize", 1, &countVal);
-            port.setRTVal(arrayVal);
-          }
+          FabricCore::RTVal countVal = FabricSplice::constructUInt32RTVal(arraySize);
+          arrayVal.callMethod("", "resize", 1, &countVal);
+          fabricOutPort.setRTVal(arrayVal);
         }
       }
-      catch(FabricSplice::Exception e)
-      {
-        xsiLogErrorFunc("Error resizing output array:" + CString(outPortName.c_str()) + ": " + CString(e.what()));
-      }
-      catch(FabricCore::Exception e)
-      {
-        xsiLogErrorFunc("Error resizing output array:" + CString(outPortName.c_str()) + ": " + CString(e.getDesc_cstr()));
-      }
+    }
+    catch(FabricSplice::Exception e)
+    {
+      xsiLogErrorFunc("Error resizing output array:" + CString(outPortName.c_str()) + ": " + CString(e.what()));
+    }
+    catch(FabricCore::Exception e)
+    {
+      xsiLogErrorFunc("Error resizing output array:" + CString(outPortName.c_str()) + ": " + CString(e.getDesc_cstr()));
     }
   }
 
