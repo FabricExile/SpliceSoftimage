@@ -35,6 +35,16 @@ class FabricDFGWidget : public DFG::DFGCombinedWidget
   {
   }
 
+  virtual void onUndo()
+  {
+    Application().ExecuteCommand(L"Undo", CValueArray(), CValue());
+  }
+
+  virtual void onRedo()
+  {
+    Application().ExecuteCommand(L"Redo", CValueArray(), CValue());
+  }
+
   virtual void onRecompilation()
   {
     std::string s = "Recompiling";
