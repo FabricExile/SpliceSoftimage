@@ -156,6 +156,7 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
       CString targetsStr = FabricSplice::Scripting::consumeStringArgument(scriptArgs, "targets").c_str();
       CString portNameStr = FabricSplice::Scripting::consumeStringArgument(scriptArgs, "portName").c_str();
       CString dgNodeStr = FabricSplice::Scripting::consumeStringArgument(scriptArgs, "dgNode", "DGNode", true).c_str();
+      CString dataTypeStr = FabricSplice::Scripting::consumeStringArgument(scriptArgs, "dataType", "", true).c_str();
 
       FabricSplice::Port_Mode portMode = FabricSplice::Port_Mode_OUT;
       CString portModeStr = FabricSplice::Scripting::consumeStringArgument(scriptArgs, "portMode", "", true).c_str();
@@ -172,7 +173,19 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
         return CStatus::InvalidArgument;
       }
 
-      CString targetDataType = getSpliceDataTypeFromRefArray(targetRefs);
+      // in case the user want to force the type (ie:pass an array)
+      CString targetDataType = getSpliceDataTypeFromRefArray(targetRefs, dataTypeStr);
+      if(!dataTypeStr.IsEmpty())
+      {
+        if(dataTypeStr != targetDataType && dataTypeStr != targetDataType + "[]")
+        {
+          xsiLogErrorFunc("Unable to connect port to targets. The data types do not match. Port Data Type:'" + dataTypeStr + "', Target Data Type:'" + targetDataType + "'.");
+          return CStatus::Unexpected;
+        }
+        targetDataType = dataTypeStr;
+      }
+
+      Application().LogMessage("TARGET "+targetDataType);
       if(targetDataType.IsEmpty())
       {
         xsiLogErrorFunc("'targets' script argument uses unsupported data type.");

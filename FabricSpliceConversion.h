@@ -29,6 +29,7 @@ void getRTValFromCMatrix4(const XSI::MATH::CMatrix4 & value, FabricCore::RTVal &
 void getCMatrix4FromFloats(float * f, XSI::MATH::CMatrix4 & value);
 void getCMatrix4FromRTVal(FabricCore::RTVal & rtVal, XSI::MATH::CMatrix4 & value);
 void getCTransformationFromRTVal(const FabricCore::RTVal & rtVal, XSI::MATH::CTransformation & value);
+void getRTValFromCTransformation(const XSI::MATH::CTransformation & value, FabricCore::RTVal & rtVal);
 void getRTValFromActionSource(const XSI::ActionSource & value, FabricCore::RTVal & rtVal);
 void getActionSourceFromRTVal(const FabricCore::RTVal & rtVal, XSI::ActionSource & value);
 

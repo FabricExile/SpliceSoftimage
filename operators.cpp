@@ -78,7 +78,6 @@ XSIPLUGINCALLBACK CStatus SpliceOp_DefineLayout(CRef & in_ctxt)
   PPGLayout oLayout;
   PPGItem oItem;
   oLayout = ctxt.GetSource();
-  if()
   oLayout.Clear();
   oLayout.AddTab("main");
   oLayout.AddItem("editLayout");
