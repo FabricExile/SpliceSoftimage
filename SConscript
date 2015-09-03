@@ -165,6 +165,10 @@ softimageFiles.append(installedModule)
 softimageFiles.append(env.Install(os.path.join(STAGE_DIR.abspath, 'Application', 'UI'), os.path.join('UI', 'FE_logo.bmp')))
 softimageFiles.append(env.Install(os.path.join(STAGE_DIR.abspath, 'Application', 'UI'), os.path.join('UI', 'FE_exclamation.bmp')))
 
+softimageFiles.append(env.Install(os.path.join(STAGE_DIR.abspath, 'Data', 'Compounds'), os.path.join('ICE_Compounds', 'dfg   Set Normals.xsicompound')))
+softimageFiles.append(env.Install(os.path.join(STAGE_DIR.abspath, 'Data', 'Compounds'), os.path.join('ICE_Compounds', 'dfg   Set UVWs.xsicompound')))
+softimageFiles.append(env.Install(os.path.join(STAGE_DIR.abspath, 'Data', 'Compounds'), os.path.join('ICE_Compounds', 'dfg   Set Colors.xsicompound')))
+
 softimageFiles.append(env.Install(STAGE_DIR, env.File('license.txt')))
 
 # also install the FabricCore dynamic library
