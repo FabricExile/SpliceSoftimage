@@ -1531,13 +1531,68 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
                 }
                 else
                 {
-                  // store UVWs and vertex colors as ICE data.
+                  // store normals, UVWs and vertex colors as ICE data.
                   //
                   // note: attempting to directly set "per point" or "per node" ICE data fails, because attributes added
                   //       via XSI::Geometry::AddICEAttribute() be constant (ICEAttribute::IsConstant() == true) and there
                   //       seems no way to get around this.
-                  //       Therefore the data (colors, UVs, ..) is stored as an "array per object" which must then be
+                  //       Therefore the data (normals, colors, UVs, ..) is stored as an "array per object" which must then be
                   //       converted to "per point" or "per node" in ICE by the user.
+
+                  // array of normals per polygon node.
+                  {
+                    typedef                 MATH::CVector3f T;
+                    CString                 name          = L"dfgDataArrayNormalsPerNode";
+                    siICENodeDataType       typeData      = siICENodeDataType::siICENodeDataVector3;
+                    siICENodeStructureType  typeStructure = siICENodeStructureType::siICENodeStructureArray;
+                    siICENodeContextType    typeContext   = siICENodeContextType::siICENodeContextSingleton;
+                    ICEAttribute            attr          = xsiPolymesh.GetICEAttributeFromName(name);
+                    if (!attr.IsValid())    attr          = xsiPolymesh.AddICEAttribute(name, typeData, typeStructure, typeContext);
+                    if (!attr.IsValid())
+                    {
+                      Application().LogMessage(L"failed to get or create ICE attribute \"" + name + L"\"", siErrorMsg);
+                    }
+                    else if (   attr.GetDataType()      != typeData
+                             || attr.GetStructureType() != typeStructure
+                             || attr.GetContextType()   != typeContext)
+                    {
+                      Application().LogMessage(L"the ICE attribute \"" + name + L"\" already exists, but has the wrong type or context", siErrorMsg);
+                    }
+                    else if (attr.IsReadonly())
+                    {
+                      Application().LogMessage(L"the ICE attribute \"" + name + L"\" is read-only", siErrorMsg);
+                    }
+                    else
+                    {
+                      CICEAttributeDataArray2DVector3f data2D;
+                      if (attr.GetDataArray2D(data2D) != CStatus::OK)
+                      {
+                        Application().LogMessage(L"failed to get the ICE data \"" + name + L"\"", siErrorMsg);
+                      }
+                      else if (data2D.GetCount() != 1)
+                      {
+                        Application().LogMessage(L"something's wrong with the ICE data \"" + name + L"\", data2D.GetCount() is " + CString(data2D.GetCount()) + L" but we expected 1.", siErrorMsg);
+                      }
+                      else
+                      {
+                        // init temporary array.
+                        T *tmp = NULL;
+                        tmp = new T[polymesh.numSamples];
+
+                        // fill tmp.
+                        float *pnd = polymesh.polyNodeNormals.data();
+                        for (LONG i=0;i<polymesh.numSamples;i++,pnd+=3)
+                          tmp[i].Set(pnd[0], pnd[1], pnd[2]);
+
+                        // set ICE sub array from tmp.
+                        if (data2D.SetSubArray(0, tmp, polymesh.numSamples) != CStatus::OK)
+                          Application().LogMessage(L"failed to set data in ICE data \"" + name + L"\"", siErrorMsg);
+
+                        // clean up.
+                        delete[] tmp;
+                      }
+                    }
+                  }
 
                   // array of UVWs per polygon node.
                   if (polymesh.hasUVWs())
