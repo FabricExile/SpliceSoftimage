@@ -28,7 +28,7 @@ using namespace XSI;
       FabricUI::DFG::DFGUICmd_##CMD::CmdName().end()            \
       );                                                        \
     in_reg.RegisterCommand( cmdName.c_str(), cmdName.c_str() ); \
-    ccnames.Add( cmdName.c_str() );                      \
+    ccnames.Add( cmdName.c_str() );                             \
   }
 
 // load plugin.
