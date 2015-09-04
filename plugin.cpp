@@ -20,6 +20,13 @@
 
 using namespace XSI;
 
+// a global BaseInterface: its only purpose is to ensure
+// that Fabric is "up and running" when the DCC is executed
+// (this avoids the long initialization times when creating
+// the first base interface).
+BaseInterface *gblBaseInterface_dummy = NULL;
+
+//
 #define REGISTER_DFGUICMD(inreg, CMD) \
   { \
     std::wstring cmdName( \
@@ -155,6 +162,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     in_reg.RegisterMenu(siMenuMainTopLevelID,       L"Fabric:DFG", true, true);
 
     // events.
+    in_reg.RegisterEvent(L"FabricDFGsiOnStartup",    siOnStartup);
     in_reg.RegisterEvent(L"FabricDFGsiOnEndCommand", siOnEndCommand);
   }
 
@@ -168,6 +176,10 @@ SICALLBACK XSIUnloadPlugin(const PluginRegistrar& in_reg)
   CString strPluginName;
   strPluginName = in_reg.GetName();
   Application().LogMessage(strPluginName + L" has been unloaded.", siVerboseMsg);
+
+  // dummy base interface.
+  if (gblBaseInterface_dummy)
+    delete gblBaseInterface_dummy;
 
   // Qt.
   if (qApp)
@@ -264,6 +276,16 @@ CStatus helpFnct_siEventOpenSave(CRef &ctxt, int openSave)
       continue;
     }
   }
+
+  // done.
+  // /note: we return 1 (i.e. "true") instead of CStatus::OK or else the event gets aborted).
+  return 1;
+}
+
+XSIPLUGINCALLBACK CStatus FabricDFGsiOnStartup_OnEvent(CRef &ctxt)
+{
+  // create a dummy base interface.
+  gblBaseInterface_dummy = new BaseInterface;
 
   // done.
   // /note: we return 1 (i.e. "true") instead of CStatus::OK or else the event gets aborted).
