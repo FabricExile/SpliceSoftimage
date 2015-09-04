@@ -20,12 +20,6 @@
 
 using namespace XSI;
 
-// a global BaseInterface: its only purpose is to ensure
-// that Fabric is "up and running" when the DCC is executed
-// (this avoids the long initialization times when creating
-// the first base interface).
-BaseInterface *gblBaseInterface_dummy = NULL;
-
 //
 #define REGISTER_DFGUICMD(inreg, CMD) \
   { \
@@ -177,10 +171,6 @@ SICALLBACK XSIUnloadPlugin(const PluginRegistrar& in_reg)
   strPluginName = in_reg.GetName();
   Application().LogMessage(strPluginName + L" has been unloaded.", siVerboseMsg);
 
-  // dummy base interface.
-  if (gblBaseInterface_dummy)
-    delete gblBaseInterface_dummy;
-
   // Qt.
   if (qApp)
     delete qApp;
@@ -284,9 +274,6 @@ CStatus helpFnct_siEventOpenSave(CRef &ctxt, int openSave)
 
 XSIPLUGINCALLBACK CStatus FabricDFGsiOnStartup_OnEvent(CRef &ctxt)
 {
-  // create a dummy base interface.
-  gblBaseInterface_dummy = new BaseInterface;
-
   // done.
   // /note: we return 1 (i.e. "true") instead of CStatus::OK or else the event gets aborted).
   return 1;
