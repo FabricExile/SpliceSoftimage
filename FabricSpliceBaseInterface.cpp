@@ -825,7 +825,7 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
 
   // make sure that the output array is already of the right size.
   // we need to resize the outputs prior to performing the operators.
-  if(outPortName.length() > 0 && outPortIt->second.isPortProcessingOngoing())
+  if(outPortName.length() > 0 && !outPortIt->second.isPortProcessingOngoing())
   {
     unsigned int arraySize = outPortIt->second.numPorts();
 
