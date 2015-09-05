@@ -126,7 +126,6 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     cmdName = L"dfgSoftimageOpApply"; in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
     cmdName = L"dfgImportJSON";       in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
     cmdName = L"dfgExportJSON";       in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
-    cmdName = L"dfgOpenCanvas";       in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
     cmdName = L"dfgSelectConnected";  in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
     cmdName = L"dfgLogStatus";        in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
 
