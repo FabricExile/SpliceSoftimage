@@ -118,12 +118,12 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     in_reg.RegisterOperator(L"dfgSoftimageOp");
 
     // commands.
-    in_reg.RegisterCommand(L"dfgSoftimageOpApply",  L"dfgSoftimageOpApply");
-    in_reg.RegisterCommand(L"dfgImportJSON",        L"dfgImportJSON");
-    in_reg.RegisterCommand(L"dfgExportJSON",        L"dfgExportJSON");
-    in_reg.RegisterCommand(L"dfgOpenCanvas",        L"dfgOpenCanvas");
-    in_reg.RegisterCommand(L"dfgSelectConnected",   L"dfgSelectConnected");
-    in_reg.RegisterCommand(L"dfgLogStatus",         L"dfgLogStatus");
+    in_reg.RegisterCommand(L"FabricCanvasSoftimageOpApply",  L"FabricCanvasSoftimageOpApply");
+    in_reg.RegisterCommand(L"FabricCanvasImportJSON",        L"FabricCanvasImportJSON");
+    in_reg.RegisterCommand(L"FabricCanvasExportJSON",        L"FabricCanvasExportJSON");
+    in_reg.RegisterCommand(L"FabricCanvasOpenCanvas",        L"FabricCanvasOpenCanvas");
+    in_reg.RegisterCommand(L"FabricCanvasSelectConnected",   L"FabricCanvasSelectConnected");
+    in_reg.RegisterCommand(L"FabricCanvasLogStatus",         L"FabricCanvasLogStatus");
 
     // commands for DFGUICmdHandler.
     REGISTER_DFGUICMD( in_reg, AddBackDrop );

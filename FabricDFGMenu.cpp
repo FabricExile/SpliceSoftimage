@@ -83,7 +83,7 @@ SICALLBACK FabricDFG_Menu_CreateDFGOp(XSI::CRef&)
     args.Add(targetObjects[i]);
     args.Add(L"");
     args.Add(true);
-    Application().ExecuteCommand(L"dfgSoftimageOpApply", args, CValue());
+    Application().ExecuteCommand(L"FabricCanvasSoftimageOpApply", args, CValue());
   }
 
   // done.
@@ -109,7 +109,7 @@ SICALLBACK FabricDFG_Menu_CreateNullWithOp(XSI::CRef&)
   args.Add(obj.GetFullName());
   args.Add(L"");
   args.Add(true);
-  Application().ExecuteCommand(L"dfgSoftimageOpApply", args, CValue());
+  Application().ExecuteCommand(L"FabricCanvasSoftimageOpApply", args, CValue());
 
   // done.
   dfgTools::ClearUndoHistory();
@@ -134,7 +134,7 @@ SICALLBACK FabricDFG_Menu_CreatePolymeshWithOp(XSI::CRef&)
   args.Add(obj.GetFullName());
   args.Add(L"");
   args.Add(true);
-  Application().ExecuteCommand(L"dfgSoftimageOpApply", args, CValue());
+  Application().ExecuteCommand(L"FabricCanvasSoftimageOpApply", args, CValue());
 
   // done.
   dfgTools::ClearUndoHistory();
@@ -209,7 +209,7 @@ SICALLBACK FabricDFG_Menu_ImportJSON(XSI::CRef&)
   CValueArray args;
   args.Add(op.GetUniqueName());
   args.Add(fileName);
-  Application().ExecuteCommand(L"dfgImportJSON", args, CValue());
+  Application().ExecuteCommand(L"FabricCanvasImportJSON", args, CValue());
 
   // done.
   dfgTools::ClearUndoHistory();
@@ -274,7 +274,7 @@ SICALLBACK FabricDFG_Menu_ExportJSON(XSI::CRef&)
   CValueArray args;
   args.Add(op.GetUniqueName());
   args.Add(fileName);
-  Application().ExecuteCommand(L"dfgExportJSON", args, CValue());
+  Application().ExecuteCommand(L"FabricCanvasExportJSON", args, CValue());
 
   // done.
   return CStatus::OK;
@@ -283,7 +283,7 @@ SICALLBACK FabricDFG_Menu_ExportJSON(XSI::CRef&)
 SICALLBACK FabricDFG_Menu_LogStatus(XSI::CRef&)
 {
   CValueArray args;
-  Application().ExecuteCommand(L"dfgLogStatus", args, CValue());
+  Application().ExecuteCommand(L"FabricCanvasLogStatus", args, CValue());
   return CStatus::OK;
 }
 
