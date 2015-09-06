@@ -1542,7 +1542,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
                   // array of normals per polygon node.
                   {
                     typedef                 MATH::CVector3f T;
-                    CString                 name          = L"dfgDataArrayNormalsPerNode";
+                    CString                 name          = L"FabricCanvasDataArrayNormalsPerNode";
                     siICENodeDataType       typeData      = siICENodeDataType::siICENodeDataVector3;
                     siICENodeStructureType  typeStructure = siICENodeStructureType::siICENodeStructureArray;
                     siICENodeContextType    typeContext   = siICENodeContextType::siICENodeContextSingleton;
@@ -1598,7 +1598,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
                   if (polymesh.hasUVWs())
                   {
                     typedef                 MATH::CVector3f T;
-                    CString                 name          = L"dfgDataArrayUVWPerNode";
+                    CString                 name          = L"FabricCanvasDataArrayUVWPerNode";
                     siICENodeDataType       typeData      = siICENodeDataType::siICENodeDataVector3;
                     siICENodeStructureType  typeStructure = siICENodeStructureType::siICENodeStructureArray;
                     siICENodeContextType    typeContext   = siICENodeContextType::siICENodeContextSingleton;
@@ -1654,7 +1654,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
                   if (polymesh.hasColors())
                   {
                     typedef                 MATH::CColor4f  T;
-                    CString                 name          = L"dfgDataArrayColorPerNode";
+                    CString                 name          = L"FabricCanvasDataArrayColorPerNode";
                     siICENodeDataType       typeData      = siICENodeDataType::siICENodeDataColor4;
                     siICENodeStructureType  typeStructure = siICENodeStructureType::siICENodeStructureArray;
                     siICENodeContextType    typeContext   = siICENodeContextType::siICENodeContextSingleton;
