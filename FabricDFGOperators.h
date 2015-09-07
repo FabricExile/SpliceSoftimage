@@ -113,7 +113,7 @@ struct _opUserData
   //       dfgSoftimageOp_Define() function.
   static std::vector<_portMapping> s_newOp_portmap;
 
-  // this is used by the command dfgSoftimageOpApply to store
+  // this is used by the command FabricCanvasSoftimageOpApply to store
   // the expressions of parameters.
   // note: this is a workaround to transfer expressions when
   //       recreating an operator.

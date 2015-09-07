@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xsi_file type="CompoundNode" name="dfg   Set UVWs" category="Fabric Engine" tasks="" author="Fabric Software Inc." url="http://www.fabricengine.com/" formatversion="1.4" compoundversion="1.0" constructionmode="Current" backgroundcolor="15441445">
+<xsi_file type="CompoundNode" name="Fabric Canvas Set UVWs" category="Fabric Engine" tasks="" author="Fabric Software Inc." url="http://www.fabricengine.com/" formatversion="1.4" compoundversion="1.0" constructionmode="Current" backgroundcolor="15441445">
 	<definition>
 		<nodes>
 			<node type="SelectInArrayNode" index="0">

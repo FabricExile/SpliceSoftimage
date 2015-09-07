@@ -803,34 +803,34 @@ FabricCore::DFGBinding DFGUICmdHandlerDCC::getBindingFromDCCObjectName(std::stri
   return FabricCore::DFGBinding();
 }
 
-void *DFGUICmdHandlerDCC::createAndExecuteDFGCommand(std::string &in_cmdName, std::vector<std::string> &in_args)
+FabricUI::DFG::DFGUICmd *DFGUICmdHandlerDCC::createAndExecuteDFGCommand(std::string &in_cmdName, std::vector<std::string> &in_args)
 {
-  void *cmd = NULL;
-  if      (in_cmdName == "dfgRemoveNodes")         cmd = createAndExecuteDFGCommand_RemoveNodes        (in_args);
-  else if (in_cmdName == "dfgConnect")             cmd = createAndExecuteDFGCommand_Connect            (in_args);
-  else if (in_cmdName == "dfgDisconnect")          cmd = createAndExecuteDFGCommand_Disconnect         (in_args);
-  else if (in_cmdName == "dfgAddGraph")            cmd = createAndExecuteDFGCommand_AddGraph           (in_args);
-  else if (in_cmdName == "dfgAddFunc")             cmd = createAndExecuteDFGCommand_AddFunc            (in_args);
-  else if (in_cmdName == "dfgInstPreset")          cmd = createAndExecuteDFGCommand_InstPreset         (in_args);
-  else if (in_cmdName == "dfgAddVar")              cmd = createAndExecuteDFGCommand_AddVar             (in_args);
-  else if (in_cmdName == "dfgAddGet")              cmd = createAndExecuteDFGCommand_AddGet             (in_args);
-  else if (in_cmdName == "dfgAddSet")              cmd = createAndExecuteDFGCommand_AddSet             (in_args);
-  else if (in_cmdName == "dfgAddPort")             cmd = createAndExecuteDFGCommand_AddPort            (in_args);
-  else if (in_cmdName == "dfgRemovePort")          cmd = createAndExecuteDFGCommand_RemovePort         (in_args);
-  else if (in_cmdName == "dfgMoveNodes")           cmd = createAndExecuteDFGCommand_MoveNodes          (in_args);
-  else if (in_cmdName == "dfgResizeBackDrop")      cmd = createAndExecuteDFGCommand_ResizeBackDrop     (in_args);
-  else if (in_cmdName == "dfgImplodeNodes")        cmd = createAndExecuteDFGCommand_ImplodeNodes       (in_args);
-  else if (in_cmdName == "dfgExplodeNode")         cmd = createAndExecuteDFGCommand_ExplodeNode        (in_args);
-  else if (in_cmdName == "dfgAddBackDrop")         cmd = createAndExecuteDFGCommand_AddBackDrop        (in_args);
-  else if (in_cmdName == "dfgSetNodeTitle")        cmd = createAndExecuteDFGCommand_SetNodeTitle       (in_args);
-  else if (in_cmdName == "dfgSetNodeComment")      cmd = createAndExecuteDFGCommand_SetNodeComment     (in_args);
-  else if (in_cmdName == "dfgSetCode")             cmd = createAndExecuteDFGCommand_SetCode            (in_args);
-  else if (in_cmdName == "dfgRenamePort")          cmd = createAndExecuteDFGCommand_RenamePort         (in_args);
-  else if (in_cmdName == "dfgPaste")               cmd = createAndExecuteDFGCommand_Paste              (in_args);
-  else if (in_cmdName == "dfgSetArgType")          cmd = createAndExecuteDFGCommand_SetArgType         (in_args);
-  else if (in_cmdName == "dfgSetArgValue")         cmd = createAndExecuteDFGCommand_SetArgValue        (in_args);
-  else if (in_cmdName == "dfgSetPortDefaultValue") cmd = createAndExecuteDFGCommand_SetPortDefaultValue(in_args);
-  else if (in_cmdName == "dfgSetRefVarPath")       cmd = createAndExecuteDFGCommand_SetRefVarPath      (in_args);
+  FabricUI::DFG::DFGUICmd *cmd = NULL;
+  if      (in_cmdName == FabricUI::DFG::DFGUICmd_RemoveNodes::        CmdName().c_str())    cmd = createAndExecuteDFGCommand_RemoveNodes        (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_Connect::            CmdName().c_str())    cmd = createAndExecuteDFGCommand_Connect            (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_Disconnect::         CmdName().c_str())    cmd = createAndExecuteDFGCommand_Disconnect         (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_AddGraph::           CmdName().c_str())    cmd = createAndExecuteDFGCommand_AddGraph           (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_AddFunc::            CmdName().c_str())    cmd = createAndExecuteDFGCommand_AddFunc            (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_InstPreset::         CmdName().c_str())    cmd = createAndExecuteDFGCommand_InstPreset         (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_AddVar::             CmdName().c_str())    cmd = createAndExecuteDFGCommand_AddVar             (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_AddGet::             CmdName().c_str())    cmd = createAndExecuteDFGCommand_AddGet             (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_AddSet::             CmdName().c_str())    cmd = createAndExecuteDFGCommand_AddSet             (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_AddPort::            CmdName().c_str())    cmd = createAndExecuteDFGCommand_AddPort            (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_RemovePort::         CmdName().c_str())    cmd = createAndExecuteDFGCommand_RemovePort         (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_MoveNodes::          CmdName().c_str())    cmd = createAndExecuteDFGCommand_MoveNodes          (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_ResizeBackDrop::     CmdName().c_str())    cmd = createAndExecuteDFGCommand_ResizeBackDrop     (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_ImplodeNodes::       CmdName().c_str())    cmd = createAndExecuteDFGCommand_ImplodeNodes       (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_ExplodeNode::        CmdName().c_str())    cmd = createAndExecuteDFGCommand_ExplodeNode        (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_AddBackDrop::        CmdName().c_str())    cmd = createAndExecuteDFGCommand_AddBackDrop        (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_SetNodeTitle::       CmdName().c_str())    cmd = createAndExecuteDFGCommand_SetNodeTitle       (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_SetNodeComment::     CmdName().c_str())    cmd = createAndExecuteDFGCommand_SetNodeComment     (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_SetCode::            CmdName().c_str())    cmd = createAndExecuteDFGCommand_SetCode            (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_RenamePort::         CmdName().c_str())    cmd = createAndExecuteDFGCommand_RenamePort         (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_Paste::              CmdName().c_str())    cmd = createAndExecuteDFGCommand_Paste              (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_SetArgType::         CmdName().c_str())    cmd = createAndExecuteDFGCommand_SetArgType         (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_SetArgValue::        CmdName().c_str())    cmd = createAndExecuteDFGCommand_SetArgValue        (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_SetPortDefaultValue::CmdName().c_str())    cmd = createAndExecuteDFGCommand_SetPortDefaultValue(in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_SetRefVarPath::      CmdName().c_str())    cmd = createAndExecuteDFGCommand_SetRefVarPath      (in_args);
   return cmd;
 }
 
@@ -1909,9 +1909,9 @@ void DFGUICmd_TermUndoRedo(XSI::CRef &in_ctxt)
   }
 }
 
-//        "dfgRemoveNodes"
+//        "RemoveNodes"
 
-SICALLBACK dfgRemoveNodes_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasRemoveNodes_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -1927,10 +1927,8 @@ SICALLBACK dfgRemoveNodes_Init(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgRemoveNodes_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasRemoveNodes_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgRemoveNodes_Execute()", XSI::siCommentMsg);
-
   // init.
   XSI::Context     ctxt(in_ctxt);
   XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
@@ -1947,27 +1945,27 @@ SICALLBACK dfgRemoveNodes_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgRemoveNodes_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasRemoveNodes_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgRemoveNodes_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasRemoveNodes_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgRemoveNodes_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasRemoveNodes_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
 }
 
-//        "dfgConnect"
+//        "Connect"
 
-SICALLBACK dfgConnect_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasConnect_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -1984,10 +1982,8 @@ SICALLBACK dfgConnect_Init(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgConnect_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasConnect_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgConnect_Execute()", XSI::siCommentMsg);
-
   // init.
   XSI::Context     ctxt(in_ctxt);
   XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
@@ -2004,27 +2000,27 @@ SICALLBACK dfgConnect_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgConnect_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasConnect_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgConnect_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasConnect_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgConnect_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasConnect_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
 }
 
-//        "dfgDisconnect"
+//        "Disconnect"
 
-SICALLBACK dfgDisconnect_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasDisconnect_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -2041,10 +2037,8 @@ SICALLBACK dfgDisconnect_Init(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgDisconnect_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasDisconnect_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgDisconnect_Execute()", XSI::siCommentMsg);
-
   // init.
   XSI::Context     ctxt(in_ctxt);
   XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
@@ -2061,27 +2055,27 @@ SICALLBACK dfgDisconnect_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgDisconnect_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasDisconnect_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgDisconnect_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasDisconnect_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgDisconnect_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasDisconnect_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
 }
 
-//        "dfgAddGraph"
+//        "AddGraph"
 
-SICALLBACK dfgAddGraph_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasAddGraph_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -2099,10 +2093,8 @@ SICALLBACK dfgAddGraph_Init(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddGraph_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasAddGraph_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgAddGraph_Execute()", XSI::siCommentMsg);
-
   // init.
   XSI::Context     ctxt(in_ctxt);
   XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
@@ -2124,27 +2116,27 @@ SICALLBACK dfgAddGraph_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddGraph_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasAddGraph_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddGraph_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasAddGraph_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddGraph_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasAddGraph_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
 }
 
-//        "dfgAddFunc"
+//        "AddFunc"
 
-SICALLBACK dfgAddFunc_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasAddFunc_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -2163,10 +2155,8 @@ SICALLBACK dfgAddFunc_Init(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddFunc_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasAddFunc_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgAddFunc_Execute()", XSI::siCommentMsg);
-
   // init.
   XSI::Context     ctxt(in_ctxt);
   XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
@@ -2188,27 +2178,27 @@ SICALLBACK dfgAddFunc_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddFunc_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasAddFunc_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddFunc_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasAddFunc_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddFunc_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasAddFunc_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
 }
 
-//        "dfgInstPreset"
+//        "InstPreset"
 
-SICALLBACK dfgInstPreset_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasInstPreset_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -2226,10 +2216,8 @@ SICALLBACK dfgInstPreset_Init(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgInstPreset_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasInstPreset_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgInstPreset_Execute()", XSI::siCommentMsg);
-
   // init.
   XSI::Context     ctxt(in_ctxt);
   XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
@@ -2251,27 +2239,27 @@ SICALLBACK dfgInstPreset_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgInstPreset_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasInstPreset_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgInstPreset_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasInstPreset_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgInstPreset_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasInstPreset_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
 }
 
-//        "dfgAddVar"
+//        "AddVar"
 
-SICALLBACK dfgAddVar_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasAddVar_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -2291,10 +2279,8 @@ SICALLBACK dfgAddVar_Init(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddVar_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasAddVar_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgAddVar_Execute()", XSI::siCommentMsg);
-
   // init.
   XSI::Context     ctxt(in_ctxt);
   XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
@@ -2316,27 +2302,27 @@ SICALLBACK dfgAddVar_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddVar_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasAddVar_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddVar_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasAddVar_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddVar_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasAddVar_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
 }
 
-//        "dfgAddGet"
+//        "AddGet"
 
-SICALLBACK dfgAddGet_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasAddGet_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -2355,10 +2341,8 @@ SICALLBACK dfgAddGet_Init(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddGet_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasAddGet_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgAddGet_Execute()", XSI::siCommentMsg);
-
   // init.
   XSI::Context     ctxt(in_ctxt);
   XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
@@ -2380,27 +2364,27 @@ SICALLBACK dfgAddGet_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddGet_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasAddGet_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddGet_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasAddGet_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddGet_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasAddGet_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
 }
 
-//        "dfgAddSet"
+//        "AddSet"
 
-SICALLBACK dfgAddSet_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasAddSet_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -2419,10 +2403,8 @@ SICALLBACK dfgAddSet_Init(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddSet_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasAddSet_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgAddSet_Execute()", XSI::siCommentMsg);
-
   // init.
   XSI::Context     ctxt(in_ctxt);
   XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
@@ -2444,27 +2426,27 @@ SICALLBACK dfgAddSet_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddSet_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasAddSet_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddSet_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasAddSet_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddSet_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasAddSet_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
 }
 
-//        "dfgAddPort"
+//        "AddPort"
 
-SICALLBACK dfgAddPort_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasAddPort_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -2483,10 +2465,8 @@ SICALLBACK dfgAddPort_Init(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddPort_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasAddPort_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgAddPort_Execute()", XSI::siCommentMsg);
-
   // init.
   XSI::Context     ctxt(in_ctxt);
   XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
@@ -2508,27 +2488,27 @@ SICALLBACK dfgAddPort_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddPort_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasAddPort_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddPort_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasAddPort_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddPort_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasAddPort_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
 }
 
-//        "dfgRemovePort"
+//        "RemovePort"
 
-SICALLBACK dfgRemovePort_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasRemovePort_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -2544,10 +2524,8 @@ SICALLBACK dfgRemovePort_Init(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgRemovePort_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasRemovePort_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgRemovePort_Execute()", XSI::siCommentMsg);
-
   // init.
   XSI::Context     ctxt(in_ctxt);
   XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
@@ -2564,27 +2542,27 @@ SICALLBACK dfgRemovePort_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgRemovePort_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasRemovePort_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgRemovePort_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasRemovePort_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgRemovePort_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasRemovePort_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
 }
 
-//        "dfgMoveNodes"
+//        "MoveNodes"
 
-SICALLBACK dfgMoveNodes_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasMoveNodes_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -2602,10 +2580,8 @@ SICALLBACK dfgMoveNodes_Init(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgMoveNodes_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasMoveNodes_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgMoveNodes_Execute()", XSI::siCommentMsg);
-
   // init.
   XSI::Context     ctxt(in_ctxt);
   XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
@@ -2622,27 +2598,27 @@ SICALLBACK dfgMoveNodes_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgMoveNodes_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasMoveNodes_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgMoveNodes_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasMoveNodes_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgMoveNodes_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasMoveNodes_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
 }
 
-//        "dfgResizeBackDrop"
+//        "ResizeBackDrop"
 
-SICALLBACK dfgResizeBackDrop_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasResizeBackDrop_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -2662,10 +2638,8 @@ SICALLBACK dfgResizeBackDrop_Init(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgResizeBackDrop_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasResizeBackDrop_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgResizeBackDrop_Execute()", XSI::siCommentMsg);
-
   // init.
   XSI::Context     ctxt(in_ctxt);
   XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
@@ -2682,27 +2656,27 @@ SICALLBACK dfgResizeBackDrop_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgResizeBackDrop_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasResizeBackDrop_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgResizeBackDrop_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasResizeBackDrop_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgResizeBackDrop_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasResizeBackDrop_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
 }
 
-//        "dfgImplodeNodes"
+//        "ImplodeNodes"
 
-SICALLBACK dfgImplodeNodes_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasImplodeNodes_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -2719,10 +2693,8 @@ SICALLBACK dfgImplodeNodes_Init(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgImplodeNodes_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasImplodeNodes_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgImplodeNodes_Execute()", XSI::siCommentMsg);
-
   // init.
   XSI::Context     ctxt(in_ctxt);
   XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
@@ -2744,27 +2716,27 @@ SICALLBACK dfgImplodeNodes_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgImplodeNodes_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasImplodeNodes_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgImplodeNodes_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasImplodeNodes_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgImplodeNodes_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasImplodeNodes_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
 }
 
-//        "dfgExplodeNode"
+//        "ExplodeNode"
 
-SICALLBACK dfgExplodeNode_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasExplodeNode_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -2780,10 +2752,8 @@ SICALLBACK dfgExplodeNode_Init(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgExplodeNode_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasExplodeNode_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgExplodeNode_Execute()", XSI::siCommentMsg);
-
   // init.
   XSI::Context     ctxt(in_ctxt);
   XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
@@ -2815,27 +2785,27 @@ SICALLBACK dfgExplodeNode_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgExplodeNode_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasExplodeNode_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgExplodeNode_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasExplodeNode_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgExplodeNode_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasExplodeNode_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
 }
 
-//        "dfgAddBackDrop"
+//        "AddBackDrop"
 
-SICALLBACK dfgAddBackDrop_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasAddBackDrop_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -2853,10 +2823,8 @@ SICALLBACK dfgAddBackDrop_Init(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddBackDrop_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasAddBackDrop_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgAddBackDrop_Execute()", XSI::siCommentMsg);
-
   // init.
   XSI::Context     ctxt(in_ctxt);
   XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
@@ -2878,27 +2846,27 @@ SICALLBACK dfgAddBackDrop_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddBackDrop_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasAddBackDrop_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddBackDrop_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasAddBackDrop_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgAddBackDrop_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasAddBackDrop_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
 }
 
-//        "dfgSetNodeTitle"
+//        "SetNodeTitle"
 
-SICALLBACK dfgSetNodeTitle_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasSetNodeTitle_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -2915,10 +2883,8 @@ SICALLBACK dfgSetNodeTitle_Init(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetNodeTitle_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasSetNodeTitle_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgSetNodeTitle_Execute()", XSI::siCommentMsg);
-
   // init.
   XSI::Context     ctxt(in_ctxt);
   XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
@@ -2935,27 +2901,27 @@ SICALLBACK dfgSetNodeTitle_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetNodeTitle_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasSetNodeTitle_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetNodeTitle_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasSetNodeTitle_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetNodeTitle_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasSetNodeTitle_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
 }
 
-//        "dfgSetNodeComment"
+//        "SetNodeComment"
 
-SICALLBACK dfgSetNodeComment_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasSetNodeComment_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -2972,10 +2938,8 @@ SICALLBACK dfgSetNodeComment_Init(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetNodeComment_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasSetNodeComment_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgSetNodeComment_Execute()", XSI::siCommentMsg);
-
   // init.
   XSI::Context     ctxt(in_ctxt);
   XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
@@ -2992,27 +2956,27 @@ SICALLBACK dfgSetNodeComment_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetNodeComment_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasSetNodeComment_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetNodeComment_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasSetNodeComment_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetNodeComment_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasSetNodeComment_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
 }
 
-//        "dfgSetCode"
+//        "SetCode"
 
-SICALLBACK dfgSetCode_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasSetCode_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -3028,10 +2992,8 @@ SICALLBACK dfgSetCode_Init(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetCode_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasSetCode_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgSetCode_Execute()", XSI::siCommentMsg);
-
   // init.
   XSI::Context     ctxt(in_ctxt);
   XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
@@ -3048,27 +3010,27 @@ SICALLBACK dfgSetCode_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetCode_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasSetCode_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetCode_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasSetCode_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetCode_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasSetCode_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
 }
 
-//        "dfgRenamePort"
+//        "RenamePort"
 
-SICALLBACK dfgRenamePort_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasRenamePort_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -3085,10 +3047,8 @@ SICALLBACK dfgRenamePort_Init(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgRenamePort_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasRenamePort_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgRenamePort_Execute()", XSI::siCommentMsg);
-
   // init.
   XSI::Context     ctxt(in_ctxt);
   XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
@@ -3110,27 +3070,27 @@ SICALLBACK dfgRenamePort_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgRenamePort_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasRenamePort_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgRenamePort_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasRenamePort_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgRenamePort_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasRenamePort_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
 }
 
-//        "dfgPaste"
+//        "Paste"
 
-SICALLBACK dfgPaste_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasPaste_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -3148,10 +3108,8 @@ SICALLBACK dfgPaste_Init(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgPaste_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasPaste_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgPaste_Execute()", XSI::siCommentMsg);
-
   // init.
   XSI::Context     ctxt(in_ctxt);
   XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
@@ -3184,27 +3142,27 @@ SICALLBACK dfgPaste_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgPaste_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasPaste_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgPaste_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasPaste_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgPaste_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasPaste_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
 }
 
-//        "dfgSetArgType"
+//        "SetArgType"
 
-SICALLBACK dfgSetArgType_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasSetArgType_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -3220,10 +3178,8 @@ SICALLBACK dfgSetArgType_Init(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetArgType_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasSetArgType_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgSetArgType_Execute()", XSI::siCommentMsg);
-
   // init.
   XSI::Context     ctxt(in_ctxt);
   XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
@@ -3240,27 +3196,27 @@ SICALLBACK dfgSetArgType_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetArgType_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasSetArgType_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetArgType_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasSetArgType_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetArgType_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasSetArgType_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
 }
 
-//        "dfgSetArgValue"
+//        "SetArgValue"
 
-SICALLBACK dfgSetArgValue_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasSetArgValue_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -3277,10 +3233,8 @@ SICALLBACK dfgSetArgValue_Init(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetArgValue_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasSetArgValue_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgSetArgValue_Execute()", XSI::siCommentMsg);
-
   // init.
   XSI::Context     ctxt(in_ctxt);
   XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
@@ -3297,27 +3251,27 @@ SICALLBACK dfgSetArgValue_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetArgValue_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasSetArgValue_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetArgValue_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasSetArgValue_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetArgValue_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasSetArgValue_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
 }
 
-//        "dfgSetPortDefaultValue"
+//        "SetPortDefaultValue"
 
-SICALLBACK dfgSetPortDefaultValue_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasSetPortDefaultValue_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -3335,10 +3289,8 @@ SICALLBACK dfgSetPortDefaultValue_Init(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetPortDefaultValue_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasSetPortDefaultValue_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgSetPortDefaultValue_Execute()", XSI::siCommentMsg);
-
   // init.
   XSI::Context     ctxt(in_ctxt);
   XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
@@ -3355,27 +3307,27 @@ SICALLBACK dfgSetPortDefaultValue_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetPortDefaultValue_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasSetPortDefaultValue_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetPortDefaultValue_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasSetPortDefaultValue_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetPortDefaultValue_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasSetPortDefaultValue_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
 }
 
-//        "dfgSetRefVarPath"
+//        "SetRefVarPath"
 
-SICALLBACK dfgSetRefVarPath_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasSetRefVarPath_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -3392,10 +3344,8 @@ SICALLBACK dfgSetRefVarPath_Init(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetRefVarPath_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasSetRefVarPath_Execute(XSI::CRef &in_ctxt)
 {
-  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] calling dfgSetRefVarPath_Execute()", XSI::siCommentMsg);
-
   // init.
   XSI::Context     ctxt(in_ctxt);
   XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
@@ -3412,19 +3362,19 @@ SICALLBACK dfgSetRefVarPath_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetRefVarPath_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasSetRefVarPath_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetRefVarPath_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasSetRefVarPath_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK dfgSetRefVarPath_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasSetRefVarPath_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;

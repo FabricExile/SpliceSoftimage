@@ -123,11 +123,11 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
 
     // commands.
     CString cmdName;
-    cmdName = L"dfgSoftimageOpApply"; in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
-    cmdName = L"dfgImportJSON";       in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
-    cmdName = L"dfgExportJSON";       in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
-    cmdName = L"dfgSelectConnected";  in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
-    cmdName = L"dfgLogStatus";        in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
+    cmdName = L"FabricCanvasSoftimageOpApply"; in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
+    cmdName = L"FabricCanvasImportJSON";       in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
+    cmdName = L"FabricCanvasExportJSON";       in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
+    cmdName = L"FabricCanvasSelectConnected";  in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
+    cmdName = L"FabricCanvasLogStatus";        in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
 
     // commands for DFGUICmdHandler.
     REGISTER_DFGUICMD( in_reg, AddBackDrop );

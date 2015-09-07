@@ -69,7 +69,7 @@ CRef recreateOperator(CustomOperator op, CString &dfgJSON)
   args.Add(dfgJSON);
   args.Add(true);
   args.Add(op.GetFullName());
-  Application().ExecuteCommand(L"dfgSoftimageOpApply", args, newOpRef);
+  Application().ExecuteCommand(L"FabricCanvasSoftimageOpApply", args, newOpRef);
   if (CRef(newOpRef).IsValid())
   {
     // delete the old operator.
@@ -977,21 +977,21 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
       CValueArray args;
       args.Add(op.GetUniqueName());
       args.Add((LONG)0);
-      Application().ExecuteCommand(L"dfgSelectConnected", args, CValue());
+      Application().ExecuteCommand(L"FabricCanvasSelectConnected", args, CValue());
     }
     else if (btnName == L"BtnSelConnectIn")
     {
       CValueArray args;
       args.Add(op.GetUniqueName());
       args.Add((LONG)-1);
-      Application().ExecuteCommand(L"dfgSelectConnected", args, CValue());
+      Application().ExecuteCommand(L"FabricCanvasSelectConnected", args, CValue());
     }
     else if (btnName == L"BtnSelConnectOut")
     {
       CValueArray args;
       args.Add(op.GetUniqueName());
       args.Add((LONG)+1);
-      Application().ExecuteCommand(L"dfgSelectConnected", args, CValue());
+      Application().ExecuteCommand(L"FabricCanvasSelectConnected", args, CValue());
     }
     else if (btnName == L"BtnImportJSON")
     {
@@ -1006,7 +1006,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
       CValueArray args;
       args.Add(op.GetUniqueName());
       args.Add(fileName);
-      if (Application().ExecuteCommand(L"dfgImportJSON", args, opWasRecreated) == CStatus::OK)
+      if (Application().ExecuteCommand(L"FabricCanvasImportJSON", args, opWasRecreated) == CStatus::OK)
       {
         if (!opWasRecreated)
         {
@@ -1029,7 +1029,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
       CValueArray args;
       args.Add(op.GetUniqueName());
       args.Add(fileName);
-      Application().ExecuteCommand(L"dfgExportJSON", args, CValue());
+      Application().ExecuteCommand(L"FabricCanvasExportJSON", args, CValue());
     }
     else if (btnName == L"BtnUpdatePPG")
     {
@@ -1133,7 +1133,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
       CValueArray args;
       args.Add(op.GetUniqueName());
       args.Add(L"console");
-      Application().ExecuteCommand(L"dfgExportJSON", args, CValue());
+      Application().ExecuteCommand(L"FabricCanvasExportJSON", args, CValue());
     }
     else if (btnName == L"BtnDebug")
     {
@@ -1542,7 +1542,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
                   // array of normals per polygon node.
                   {
                     typedef                 MATH::CVector3f T;
-                    CString                 name          = L"dfgDataArrayNormalsPerNode";
+                    CString                 name          = L"FabricCanvasDataArrayNormalsPerNode";
                     siICENodeDataType       typeData      = siICENodeDataType::siICENodeDataVector3;
                     siICENodeStructureType  typeStructure = siICENodeStructureType::siICENodeStructureArray;
                     siICENodeContextType    typeContext   = siICENodeContextType::siICENodeContextSingleton;
@@ -1598,7 +1598,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
                   if (polymesh.hasUVWs())
                   {
                     typedef                 MATH::CVector3f T;
-                    CString                 name          = L"dfgDataArrayUVWPerNode";
+                    CString                 name          = L"FabricCanvasDataArrayUVWPerNode";
                     siICENodeDataType       typeData      = siICENodeDataType::siICENodeDataVector3;
                     siICENodeStructureType  typeStructure = siICENodeStructureType::siICENodeStructureArray;
                     siICENodeContextType    typeContext   = siICENodeContextType::siICENodeContextSingleton;
@@ -1654,7 +1654,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
                   if (polymesh.hasColors())
                   {
                     typedef                 MATH::CColor4f  T;
-                    CString                 name          = L"dfgDataArrayColorPerNode";
+                    CString                 name          = L"FabricCanvasDataArrayColorPerNode";
                     siICENodeDataType       typeData      = siICENodeDataType::siICENodeDataColor4;
                     siICENodeStructureType  typeStructure = siICENodeStructureType::siICENodeStructureArray;
                     siICENodeContextType    typeContext   = siICENodeContextType::siICENodeContextSingleton;
