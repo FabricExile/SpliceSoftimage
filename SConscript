@@ -150,7 +150,7 @@ else:
   env.Append(LIBS = ['QtGui'])
   env.Append(LIBS = ['QtOpenGL'])
 
-target = 'FabricForSoftimage'
+target = 'FabricSoftimage'
 
 softimageModule = env.SharedLibrary(target = target, source = Glob('*.cpp'), SHLIBPREFIX='')
 
