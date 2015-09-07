@@ -34,10 +34,10 @@
 using namespace XSI;
 
 // ---
-// command "dfgSoftimageOpApply".
+// command "FabricCanvasSoftimageOpApply".
 // ---
 
-SICALLBACK dfgSoftimageOpApply_Init(CRef &in_ctxt)
+SICALLBACK FabricCanvasSoftimageOpApply_Init(CRef &in_ctxt)
 {
   Context ctxt(in_ctxt);
   Command oCmd;
@@ -57,7 +57,7 @@ SICALLBACK dfgSoftimageOpApply_Init(CRef &in_ctxt)
   return CStatus::OK;
 }
 
-SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
+SICALLBACK FabricCanvasSoftimageOpApply_Execute(CRef &in_ctxt)
 {
   // ref at global _opUserData::s_portmap_newOp.
   std::vector <_portMapping> &portmap = _opUserData::s_newOp_portmap;
@@ -402,10 +402,10 @@ SICALLBACK dfgSoftimageOpApply_Execute(CRef &in_ctxt)
 }
 
 // ---
-// command "dfgImportJSON".
+// command "FabricCanvasImportJSON".
 // ---
 
-SICALLBACK dfgImportJSON_Init(CRef &in_ctxt)
+SICALLBACK FabricCanvasImportJSON_Init(CRef &in_ctxt)
 {
   Context ctxt(in_ctxt);
   Command oCmd;
@@ -422,7 +422,7 @@ SICALLBACK dfgImportJSON_Init(CRef &in_ctxt)
   return CStatus::OK;
 }
 
-SICALLBACK dfgImportJSON_Execute(CRef &in_ctxt)
+SICALLBACK FabricCanvasImportJSON_Execute(CRef &in_ctxt)
 {
   // init.
   Context ctxt(in_ctxt);
@@ -568,7 +568,7 @@ SICALLBACK dfgImportJSON_Execute(CRef &in_ctxt)
       args.Add(CString(json.c_str()));
       args.Add(true);
       args.Add(op.GetFullName());
-      if (Application().ExecuteCommand(L"dfgSoftimageOpApply", args, CValue()) == CStatus::OK)
+      if (Application().ExecuteCommand(L"FabricCanvasSoftimageOpApply", args, CValue()) == CStatus::OK)
       {
         // store return value in context, "true" meaning that the operator was recreated.
         ctxt.PutAttribute(L"ReturnValue", true);
@@ -587,10 +587,10 @@ SICALLBACK dfgImportJSON_Execute(CRef &in_ctxt)
 }
 
 // ---
-// command "dfgExportJSON".
+// command "FabricCanvasExportJSON".
 // ---
 
-SICALLBACK dfgExportJSON_Init(CRef &in_ctxt)
+SICALLBACK FabricCanvasExportJSON_Init(CRef &in_ctxt)
 {
   Context ctxt(in_ctxt);
   Command oCmd;
@@ -607,7 +607,7 @@ SICALLBACK dfgExportJSON_Init(CRef &in_ctxt)
   return CStatus::OK;
 }
 
-SICALLBACK dfgExportJSON_Execute(CRef &in_ctxt)
+SICALLBACK FabricCanvasExportJSON_Execute(CRef &in_ctxt)
 {
   // init.
   Context ctxt(in_ctxt);
@@ -728,10 +728,10 @@ SICALLBACK dfgExportJSON_Execute(CRef &in_ctxt)
 }
 
 // ---
-// command "dfgSelectConnected".
+// command "FabricCanvasSelectConnected".
 // ---
 
-SICALLBACK dfgSelectConnected_Init(CRef &in_ctxt)
+SICALLBACK FabricCanvasSelectConnected_Init(CRef &in_ctxt)
 {
   Context ctxt(in_ctxt);
   Command oCmd;
@@ -750,7 +750,7 @@ SICALLBACK dfgSelectConnected_Init(CRef &in_ctxt)
   return CStatus::OK;
 }
 
-SICALLBACK dfgSelectConnected_Execute(CRef &in_ctxt)
+SICALLBACK FabricCanvasSelectConnected_Execute(CRef &in_ctxt)
 {
   // init.
   Context ctxt(in_ctxt);
@@ -821,10 +821,10 @@ SICALLBACK dfgSelectConnected_Execute(CRef &in_ctxt)
 }
 
 // ---
-// command "dfgLogStatus".
+// command "FabricCanvasLogStatus".
 // ---
 
-SICALLBACK dfgLogStatus_Init(CRef &in_ctxt)
+SICALLBACK FabricCanvasLogStatus_Init(CRef &in_ctxt)
 {
   Context ctxt(in_ctxt);
   Command oCmd;
@@ -839,7 +839,7 @@ SICALLBACK dfgLogStatus_Init(CRef &in_ctxt)
   return CStatus::OK;
 }
 
-SICALLBACK dfgLogStatus_Execute(CRef &in_ctxt)
+SICALLBACK FabricCanvasLogStatus_Execute(CRef &in_ctxt)
 {
   CString s = L"   Fabric Engine Plugin, Fabric Core v. " + CString(FabricCore::GetVersionStr()) + L"   ";
   CString line;

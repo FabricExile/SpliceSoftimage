@@ -20,14 +20,15 @@
 
 using namespace XSI;
 
-//
-#define REGISTER_DFGUICMD(inreg, CMD) \
-  { \
-    std::wstring cmdName( \
-      FabricUI::DFG::DFGUICmd_##CMD::CmdName().begin(), \
-      FabricUI::DFG::DFGUICmd_##CMD::CmdName().end() \
-      ); \
+// for registering the DFGUICmdHandler custom commands.
+#define REGISTER_DFGUICMD(inreg, CMD)                           \
+  {                                                             \
+    std::wstring cmdName(                                       \
+      FabricUI::DFG::DFGUICmd_##CMD::CmdName().begin(),         \
+      FabricUI::DFG::DFGUICmd_##CMD::CmdName().end()            \
+      );                                                        \
     in_reg.RegisterCommand( cmdName.c_str(), cmdName.c_str() ); \
+    ccnames.Add( cmdName.c_str() );                             \
   }
 
 // load plugin.
@@ -112,18 +113,21 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     Register_spliceGetData(in_reg);
   }
 
+  // array of custom command names.
+  CStringArray ccnames;
+
   // register the (new) Fabric DFG/Canvas.
   {
     // operators.
     in_reg.RegisterOperator(L"dfgSoftimageOp");
 
     // commands.
-    in_reg.RegisterCommand(L"dfgSoftimageOpApply",  L"dfgSoftimageOpApply");
-    in_reg.RegisterCommand(L"dfgImportJSON",        L"dfgImportJSON");
-    in_reg.RegisterCommand(L"dfgExportJSON",        L"dfgExportJSON");
-    in_reg.RegisterCommand(L"dfgOpenCanvas",        L"dfgOpenCanvas");
-    in_reg.RegisterCommand(L"dfgSelectConnected",   L"dfgSelectConnected");
-    in_reg.RegisterCommand(L"dfgLogStatus",         L"dfgLogStatus");
+    CString cmdName;
+    cmdName = L"FabricCanvasSoftimageOpApply"; in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
+    cmdName = L"FabricCanvasImportJSON";       in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
+    cmdName = L"FabricCanvasExportJSON";       in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
+    cmdName = L"FabricCanvasSelectConnected";  in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
+    cmdName = L"FabricCanvasLogStatus";        in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
 
     // commands for DFGUICmdHandler.
     REGISTER_DFGUICMD( in_reg, AddBackDrop );
@@ -159,6 +163,18 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     in_reg.RegisterEvent(L"FabricDFGsiOnStartup",    siOnStartup);
     in_reg.RegisterEvent(L"FabricDFGsiOnEndCommand", siOnEndCommand);
   }
+
+  // sort the list of custom command names and log the result.
+  for (LONG i=ccnames.GetCount();i>1;i--) // simple bubble sort.
+    for (LONG j=0;j<i-1;j++)
+      if (ccnames[j] > ccnames[j + 1])
+      {
+        CString mem = ccnames[j];
+        ccnames[j] = ccnames[j + 1];
+        ccnames[j + 1] = mem;
+      }
+  for (LONG i=0;i<ccnames.GetCount();i++)
+    Application().LogMessage(L"    " + ccnames[i]);
 
   // done.
   return CStatus::OK;
