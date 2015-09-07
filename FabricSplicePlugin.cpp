@@ -182,7 +182,7 @@ void xsiInitializeSplice()
   FabricSplice::Logging::setCompilerErrorFunc(xsiCompilerErrorFunc);
 
   CString workgroupFolder = xsiGetWorkgroupPath();
-  CString extFolder = workgroupFolder + "/../../Exts"; // above the 'SpliceIntegrations' folder
+  CString extFolder = workgroupFolder + "/../../Exts"; // above the 'DCCIntegrations' folder
   if(boost::filesystem::exists(extFolder.GetAsciiString()))
   {
     boost::filesystem::path extFolderAbs = boost::filesystem::canonical(extFolder.GetAsciiString());

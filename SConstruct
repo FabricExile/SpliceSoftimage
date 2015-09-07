@@ -76,7 +76,7 @@ else:
     'FABRIC_BUILD_TYPE': os.environ['FABRIC_BUILD_TYPE'],
     'FABRIC_BUILD_OS': os.environ['FABRIC_BUILD_OS'],
     'FABRIC_BUILD_ARCH': os.environ['FABRIC_BUILD_ARCH'],
-    'STAGE_DIR': spliceEnv.Dir('.stage').Dir('SpliceIntegrations').Dir('FabricSpliceSoftimage'+os.environ['SOFTIMAGE_VERSION']),
+    'STAGE_DIR': spliceEnv.Dir('.stage').Dir('DCCIntegrations').Dir('FabricForSoftimage'+os.environ['SOFTIMAGE_VERSION']),
     'BOOST_DIR': os.environ['BOOST_DIR'],
     'SOFTIMAGE_INCLUDE_DIR': os.environ['SOFTIMAGE_INCLUDE_DIR'],
     'SOFTIMAGE_LIB_DIR': os.environ['SOFTIMAGE_LIB_DIR'],
