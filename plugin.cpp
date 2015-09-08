@@ -161,8 +161,8 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     in_reg.RegisterMenu(siMenuMainTopLevelID,       L"Fabric:DFG", true, true);
 
     // events.
-    in_reg.RegisterEvent(L"FabricDFGsiOnStartup",    siOnStartup);
-    in_reg.RegisterEvent(L"FabricDFGsiOnEndCommand", siOnEndCommand);
+    in_reg.RegisterEvent(L"FabricCanvasOnStartup",    siOnStartup);
+    in_reg.RegisterEvent(L"FabricCanvasOnEndCommand", siOnEndCommand);
   }
 
   // sort the list of custom command names and log the result.
@@ -289,7 +289,7 @@ CStatus helpFnct_siEventOpenSave(CRef &ctxt, int openSave)
   return 1;
 }
 
-XSIPLUGINCALLBACK CStatus FabricDFGsiOnStartup_OnEvent(CRef &ctxt)
+XSIPLUGINCALLBACK CStatus FabricCanvasOnStartup_OnEvent(CRef &ctxt)
 {
   // done.
   // /note: we return 1 (i.e. "true") instead of CStatus::OK or else the event gets aborted).
@@ -297,7 +297,7 @@ XSIPLUGINCALLBACK CStatus FabricDFGsiOnStartup_OnEvent(CRef &ctxt)
 }
 
 bool g_clearSoftimageUndoHistory = false;
-XSIPLUGINCALLBACK CStatus FabricDFGsiOnEndCommand_OnEvent(CRef &ctxt)
+XSIPLUGINCALLBACK CStatus FabricCanvasOnEndCommand_OnEvent(CRef &ctxt)
 {
   // if the global flag g_clearSoftimageUndoHistory is set then we clear Softimage's undo history and reset the flag.
   if (g_clearSoftimageUndoHistory)
