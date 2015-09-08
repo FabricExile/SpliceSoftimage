@@ -141,7 +141,7 @@ bool dfgTools::GetOperatorPortMapping(XSI::CRef &in_op, std::vector<_portMapping
   { out_err = L"failed to get base interface or graph.";
     return false; }
 
-  // get the DFG ports.
+  // get the graph ports.
   FabricCore::DFGExec exec = pud->GetBaseInterface()->getBinding().getExec();
   if (exec.getExecPortCount() == 0)
     return true;

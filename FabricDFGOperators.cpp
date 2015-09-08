@@ -180,7 +180,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
   oPDef = oFactory.CreateParamDef(L"myBitmapWidget",      CValue::siInt4,   siClassifMetaData, siPersistable,         L"", L"", CValue(), CValue(), CValue(), 0, 1);
   op.AddParameter(oPDef, emptyParam);
 
-  // create grid parameter for the list of DFG ports.
+  // create grid parameter for the list of graph ports.
   // NOTE: this port MUST come JUST BEFORE the exposed DFG parameters!
   op.AddParameter(oFactory.CreateGridParamDef("dfgPorts"), emptyParam);
 
@@ -271,7 +271,7 @@ int dfgSoftimageOp_UpdateGridData_dfgPorts(CustomOperator &op)
   // get grid object.
   GridData grid((CRef)op.GetParameter("dfgPorts").GetValue());
 
-  // get operator's user data and check if there are any DFG ports.
+  // get operator's user data and check if there are any graph ports.
   std::vector<_portMapping> pmap;
   CString       err;
   if (!dfgTools::GetOperatorPortMapping(op, pmap, err))
@@ -364,7 +364,7 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
   // update the grid data.
   const int dfgPortsNumRows = dfgSoftimageOp_UpdateGridData_dfgPorts(op);
 
-  // get the names of all DFG ports that are available as XSI parameters.
+  // get the names of all graph ports that are available as XSI parameters.
   CStringArray exposedDFGParams = CString(op.GetParameterValue(L"exposedDFGParams")).Split(L";");
 
   // set the "sync" flag.
@@ -534,7 +534,7 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
       oLayout.EndGroup();
       oLayout.AddSpacer(0, 12);
 
-      oLayout.AddGroup(L"DFG Ports");
+      oLayout.AddGroup(L"Graph Ports");
         oLayout.AddRow();
           oLayout.AddSpacer(0, 0);
           pi = oLayout.AddButton(L"BtnUpdatePPG", L"Update UI");
@@ -1050,7 +1050,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
         Application().LogMessage(L"\"" + op.GetRef().GetAsText() + L"\" (ObjectID = " + CString(op.GetObjectID()) + L")", siInfoMsg);
         Application().LogMessage(L"{", siInfoMsg);
 
-        // log (DFG ports).
+        // log (graph ports).
         FabricCore::DFGExec exec = pud->GetBaseInterface()->getBinding().getExec();
         Application().LogMessage(L"    amount of graph ports: " + CString((LONG)exec.getExecPortCount()), siInfoMsg);
         for (int i=0;i<exec.getExecPortCount();i++)
