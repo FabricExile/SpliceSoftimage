@@ -69,7 +69,7 @@ CRef recreateOperator(CustomOperator op, CString &dfgJSON)
   args.Add(dfgJSON);
   args.Add(true);
   args.Add(op.GetFullName());
-  Application().ExecuteCommand(L"FabricCanvasSoftimageOpApply", args, newOpRef);
+  Application().ExecuteCommand(L"FabricCanvasOpApply", args, newOpRef);
   if (CRef(newOpRef).IsValid())
   {
     // delete the old operator.
@@ -111,10 +111,10 @@ CRef recreateOperator(CustomOperator op, CString &dfgJSON)
   return newOpRef;
 }
 
-XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Init(CRef &in_ctxt)
+XSIPLUGINCALLBACK CStatus CanvasOp_Init(CRef &in_ctxt)
 {
   // beta log.
-  CString functionName = L"dfgSoftimageOp_Init()";
+  CString functionName = L"CanvasOp_Init()";
   if (FabricDFGPlugin_BETA) Application().LogMessage(functionName + L" called", siInfoMsg);
 
   // init.
@@ -129,10 +129,10 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Init(CRef &in_ctxt)
   return CStatus::OK;
 }
 
-XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Term(CRef &in_ctxt)
+XSIPLUGINCALLBACK CStatus CanvasOp_Term(CRef &in_ctxt)
 {
   // beta log.
-  CString functionName = L"dfgSoftimageOp_Term()";
+  CString functionName = L"CanvasOp_Term()";
   if (FabricDFGPlugin_BETA) Application().LogMessage(functionName + L" called", siInfoMsg);
 
   // init.
@@ -152,10 +152,10 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Term(CRef &in_ctxt)
   return CStatus::OK;
 }
 
-XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
+XSIPLUGINCALLBACK CStatus CanvasOp_Define(CRef &in_ctxt)
 {
   // beta log.
-  CString functionName = L"dfgSoftimageOp_Define()";
+  CString functionName = L"CanvasOp_Define()";
   if (FabricDFGPlugin_BETA) Application().LogMessage(functionName + L" called", siInfoMsg);
 
   // init.
@@ -258,7 +258,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Define(CRef &in_ctxt)
   return CStatus::OK;
 }
 
-int dfgSoftimageOp_UpdateGridData_dfgPorts(CustomOperator &op)
+int CanvasOp_UpdateGridData_dfgPorts(CustomOperator &op)
 {
   /*
      Here we set the data of the grid parameter "dfgPorts".
@@ -334,10 +334,10 @@ int dfgSoftimageOp_UpdateGridData_dfgPorts(CustomOperator &op)
   return pmap.size();
 }
 
-void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
+void CanvasOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
 {
   // debug log.
-  if (opLOG)  Application().LogMessage(L"dfgSoftimageOp_DefineLayout() called");
+  if (opLOG)  Application().LogMessage(L"CanvasOp_DefineLayout() called");
 
   // init.
   oLayout.Clear();
@@ -362,7 +362,7 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
   const LONG btnTSCy = 22;
 
   // update the grid data.
-  const int dfgPortsNumRows = dfgSoftimageOp_UpdateGridData_dfgPorts(op);
+  const int dfgPortsNumRows = CanvasOp_UpdateGridData_dfgPorts(op);
 
   // get the names of all graph ports that are available as XSI parameters.
   CStringArray exposedDFGParams = CString(op.GetParameterValue(L"exposedDFGParams")).Split(L";");
@@ -669,7 +669,7 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
   }
 }
 
-XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
+XSIPLUGINCALLBACK CStatus CanvasOp_PPGEvent(const CRef &in_ctxt)
 {
   /*  note:
 
@@ -691,7 +691,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
   if (eventID == PPGEventContext::siOnInit)
   {
     PPGLayout oLayout = op.GetPPGLayout();
-    dfgSoftimageOp_DefineLayout(oLayout, op);
+    CanvasOp_DefineLayout(oLayout, op);
     ctxt.PutAttribute(L"Refresh", true);
   }
   else if (eventID == PPGEventContext::siButtonClicked)
@@ -722,7 +722,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
         {
           if (opLOG)  Application().LogMessage(L"refreshing PPG after closing Canvas");
           PPGLayout oLayout = op.GetPPGLayout();
-          dfgSoftimageOp_DefineLayout(oLayout, op);
+          CanvasOp_DefineLayout(oLayout, op);
           ctxt.PutAttribute(L"Refresh", true);
         }
       }
@@ -833,11 +833,11 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
           {
             if (selRow < 0) { selRow = j;
                               break; }
-            else            { toolkit.MsgBox(L"More than one DFG port selected.\n\nPlease select a single port and try again.", siMsgOkOnly, "dfgSoftimageOp", ret);
+            else            { toolkit.MsgBox(L"More than one port selected.\n\nPlease select a single port and try again.", siMsgOkOnly, "CanvasOp", ret);
                               return CStatus::OK; }
           }
       if (selRow < 0)
-      { toolkit.MsgBox(L"No DFG port selected.\n\nPlease select a single port and try again.", siMsgOkOnly, "dfgSoftimageOp", ret);
+      { toolkit.MsgBox(L"No port selected.\n\nPlease select a single port and try again.", siMsgOkOnly, "CanvasOp", ret);
         return CStatus::OK; }
 
       // get the name of the selected port as well as its port mapping.
@@ -855,14 +855,14 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
           }
       }
       if (pmap.dfgPortName != selPortName)
-      { toolkit.MsgBox(L"Failed to find selected port.", siMsgOkOnly | siMsgExclamation, "dfgSoftimageOp", ret);
+      { toolkit.MsgBox(L"Failed to find selected port.", siMsgOkOnly | siMsgExclamation, "CanvasOp", ret);
         return CStatus::OK; }
       if (   pmap.dfgPortType != DFG_PORT_TYPE_IN
           && pmap.dfgPortType != DFG_PORT_TYPE_OUT)
-      { toolkit.MsgBox(L"Selected port has unsupported type (neither \"In\" nor \"Out\").", siMsgOkOnly | siMsgExclamation, "dfgSoftimageOp", ret);
+      { toolkit.MsgBox(L"Selected port has unsupported type (neither \"In\" nor \"Out\").", siMsgOkOnly | siMsgExclamation, "CanvasOp", ret);
         return CStatus::OK; }
       if (pmap.mapType != DFG_PORT_MAPTYPE_XSI_PORT)
-      { toolkit.MsgBox(L"Selected port Type/Target is not \"XSI Port\".", siMsgOkOnly, "dfgSoftimageOp", ret);
+      { toolkit.MsgBox(L"Selected port Type/Target is not \"XSI Port\".", siMsgOkOnly, "CanvasOp", ret);
         return CStatus::OK; }
 
       // find the port group.
@@ -879,7 +879,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
           }
       }
       if (!portgroup.IsValid())
-      { toolkit.MsgBox(L"Unable to find matching port group.", siMsgOkOnly | siMsgExclamation, "dfgSoftimageOp", ret);
+      { toolkit.MsgBox(L"Unable to find matching port group.", siMsgOkOnly | siMsgExclamation, "CanvasOp", ret);
         return CStatus::OK; }
 
       // set target.
@@ -969,7 +969,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
 
       // refresh layout.
       PPGLayout oLayout = op.GetPPGLayout();
-      dfgSoftimageOp_DefineLayout(oLayout, op);
+      CanvasOp_DefineLayout(oLayout, op);
       ctxt.PutAttribute(L"Refresh", true);
     }
     else if (btnName == L"BtnSelConnectAll")
@@ -1011,7 +1011,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
         if (!opWasRecreated)
         {
           PPGLayout oLayout = op.GetPPGLayout();
-          dfgSoftimageOp_DefineLayout(oLayout, op);
+          CanvasOp_DefineLayout(oLayout, op);
           ctxt.PutAttribute(L"Refresh", true);
         }
         dfgTools::ClearUndoHistory();
@@ -1034,7 +1034,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
     else if (btnName == L"BtnUpdatePPG")
     {
       PPGLayout oLayout = op.GetPPGLayout();
-      dfgSoftimageOp_DefineLayout(oLayout, op);
+      CanvasOp_DefineLayout(oLayout, op);
       ctxt.PutAttribute(L"Refresh", true);
     }
     else if (btnName == L"BtnLogGraphInfo")
@@ -1168,7 +1168,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
   return CStatus::OK;
 }
 
-XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
+XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
 {
   // init.
   OperatorContext ctxt(in_ctxt);
@@ -1182,7 +1182,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_Update(CRef &in_ctxt)
                                                   return CStatus::OK; }
 
   // log.
-  CString functionName = L"dfgSoftimageOp_Update(opObjID = " + CString(op.GetObjectID()) + L")";
+  CString functionName = L"CanvasOp_Update(opObjID = " + CString(op.GetObjectID()) + L")";
   const bool verbose = (bool)ctxt.GetParameterValue(L"verbose");
   if (verbose)  Application().LogMessage(functionName + L" called #" + CString((LONG)pud->updateCounter), siInfoMsg);
   pud->updateCounter++;

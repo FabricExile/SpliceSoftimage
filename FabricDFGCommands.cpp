@@ -34,16 +34,16 @@
 using namespace XSI;
 
 // ---
-// command "FabricCanvasSoftimageOpApply".
+// command "FabricCanvasOpApply".
 // ---
 
-SICALLBACK FabricCanvasSoftimageOpApply_Init(CRef &in_ctxt)
+SICALLBACK FabricCanvasOpApply_Init(CRef &in_ctxt)
 {
   Context ctxt(in_ctxt);
   Command oCmd;
 
   oCmd = ctxt.GetSource();
-  oCmd.PutDescription(L"applies a dfgSoftimageOp operator.");
+  oCmd.PutDescription(L"applies a CanvasOp operator.");
   oCmd.SetFlag(siNoLogging, false);
   oCmd.EnableReturnValue(true);     // L"ReturnValue" will contain the CRef of the new operator.
 
@@ -57,7 +57,7 @@ SICALLBACK FabricCanvasSoftimageOpApply_Init(CRef &in_ctxt)
   return CStatus::OK;
 }
 
-SICALLBACK FabricCanvasSoftimageOpApply_Execute(CRef &in_ctxt)
+SICALLBACK FabricCanvasOpApply_Execute(CRef &in_ctxt)
 {
   // ref at global _opUserData::s_portmap_newOp.
   std::vector <_portMapping> &portmap = _opUserData::s_newOp_portmap;
@@ -68,7 +68,7 @@ SICALLBACK FabricCanvasSoftimageOpApply_Execute(CRef &in_ctxt)
   _opUserData::s_newOp_expressions.clear();
   CValueArray args = ctxt.GetAttribute(L"Arguments");
   if (args.GetCount() < 5 || CString(args[0]).IsEmpty())
-  { Application().LogMessage(L"apply dfgSoftimageOp operator failed: empty or missing argument(s)", siErrorMsg);
+  { Application().LogMessage(L"apply CanvasOp operator failed: empty or missing argument(s)", siErrorMsg);
     portmap.clear();
     return CStatus::OK; }
   CString objectName      (args[0]);
@@ -78,7 +78,7 @@ SICALLBACK FabricCanvasSoftimageOpApply_Execute(CRef &in_ctxt)
   LONG    createSpliceOp = args[4];
 
   // log.
-  Application().LogMessage(L"applying a  \"dfgSoftimageOp\" custom operator to \"" + objectName + L"\"", siVerboseMsg);
+  Application().LogMessage(L"applying a  \"CanvasOp\" custom operator to \"" + objectName + L"\"", siVerboseMsg);
 
   // get target X3DObject.
   CRefArray objRefArray = Application().GetActiveSceneRoot().FindChildren2(objectName, L"", CStringArray());
@@ -99,8 +99,8 @@ SICALLBACK FabricCanvasSoftimageOpApply_Execute(CRef &in_ctxt)
   // go.
   do
   {
-    // create a SpliceOp before creating the dfgSoftimageOp?
-    // (note: adding a SpliceOp to the object prevents things from going wrong when loading a scene into XSI that has one or more dfgSoftimageOp.)
+    // create a SpliceOp before creating the CanvasOp?
+    // (note: adding a SpliceOp to the object prevents things from going wrong when loading a scene into XSI that has one or more CanvasOp.)
     if (    createSpliceOp == 1
         || (createSpliceOp == 2 && dfgTools::GetRefsAtOps(obj, CString(L"SpliceOp"), XSI::CRefArray()) == 0)  )
     {
@@ -110,8 +110,8 @@ SICALLBACK FabricCanvasSoftimageOpApply_Execute(CRef &in_ctxt)
       Application().ExecuteCommand(L"fabricSplice", args, CValue());
     }
 
-    // create the dfgSoftimageOp operator
-    CString opName = L"dfgSoftimageOp";
+    // create the CanvasOp operator
+    CString opName = L"CanvasOp";
     CustomOperator newOp = Application().GetFactory().CreateObject(opName);
 
     // store operator's CRef in result.
@@ -457,7 +457,7 @@ SICALLBACK FabricCanvasImportGraph_Execute(CRef &in_ctxt)
   _opUserData *pud = _opUserData::GetUserData(op.GetObjectID());
   if (!pud)
   { Application().LogMessage(L"found no valid user data in custom operator \"" + operatorName + L"\"", siErrorMsg);
-    Application().LogMessage(L"... operator perhaps not dfgSoftimageOp?", siErrorMsg);
+    Application().LogMessage(L"... operator perhaps not CanvasOp?", siErrorMsg);
     return CStatus::OK; }
 
   // get the current port mapping.
@@ -568,7 +568,7 @@ SICALLBACK FabricCanvasImportGraph_Execute(CRef &in_ctxt)
       args.Add(CString(json.c_str()));
       args.Add(true);
       args.Add(op.GetFullName());
-      if (Application().ExecuteCommand(L"FabricCanvasSoftimageOpApply", args, CValue()) == CStatus::OK)
+      if (Application().ExecuteCommand(L"FabricCanvasOpApply", args, CValue()) == CStatus::OK)
       {
         // store return value in context, "true" meaning that the operator was recreated.
         ctxt.PutAttribute(L"ReturnValue", true);
@@ -643,7 +643,7 @@ SICALLBACK FabricCanvasExportGraph_Execute(CRef &in_ctxt)
   _opUserData *pud = _opUserData::GetUserData(op.GetObjectID());
   if (!pud)
   { Application().LogMessage(L"found no valid user data in custom operator \"" + operatorName + L"\"", siErrorMsg);
-    Application().LogMessage(L"... operator perhaps not dfgSoftimageOp?", siErrorMsg);
+    Application().LogMessage(L"... operator perhaps not CanvasOp?", siErrorMsg);
     return CStatus::OK; }
 
   // check if base interface exists.

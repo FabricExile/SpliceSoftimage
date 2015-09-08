@@ -83,7 +83,7 @@ SICALLBACK FabricDFG_Menu_CreateDFGOp(XSI::CRef&)
     args.Add(targetObjects[i]);
     args.Add(L"");
     args.Add(true);
-    Application().ExecuteCommand(L"FabricCanvasSoftimageOpApply", args, CValue());
+    Application().ExecuteCommand(L"FabricCanvasOpApply", args, CValue());
   }
 
   // done.
@@ -109,7 +109,7 @@ SICALLBACK FabricDFG_Menu_CreateNullWithOp(XSI::CRef&)
   args.Add(obj.GetFullName());
   args.Add(L"");
   args.Add(true);
-  Application().ExecuteCommand(L"FabricCanvasSoftimageOpApply", args, CValue());
+  Application().ExecuteCommand(L"FabricCanvasOpApply", args, CValue());
 
   // done.
   dfgTools::ClearUndoHistory();
@@ -134,7 +134,7 @@ SICALLBACK FabricDFG_Menu_CreatePolymeshWithOp(XSI::CRef&)
   args.Add(obj.GetFullName());
   args.Add(L"");
   args.Add(true);
-  Application().ExecuteCommand(L"FabricCanvasSoftimageOpApply", args, CValue());
+  Application().ExecuteCommand(L"FabricCanvasOpApply", args, CValue());
 
   // done.
   dfgTools::ClearUndoHistory();
@@ -186,7 +186,7 @@ SICALLBACK FabricDFG_Menu_ImportGraph(XSI::CRef&)
     { toolkit.MsgBox(L"The selection cannot be used for this operation.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
       return CStatus::OK; }
     CRefArray opRefs;
-    int numOps = dfgTools::GetRefsAtOps(obj, CString(L"dfgSoftimageOp"), opRefs);
+    int numOps = dfgTools::GetRefsAtOps(obj, CString(L"CanvasOp"), opRefs);
     if (numOps < 1)
     { toolkit.MsgBox(L"No valid custom operator found to perform this operation.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
       return CStatus::OK; }
@@ -251,7 +251,7 @@ SICALLBACK FabricDFG_Menu_ExportGraph(XSI::CRef&)
     { toolkit.MsgBox(L"The selection cannot be used for this operation.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
       return CStatus::OK; }
     CRefArray opRefs;
-    int numOps = dfgTools::GetRefsAtOps(obj, CString(L"dfgSoftimageOp"), opRefs);
+    int numOps = dfgTools::GetRefsAtOps(obj, CString(L"CanvasOp"), opRefs);
     if (numOps < 1)
     { toolkit.MsgBox(L"No valid custom operator found to perform this operation.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
       return CStatus::OK; }

@@ -119,15 +119,15 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
   // register the new Fabric Canvas.
   {
     // operators.
-    in_reg.RegisterOperator(L"dfgSoftimageOp");
+    in_reg.RegisterOperator(L"CanvasOp");
 
     // commands.
     CString cmdName;
-    cmdName = L"FabricCanvasSoftimageOpApply"; in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
-    cmdName = L"FabricCanvasImportGraph";      in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
-    cmdName = L"FabricCanvasExportGraph";      in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
-    cmdName = L"FabricCanvasSelectConnected";  in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
-    cmdName = L"FabricCanvasLogStatus";        in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
+    cmdName = L"FabricCanvasOpApply";           in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
+    cmdName = L"FabricCanvasImportGraph";       in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
+    cmdName = L"FabricCanvasExportGraph";       in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
+    cmdName = L"FabricCanvasSelectConnected";   in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
+    cmdName = L"FabricCanvasLogStatus";         in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
 
     // commands for DFGUICmdHandler.
     REGISTER_DFGUICMD( in_reg, AddBackDrop );
@@ -216,7 +216,7 @@ CStatus helpFnct_siEventOpenSave(CRef &ctxt, int openSave)
     _opUserData *pud = it->second;
     if (!pud) continue;
 
-    // get the object ID of the dfgSoftimageOp operator to which the user data belongs to.
+    // get the object ID of the CanvasOp operator to which the user data belongs to.
     unsigned int opObjID = it->first;
 
     // check if the user data has a base interface.
@@ -233,14 +233,14 @@ CStatus helpFnct_siEventOpenSave(CRef &ctxt, int openSave)
     if (!op.IsValid())
     { Application().LogMessage(L"CustomOperator op(pItem.GetRef()) failed", siWarningMsg);
       continue; }
-    if (op.GetType() != L"dfgSoftimageOp")
-    { Application().LogMessage(L"op.GetType() returned \"" + op.GetType() + L"\" instead of \"dfgSoftimageOp\"", siWarningMsg);
+    if (op.GetType() != L"CanvasOp")
+    { Application().LogMessage(L"op.GetType() returned \"" + op.GetType() + L"\" instead of \"CanvasOp\"", siWarningMsg);
       continue; }
 
     // store JSON in parameter persistenceData.
     if (openSave == 0)
     {
-      Application().LogMessage(L"storing DFG JSON for dfgSoftimageOp(opObjID = " + CString(op.GetObjectID()) + L")");
+      Application().LogMessage(L"storing DFG JSON for CanvasOp(opObjID = " + CString(op.GetObjectID()) + L")");
       try
       {
         CString dfgJSON = pud->GetBaseInterface()->getJSON().c_str();
@@ -258,7 +258,7 @@ CStatus helpFnct_siEventOpenSave(CRef &ctxt, int openSave)
     // set DFG JSON from parameter persistenceData.
     else if (openSave == 1)
     {
-      Application().LogMessage(L"setting DFG JSON from dfgSoftimageOp(opObjID = " + CString(op.GetObjectID()) + L")");
+      Application().LogMessage(L"setting DFG JSON from CanvasOp(opObjID = " + CString(op.GetObjectID()) + L")");
       try
       {
         CString dfgJSON = op.GetParameterValue(L"persistenceData");

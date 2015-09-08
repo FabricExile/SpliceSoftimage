@@ -93,8 +93,8 @@ struct _portMapping
   }
 };
 
-// _____________________________________
-// dfgSoftimageOp's user data structure.
+// _______________________________
+// CanvasOp's user data structure.
 struct _opUserData
 {
  private:
@@ -110,10 +110,10 @@ struct _opUserData
   // this is used by the functions that create new operators.
   // note: we need to make this a global thing, because we cannot access
   //       things such as the user data and the operator in the
-  //       dfgSoftimageOp_Define() function.
+  //       CanvasOp_Define() function.
   static std::vector<_portMapping> s_newOp_portmap;
 
-  // this is used by the command FabricCanvasSoftimageOpApply to store
+  // this is used by the command FabricCanvasOpApply to store
   // the expressions of parameters.
   // note: this is a workaround to transfer expressions when
   //       recreating an operator.
