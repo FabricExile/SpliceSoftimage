@@ -1006,7 +1006,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
       CValueArray args;
       args.Add(op.GetUniqueName());
       args.Add(fileName);
-      if (Application().ExecuteCommand(L"FabricCanvasImportJSON", args, opWasRecreated) == CStatus::OK)
+      if (Application().ExecuteCommand(L"FabricCanvasImportGraph", args, opWasRecreated) == CStatus::OK)
       {
         if (!opWasRecreated)
         {
@@ -1029,7 +1029,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
       CValueArray args;
       args.Add(op.GetUniqueName());
       args.Add(fileName);
-      Application().ExecuteCommand(L"FabricCanvasExportJSON", args, CValue());
+      Application().ExecuteCommand(L"FabricCanvasExportGraph", args, CValue());
     }
     else if (btnName == L"BtnUpdatePPG")
     {
@@ -1133,7 +1133,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
       CValueArray args;
       args.Add(op.GetUniqueName());
       args.Add(L"console");
-      Application().ExecuteCommand(L"FabricCanvasExportJSON", args, CValue());
+      Application().ExecuteCommand(L"FabricCanvasExportGraph", args, CValue());
     }
     else if (btnName == L"BtnDebug")
     {

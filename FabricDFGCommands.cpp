@@ -402,10 +402,10 @@ SICALLBACK FabricCanvasSoftimageOpApply_Execute(CRef &in_ctxt)
 }
 
 // ---
-// command "FabricCanvasImportJSON".
+// command "FabricCanvasImportGraph".
 // ---
 
-SICALLBACK FabricCanvasImportJSON_Init(CRef &in_ctxt)
+SICALLBACK FabricCanvasImportGraph_Init(CRef &in_ctxt)
 {
   Context ctxt(in_ctxt);
   Command oCmd;
@@ -422,14 +422,14 @@ SICALLBACK FabricCanvasImportJSON_Init(CRef &in_ctxt)
   return CStatus::OK;
 }
 
-SICALLBACK FabricCanvasImportJSON_Execute(CRef &in_ctxt)
+SICALLBACK FabricCanvasImportGraph_Execute(CRef &in_ctxt)
 {
   // init.
   Context ctxt(in_ctxt);
   ctxt.PutAttribute(L"ReturnValue", false); // init return value.
   CValueArray args = ctxt.GetAttribute(L"Arguments");
   if (args.GetCount() < 2 || CString(args[0]).IsEmpty())
-  { Application().LogMessage(L"import json failed: empty or missing argument(s)", siErrorMsg);
+  { Application().LogMessage(L"import graph failed: empty or missing argument(s)", siErrorMsg);
     return CStatus::OK; }
   CString operatorName          ( args[0] );
   CString filePath              = args[1];
@@ -587,10 +587,10 @@ SICALLBACK FabricCanvasImportJSON_Execute(CRef &in_ctxt)
 }
 
 // ---
-// command "FabricCanvasExportJSON".
+// command "FabricCanvasExportGraph".
 // ---
 
-SICALLBACK FabricCanvasExportJSON_Init(CRef &in_ctxt)
+SICALLBACK FabricCanvasExportGraph_Init(CRef &in_ctxt)
 {
   Context ctxt(in_ctxt);
   Command oCmd;
@@ -607,20 +607,20 @@ SICALLBACK FabricCanvasExportJSON_Init(CRef &in_ctxt)
   return CStatus::OK;
 }
 
-SICALLBACK FabricCanvasExportJSON_Execute(CRef &in_ctxt)
+SICALLBACK FabricCanvasExportGraph_Execute(CRef &in_ctxt)
 {
   // init.
   Context ctxt(in_ctxt);
   CValueArray args = ctxt.GetAttribute(L"Arguments");
   if (args.GetCount() < 2 || CString(args[0]).IsEmpty())
-  { Application().LogMessage(L"export json failed: empty or missing argument(s)", siErrorMsg);
+  { Application().LogMessage(L"export graph failed: empty or missing argument(s)", siErrorMsg);
     return CStatus::OK; }
   CString operatorName(args[0]);
   CString filePath = args[1];
   const bool onlyLog = filePath.IsEqualNoCase(L"console");
 
   // log.
-  if (onlyLog)  Application().LogMessage(L"logging JSON of \"" + operatorName + L"\".", siVerboseMsg);
+  if (onlyLog)  Application().LogMessage(L"logging graph of \"" + operatorName + L"\".", siVerboseMsg);
   else          Application().LogMessage(L"exporting \"" + operatorName + L"\" as JSON file \"" + filePath + L"\"", siVerboseMsg);
 
   // set ref at operator.

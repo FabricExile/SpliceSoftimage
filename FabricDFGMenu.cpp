@@ -24,8 +24,8 @@ XSIPLUGINCALLBACK CStatus FabricDFG_Init( CRef &in_ctxt )
   menu.AddCallbackItem("Create Null with Graph",              "FabricDFG_Menu_CreateNullWithOp",      item);
   menu.AddCallbackItem("Create Polymesh with Graph",          "FabricDFG_Menu_CreatePolymeshWithOp",  item);
   menu.AddSeparatorItem();
-  menu.AddCallbackItem("Load Graph",                          "FabricDFG_Menu_ImportJSON",            item);
-  menu.AddCallbackItem("Save Graph",                          "FabricDFG_Menu_ExportJSON",            item);
+  menu.AddCallbackItem("Load Graph",                          "FabricDFG_Menu_ImportGraph",           item);
+  menu.AddCallbackItem("Save Graph",                          "FabricDFG_Menu_ExportGraph",           item);
   menu.AddSeparatorItem();
   menu.AddCallbackItem("Online Help",                         "FabricDFG_Menu_OnlineHelp",            item);
   menu.AddCallbackItem("Log Status",                          "FabricDFG_Menu_LogStatus",             item);
@@ -151,11 +151,11 @@ SICALLBACK FabricDFG_Menu_OnlineHelp(XSI::CRef&)
   return CStatus::OK;
 }
 
-SICALLBACK FabricDFG_Menu_ImportJSON(XSI::CRef&)
+SICALLBACK FabricDFG_Menu_ImportGraph(XSI::CRef&)
 {
   LONG ret;
   UIToolkit toolkit = Application().GetUIToolkit();
-  CString msgBoxtitle = L"Import JSON";
+  CString msgBoxtitle = L"Import graph";
 
   // get/check current selection.
   CRef selRef;
@@ -209,18 +209,18 @@ SICALLBACK FabricDFG_Menu_ImportJSON(XSI::CRef&)
   CValueArray args;
   args.Add(op.GetUniqueName());
   args.Add(fileName);
-  Application().ExecuteCommand(L"FabricCanvasImportJSON", args, CValue());
+  Application().ExecuteCommand(L"FabricCanvasImportGraph", args, CValue());
 
   // done.
   dfgTools::ClearUndoHistory();
   return CStatus::OK;
 }
 
-SICALLBACK FabricDFG_Menu_ExportJSON(XSI::CRef&)
+SICALLBACK FabricDFG_Menu_ExportGraph(XSI::CRef&)
 {
   LONG ret;
   UIToolkit toolkit = Application().GetUIToolkit();
-  CString msgBoxtitle = L"Export JSON";
+  CString msgBoxtitle = L"Export Graph";
 
   // get/check current selection.
   CRef selRef;
@@ -274,7 +274,7 @@ SICALLBACK FabricDFG_Menu_ExportJSON(XSI::CRef&)
   CValueArray args;
   args.Add(op.GetUniqueName());
   args.Add(fileName);
-  Application().ExecuteCommand(L"FabricCanvasExportJSON", args, CValue());
+  Application().ExecuteCommand(L"FabricCanvasExportGraph", args, CValue());
 
   // done.
   return CStatus::OK;
