@@ -155,6 +155,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     REGISTER_DFGUICMD( in_reg, SetNodeTitle );
     REGISTER_DFGUICMD( in_reg, SetPortDefaultValue );
     REGISTER_DFGUICMD( in_reg, SetRefVarPath );
+    REGISTER_DFGUICMD( in_reg, ReorderPorts );
 
     // menu.
     in_reg.RegisterMenu(siMenuMainTopLevelID,       L"Fabric:DFG", true, true);
