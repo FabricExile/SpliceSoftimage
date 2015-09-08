@@ -69,7 +69,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
   in_reg.PutName  (L"Fabric Engine Plugin");
   in_reg.PutVersion(FabricCore::GetVersionMaj(), FabricCore::GetVersionMin());
 
-  // register the (old) Fabric Splice.
+  // register the legacy Fabric Splice.
   {
     // rendering.
     in_reg.RegisterDisplayCallback(L"SpliceRenderPass");
@@ -100,14 +100,14 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     in_reg.RegisterEvent(L"FabricSpliceCloseScene",     siOnCloseScene);
     in_reg.RegisterEvent(L"FabricSpliceOpenBeginScene", siOnBeginSceneOpen);
     in_reg.RegisterEvent(L"FabricSpliceOpenEndScene",   siOnEndSceneOpen);
-    in_reg.RegisterEvent(L"FabricSpliceSaveScene",      siOnBeginSceneSave);    //
-    in_reg.RegisterEvent(L"FabricSpliceSaveAsScene",    siOnBeginSceneSaveAs);  //
+    in_reg.RegisterEvent(L"FabricSpliceSaveScene",      siOnBeginSceneSave);
+    in_reg.RegisterEvent(L"FabricSpliceSaveAsScene",    siOnBeginSceneSaveAs);
     in_reg.RegisterEvent(L"FabricSpliceTerminate",      siOnTerminate);
-    in_reg.RegisterEvent(L"FabricSpliceSaveScene2",     siOnBeginSceneSave2);   //
-    in_reg.RegisterEvent(L"FabricSpliceImport",         siOnEndFileImport);     //
-    in_reg.RegisterEvent(L"FabricSpliceBeginExport",    siOnBeginFileExport);   //
-    in_reg.RegisterEvent(L"FabricSpliceEndExport",      siOnEndFileExport);     //
-    in_reg.RegisterEvent(L"FabricSpliceValueChange",    siOnValueChange);       //
+    in_reg.RegisterEvent(L"FabricSpliceSaveScene2",     siOnBeginSceneSave2);
+    in_reg.RegisterEvent(L"FabricSpliceImport",         siOnEndFileImport);
+    in_reg.RegisterEvent(L"FabricSpliceBeginExport",    siOnBeginFileExport);
+    in_reg.RegisterEvent(L"FabricSpliceEndExport",      siOnEndFileExport);
+    in_reg.RegisterEvent(L"FabricSpliceValueChange",    siOnValueChange);
 
     // ice nodes.
     Register_spliceGetData(in_reg);
@@ -116,7 +116,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
   // array of custom command names.
   CStringArray ccnames;
 
-  // register the (new) Fabric DFG/Canvas.
+  // register the new Fabric Canvas.
   {
     // operators.
     in_reg.RegisterOperator(L"dfgSoftimageOp");

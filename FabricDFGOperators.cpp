@@ -622,10 +622,10 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
 
         oLayout.AddGroup(L"File");
           oLayout.AddRow();
-            pi = oLayout.AddButton(L"BtnImportJSON", L"Import JSON");
+            pi = oLayout.AddButton(L"BtnImportGraph", L"Import Graph");
             pi.PutAttribute(siUICX, btnTx);
             pi.PutAttribute(siUICY, btnTy);
-            pi = oLayout.AddButton(L"BtnExportJSON", L"Export JSON");
+            pi = oLayout.AddButton(L"BtnExportGraph", L"Export Graph");
             pi.PutAttribute(siUICX, btnTx);
             pi.PutAttribute(siUICY, btnTy);
           oLayout.EndRow();
@@ -634,10 +634,10 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
 
         oLayout.AddGroup(L"Miscellaneous");
           oLayout.AddRow();
-            pi = oLayout.AddButton(L"BtnLogDFGInfo", L"Log DFG Info");
+            pi = oLayout.AddButton(L"BtnLogGraphInfo", L"Log Graph Info");
             pi.PutAttribute(siUICX, btnTx);
             pi.PutAttribute(siUICY, btnTy);
-            pi = oLayout.AddButton(L"BtnLogDFGJSON", L"Log DFG JSON");
+            pi = oLayout.AddButton(L"BtnLogGraphFile", L"Log Graph File");
             pi.PutAttribute(siUICX, btnTx);
             pi.PutAttribute(siUICY, btnTy);
           oLayout.EndRow();
@@ -993,7 +993,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
       args.Add((LONG)+1);
       Application().ExecuteCommand(L"FabricCanvasSelectConnected", args, CValue());
     }
-    else if (btnName == L"BtnImportJSON")
+    else if (btnName == L"BtnImportGraph")
     {
       // open file browser.
       CString fileName;
@@ -1017,7 +1017,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
         dfgTools::ClearUndoHistory();
       }
     }
-    else if (btnName == L"BtnExportJSON")
+    else if (btnName == L"BtnExportGraph")
     {
       // open file browser.
       CString fileName;
@@ -1037,7 +1037,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
       dfgSoftimageOp_DefineLayout(oLayout, op);
       ctxt.PutAttribute(L"Refresh", true);
     }
-    else if (btnName == L"BtnLogDFGInfo")
+    else if (btnName == L"BtnLogGraphInfo")
     {
       try
       {
@@ -1052,7 +1052,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
 
         // log (DFG ports).
         FabricCore::DFGExec exec = pud->GetBaseInterface()->getBinding().getExec();
-        Application().LogMessage(L"    amount of DFG ports: " + CString((LONG)exec.getExecPortCount()), siInfoMsg);
+        Application().LogMessage(L"    amount of graph ports: " + CString((LONG)exec.getExecPortCount()), siInfoMsg);
         for (int i=0;i<exec.getExecPortCount();i++)
         {
           char s[16];
@@ -1128,7 +1128,7 @@ XSIPLUGINCALLBACK CStatus dfgSoftimageOp_PPGEvent(const CRef &in_ctxt)
         feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
       }
     }
-    else if (btnName == L"BtnLogDFGJSON")
+    else if (btnName == L"BtnLogGraphFile")
     {
       CValueArray args;
       args.Add(op.GetUniqueName());
