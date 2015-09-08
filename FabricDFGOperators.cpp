@@ -658,7 +658,7 @@ void dfgSoftimageOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
 			lv_enum.Add( 0 );
 			lv_enum.Add( L"execute graph only if necessary" );
 			lv_enum.Add( 1 );
-			oLayout.AddEnumControl(L"graphExecMode", lv_enum, L"Graph Exec Modo", siControlCombo);
+			oLayout.AddEnumControl(L"graphExecMode", lv_enum, L"Graph Exec Mode", siControlCombo);
       oLayout.AddItem(L"persistenceData",     L"persistenceData");
       oLayout.AddItem(L"mute",                L"Mute");
       oLayout.AddItem(L"alwaysevaluate",      L"Always Evaluate");
