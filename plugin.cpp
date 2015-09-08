@@ -92,9 +92,6 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     // tools.
     in_reg.RegisterTool(L"fabricSpliceTool");
 
-    // menu.
-    in_reg.RegisterMenu(siMenuMainTopLevelID, "Fabric:Splice", true, true);
-
     // events.
     in_reg.RegisterEvent(L"FabricSpliceNewScene",       siOnEndNewScene);
     in_reg.RegisterEvent(L"FabricSpliceCloseScene",     siOnCloseScene);
@@ -158,7 +155,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     REGISTER_DFGUICMD( in_reg, ReorderPorts );
 
     // menu.
-    in_reg.RegisterMenu(siMenuMainTopLevelID,       L"Fabric:DFG", true, true);
+    in_reg.RegisterMenu(siMenuMainTopLevelID,       L"Fabric", true, true);
 
     // events.
     in_reg.RegisterEvent(L"FabricCanvasOnStartup",    siOnStartup);

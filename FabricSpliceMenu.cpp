@@ -18,24 +18,6 @@
 
 using namespace XSI;
 
-XSIPLUGINCALLBACK CStatus FabricSplice_Init( CRef& in_ctxt )
-{
-  
-  Menu menu = Context(in_ctxt).GetSource();
-  MenuItem item;
-
-  menu.AddCallbackItem("Splice Editor", "FabricSplice_Menu_Editor", item);
-  menu.AddCallbackItem("Toggle Renderer", "FabricSplice_Menu_Renderer", item);
-  menu.AddCallbackItem("Load Splice Preset", "FabricSplice_Menu_LoadSplice", item);
-  menu.AddSeparatorItem();
-  menu.AddCallbackItem("Toggle Manipulation", "FabricSplice_Menu_Manipulation", item);
-  menu.AddSeparatorItem();
-  menu.AddCallbackItem("Online Help", "FabricSplice_Menu_OnlineHelp", item);
-  menu.AddCallbackItem("ThirdParty Licenses", "FabricSplice_Menu_ThirdPartyLicenses", item);
-
-  return CStatus::OK;
-}
-
 SICALLBACK FabricSplice_Menu_LoadSplice( XSI::CRef& )
 {
   xsiInitializeSplice();
@@ -113,17 +95,6 @@ SICALLBACK FabricSplice_Menu_Manipulation( XSI::CRef& )
   CValue returnVal;
   CValueArray args(0);
   Application().ExecuteScriptCode(L"Application.fabricSpliceTool()", L"Python");
-  return true;
-}
-
-SICALLBACK FabricSplice_Menu_OnlineHelp( XSI::CRef& )
-{
-  CValue returnVal;
-  CValueArray args(3);
-  args[0] = "http://docs.fabric-engine.com/FabricEngine/latest/HTML/Splice/Softimage/index.html";
-  args[1] = true;
-  args[2] = (LONG)1l;
-  Application().ExecuteCommand(L"OpenNetView", args, returnVal);
   return true;
 }
 

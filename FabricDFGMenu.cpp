@@ -14,26 +14,34 @@
 
 using namespace XSI;
 
-XSIPLUGINCALLBACK CStatus FabricDFG_Init( CRef &in_ctxt )
+XSIPLUGINCALLBACK CStatus Fabric_Init( CRef &in_ctxt )
 {
   Menu menu = Context(in_ctxt).GetSource();
   MenuItem item;
 
-  menu.AddCallbackItem("Create Graph",                        "FabricDFG_Menu_CreateDFGOp",           item);
+  menu.AddCallbackItem("Create Graph",                        "FabricCanvas_Menu_CreateDFGOp",            item);
   menu.AddSeparatorItem();
-  menu.AddCallbackItem("Create Null with Graph",              "FabricDFG_Menu_CreateNullWithOp",      item);
-  menu.AddCallbackItem("Create Polymesh with Graph",          "FabricDFG_Menu_CreatePolymeshWithOp",  item);
+  menu.AddCallbackItem("Create Null with Graph",              "FabricCanvas_Menu_CreateNullWithOp",       item);
+  menu.AddCallbackItem("Create Polymesh with Graph",          "FabricCanvas_Menu_CreatePolymeshWithOp",   item);
   menu.AddSeparatorItem();
-  menu.AddCallbackItem("Load Graph",                          "FabricDFG_Menu_ImportGraph",           item);
-  menu.AddCallbackItem("Save Graph",                          "FabricDFG_Menu_ExportGraph",           item);
+  menu.AddCallbackItem("Load Graph",                          "FabricCanvas_Menu_ImportGraph",            item);
+  menu.AddCallbackItem("Save Graph",                          "FabricCanvas_Menu_ExportGraph",            item);
   menu.AddSeparatorItem();
-  menu.AddCallbackItem("Online Help",                         "FabricDFG_Menu_OnlineHelp",            item);
-  menu.AddCallbackItem("Log Status",                          "FabricDFG_Menu_LogStatus",             item);
+  menu.AddCallbackItem("Splice Editor (legacy)",              "FabricSplice_Menu_Editor",                 item);
+  menu.AddCallbackItem("Load Splice Preset (legacy)",         "FabricSplice_Menu_LoadSplice",             item);
+  menu.AddSeparatorItem();
+  menu.AddCallbackItem("Toggle Manipulation",                 "FabricSplice_Menu_Manipulation",           item);
+  menu.AddSeparatorItem();
+  menu.AddCallbackItem("Toggle Renderer",                     "FabricSplice_Menu_Renderer",               item);
+  menu.AddSeparatorItem();
+  menu.AddCallbackItem("Online Help",                         "FabricCanvas_Menu_OnlineHelp",             item);
+  menu.AddCallbackItem("ThirdParty Licenses",                 "FabricSplice_Menu_ThirdPartyLicenses",     item);
+  menu.AddCallbackItem("Log Status",                          "FabricCanvas_Menu_LogStatus",              item);
 
   return CStatus::OK;
 }
 
-SICALLBACK FabricDFG_Menu_CreateDFGOp(XSI::CRef&)
+SICALLBACK FabricCanvas_Menu_CreateDFGOp(XSI::CRef&)
 {
   // init and fill array of target objects.
   CStringArray targetObjects;
@@ -91,7 +99,7 @@ SICALLBACK FabricDFG_Menu_CreateDFGOp(XSI::CRef&)
   return CStatus::OK;
 }
 
-SICALLBACK FabricDFG_Menu_CreateNullWithOp(XSI::CRef&)
+SICALLBACK FabricCanvas_Menu_CreateNullWithOp(XSI::CRef&)
 {
   // create a null.
   Null obj;
@@ -116,7 +124,7 @@ SICALLBACK FabricDFG_Menu_CreateNullWithOp(XSI::CRef&)
   return CStatus::OK;
 }
 
-SICALLBACK FabricDFG_Menu_CreatePolymeshWithOp(XSI::CRef&)
+SICALLBACK FabricCanvas_Menu_CreatePolymeshWithOp(XSI::CRef&)
 {
   // create an empty polygon mesh.
   X3DObject obj;
@@ -141,7 +149,7 @@ SICALLBACK FabricDFG_Menu_CreatePolymeshWithOp(XSI::CRef&)
   return CStatus::OK;
 }
 
-SICALLBACK FabricDFG_Menu_OnlineHelp(XSI::CRef&)
+SICALLBACK FabricCanvas_Menu_OnlineHelp(XSI::CRef&)
 {
   CValueArray args;
   args.Add(L"http://docs.fabric-engine.com/FabricEngine/latest/HTML/");
@@ -151,7 +159,7 @@ SICALLBACK FabricDFG_Menu_OnlineHelp(XSI::CRef&)
   return CStatus::OK;
 }
 
-SICALLBACK FabricDFG_Menu_ImportGraph(XSI::CRef&)
+SICALLBACK FabricCanvas_Menu_ImportGraph(XSI::CRef&)
 {
   LONG ret;
   UIToolkit toolkit = Application().GetUIToolkit();
@@ -216,7 +224,7 @@ SICALLBACK FabricDFG_Menu_ImportGraph(XSI::CRef&)
   return CStatus::OK;
 }
 
-SICALLBACK FabricDFG_Menu_ExportGraph(XSI::CRef&)
+SICALLBACK FabricCanvas_Menu_ExportGraph(XSI::CRef&)
 {
   LONG ret;
   UIToolkit toolkit = Application().GetUIToolkit();
@@ -280,7 +288,7 @@ SICALLBACK FabricDFG_Menu_ExportGraph(XSI::CRef&)
   return CStatus::OK;
 }
 
-SICALLBACK FabricDFG_Menu_LogStatus(XSI::CRef&)
+SICALLBACK FabricCanvas_Menu_LogStatus(XSI::CRef&)
 {
   CValueArray args;
   Application().ExecuteCommand(L"FabricCanvasLogStatus", args, CValue());
