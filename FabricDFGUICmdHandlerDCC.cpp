@@ -251,7 +251,8 @@ void DFGUICmdHandlerDCC::dfgDoRemoveNodes(
   args.push_back(execPath);
   args.push_back(EncodeNames(nodeNames));
 
-  execCmd(cmdName, args, std::string());
+  std::string output;
+  execCmd(cmdName, args, output);
 }
 
 void DFGUICmdHandlerDCC::dfgDoConnect(
@@ -270,7 +271,8 @@ void DFGUICmdHandlerDCC::dfgDoConnect(
   args.push_back(srcPort);
   args.push_back(dstPort);
 
-  execCmd(cmdName, args, std::string());
+  std::string output;
+  execCmd(cmdName, args, output);
 }
 
 void DFGUICmdHandlerDCC::dfgDoDisconnect(
@@ -289,7 +291,8 @@ void DFGUICmdHandlerDCC::dfgDoDisconnect(
   args.push_back(srcPort);
   args.push_back(dstPort);
 
-  execCmd(cmdName, args, std::string());
+  std::string output;
+  execCmd(cmdName, args, output);
 }
 
 std::string DFGUICmdHandlerDCC::dfgDoAddGraph(
@@ -480,7 +483,8 @@ void DFGUICmdHandlerDCC::dfgDoRemovePort(
   args.push_back(execPath);
   args.push_back(portName);
 
-  execCmd(cmdName, args, std::string());
+  std::string output;
+  execCmd(cmdName, args, output);
 }
 
 void DFGUICmdHandlerDCC::dfgDoMoveNodes(
@@ -500,7 +504,8 @@ void DFGUICmdHandlerDCC::dfgDoMoveNodes(
   args.push_back(EncodeXPoss(poss));
   args.push_back(EncodeYPoss(poss));
 
-  execCmd(cmdName, args, std::string());
+  std::string output;
+  execCmd(cmdName, args, output);
 }
 
 void DFGUICmdHandlerDCC::dfgDoResizeBackDrop(
@@ -521,7 +526,8 @@ void DFGUICmdHandlerDCC::dfgDoResizeBackDrop(
   EncodePosition(pos, args);
   EncodeSize(size, args);
 
-  execCmd(cmdName, args, std::string());
+  std::string output;
+  execCmd(cmdName, args, output);
 }
 
 std::string DFGUICmdHandlerDCC::dfgDoImplodeNodes(
@@ -588,7 +594,8 @@ void DFGUICmdHandlerDCC::dfgDoAddBackDrop(
   args.push_back(title);
   EncodePosition(pos, args);
 
-  execCmd(cmdName, args, std::string());
+  std::string output;
+  execCmd(cmdName, args, output);
 }
 
 void DFGUICmdHandlerDCC::dfgDoSetNodeTitle(
@@ -607,7 +614,8 @@ void DFGUICmdHandlerDCC::dfgDoSetNodeTitle(
   args.push_back(nodeName);
   args.push_back(title);
 
-  execCmd(cmdName, args, std::string());
+  std::string output;
+  execCmd(cmdName, args, output);
 }
 
 void DFGUICmdHandlerDCC::dfgDoSetNodeComment(
@@ -626,7 +634,8 @@ void DFGUICmdHandlerDCC::dfgDoSetNodeComment(
   args.push_back(nodeName);
   args.push_back(comment);
 
-  execCmd(cmdName, args, std::string());
+  std::string output;
+  execCmd(cmdName, args, output);
 }
 
 void DFGUICmdHandlerDCC::dfgDoSetCode(
@@ -643,7 +652,8 @@ void DFGUICmdHandlerDCC::dfgDoSetCode(
   args.push_back(execPath);
   args.push_back(code);
 
-  execCmd(cmdName, args, std::string());
+  std::string output;
+  execCmd(cmdName, args, output);
 }
 
 std::string DFGUICmdHandlerDCC::dfgDoRenamePort(
@@ -709,7 +719,8 @@ void DFGUICmdHandlerDCC::dfgDoSetArgType(
   args.push_back(argName);
   args.push_back(typeName);
 
-  execCmd(cmdName, args, std::string());
+  std::string output;
+  execCmd(cmdName, args, output);
 }
 
 void DFGUICmdHandlerDCC::dfgDoSetArgValue(
@@ -726,7 +737,8 @@ void DFGUICmdHandlerDCC::dfgDoSetArgValue(
   args.push_back(value.getTypeNameCStr());
   args.push_back(value.getJSON().getStringCString());
 
-  execCmd(cmdName, args, std::string());
+  std::string output;
+  execCmd(cmdName, args, output);
 }
 
 void DFGUICmdHandlerDCC::dfgDoSetPortDefaultValue(
@@ -746,7 +758,8 @@ void DFGUICmdHandlerDCC::dfgDoSetPortDefaultValue(
   args.push_back(value.getTypeNameCStr());
   args.push_back(value.getJSON().getStringCString());
 
-  execCmd(cmdName, args, std::string());
+  std::string output;
+  execCmd(cmdName, args, output);
 }
 
 void DFGUICmdHandlerDCC::dfgDoSetRefVarPath(
@@ -765,7 +778,8 @@ void DFGUICmdHandlerDCC::dfgDoSetRefVarPath(
   args.push_back(refName);
   args.push_back(varPath);
 
-  execCmd(cmdName, args, std::string());
+  std::string output;
+  execCmd(cmdName, args, output);
 }
 
 void DFGUICmdHandlerDCC::dfgDoReorderPorts(
@@ -781,17 +795,20 @@ void DFGUICmdHandlerDCC::dfgDoReorderPorts(
   args.push_back(getDCCObjectNameFromBinding(binding));
   args.push_back(execPath);
 
-  XSI::CString indicesStr = "[";
+  char n[64];
+  std::string indicesStr = "[";
   for(size_t i=0;i<indices.size();i++)
-  { 
+  {
     if(i > 0)
       indicesStr += ", ";
-    indicesStr += XSI::CValue((LONG)indices[i]).GetAsText();
+    sprintf(n, "%d", indices[i]);
+    indicesStr += n;
   }
   indicesStr += "]";
-  args.push_back(indicesStr.GetAsciiString());
+  args.push_back(indicesStr);
 
-  execCmd(cmdName, args, std::string());
+  std::string output;
+  execCmd(cmdName, args, output);
 }
 
 
