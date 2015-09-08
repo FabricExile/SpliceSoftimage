@@ -772,7 +772,7 @@ void DFGUICmdHandlerDCC::dfgDoReorderPorts(
   FabricCore::DFGBinding const &binding,
   FTL::CStrRef execPath,
   FabricCore::DFGExec const &exec,
-  const std::vector<unsigned int> & indices
+  const std::vector<unsigned int> &indices
   )
 {
   std::string cmdName(FabricUI::DFG::DFGUICmd_ReorderPorts::CmdName());
@@ -3470,8 +3470,8 @@ SICALLBACK FabricCanvasReorderPorts_Init(XSI::CRef &in_ctxt)
   XSI::ArgumentArray oArgs = oCmd.GetArguments();
   oArgs.Add(L"binding",  XSI::CString());
   oArgs.Add(L"execPath", XSI::CString());
-  oArgs.Add(L"refName",  XSI::CString());
-  oArgs.Add(L"varPath",  XSI::CString());
+  oArgs.Add(L"exec",     XSI::CString());
+  oArgs.Add(L"indices",  XSI::CString());
 
   return XSI::CStatus::OK;
 }
