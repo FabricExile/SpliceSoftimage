@@ -251,7 +251,7 @@ SICALLBACK FabricCanvasSoftimageOpApply_Execute(CRef &in_ctxt)
             CStringArray paramNames;
             paramNames.Add(L"FabricActive");
             paramNames.Add(L"verbose");
-            paramNames.Add(L"dfgExecMode");
+            paramNames.Add(L"graphExecMode");
             for (LONG i=0;i<paramNames.GetCount();i++)
             {
               Parameter otherParam = otherOp.GetParameter(paramNames[i]);
