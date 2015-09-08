@@ -45,12 +45,6 @@ class FabricDFGWidget : public DFG::DFGCombinedWidget
     Application().ExecuteCommand(L"Redo", CValueArray(), CValue());
   }
 
-  virtual void onRecompilation()
-  {
-    std::string s = "Recompiling";
-    log(NULL, s.c_str(), s.length());
-  }
-
   static void log(void *userData, const char *message, unsigned int length)
   {
     std::string mess = std::string("[CANVAS] ") + (message ? message : "");
