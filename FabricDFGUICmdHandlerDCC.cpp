@@ -3487,7 +3487,6 @@ SICALLBACK FabricCanvasReorderPorts_Init(XSI::CRef &in_ctxt)
   XSI::ArgumentArray oArgs = oCmd.GetArguments();
   oArgs.Add(L"binding",  XSI::CString());
   oArgs.Add(L"execPath", XSI::CString());
-  oArgs.Add(L"exec",     XSI::CString());
   oArgs.Add(L"indices",  XSI::CString());
 
   return XSI::CStatus::OK;
