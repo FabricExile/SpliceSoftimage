@@ -438,7 +438,8 @@ std::string DFGUICmdHandlerDCC::dfgDoAddPort(
   FTL::CStrRef desiredPortName,
   FabricCore::DFGPortType portType,
   FTL::CStrRef typeSpec,
-  FTL::CStrRef portToConnect
+  FTL::CStrRef portToConnect,
+  FTL::CStrRef metaData
   )
 {
   std::string cmdName(FabricUI::DFG::DFGUICmd_AddPort::CmdName());
@@ -463,6 +464,7 @@ std::string DFGUICmdHandlerDCC::dfgDoAddPort(
   args.push_back(portTypeStr);
   args.push_back(typeSpec);
   args.push_back(portToConnect);
+  args.push_back(metaData);
 
   std::string result;
   execCmd(cmdName, args, result);
@@ -1279,13 +1281,18 @@ FabricUI::DFG::DFGUICmd_AddPort *DFGUICmdHandlerDCC::createAndExecuteDFGCommand_
     if (!DecodeString(args, ai, portToConnectWith))
       return cmd;
 
+    std::string metaData;
+    if (!DecodeString(args, ai, metaData))
+      return cmd;
+
     cmd = new FabricUI::DFG::DFGUICmd_AddPort(binding,
                                               execPath.c_str(),
                                               exec,
                                               desiredPortName.c_str(),
                                               portType,
                                               typeSpec.c_str(),
-                                              portToConnectWith.c_str());
+                                              portToConnectWith.c_str(),
+                                              metaData.c_str());
     try
     {
       cmd->doit();
@@ -2555,6 +2562,7 @@ SICALLBACK FabricCanvasAddPort_Init(XSI::CRef &in_ctxt)
   oArgs.Add(L"portType",        XSI::CString());
   oArgs.Add(L"typeSpec",        XSI::CString());
   oArgs.Add(L"portToConnect",   XSI::CString());
+  oArgs.Add(L"metaData",        XSI::CString());
 
   return XSI::CStatus::OK;
 }
