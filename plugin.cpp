@@ -136,6 +136,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     REGISTER_DFGUICMD( in_reg, AddVar );
     REGISTER_DFGUICMD( in_reg, Connect );
     REGISTER_DFGUICMD( in_reg, Disconnect );
+    REGISTER_DFGUICMD( in_reg, EditPort );
     REGISTER_DFGUICMD( in_reg, ExplodeNode );
     REGISTER_DFGUICMD( in_reg, ImplodeNodes );
     REGISTER_DFGUICMD( in_reg, InstPreset );
@@ -148,6 +149,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     REGISTER_DFGUICMD( in_reg, SetArgType );
     REGISTER_DFGUICMD( in_reg, SetArgValue );
     REGISTER_DFGUICMD( in_reg, SetCode );
+    REGISTER_DFGUICMD( in_reg, SetExtDeps );
     REGISTER_DFGUICMD( in_reg, SetNodeComment );
     REGISTER_DFGUICMD( in_reg, SetNodeTitle );
     REGISTER_DFGUICMD( in_reg, SetPortDefaultValue );

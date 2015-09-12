@@ -91,10 +91,10 @@ static inline bool HandleFabricCoreException(FabricCore::Exception const &e)
   return false;
 }
 
-static inline std::string EncodeNames(FTL::ArrayRef<FTL::CStrRef> names)
+static inline std::string EncodeNames(FTL::ArrayRef<FTL::StrRef> names)
 {
   std::stringstream nameSS;
-  for ( FTL::ArrayRef<FTL::CStrRef>::IT it = names.begin();
+  for ( FTL::ArrayRef<FTL::StrRef>::IT it = names.begin();
     it != names.end(); ++it )
   {
     if ( it != names.begin() )
@@ -539,6 +539,24 @@ void DFGUICmdHandlerDCC::dfgDoMoveNodes(
   execCmd(cmdName, args, output);
 }
 
+void DFGUICmdHandlerDCC::dfgDoSetExtDeps(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::ArrayRef<FTL::StrRef> extDeps
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_SetExtDeps::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getDCCObjectNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(EncodeNames(extDeps));
+
+  std::string output;
+  execCmd(cmdName, args, output);
+}
+
 void DFGUICmdHandlerDCC::dfgDoResizeBackDrop(
   FabricCore::DFGBinding const &binding,
   FTL::CStrRef execPath,
@@ -894,6 +912,7 @@ FabricUI::DFG::DFGUICmd *DFGUICmdHandlerDCC::createAndExecuteDFGCommand(std::str
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_AddGet::             CmdName().c_str())    cmd = createAndExecuteDFGCommand_AddGet             (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_AddSet::             CmdName().c_str())    cmd = createAndExecuteDFGCommand_AddSet             (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_AddPort::            CmdName().c_str())    cmd = createAndExecuteDFGCommand_AddPort            (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_EditPort::           CmdName().c_str())    cmd = createAndExecuteDFGCommand_EditPort           (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_RemovePort::         CmdName().c_str())    cmd = createAndExecuteDFGCommand_RemovePort         (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_MoveNodes::          CmdName().c_str())    cmd = createAndExecuteDFGCommand_MoveNodes          (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_ResizeBackDrop::     CmdName().c_str())    cmd = createAndExecuteDFGCommand_ResizeBackDrop     (in_args);
@@ -907,6 +926,7 @@ FabricUI::DFG::DFGUICmd *DFGUICmdHandlerDCC::createAndExecuteDFGCommand(std::str
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_Paste::              CmdName().c_str())    cmd = createAndExecuteDFGCommand_Paste              (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_SetArgType::         CmdName().c_str())    cmd = createAndExecuteDFGCommand_SetArgType         (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_SetArgValue::        CmdName().c_str())    cmd = createAndExecuteDFGCommand_SetArgValue        (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_SetExtDeps::         CmdName().c_str())    cmd = createAndExecuteDFGCommand_SetExtDeps         (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_SetPortDefaultValue::CmdName().c_str())    cmd = createAndExecuteDFGCommand_SetPortDefaultValue(in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_SetRefVarPath::      CmdName().c_str())    cmd = createAndExecuteDFGCommand_SetRefVarPath      (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_ReorderPorts::       CmdName().c_str())    cmd = createAndExecuteDFGCommand_ReorderPorts       (in_args);
@@ -1317,19 +1337,72 @@ FabricUI::DFG::DFGUICmd_AddPort *DFGUICmdHandlerDCC::createAndExecuteDFGCommand_
     if (!DecodeString(args, ai, extDep))
       return cmd;
 
-    std::string metaData;
-    if (!DecodeString(args, ai, metaData))
+    std::string uiMetadata;
+    if (!DecodeString(args, ai, uiMetadata))
       return cmd;
 
     cmd = new FabricUI::DFG::DFGUICmd_AddPort(binding,
-                                              execPath.c_str(),
+                                              execPath,
                                               exec,
-                                              desiredPortName.c_str(),
+                                              desiredPortName,
                                               portType,
-                                              typeSpec.c_str(),
-                                              portToConnectWith.c_str(),
-                                              extDep.c_str(),
-                                              metaData.c_str());
+                                              typeSpec,
+                                              portToConnectWith,
+                                              extDep,
+                                              uiMetadata);
+    try
+    {
+      cmd->doit();
+    }
+    catch(FabricCore::Exception e)
+    {
+      feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+    }
+  }
+
+  return cmd;
+}
+
+FabricUI::DFG::DFGUICmd_EditPort *DFGUICmdHandlerDCC::createAndExecuteDFGCommand_EditPort(std::vector<std::string> &args)
+{
+  FabricUI::DFG::DFGUICmd_EditPort *cmd = NULL;
+  {
+    unsigned int ai = 0;
+
+    FabricCore::DFGBinding binding;
+    std::string execPath;
+    FabricCore::DFGExec exec;
+    if (!DecodeExec(args, ai, binding, execPath, exec))
+      return cmd;
+
+    std::string oldPortName;
+    if (!DecodeString(args, ai, oldPortName))
+      return cmd;
+
+    std::string desiredNewPortName;
+    if (!DecodeString(args, ai, desiredNewPortName))
+      return cmd;
+
+    std::string typeSpec;
+    if (!DecodeString(args, ai, typeSpec))
+      return cmd;
+
+    std::string extDep;
+    if (!DecodeString(args, ai, extDep))
+      return cmd;
+
+    std::string uiMetadata;
+    if (!DecodeString(args, ai, uiMetadata))
+      return cmd;
+
+    cmd = new FabricUI::DFG::DFGUICmd_EditPort(binding,
+                                              execPath,
+                                              exec,
+                                              oldPortName,
+                                              desiredNewPortName,
+                                              typeSpec,
+                                              extDep,
+                                              uiMetadata);
     try
     {
       cmd->doit();
@@ -1417,6 +1490,40 @@ FabricUI::DFG::DFGUICmd_MoveNodes *DFGUICmdHandlerDCC::createAndExecuteDFGComman
                                                 exec,
                                                 nodeNames,
                                                 poss);
+    try
+    {
+      cmd->doit();
+    }
+    catch(FabricCore::Exception e)
+    {
+      feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+    }
+  }
+
+  return cmd;
+}
+
+FabricUI::DFG::DFGUICmd_SetExtDeps *DFGUICmdHandlerDCC::createAndExecuteDFGCommand_SetExtDeps(std::vector<std::string> &args)
+{
+  FabricUI::DFG::DFGUICmd_SetExtDeps *cmd = NULL;
+  {
+    unsigned int ai = 0;
+
+    FabricCore::DFGBinding binding;
+    std::string execPath;
+    FabricCore::DFGExec exec;
+    if (!DecodeExec(args, ai, binding, execPath, exec))
+      return cmd;
+
+    std::string extDepsString;
+    std::vector<FTL::StrRef> extDeps;
+    if (!DecodeNames(args, ai, extDepsString, extDeps))
+      return cmd;
+
+    cmd = new FabricUI::DFG::DFGUICmd_SetExtDeps(binding,
+                                                 execPath,
+                                                 exec,
+                                                 extDeps);
     try
     {
       cmd->doit();
@@ -2600,7 +2707,7 @@ SICALLBACK FabricCanvasAddPort_Init(XSI::CRef &in_ctxt)
   oArgs.Add(L"typeSpec",        XSI::CString());
   oArgs.Add(L"portToConnect",   XSI::CString());
   oArgs.Add(L"extDep",          XSI::CString());
-  oArgs.Add(L"metaData",        XSI::CString());
+  oArgs.Add(L"uiMetadata",      XSI::CString());
 
   return XSI::CStatus::OK;
 }
@@ -2641,6 +2748,69 @@ SICALLBACK FabricCanvasAddPort_Redo(XSI::CRef &ctxt)
 }
 
 SICALLBACK FabricCanvasAddPort_TermUndoRedo(XSI::CRef &ctxt)
+{
+  DFGUICmd_TermUndoRedo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+//        "EditPort"
+
+SICALLBACK FabricCanvasEditPort_Init(XSI::CRef &in_ctxt)
+{
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.EnableReturnValue(true);
+
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",            XSI::CString());
+  oArgs.Add(L"execPath",           XSI::CString());
+  oArgs.Add(L"oldPortName",        XSI::CString());
+  oArgs.Add(L"desiredNewPortName", XSI::CString());
+  oArgs.Add(L"typeSpec",           XSI::CString());
+  oArgs.Add(L"extDep",             XSI::CString());
+  oArgs.Add(L"uiMetadata",         XSI::CString());
+
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasEditPort_Execute(XSI::CRef &in_ctxt)
+{
+  // init.
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  CValueArrayToStdVector(tmp, args);
+
+  // create and execute the DFG command.
+  FabricUI::DFG::DFGUICmd_EditPort *cmd = DFGUICmdHandlerDCC::createAndExecuteDFGCommand_EditPort(args);
+  if (!cmd)
+    return XSI::CStatus::Fail;
+
+  // store return value.
+  XSI::CString returnValue = cmd->getActualNewPortName().c_str();
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", XSI::siCommentMsg);
+  ctxt.PutAttribute(L"ReturnValue", returnValue);
+
+  // done.
+  DFGUICmd_Finish(ctxt, cmd);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasEditPort_Undo(XSI::CRef &ctxt)
+{
+  DFGUICmd_Undo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasEditPort_Redo(XSI::CRef &ctxt)
+{
+  DFGUICmd_Redo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasEditPort_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
@@ -2751,6 +2921,60 @@ SICALLBACK FabricCanvasMoveNodes_Redo(XSI::CRef &ctxt)
 }
 
 SICALLBACK FabricCanvasMoveNodes_TermUndoRedo(XSI::CRef &ctxt)
+{
+  DFGUICmd_TermUndoRedo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+//        "SetExtDeps"
+
+SICALLBACK FabricCanvasSetExtDeps_Init(XSI::CRef &in_ctxt)
+{
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.EnableReturnValue(false);
+
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",   XSI::CString());
+  oArgs.Add(L"execPath",  XSI::CString());
+  oArgs.Add(L"extDeps",   XSI::CString());
+
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasSetExtDeps_Execute(XSI::CRef &in_ctxt)
+{
+  // init.
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  CValueArrayToStdVector(tmp, args);
+
+  // create and execute the DFG command.
+  FabricUI::DFG::DFGUICmd_SetExtDeps *cmd = DFGUICmdHandlerDCC::createAndExecuteDFGCommand_SetExtDeps(args);
+  if (!cmd)
+    return XSI::CStatus::Fail;
+
+  // done.
+  DFGUICmd_Finish(ctxt, cmd);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasSetExtDeps_Undo(XSI::CRef &ctxt)
+{
+  DFGUICmd_Undo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasSetExtDeps_Redo(XSI::CRef &ctxt)
+{
+  DFGUICmd_Redo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasSetExtDeps_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;

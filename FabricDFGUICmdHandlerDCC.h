@@ -115,7 +115,8 @@ protected:
     FabricCore::DFGPortType portType,
     FTL::CStrRef typeSpec,
     FTL::CStrRef portToConnect,
-    FTL::CStrRef metaData
+    FTL::StrRef extDep,
+    FTL::CStrRef uiMetadata
     );
 
   virtual std::string dfgDoEditPort(
@@ -250,6 +251,13 @@ protected:
     const std::vector<unsigned int> &indices
     );
 
+  virtual void dfgDoSetExtDeps(
+    FabricCore::DFGBinding const &binding,
+    FTL::CStrRef execPath,
+    FabricCore::DFGExec const &exec,
+    FTL::ArrayRef<FTL::StrRef> extDeps
+    );
+
 protected:
     
   std::string getDCCObjectNameFromBinding(FabricCore::DFGBinding const &binding);
@@ -271,6 +279,7 @@ public:
   static FabricUI::DFG::DFGUICmd_AddGet *createAndExecuteDFGCommand_AddGet(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_AddSet *createAndExecuteDFGCommand_AddSet(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_AddPort *createAndExecuteDFGCommand_AddPort(std::vector<std::string> &args);
+  static FabricUI::DFG::DFGUICmd_EditPort *createAndExecuteDFGCommand_EditPort(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_RemovePort *createAndExecuteDFGCommand_RemovePort(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_MoveNodes *createAndExecuteDFGCommand_MoveNodes(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_ResizeBackDrop *createAndExecuteDFGCommand_ResizeBackDrop(std::vector<std::string> &args);
@@ -284,6 +293,7 @@ public:
   static FabricUI::DFG::DFGUICmd_Paste *createAndExecuteDFGCommand_Paste(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_SetArgType *createAndExecuteDFGCommand_SetArgType(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_SetArgValue *createAndExecuteDFGCommand_SetArgValue(std::vector<std::string> &args);
+  static FabricUI::DFG::DFGUICmd_SetExtDeps *createAndExecuteDFGCommand_SetExtDeps(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_SetPortDefaultValue *createAndExecuteDFGCommand_SetPortDefaultValue(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_SetRefVarPath *createAndExecuteDFGCommand_SetRefVarPath(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_ReorderPorts *createAndExecuteDFGCommand_ReorderPorts(std::vector<std::string> &args);
