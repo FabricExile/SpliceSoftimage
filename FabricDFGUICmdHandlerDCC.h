@@ -35,7 +35,7 @@ protected:
     FabricCore::DFGBinding const &binding,
     FTL::CStrRef execPath,
     FabricCore::DFGExec const &exec,
-    FTL::ArrayRef<FTL::CStrRef> nodeNames
+    FTL::ArrayRef<FTL::StrRef> nodeNames
     );
 
   virtual void dfgDoConnect(
@@ -140,7 +140,7 @@ protected:
     FabricCore::DFGBinding const &binding,
     FTL::CStrRef execPath,
     FabricCore::DFGExec const &exec,
-    FTL::ArrayRef<FTL::CStrRef> nodeNames,
+    FTL::ArrayRef<FTL::StrRef> nodeNames,
     FTL::ArrayRef<QPointF> newTopLeftPoss
     );
 
@@ -157,7 +157,7 @@ protected:
     FabricCore::DFGBinding const &binding,
     FTL::CStrRef execPath,
     FabricCore::DFGExec const &exec,
-    FTL::ArrayRef<FTL::CStrRef> nodeNames,
+    FTL::ArrayRef<FTL::StrRef> nodeNames,
     FTL::CStrRef desiredNodeName
     );
 
