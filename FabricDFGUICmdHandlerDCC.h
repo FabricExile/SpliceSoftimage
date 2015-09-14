@@ -228,6 +228,13 @@ protected:
     FabricCore::RTVal const &value
     );
 
+  virtual void dfgDoSetExtDeps(
+    FabricCore::DFGBinding const &binding,
+    FTL::CStrRef execPath,
+    FabricCore::DFGExec const &exec,
+    FTL::ArrayRef<FTL::StrRef> extDeps
+    );
+
   virtual void dfgDoSetPortDefaultValue(
     FabricCore::DFGBinding const &binding,
     FTL::CStrRef execPath,
@@ -249,13 +256,6 @@ protected:
     FTL::CStrRef execPath,
     FabricCore::DFGExec const &exec,
     const std::vector<unsigned int> &indices
-    );
-
-  virtual void dfgDoSetExtDeps(
-    FabricCore::DFGBinding const &binding,
-    FTL::CStrRef execPath,
-    FabricCore::DFGExec const &exec,
-    FTL::ArrayRef<FTL::StrRef> extDeps
     );
 
 protected:
