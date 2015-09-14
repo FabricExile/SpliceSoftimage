@@ -122,12 +122,7 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
   }
 
   // init Qt app, if necessary.
-  if (!qApp)
-  {
-    Application().LogMessage(L"allocating an instance of QApplication", siCommentMsg);
-    int argc = 0;
-    new QApplication(argc, NULL);
-  }
+  FabricInitQt();
 
   // check.
   if (!qApp)                    return OPENCANVAS_RETURN_VALS::NULL_POINTER;
@@ -236,4 +231,14 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
 
   // done.
   return OPENCANVAS_RETURN_VALS::SUCCESS;
+}
+
+void FabricInitQt()
+{
+  if (!qApp)
+  {
+    Application().LogMessage(L"allocating an instance of QApplication", siCommentMsg);
+    int argc = 0;
+    new QApplication(argc, NULL);
+  }
 }
