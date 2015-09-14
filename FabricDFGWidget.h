@@ -14,4 +14,6 @@ struct _opUserData;
 const char *GetOpenCanvasErrorDescription(OPENCANVAS_RETURN_VALS in_errID);
 OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle);
 
+void FabricInitQt();
+
 #endif
