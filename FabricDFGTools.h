@@ -16,7 +16,7 @@ class dfgTools
 {
  public:
 
-  // opens a file browser for "*.dfg.json" files.
+  // opens a file browser for "*.canvas" files.
   // params:  isSave        true: save file browser, false: load file browser.
   //          out_filepath  complete filepath or "" on abort or error.
   // return: true on success, false on abort or error.

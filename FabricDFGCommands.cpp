@@ -411,7 +411,7 @@ SICALLBACK FabricCanvasImportGraph_Init(CRef &in_ctxt)
   Command oCmd;
 
   oCmd = ctxt.GetSource();
-  oCmd.PutDescription(L"imports a dfg.json file.");
+  oCmd.PutDescription(L"imports a canvas file.");
   oCmd.SetFlag(siNoLogging, false);
   oCmd.EnableReturnValue(true);     // if L"ReturnValue" is true then the operator was recreated.
 
@@ -596,13 +596,13 @@ SICALLBACK FabricCanvasExportGraph_Init(CRef &in_ctxt)
   Command oCmd;
 
   oCmd = ctxt.GetSource();
-  oCmd.PutDescription(L"exports a dfg.json file.");
+  oCmd.PutDescription(L"exports a canvas file.");
   oCmd.SetFlag(siNoLogging, false);
   oCmd.EnableReturnValue(false) ;
 
   ArgumentArray oArgs = oCmd.GetArguments();
   oArgs.Add(L"OperatorName", CString());
-  oArgs.Add(L"JSONFilePath", CString());  // the filepath of the dfg.json file or L"console" to log the content in the history log (without writing anything to disk).
+  oArgs.Add(L"JSONFilePath", CString());  // the filepath of the canvas file or L"console" to log the content in the history log (without writing anything to disk).
 
   return CStatus::OK;
 }

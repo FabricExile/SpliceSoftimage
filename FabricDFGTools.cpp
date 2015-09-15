@@ -56,7 +56,7 @@ bool dfgTools::FileBrowserJSON(bool isSave, XSI::CString &out_filepath)
   // open file browser.
   CComAPIHandler toolkit;
   toolkit.CreateInstance(L"XSI.UIToolkit");
-  CString ext = ".dfg.json";
+  CString ext = ".canvas";
 
   CComAPIHandler filebrowser(toolkit.GetProperty(L"FileBrowser"));
   filebrowser.PutProperty(L"InitialDirectory", Application().GetActiveProject().GetPath());
@@ -77,7 +77,7 @@ bool dfgTools::FileBrowserJSON(bool isSave, XSI::CString &out_filepath)
       out_filepath += uiFileName[i];
   }
 
-  // take care of possible double extension (e.g. "myProfile.dfg.json.dfg.json").
+  // take care of possible double extension (e.g. "myProfile.canvas.canvas").
   ULONG dfg1 = out_filepath.ReverseFindString(ext, UINT_MAX);
   if (dfg1 != UINT_MAX)
   {
