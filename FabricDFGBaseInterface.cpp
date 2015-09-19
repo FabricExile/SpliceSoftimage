@@ -13,7 +13,7 @@
 #include <sstream>
 
 FabricCore::Client                        BaseInterface::s_client;
-FabricCore::DFGHost                       BaseInterface::s_host = NULL;
+FabricCore::DFGHost                       BaseInterface::s_host;
 FabricServices::ASTWrapper::KLASTManager *BaseInterface::s_manager = NULL;
 unsigned int                              BaseInterface::s_maxId = 0;
 void (*BaseInterface::s_logFunc)(void *, const char *, unsigned int) = NULL;

@@ -47,6 +47,7 @@
 #include "FabricDFGBaseInterface.h"
 #include "FabricDFGTools.h"
 #include "FabricDFGWidget.h"
+#include <Persistence/RTValToJSONEncoder.hpp>
 
 std::map <unsigned int, _opUserData *>  _opUserData::s_instances;
 std::vector<_portMapping>               _opUserData::s_newOp_portmap;
@@ -1272,6 +1273,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
 
         CString portName = exec.getExecPortName(i);
         CString portResolvedType = exec.getExecPortResolvedType(i);
+        bool storable = true;
 
         // find a matching XSI port.
         if (!done)
@@ -1356,6 +1358,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                   }
                 }
               }
+              storable = false;
             }
           }
         }
@@ -1412,8 +1415,18 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
             else
             {
               Application().LogMessage(L"the port \"" + portName + L"\" has the unsupported data type \"" + portResolvedType + L"\"", siWarningMsg)  ;
+              storable = false;
             }
           }
+        }
+
+        if( storable ) {
+          // Set ports added with a "storable type" as persistable so their values are 
+          // exported if saving the graph
+          // TODO: handle this in a "clean" way; here we are not in the context of an undo-able command.
+          //       We would need that the DFG knows which binding types are "stored" as attributes on the
+          //       DCC side and set these as persistable in the source "addPort" command.
+          exec.setExecPortMetadata( portName.GetAsciiString(), DFG_METADATA_UIPERSISTVALUE, "true" );
         }
       }
     }
