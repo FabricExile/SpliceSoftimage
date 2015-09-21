@@ -56,7 +56,7 @@ using namespace XSI;
 
 CString xsiGetWorkgroupPath();
 
-CRef recreateOperator(CustomOperator op, CString &dfgJSON)
+XSI::CRef recreateOperator(XSI::CustomOperator op, XSI::CString &dfgJSON)
 {
   // memorize current undo levels and then set them to zero.
   const LONG memUndoLevels = dfgTools::GetUndoLevels();
@@ -1776,15 +1776,15 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
         CString mode;
         switch (pmap.dfgPortType)
         {
-          case DFG_PORT_TYPE_IN:   mode = L"In";         break;
-          case DFG_PORT_TYPE_OUT:  mode = L"Out";        break;
+          case DFG_PORT_TYPE_IN:    mode = L"In";         break;
+          case DFG_PORT_TYPE_OUT:   mode = L"Out";        break;
           default:                  mode = L"undefined";  break;
         }
 
         grid.PutRowLabel( 0, L"  " + CString(i) + L"  ");
-        grid.PutCell(0,   0, L" " + name);
-        grid.PutCell(1,   0, L" " + type);
-        grid.PutCell(2,   0, L" " + mode);
+        grid.PutCell(0,   0, L" "  + name);
+        grid.PutCell(1,   0, L" "  + type);
+        grid.PutCell(2,   0, L" "  + mode);
       }
 
       // other params.
@@ -1910,6 +1910,12 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
       pmap.mapType = (DFG_PORT_MAPTYPE)(int)cp.GetParameterValue(L"MapType" + CString(i));
       if (pmap.mapType != mem)
         ret = 1;
+
+      if (!pmap.isValid())
+      {
+        ret = -1;
+        break;
+      }
     }
   }
 

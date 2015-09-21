@@ -64,6 +64,72 @@ struct _portMapping
     xsiDefaultValue .Clear();
   }
 
+  // returns true if the port map is valid.
+  bool isValid()
+  {
+    // check name.
+    if (dfgPortName.IsEmpty())
+      return false;
+
+    // check port type.
+    if (dfgPortType != DFG_PORT_TYPE_IN && dfgPortType != DFG_PORT_TYPE_OUT)
+      return false;
+
+    // check map type.
+    if (mapType == DFG_PORT_MAPTYPE_INTERNAL)
+    {
+    }
+    else if (mapType == DFG_PORT_MAPTYPE_XSI_PARAMETER)
+    {
+      if (dfgPortType != DFG_PORT_TYPE_IN)
+        return false;
+
+      if (   dfgPortDataType != L"Boolean"
+
+          && dfgPortDataType != L"Scalar"
+          && dfgPortDataType != L"Float32"
+          && dfgPortDataType != L"Float64"
+
+          && dfgPortDataType != L"Integer"
+          && dfgPortDataType != L"SInt8"
+          && dfgPortDataType != L"SInt16"
+          && dfgPortDataType != L"SInt32"
+          && dfgPortDataType != L"SInt64"
+
+          && dfgPortDataType != L"Byte"
+          && dfgPortDataType != L"UInt8"
+          && dfgPortDataType != L"UInt16"
+          && dfgPortDataType != L"Count"
+          && dfgPortDataType != L"Index"
+          && dfgPortDataType != L"Size"
+          && dfgPortDataType != L"UInt32"
+          && dfgPortDataType != L"DataSize"
+          && dfgPortDataType != L"UInt64"
+
+          && dfgPortDataType == L"String")
+      return false;
+
+    }
+    else if (mapType == DFG_PORT_MAPTYPE_XSI_PORT)
+    {
+      if (   dfgPortDataType != L"Mat44"
+
+          && dfgPortDataType != L"PolygonMesh")
+        return false;
+    }
+    else if (mapType == DFG_PORT_MAPTYPE_XSI_ICE_PORT)
+    {
+      return false;
+    }
+    else
+    {
+      return false;
+    }
+
+    // it's all good.
+    return true;
+  }
+
   // returns true if the two port mappings match (same name, type, etc.).
   static bool areMatching(const _portMapping &a, const _portMapping &b, bool considerPortDataType = true)
   {
@@ -92,7 +158,7 @@ struct _portMapping
     return -1;
   }
 
-  //
+  // returns the mapping as a string, e.g. "myPort|In|Float32|XSI Parameter||0.1".
   std::string asString()
   {
     std::string s = "";
@@ -880,6 +946,7 @@ struct _polymesh
 };
 
 // forward declarations.
+XSI::CRef recreateOperator(XSI::CustomOperator op, XSI::CString &dfgJSON);
 int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap);
 
 #endif
