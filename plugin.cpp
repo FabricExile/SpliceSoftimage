@@ -121,6 +121,9 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     // commands.
     CString cmdName;
     cmdName = L"FabricCanvasOpApply";           in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
+    cmdName = L"FabricCanvasOpPortMapDefine";   in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
+    cmdName = L"FabricCanvasOpConnectPort";     in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
+    cmdName = L"FabricCanvasOpPortMapQuery";    in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
     cmdName = L"FabricCanvasImportGraph";       in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
     cmdName = L"FabricCanvasExportGraph";       in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
     cmdName = L"FabricCanvasSelectConnected";   in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);

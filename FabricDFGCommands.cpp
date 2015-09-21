@@ -68,7 +68,7 @@ SICALLBACK FabricCanvasOpApply_Execute(CRef &in_ctxt)
   _opUserData::s_newOp_expressions.clear();
   CValueArray args = ctxt.GetAttribute(L"Arguments");
   if (args.GetCount() < 5 || CString(args[0]).IsEmpty())
-  { Application().LogMessage(L"apply CanvasOp operator failed: empty or missing argument(s)", siErrorMsg);
+  { Application().LogMessage(L"empty or missing argument(s)", siErrorMsg);
     portmap.clear();
     return CStatus::OK; }
   CString objectName      (args[0]);
@@ -402,6 +402,432 @@ SICALLBACK FabricCanvasOpApply_Execute(CRef &in_ctxt)
 }
 
 // ---
+// command "FabricCanvasOpConnectPort".
+// ---
+
+SICALLBACK FabricCanvasOpConnectPort_Init(CRef &in_ctxt)
+{
+  Context ctxt(in_ctxt);
+  Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.PutDescription(L"connects the port of a Canvas operator.");
+  oCmd.SetFlag(siNoLogging, false);
+  oCmd.EnableReturnValue(true);   // returns 'true' on success.
+
+  ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"OperatorName", CString());
+  oArgs.Add(L"portName",     CString());
+  oArgs.Add(L"targetName",   CString());  // if empty then disconnect port.
+
+  return CStatus::OK;
+}
+
+SICALLBACK FabricCanvasOpConnectPort_Execute(CRef &in_ctxt)
+{
+  // init.
+  Context ctxt(in_ctxt);
+  ctxt.PutAttribute(L"ReturnValue", false); // init return value.
+  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  if (args.GetCount() < 3 || CString(args[0]).IsEmpty())
+  { Application().LogMessage(L"empty or missing argument(s)", siErrorMsg);
+    return CStatus::OK; }
+  CString operatorName          ( args[0] );
+  CString portName              = args[1];
+  CString targetName            = args[2];
+
+  // set ref at operator.
+  CRef ref;
+  ref.Set(operatorName);
+  if (!ref.IsValid())
+  { Application().LogMessage(L"failed to find an object called \"" + operatorName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+  if (ref.GetClassID() != siCustomOperatorID)
+  { Application().LogMessage(L"not a custom operator: \"" + operatorName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+
+  // get operator.
+  CustomOperator op(ref);
+  if (!op.IsValid())
+  { Application().LogMessage(L"failed to set custom operator from \"" + operatorName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+
+  // get op's _opUserData.
+  _opUserData *pud = _opUserData::GetUserData(op.GetObjectID());
+  if (!pud)
+  { Application().LogMessage(L"found no valid user data in custom operator \"" + operatorName + L"\"", siErrorMsg);
+    Application().LogMessage(L"... operator perhaps not CanvasOp?", siErrorMsg);
+    return CStatus::OK; }
+
+  // get the port's port mapping.
+  _portMapping pmap;
+  {
+    std::vector<_portMapping> tmp;
+    CString err;
+    dfgTools::GetOperatorPortMapping(op, tmp, err);
+    for (int i=0;i<tmp.size();i++)
+      if (portName == tmp[i].dfgPortName)
+      {
+        pmap = tmp[i];
+        break;
+      }
+  }
+  if (pmap.dfgPortName != portName)
+  { Application().LogMessage(L"failed to find port \"" + portName + "\"", siErrorMsg);
+    return CStatus::OK; }
+  if (   pmap.dfgPortType != DFG_PORT_TYPE_IN
+      && pmap.dfgPortType != DFG_PORT_TYPE_OUT)
+  { Application().LogMessage(L"port has unsupported type (neither \"In\" nor \"Out\").", siErrorMsg);
+    return CStatus::OK; }
+  if (pmap.mapType != DFG_PORT_MAPTYPE_XSI_PORT)
+  { Application().LogMessage(L"selected port Type/Target is not \"XSI Port\".", siErrorMsg);
+    return CStatus::OK; }
+
+  // find the port group.
+  PortGroup portgroup;
+  CRefArray pgRef = op.GetPortGroups();
+  for (int i=0;i<pgRef.GetCount();i++)
+  {
+    PortGroup pg(pgRef[i]);
+    if (   pg.IsValid()
+        && pg.GetName() == pmap.dfgPortName)
+      {
+        portgroup.SetObject(pgRef[i]);
+        break;
+      }
+  }
+  if (!portgroup.IsValid())
+  { Application().LogMessage(L"unable to find matching port group.", siErrorMsg);
+    return CStatus::OK; }
+
+  // set target ref.
+  CRef targetRef;
+  if (targetName != L"")
+  {
+    if (targetRef.Set(targetName) != CStatus::OK)
+    { Application().LogMessage(L"failed to set target ref.", siErrorMsg);
+      return CStatus::OK; }
+  }
+
+  // check/correct target's siClassID and CRef.
+  if (targetName != L"")
+  {
+    siClassID portClassID = dfgTools::GetSiClassIdFromResolvedDataType(pmap.dfgPortDataType);
+    if (targetRef.GetClassID() != portClassID)
+    {
+      bool err = true;
+
+      // kinematics?
+      if (portClassID == siKinematicStateID)
+      {
+        CRef tmp;
+        tmp.Set(targetRef.GetAsText() + L".kine.global");
+        if (tmp.IsValid())
+        {
+          targetRef = tmp;
+          err = false;
+        }
+      }
+
+      // polygon mesh?
+      if (portClassID == siPolygonMeshID)
+      {
+        CRef tmp;
+        tmp.Set(targetRef.GetAsText() + L".polymsh");
+        if (tmp.IsValid())
+        {
+          targetRef = tmp;
+          err = false;
+        }
+      }
+
+      //
+      if (err)
+      {
+        CString emptyString;
+        Application().LogMessage(L"the target has the type \"" + targetRef.GetClassIDName() + L"\", but the port needs the type \"" + dfgTools::GetSiClassIdDescription(portClassID, emptyString) + L"\".", siErrorMsg);
+        return CStatus::OK;
+      }
+    }
+  }
+
+  // disconnect any existing connection.
+  while (portgroup.GetInstanceCount() > 0)
+  {
+    if (op.DisconnectGroup(portgroup.GetIndex(), 0, true) != CStatus::OK)
+    { Application().LogMessage(L"op.DisconnectGroup() failed.", siWarningMsg);
+      break; }
+  }
+
+  // connect.
+  if (targetName != L"")
+  {
+    LONG instance;
+    if (op.ConnectToGroup(portgroup.GetIndex(), targetRef, instance) != CStatus::OK)
+    { Application().LogMessage(L"failed to connect \"" + targetRef.GetAsText() + "\"", siErrorMsg);
+      return CStatus::OK; }
+  }
+
+  // done.
+  ctxt.PutAttribute(L"ReturnValue", true);
+  return CStatus::OK;
+}
+
+// ---
+// command "FabricCanvasOpPortMapDefine".
+// ---
+
+SICALLBACK FabricCanvasOpPortMapDefine_Init(CRef &in_ctxt)
+{
+  Context ctxt(in_ctxt);
+  Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.PutDescription(L"defines the port mapping of one or more ports of a Canvas operator.");
+  oCmd.SetFlag(siNoLogging, false);
+  oCmd.EnableReturnValue(true);   // L"ReturnValue" will contain the CRef of the new operator.
+
+  ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"OperatorName",      CString());
+  oArgs.Add(L"portmapDefinition", CString());
+
+  return CStatus::OK;
+}
+
+SICALLBACK FabricCanvasOpPortMapDefine_Execute(CRef &in_ctxt)
+{
+  // init.
+  Context ctxt(in_ctxt);
+  ctxt.PutAttribute(L"ReturnValue", CRef()); // init return value.
+  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  if (args.GetCount() < 2 || CString(args[0]).IsEmpty())
+  { Application().LogMessage(L"empty or missing argument(s)", siErrorMsg);
+    return CStatus::OK; }
+  CString operatorName          ( args[0] );
+  CString portmapDefinition     = args[1];
+
+  // set ref at operator.
+  CRef ref;
+  ref.Set(operatorName);
+  if (!ref.IsValid())
+  { Application().LogMessage(L"failed to find an object called \"" + operatorName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+  if (ref.GetClassID() != siCustomOperatorID)
+  { Application().LogMessage(L"not a custom operator: \"" + operatorName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+
+  // get operator.
+  CustomOperator op(ref);
+  if (!op.IsValid())
+  { Application().LogMessage(L"failed to set custom operator from \"" + operatorName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+
+  // get op's _opUserData.
+  _opUserData *pud = _opUserData::GetUserData(op.GetObjectID());
+  if (!pud)
+  { Application().LogMessage(L"found no valid user data in custom operator \"" + operatorName + L"\"", siErrorMsg);
+    Application().LogMessage(L"... operator perhaps not CanvasOp?", siErrorMsg);
+    return CStatus::OK; }
+
+  // get the current port mapping.
+  std::vector <_portMapping> currPortmap;
+  {
+    CString err;
+    if (!dfgTools::GetOperatorPortMapping(op, currPortmap, err))
+    { Application().LogMessage(L"dfgTools::GetOperatorPortMapping() failed, err = \"" + err + L"\"", siWarningMsg);
+      return CStatus::OK; }
+  }
+
+  // create a new port mapping based on currPortmap and portmapDefinition.
+  bool nothingToDo = true;
+  std::vector <_portMapping> newPortmap;
+  {
+    newPortmap = currPortmap;
+
+    CString err = L"";
+    CStringArray pmdArray = portmapDefinition.Split(L"<<->>");
+    for (LONG i=0;i<pmdArray.GetCount();i++)
+    {
+      // split the i-th definition.
+      CStringArray pmd = pmdArray[i].Split(L"|");
+      if (pmd.GetCount() != 2)
+      { err = "\"" + pmdArray[i] + L"\": illegal port map definition, must be \"<port name>|<map type>\".";
+        break; }
+
+      // get the port name and index.
+      CString portName = pmd[0];
+      int portIdx = _portMapping::findByPortName(portName, newPortmap);
+      if (portIdx < 0)
+      { err = "cannot find port \"" + portName + L"\"";
+        break; }
+      _portMapping &npm = newPortmap[portIdx];
+
+      // get/check the map type.
+      CString mapTypeStr = pmd[1];
+      DFG_PORT_MAPTYPE mapType;
+      if      (mapTypeStr == "Internal")        mapType = DFG_PORT_MAPTYPE_INTERNAL;
+      else if (mapTypeStr == "XSI Parameter")   mapType = DFG_PORT_MAPTYPE_XSI_PARAMETER;
+      else if (mapTypeStr == "XSI Port")        mapType = DFG_PORT_MAPTYPE_XSI_PORT;
+      else if (mapTypeStr == "XSI ICE Port")    mapType = DFG_PORT_MAPTYPE_XSI_ICE_PORT;
+      else
+      { err = "unknown map type \"" + mapTypeStr + L"\"";
+        break; }
+
+      // nothing to do?
+      if (mapType == npm.mapType)
+        continue;
+
+      // set map type.
+      npm.mapType = mapType;
+
+      // update flag.
+      nothingToDo = false;
+
+      // check.
+      if (!npm.isValid())
+      { err = "the port \"" + portName + L"\" (type = \"" + (npm.dfgPortType == DFG_PORT_TYPE_IN ? L"In" : L"Out") + L"\", data type = \"" + npm.dfgPortDataType + L"\") cannot have the map type \"" + mapTypeStr + L"\"";
+        break; }
+    }
+
+    // error?
+    if (!err.IsEmpty())
+    { Application().LogMessage(err, siErrorMsg);
+      return CStatus::OK; }
+  }
+
+  // do it.
+  CRef retVal;
+  if (nothingToDo)
+  {
+    // nothing to do, so we return the CRef at the current operator.
+    retVal = op.GetRef();
+  }
+  else
+  {
+    // ref at global _opUserData::s_portmap_newOp (for the call of recreateOperator()).
+    std::vector <_portMapping> &portmap = _opUserData::s_newOp_portmap;
+
+    // copy our new port mapping.
+    portmap = newPortmap;
+
+    // get the current graph as JSON.
+    CString dfgJSON;
+    if (pud->GetBaseInterface())
+    {
+      try
+      {
+        std::string json = pud->GetBaseInterface()->getJSON();
+        dfgJSON = json.c_str();
+      }
+      catch (FabricCore::Exception e)
+      {
+        feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+        dfgJSON = L"";
+      }
+    }
+
+    // re-create operator.
+    retVal = recreateOperator(op, dfgJSON);
+    dfgTools::ClearUndoHistory();
+  }
+
+  // done.
+  ctxt.PutAttribute(L"ReturnValue", retVal);
+  return CStatus::OK;
+}
+
+// ---
+// command "FabricCanvasOpPortMapQuery".
+// ---
+
+SICALLBACK FabricCanvasOpPortMapQuery_Init(CRef &in_ctxt)
+{
+  Context ctxt(in_ctxt);
+  Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.PutDescription(L"returns the port mapping of a Canvas operator.");
+  oCmd.SetFlag(siNoLogging, false);
+  oCmd.EnableReturnValue(true);   // return value is an array of strings.
+
+  ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"OperatorName", CString());
+  oArgs.Add(L"portName",     CString());  // if L"" then the mapping for all ports is returned.
+
+  return CStatus::OK;
+}
+
+SICALLBACK FabricCanvasOpPortMapQuery_Execute(CRef &in_ctxt)
+{
+  // init.
+  Context ctxt(in_ctxt);
+  ctxt.PutAttribute(L"ReturnValue", L""); // init return value.
+  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  if (args.GetCount() < 2 || CString(args[0]).IsEmpty())
+  { Application().LogMessage(L"empty or missing argument(s)", siErrorMsg);
+    return CStatus::OK; }
+  CString operatorName          ( args[0] );
+  CString portName              = args[1];
+
+  // set ref at operator.
+  CRef ref;
+  ref.Set(operatorName);
+  if (!ref.IsValid())
+  { Application().LogMessage(L"failed to find an object called \"" + operatorName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+  if (ref.GetClassID() != siCustomOperatorID)
+  { Application().LogMessage(L"not a custom operator: \"" + operatorName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+
+  // get operator.
+  CustomOperator op(ref);
+  if (!op.IsValid())
+  { Application().LogMessage(L"failed to set custom operator from \"" + operatorName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+
+  // get op's _opUserData.
+  _opUserData *pud = _opUserData::GetUserData(op.GetObjectID());
+  if (!pud)
+  { Application().LogMessage(L"found no valid user data in custom operator \"" + operatorName + L"\"", siErrorMsg);
+    Application().LogMessage(L"... operator perhaps not CanvasOp?", siErrorMsg);
+    return CStatus::OK; }
+
+  // get the current port mapping.
+  std::vector <_portMapping> portmap;
+  {
+    CString err;
+    if (!dfgTools::GetOperatorPortMapping(op, portmap, err))
+    { Application().LogMessage(L"dfgTools::GetOperatorPortMapping() failed, err = \"" + err + L"\"", siWarningMsg);
+      return CStatus::OK; }
+  }
+
+  // declare return value.
+  CString retVal = L"";
+
+  // case 1: return the portmapping for all ports.
+  if (portName.IsEmpty())
+  {
+    for (int i=0;i<portmap.size();i++)
+    {
+      if (i)  retVal += L"<<->>";
+      retVal += portmap[i].asString().c_str();
+    }
+  }
+
+  // case 2: return the portmapping for the port called portName.
+  else
+  {
+    int i = _portMapping::findByPortName(portName, portmap);
+    if (i >= 0)
+      retVal = portmap[i].asString().c_str();
+  }
+
+  // done.
+  ctxt.PutAttribute(L"ReturnValue", retVal);
+  return CStatus::OK;
+}
+
+// ---
 // command "FabricCanvasImportGraph".
 // ---
 
@@ -429,7 +855,7 @@ SICALLBACK FabricCanvasImportGraph_Execute(CRef &in_ctxt)
   ctxt.PutAttribute(L"ReturnValue", false); // init return value.
   CValueArray args = ctxt.GetAttribute(L"Arguments");
   if (args.GetCount() < 2 || CString(args[0]).IsEmpty())
-  { Application().LogMessage(L"import graph failed: empty or missing argument(s)", siErrorMsg);
+  { Application().LogMessage(L"empty or missing argument(s)", siErrorMsg);
     return CStatus::OK; }
   CString operatorName          ( args[0] );
   CString filePath              = args[1];
@@ -582,7 +1008,7 @@ SICALLBACK FabricCanvasImportGraph_Execute(CRef &in_ctxt)
   }
 
   // done.
-    dfgTools::ClearUndoHistory();
+  dfgTools::ClearUndoHistory();
   return CStatus::OK;
 }
 
@@ -613,7 +1039,7 @@ SICALLBACK FabricCanvasExportGraph_Execute(CRef &in_ctxt)
   Context ctxt(in_ctxt);
   CValueArray args = ctxt.GetAttribute(L"Arguments");
   if (args.GetCount() < 2 || CString(args[0]).IsEmpty())
-  { Application().LogMessage(L"export graph failed: empty or missing argument(s)", siErrorMsg);
+  { Application().LogMessage(L"empty or missing argument(s)", siErrorMsg);
     return CStatus::OK; }
   CString operatorName(args[0]);
   CString filePath = args[1];
