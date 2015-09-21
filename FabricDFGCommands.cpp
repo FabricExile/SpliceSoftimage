@@ -402,6 +402,178 @@ SICALLBACK FabricCanvasOpApply_Execute(CRef &in_ctxt)
 }
 
 // ---
+// command "FabricCanvasOpConnectPort".
+// ---
+
+SICALLBACK FabricCanvasOpConnectPort_Init(CRef &in_ctxt)
+{
+  Context ctxt(in_ctxt);
+  Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.PutDescription(L"connects the port of a Canvas operator.");
+  oCmd.SetFlag(siNoLogging, false);
+  oCmd.EnableReturnValue(true);   // returns 'true' on success.
+
+  ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"OperatorName", CString());
+  oArgs.Add(L"portName",     CString());
+  oArgs.Add(L"targetName",   CString());  // if empty then disconnect port.
+
+  return CStatus::OK;
+}
+
+SICALLBACK FabricCanvasOpConnectPort_Execute(CRef &in_ctxt)
+{
+  // init.
+  Context ctxt(in_ctxt);
+  ctxt.PutAttribute(L"ReturnValue", false); // init return value.
+  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  if (args.GetCount() < 3 || CString(args[0]).IsEmpty())
+  { Application().LogMessage(L"import graph failed: empty or missing argument(s)", siErrorMsg);
+    return CStatus::OK; }
+  CString operatorName          ( args[0] );
+  CString portName              = args[1];
+  CString targetName            = args[2];
+
+  // set ref at operator.
+  CRef ref;
+  ref.Set(operatorName);
+  if (!ref.IsValid())
+  { Application().LogMessage(L"failed to find an object called \"" + operatorName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+  if (ref.GetClassID() != siCustomOperatorID)
+  { Application().LogMessage(L"not a custom operator: \"" + operatorName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+
+  // get operator.
+  CustomOperator op(ref);
+  if (!op.IsValid())
+  { Application().LogMessage(L"failed to set custom operator from \"" + operatorName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+
+  // get op's _opUserData.
+  _opUserData *pud = _opUserData::GetUserData(op.GetObjectID());
+  if (!pud)
+  { Application().LogMessage(L"found no valid user data in custom operator \"" + operatorName + L"\"", siErrorMsg);
+    Application().LogMessage(L"... operator perhaps not CanvasOp?", siErrorMsg);
+    return CStatus::OK; }
+
+  // get the port's port mapping.
+  _portMapping pmap;
+  {
+    std::vector<_portMapping> tmp;
+    CString err;
+    dfgTools::GetOperatorPortMapping(op, tmp, err);
+    for (int i=0;i<tmp.size();i++)
+      if (portName == tmp[i].dfgPortName)
+      {
+        pmap = tmp[i];
+        break;
+      }
+  }
+  if (pmap.dfgPortName != portName)
+  { Application().LogMessage(L"failed to find port \"" + portName + "\"", siErrorMsg);
+    return CStatus::OK; }
+  if (   pmap.dfgPortType != DFG_PORT_TYPE_IN
+      && pmap.dfgPortType != DFG_PORT_TYPE_OUT)
+  { Application().LogMessage(L"port has unsupported type (neither \"In\" nor \"Out\").", siErrorMsg);
+    return CStatus::OK; }
+  if (pmap.mapType != DFG_PORT_MAPTYPE_XSI_PORT)
+  { Application().LogMessage(L"selected port Type/Target is not \"XSI Port\".", siErrorMsg);
+    return CStatus::OK; }
+
+  // find the port group.
+  PortGroup portgroup;
+  CRefArray pgRef = op.GetPortGroups();
+  for (int i=0;i<pgRef.GetCount();i++)
+  {
+    PortGroup pg(pgRef[i]);
+    if (   pg.IsValid()
+        && pg.GetName() == pmap.dfgPortName)
+      {
+        portgroup.SetObject(pgRef[i]);
+        break;
+      }
+  }
+  if (!portgroup.IsValid())
+  { Application().LogMessage(L"unable to find matching port group.", siErrorMsg);
+    return CStatus::OK; }
+
+  // set target ref.
+  CRef targetRef;
+  if (targetName != L"")
+  {
+    if (targetRef.Set(targetName) != CStatus::OK)
+    { Application().LogMessage(L"failed to set target ref.", siErrorMsg);
+      return CStatus::OK; }
+  }
+
+  // check/correct target's siClassID and CRef.
+  if (targetName != L"")
+  {
+    siClassID portClassID = dfgTools::GetSiClassIdFromResolvedDataType(pmap.dfgPortDataType);
+    if (targetRef.GetClassID() != portClassID)
+    {
+      bool err = true;
+
+      // kinematics?
+      if (portClassID == siKinematicStateID)
+      {
+        CRef tmp;
+        tmp.Set(targetRef.GetAsText() + L".kine.global");
+        if (tmp.IsValid())
+        {
+          targetRef = tmp;
+          err = false;
+        }
+      }
+
+      // polygon mesh?
+      if (portClassID == siPolygonMeshID)
+      {
+        CRef tmp;
+        tmp.Set(targetRef.GetAsText() + L".polymsh");
+        if (tmp.IsValid())
+        {
+          targetRef = tmp;
+          err = false;
+        }
+      }
+
+      //
+      if (err)
+      {
+        CString emptyString;
+        Application().LogMessage(L"the target has the type \"" + targetRef.GetClassIDName() + L"\", but the port needs the type \"" + dfgTools::GetSiClassIdDescription(portClassID, emptyString) + L"\".", siErrorMsg);
+        return CStatus::OK;
+      }
+    }
+  }
+
+  // disconnect any existing connection.
+  while (portgroup.GetInstanceCount() > 0)
+  {
+    if (op.DisconnectGroup(portgroup.GetIndex(), 0, true) != CStatus::OK)
+    { Application().LogMessage(L"op.DisconnectGroup() failed.", siWarningMsg);
+      break; }
+  }
+
+  // connect.
+  if (targetName != L"")
+  {
+    LONG instance;
+    if (op.ConnectToGroup(portgroup.GetIndex(), targetRef, instance) != CStatus::OK)
+    { Application().LogMessage(L"failed to connect \"" + targetRef.GetAsText() + "\"", siErrorMsg);
+      return CStatus::OK; }
+  }
+
+  // done.
+  ctxt.PutAttribute(L"ReturnValue", true);
+  return CStatus::OK;
+}
+
+// ---
 // command "FabricCanvasOpPortMapQuery".
 // ---
 
