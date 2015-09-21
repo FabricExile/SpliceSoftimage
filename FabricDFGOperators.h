@@ -91,6 +91,36 @@ struct _portMapping
         return i;
     return -1;
   }
+
+  //
+  std::string asString()
+  {
+    std::string s = "";
+    s += dfgPortName.GetAsciiString();
+    s += "|";
+    switch (dfgPortType)
+    {
+      case DFG_PORT_TYPE_IN:    s += "In";    break;
+      case DFG_PORT_TYPE_OUT:   s += "Out";   break;
+      default:                                break;
+    }
+    s += "|";
+    s += dfgPortDataType.GetAsciiString();
+    s += "|";
+    switch (mapType)
+    {
+      case DFG_PORT_MAPTYPE_INTERNAL:       s += "Internal";      break;
+      case DFG_PORT_MAPTYPE_XSI_PARAMETER:  s += "XSI Parameter"; break;
+      case DFG_PORT_MAPTYPE_XSI_PORT:       s += "XSI Port";      break;
+      case DFG_PORT_MAPTYPE_XSI_ICE_PORT:   s += "XSI ICE Port";  break;
+      default:                              s += "unknown";       break;
+    }
+    s += "|";
+    s += mapTarget.GetAsciiString();
+    s += "|";
+    s += xsiDefaultValue.GetAsText().GetAsciiString();
+    return s;
+  }
 };
 
 // _______________________________
