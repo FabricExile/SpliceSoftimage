@@ -157,6 +157,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     REGISTER_DFGUICMD( in_reg, SetNodeTitle );
     REGISTER_DFGUICMD( in_reg, SetPortDefaultValue );
     REGISTER_DFGUICMD( in_reg, SetRefVarPath );
+    REGISTER_DFGUICMD( in_reg, SplitFromPreset );
     REGISTER_DFGUICMD( in_reg, ReorderPorts );
 
     // menu.

@@ -235,6 +235,12 @@ protected:
     FTL::ArrayRef<FTL::StrRef> extDeps
     );
 
+  virtual void dfgDoSplitFromPreset(
+    FabricCore::DFGBinding const &binding,
+    FTL::CStrRef execPath,
+    FabricCore::DFGExec const &exec
+    );
+
   virtual void dfgDoSetPortDefaultValue(
     FabricCore::DFGBinding const &binding,
     FTL::CStrRef execPath,
@@ -296,6 +302,7 @@ public:
   static FabricUI::DFG::DFGUICmd_SetExtDeps *createAndExecuteDFGCommand_SetExtDeps(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_SetPortDefaultValue *createAndExecuteDFGCommand_SetPortDefaultValue(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_SetRefVarPath *createAndExecuteDFGCommand_SetRefVarPath(std::vector<std::string> &args);
+  static FabricUI::DFG::DFGUICmd_SplitFromPreset *createAndExecuteDFGCommand_SplitFromPreset(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_ReorderPorts *createAndExecuteDFGCommand_ReorderPorts(std::vector<std::string> &args);
 };
 
