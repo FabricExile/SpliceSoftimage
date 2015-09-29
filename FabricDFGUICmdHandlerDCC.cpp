@@ -560,8 +560,7 @@ void DFGUICmdHandlerDCC::dfgDoSetExtDeps(
 void DFGUICmdHandlerDCC::dfgDoSplitFromPreset(
   FabricCore::DFGBinding const &binding,
   FTL::CStrRef execPath,
-  FabricCore::DFGExec const &exec,
-  FTL::ArrayRef<FTL::StrRef> extDeps
+  FabricCore::DFGExec const &exec
   )
 {
   std::string cmdName(FabricUI::DFG::DFGUICmd_SplitFromPreset::CmdName());

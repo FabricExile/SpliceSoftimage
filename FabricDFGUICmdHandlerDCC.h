@@ -235,12 +235,6 @@ protected:
     FTL::ArrayRef<FTL::StrRef> extDeps
     );
 
-  virtual void dfgDoSplitFromPreset(
-    FabricCore::DFGBinding const &binding,
-    FTL::CStrRef execPath,
-    FabricCore::DFGExec const &exec
-    );
-
   virtual void dfgDoSetPortDefaultValue(
     FabricCore::DFGBinding const &binding,
     FTL::CStrRef execPath,
@@ -255,6 +249,12 @@ protected:
     FabricCore::DFGExec const &exec,
     FTL::CStrRef refName,
     FTL::CStrRef varPath
+    );
+
+  virtual void dfgDoSplitFromPreset(
+    FabricCore::DFGBinding const &binding,
+    FTL::CStrRef execPath,
+    FabricCore::DFGExec const &exec
     );
 
   virtual void dfgDoReorderPorts(
