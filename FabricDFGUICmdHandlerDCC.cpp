@@ -27,7 +27,7 @@ bool execCmd(std::string &in_cmdName, std::vector<std::string> &in_args, std::st
   /*
     executes a DCC command.
 
-    return values: on success: true and io_result contains the command's return value (unless DFGUICmdHandlerByPassDCC == false).
+    return values: on success: true and io_result contains the command's return value.
                    on failure: false and io_result is empty.
   */
 
@@ -45,28 +45,15 @@ bool execCmd(std::string &in_cmdName, std::vector<std::string> &in_args, std::st
   // execute DCC command.
   bool ret = false;
   {
-    if (DFGUICmdHandlerByPassDCC)
-    {
-      // execute the dfg command directly.
-      void *cmd = DFGUICmdHandlerDCC::createAndExecuteDFGCommand(in_cmdName, in_args);
-      if (cmd)
-      {
-        ret = true;
-        delete cmd;
-      }
-    }
-    else
-    {
-      // execute the dfg command by executing the corresponding XSI command.
-      XSI::CValue result;
-      XSI::CValueArray args;
-      for (int i=0;i<in_args.size();i++)
-        args.Add(XSI::CString(in_args[i].c_str()));
-      ret = (XSI::Application().ExecuteCommand(XSI::CString(in_cmdName.c_str()), args, result) == XSI::CStatus::OK);
+    // execute the dfg command by executing the corresponding DCC command.
+    XSI::CValue result;
+    XSI::CValueArray args;
+    for (int i=0;i<in_args.size();i++)
+      args.Add(XSI::CString(in_args[i].c_str()));
+    ret = (XSI::Application().ExecuteCommand(XSI::CString(in_cmdName.c_str()), args, result) == XSI::CStatus::OK);
 
-      // store the result in io_result.
-      if (ret)  io_result = XSI::CString(result).GetAsciiString();
-    }
+    // store the result in io_result.
+    if (ret)  io_result = XSI::CString(result).GetAsciiString();
   }
 
   // failed?
@@ -1567,8 +1554,8 @@ FabricUI::DFG::DFGUICmd_SplitFromPreset *DFGUICmdHandlerDCC::createAndExecuteDFG
       return cmd;
 
     cmd = new FabricUI::DFG::DFGUICmd_SplitFromPreset(binding,
-                                                 execPath,
-                                                 exec);
+                                                      execPath,
+                                                      exec);
     try
     {
       cmd->doit();
