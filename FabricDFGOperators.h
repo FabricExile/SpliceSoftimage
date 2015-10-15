@@ -106,7 +106,7 @@ struct _portMapping
           && dfgPortDataType != L"DataSize"
           && dfgPortDataType != L"UInt64"
 
-          && dfgPortDataType == L"String")
+          && dfgPortDataType != L"String")
       return false;
 
     }
