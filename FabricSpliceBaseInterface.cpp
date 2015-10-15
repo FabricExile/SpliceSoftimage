@@ -425,6 +425,7 @@ CValueArray FabricSpliceBaseInterface::getSpliceXSIPortTypeCombo()
   combo.Add(L"Scalar"); combo.Add(L"Scalar");
   combo.Add(L"String"); combo.Add(L"String");
   combo.Add(L"Mat44"); combo.Add(L"Mat44");
+  combo.Add(L"Xfo"); combo.Add(L"Xfo");
   combo.Add(L"Lines"); combo.Add(L"Lines");
   combo.Add(L"PolygonMesh"); combo.Add(L"PolygonMesh");
   return combo;
@@ -486,6 +487,8 @@ CStatus FabricSpliceBaseInterface::addXSIPort(const CRefArray &targets, const CS
      dataType != "String[]" && 
      dataType != "Mat44" && 
      dataType != "Mat44[]" && 
+     dataType != "Xfo" && 
+     dataType != "Xfo[]" && 
      dataType != "PolygonMesh" &&
      dataType != "PolygonMesh[]" &&
      dataType != "Lines" &&

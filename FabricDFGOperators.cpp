@@ -1322,7 +1322,35 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                 }
               }
             }
+            else if (portResolvedType == L"Xfo")
+            {
+              if (xsiPortValue.m_t == CValue::siRef)
+              {
+                KinematicState ks(xsiPortValue);
+                if (ks.IsValid())
+                {
+                  // put the XSI port's value into a std::vector.
+                  MATH::CTransformation t = ks.GetTransform();
+                  MATH::CQuaternion q = t.GetRotationQuaternion();
 
+
+                  std::vector <double> val(10);
+                  val[ 0] = t.GetSclX(); // scaling.
+                  val[ 1] = t.GetSclY();
+                  val[ 2] = t.GetSclZ();
+                  val[ 3] = q.GetW();    // orientation.
+                  val[ 4] = q.GetX();
+                  val[ 5] = q.GetY();
+                  val[ 6] = q.GetZ();
+                  val[ 7] = t.GetPosX(); // positions
+                  val[ 8] = t.GetPosY();
+                  val[ 9] = t.GetPosZ();
+
+                  // set the DFG port from the std::vector.
+                  BaseInterface::SetValueOfArgXfo(*client, binding, portName.GetAsciiString(), val);
+                }
+              }
+            }
             //
             else if (portResolvedType == L"PolygonMesh")
             {
@@ -1481,24 +1509,33 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
             {
               KinematicState kineOut(ctxt.GetOutputTarget());
               MATH::CTransformation t;
-              MATH::CMatrix4 m;
-              m.SetValue(0, 0, val[ 0]); // row 0.
-              m.SetValue(1, 0, val[ 1]);
-              m.SetValue(2, 0, val[ 2]);
-              m.SetValue(3, 0, val[ 3]);
-              m.SetValue(0, 1, val[ 4]); // row 1.
-              m.SetValue(1, 1, val[ 5]);
-              m.SetValue(2, 1, val[ 6]);
-              m.SetValue(3, 1, val[ 7]);
-              m.SetValue(0, 2, val[ 8]); // row 2.
-              m.SetValue(1, 2, val[ 9]);
-              m.SetValue(2, 2, val[10]);
-              m.SetValue(3, 2, val[11]);
-              m.SetValue(0, 3, val[12]); // row 3.
-              m.SetValue(1, 3, val[13]);
-              m.SetValue(2, 3, val[14]);
-              m.SetValue(3, 3, val[15]);
-              t.SetMatrix4(m);
+              if(val.size() == 16)
+              {
+                MATH::CMatrix4 m;
+                m.SetValue(0, 0, val[ 0]); // row 0.
+                m.SetValue(1, 0, val[ 1]);
+                m.SetValue(2, 0, val[ 2]);
+                m.SetValue(3, 0, val[ 3]);
+                m.SetValue(0, 1, val[ 4]); // row 1.
+                m.SetValue(1, 1, val[ 5]);
+                m.SetValue(2, 1, val[ 6]);
+                m.SetValue(3, 1, val[ 7]);
+                m.SetValue(0, 2, val[ 8]); // row 2.
+                m.SetValue(1, 2, val[ 9]);
+                m.SetValue(2, 2, val[10]);
+                m.SetValue(3, 2, val[11]);
+                m.SetValue(0, 3, val[12]); // row 3.
+                m.SetValue(1, 3, val[13]);
+                m.SetValue(2, 3, val[14]);
+                m.SetValue(3, 3, val[15]);
+                t.SetMatrix4(m);
+              else
+              {
+                t.SetScalingFromValues(val[0],val[1],val[2]);
+                MATH::CQuaternion quat(val[3], val[4],val[5],val[6]);
+                t.SetRotationFromQuaternion(quat);
+                t.SetTranslationFromValues(val[7],val[8],val[9]);
+              }
               kineOut.PutTransform(t);
             }
           }
@@ -1868,6 +1905,8 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
               }
               if (   pmap.dfgPortDataType == L"Mat44"
 
+                  || pmap.dfgPortDataType == L"Xfo"
+
                   || pmap.dfgPortDataType == L"PolygonMesh")
               {
                 cvaMapType.Add( L"XSI Port" );
@@ -1877,6 +1916,8 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
             else if (pmap.dfgPortType == DFG_PORT_TYPE_OUT)
             {
               if (   pmap.dfgPortDataType == L"Mat44"
+
+                  || pmap.dfgPortDataType == L"Xfo"
 
                   || pmap.dfgPortDataType == L"PolygonMesh")
               {

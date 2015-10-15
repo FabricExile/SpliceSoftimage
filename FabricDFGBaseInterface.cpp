@@ -894,6 +894,32 @@ int BaseInterface::GetArgValueMat44(FabricCore::DFGBinding &binding, char const 
                                                 out.push_back(rtRow.maybeGetMember("t").getFloat32());
                                               }
                                             }
+    else if (resolvedType == "Xfo")       {
+                                              //char member[32];
+                                              /*FabricCore::RTVal tr = rtval.maybeGetMember("tr");
+                                              FabricCore::RTVal ori = rtval.maybeGetMember("ori");
+                                              FabricCore::RTVal oriAxis = rtval.maybeGetMember("v");
+                                              FabricCore::RTVal sc = rtval.maybeGetMember("sc");*/
+
+                                              /*#ifdef _WIN32
+                                                sprintf_s(member, sizeof(member), "row%ld", i);
+                                              #else
+                                                snprintf(member, sizeof(member), "row%ld", i);
+                                              #endif*/
+                                              FabricCore::RTVal ori;
+                                              ori = rtval.maybeGetMember("ori");
+
+                                              out.push_back(rtval.maybeGetMember("sc").maybeGetMember("x").getFloat32());
+                                              out.push_back(rtval.maybeGetMember("sc").maybeGetMember("y").getFloat32());
+                                              out.push_back(rtval.maybeGetMember("sc").maybeGetMember("z").getFloat32());
+                                              out.push_back(ori.maybeGetMember("w").getFloat32());
+                                              out.push_back(ori.maybeGetMember("v").maybeGetMember("x").getFloat32());
+                                              out.push_back(ori.maybeGetMember("v").maybeGetMember("y").getFloat32());
+                                              out.push_back(ori.maybeGetMember("v").maybeGetMember("z").getFloat32());
+                                              out.push_back(rtval.maybeGetMember("tr").maybeGetMember("x").getFloat32());
+                                              out.push_back(rtval.maybeGetMember("tr").maybeGetMember("y").getFloat32());
+                                              out.push_back(rtval.maybeGetMember("tr").maybeGetMember("z").getFloat32());
+                                            }
     else
       return -1;
   }
@@ -1441,6 +1467,46 @@ void BaseInterface::SetValueOfArgMat44(FabricCore::Client &client, FabricCore::D
       v[i]    = FabricCore::RTVal::Construct(client, "Vec4", 4, xyzt);
     }
     rtval = FabricCore::RTVal::Construct(client, "Mat44", 4, v);
+    binding.setArgValue(argName, rtval, false);
+  }
+  catch (FabricCore::Exception e)
+  {
+    logErrorFunc(NULL, e.getDesc_cstr(), e.getDescLength());
+  }
+}
+
+void BaseInterface::SetValueOfArgXfo(FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val)
+{
+  if (!binding.getExec().haveExecPort(argName))
+  {
+    std::string s = "BaseInterface::SetValueOfArgXfo(): port not found.";
+    logErrorFunc(NULL, s.c_str(), s.length());
+    return;
+  }
+
+  try
+  {
+    FabricCore::RTVal rtval;
+    rtVal = FabricCore::RTVal::Construct(client, "Xfo");
+    FabricCore::RTVal sc = FabricSplice::constructRTVal("Vec3");
+    FabricCore::RTVal ori = FabricSplice::constructRTVal("Quat");
+    FabricCore::RTVal oriAxis = FabricSplice::constructRTVal("Vec3");
+    FabricCore::RTVal tr = FabricSplice::constructRTVal("Vec3");
+
+    sc.setMember("x", FabricCore::RTVal::ConstructFloat64(val[0]);
+    sc.setMember("y", FabricCore::RTVal::ConstructFloat64(val[1]);
+    sc.setMember("z", FabricCore::RTVal::ConstructFloat64(val[2]);
+    rtVal.setMember("sc", sc);
+    ori.setMember("w", FabricCore::RTVal::ConstructFloat64(val[3]);
+    oriAxis.setMember("x", FabricCore::RTVal::ConstructFloat64(val[4]);
+    oriAxis.setMember("y", FabricCore::RTVal::ConstructFloat64(val[5]);
+    oriAxis.setMember("z", FabricCore::RTVal::ConstructFloat64(val[6]);
+    ori.setMember("v", oriAxis);
+    rtVal.setMember("ori", ori);
+    tr.setMember("x", FabricCore::RTVal::ConstructFloat64(val[7]);
+    tr.setMember("y", FabricCore::RTVal::ConstructFloat64(val[8]);
+    tr.setMember("z", FabricCore::RTVal::ConstructFloat64(val[9]);
+    rtVal.setMember("tr", tr);
     binding.setArgValue(argName, rtval, false);
   }
   catch (FabricCore::Exception e)
