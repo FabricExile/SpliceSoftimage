@@ -1131,6 +1131,11 @@ int BaseInterface::GetArgValuePolygonMesh(FabricCore::DFGBinding &binding,
   return errID;
 }
 
+int BaseInterface::GetArgValueProperties(FabricCore::DFGBinding &binding, char const * argName, std::vector <double> &out, bool strict)
+{
+
+}
+
 void BaseInterface::SetValueOfArgBoolean(FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const bool val)
 {
   if (!binding.getExec().haveExecPort(argName))
@@ -1572,6 +1577,10 @@ void BaseInterface::SetValueOfArgPolygonMesh(FabricCore::Client &client, FabricC
   }
 }
 
+void BaseInterface::SetValueOfArgProperties(FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val)
+{
+
+}
 
 
 

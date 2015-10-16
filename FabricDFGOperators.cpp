@@ -1387,6 +1387,14 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
               }
               storable = false;
             }
+            else if (portResolvedType == L"Float64[]")
+            {
+
+            }
+            else if (portResolvedType == L"Vec3[]")
+            {
+              
+            }
           }
         }
 
@@ -1907,7 +1915,11 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
 
                   || pmap.dfgPortDataType == L"Xfo"
 
-                  || pmap.dfgPortDataType == L"PolygonMesh")
+                  || pmap.dfgPortDataType == L"PolygonMesh"
+
+                  || pmap.dfgPortDataType == L"Float64[]"
+
+                  || pmap.dfgPortDataType == L"Vec3[]")
               {
                 cvaMapType.Add( L"XSI Port" );
                 cvaMapType.Add( DFG_PORT_MAPTYPE_XSI_PORT );
@@ -1919,7 +1931,11 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
 
                   || pmap.dfgPortDataType == L"Xfo"
 
-                  || pmap.dfgPortDataType == L"PolygonMesh")
+                  || pmap.dfgPortDataType == L"PolygonMesh"
+
+                  || pmap.dfgPortDataType == L"Float64[]"
+
+                  || pmap.dfgPortDataType == L"Vec3[]")
               {
                 cvaMapType.Add( L"XSI Port" );
                 cvaMapType.Add( DFG_PORT_MAPTYPE_XSI_PORT );
