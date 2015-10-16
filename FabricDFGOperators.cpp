@@ -1333,7 +1333,6 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                   MATH::CTransformation t = ks.GetTransform();
                   MATH::CQuaternion q = t.GetRotationQuaternion();
 
-
                   std::vector <double> val(10);
                   val[ 0] = t.GetSclX(); // scaling.
                   val[ 1] = t.GetSclY();
@@ -1529,6 +1528,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                 m.SetValue(2, 3, val[14]);
                 m.SetValue(3, 3, val[15]);
                 t.SetMatrix4(m);
+              }
               else
               {
                 t.SetScalingFromValues(val[0],val[1],val[2]);
