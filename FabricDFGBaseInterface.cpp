@@ -113,6 +113,8 @@ BaseInterface::~BaseInterface()
 
   m_binding = FabricCore::DFGBinding();
 
+  m_evalContext = FabricCore::RTVal();
+
   delete m_cmdHandler;
 
   if (it != s_instances.end())
@@ -170,6 +172,11 @@ FabricCore::DFGHost BaseInterface::getHost()
 FabricCore::DFGBinding BaseInterface::getBinding()
 {
   return m_binding;
+}
+
+FabricCore::RTVal *BaseInterface::getEvalContext()
+{
+  return &m_evalContext;
 }
 
 FabricServices::ASTWrapper::KLASTManager *BaseInterface::getManager()

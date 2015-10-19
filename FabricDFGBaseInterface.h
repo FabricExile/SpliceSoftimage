@@ -35,6 +35,7 @@ class BaseInterface
   static FabricCore::Client                       *getClient();
   static FabricCore::DFGHost                       getHost();
   FabricCore::DFGBinding                           getBinding();
+  FabricCore::RTVal                               *getEvalContext();
   static FabricServices::ASTWrapper::KLASTManager *getManager();
   DFGUICmdHandlerDCC                              *getCmdHandler();
 
@@ -64,6 +65,7 @@ class BaseInterface
   static FabricCore::DFGHost                       s_host;
   static FabricServices::ASTWrapper::KLASTManager *s_manager;
   FabricCore::DFGBinding                           m_binding;
+  FabricCore::RTVal                                m_evalContext;
   DFGUICmdHandlerDCC                              *m_cmdHandler;
   static std::map<unsigned int, BaseInterface*>    s_instances;
 
