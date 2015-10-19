@@ -7,7 +7,6 @@
 #include <FabricUI/DFG/DFGUICmd/DFGUICmds.h>
 
 #define DFGUICmdHandlerLOG        false  // FOR DEBUGGING: log some info.
-#define DFGUICmdHandlerByPassDCC  false  // FOR DEBUGGING: execute the dfg commands directly instead of using the DCC's commands.
 
 class BaseInterface;
 
