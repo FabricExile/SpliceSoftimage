@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <sstream>
 
+
 FabricCore::Client                        BaseInterface::s_client;
 FabricCore::DFGHost                       BaseInterface::s_host;
 FabricServices::ASTWrapper::KLASTManager *BaseInterface::s_manager = NULL;
@@ -1133,7 +1134,7 @@ int BaseInterface::GetArgValuePolygonMesh(FabricCore::DFGBinding &binding,
 
 int BaseInterface::GetArgValueProperties(FabricCore::DFGBinding &binding, char const * argName, std::vector <double> &out, bool strict)
 {
-
+  return 0;
 }
 
 void BaseInterface::SetValueOfArgBoolean(FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const bool val)
@@ -1577,9 +1578,30 @@ void BaseInterface::SetValueOfArgPolygonMesh(FabricCore::Client &client, FabricC
   }
 }
 
-void BaseInterface::SetValueOfArgProperties(FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val)
+void BaseInterface::SetValueOfArgProperties(FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector<double> &val)
 {
 
+  if (!binding.getExec().haveExecPort(argName))
+  {
+    std::string s = "BaseInterface::SetValueOfArgProperties(): port not found.";
+    logErrorFunc(NULL, s.c_str(), s.length());
+    return;
+  }
+
+  try
+  {
+    for (LONG i=0;i<val.size();i++){
+      std::string m;
+      m  = "weight map val form plugin= " + std::to_string(val[i]);
+      logFunc(NULL, m.c_str(), m.length());
+    }
+    FabricCore::RTVal rtval = FabricCore::RTVal::ConstructExternalArray(client, "Float64", val.size(), (void *)val.data());
+    binding.setArgValue(argName, rtval, false);
+  }
+  catch (FabricCore::Exception e)
+  {
+    logErrorFunc(NULL, e.getDesc_cstr(), e.getDescLength());
+  }
 }
 
 

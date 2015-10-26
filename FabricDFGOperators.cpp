@@ -1282,7 +1282,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
           if (!xsiPortValue.IsEmpty())
           {
             done = true;
-
+            Application().LogMessage(L"portResolvedType " + portResolvedType, siWarningMsg); //TO REMOVE
             //
             if (verbose) Application().LogMessage(functionName + L": transfer xsi port data to dfg port \"" + portName + L"\"");
 
@@ -1387,11 +1387,27 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
               }
               storable = false;
             }
-            else if (portResolvedType == L"Float64[]")
+            else if (portResolvedType == L"Float64Array<>")
             {
+              if (xsiPortValue.m_t == CValue::siRef)
+              {
+                ClusterProperty clsProp(xsiPortValue);
+                if(clsProp.IsValid())
+                {
+                  Application().LogMessage(L"process weight map", siWarningMsg);
 
+                  CClusterPropertyElementArray clsPropElem(clsProp.GetElements());
+                  double * w = &clsPropElem.GetArray()[0];
+                  std::vector<double> weights(w, w+clsPropElem.GetCount());
+                  BaseInterface::SetValueOfArgProperties(*client, binding, portName.GetAsciiString(), weights);
+                }
+              }
+              else
+              {
+                Application().LogMessage(L"ERROR: failed to get weight map", siWarningMsg);
+              }
             }
-            else if (portResolvedType == L"Vec3[]")
+            else if (portResolvedType == L"Vec3Array")
             {
               
             }
@@ -1917,9 +1933,9 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
 
                   || pmap.dfgPortDataType == L"PolygonMesh"
 
-                  || pmap.dfgPortDataType == L"Float64[]"
+                  || pmap.dfgPortDataType == L"Float64Array<>"
 
-                  || pmap.dfgPortDataType == L"Vec3[]")
+                  || pmap.dfgPortDataType == L"Vec3Array")
               {
                 cvaMapType.Add( L"XSI Port" );
                 cvaMapType.Add( DFG_PORT_MAPTYPE_XSI_PORT );
@@ -1933,9 +1949,9 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
 
                   || pmap.dfgPortDataType == L"PolygonMesh"
 
-                  || pmap.dfgPortDataType == L"Float64[]"
+                  || pmap.dfgPortDataType == L"Float64Array<>"
 
-                  || pmap.dfgPortDataType == L"Vec3[]")
+                  || pmap.dfgPortDataType == L"Vec3Array")
               {
                 cvaMapType.Add( L"XSI Port" );
                 cvaMapType.Add( DFG_PORT_MAPTYPE_XSI_PORT );

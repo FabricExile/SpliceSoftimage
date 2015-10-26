@@ -279,13 +279,14 @@ XSI::siClassID dfgTools::GetSiClassIdFromResolvedDataType(const XSI::CString &re
       || resDataType == L"Size"
       || resDataType == L"UInt32"
       || resDataType == L"DataSize"
-      || resDataType == L"UInt64")    return siParameterID;
+      || resDataType == L"UInt64"
+      /*|| resDataType == L"KeyframeTrack"*/)    return siParameterID;
 
   if (resDataType == L"Mat44" || resDataType == L"Xfo")         return siKinematicStateID;
 
   if (resDataType == L"PolygonMesh")                            return siPolygonMeshID;
 
-  if (resDataType == L"Float64[]" || resDataType == L"Vec3[]")  return siClusterPropertyID;
+  if (resDataType == L"Float64Array<>" || resDataType == L"Vec3Array")  return siClusterPropertyID;
   
   return siUnknownClassID;  // no match.
 }

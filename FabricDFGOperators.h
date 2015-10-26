@@ -118,9 +118,9 @@ struct _portMapping
 
           && dfgPortDataType != L"PolygonMesh"
 
-          && dfgPortDataType != L"Float64[]"
+          && dfgPortDataType != L"Float64Array<>"
 
-          && dfgPortDataType != L"Vec3[]")
+          && dfgPortDataType != L"Vec3Array")
         return false;
     }
     else if (mapType == DFG_PORT_MAPTYPE_XSI_ICE_PORT)
