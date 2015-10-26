@@ -712,7 +712,8 @@ std::string DFGUICmdHandlerDCC::dfgDoEditNode(
   FabricCore::DFGExec const &exec,
   FTL::StrRef oldNodeName,
   FTL::StrRef desiredNewNodeName,
-  FTL::StrRef uiMetadata
+  FTL::StrRef nodeMetadata,
+  FTL::StrRef execMetadata
   )
 {
   std::string cmdName(FabricUI::DFG::DFGUICmd_EditNode::CmdName());
@@ -722,7 +723,8 @@ std::string DFGUICmdHandlerDCC::dfgDoEditNode(
   args.push_back(execPath);
   args.push_back(oldNodeName);
   args.push_back(desiredNewNodeName);
-  args.push_back(uiMetadata);
+  args.push_back(nodeMetadata);
+  args.push_back(execMetadata);
 
   std::string result;
   execCmd(cmdName, args, result);
@@ -1868,8 +1870,12 @@ FabricUI::DFG::DFGUICmd_EditNode *DFGUICmdHandlerDCC::createAndExecuteDFGCommand
     if (!DecodeString(args, ai, desiredNewNodeName))
       return cmd;
 
-    std::string uiMetadata;
-    if (!DecodeString(args, ai, uiMetadata))
+    std::string nodeMetadata;
+    if (!DecodeString(args, ai, nodeMetadata))
+      return cmd;
+
+    std::string execMetadata;
+    if (!DecodeString(args, ai, execMetadata))
       return cmd;
 
     cmd = new FabricUI::DFG::DFGUICmd_EditNode(binding,
@@ -1877,7 +1883,8 @@ FabricUI::DFG::DFGUICmd_EditNode *DFGUICmdHandlerDCC::createAndExecuteDFGCommand
                                                  exec,
                                                  oldNodeName.c_str(),
                                                  desiredNewNodeName.c_str(),
-                                                 uiMetadata.c_str());
+                                                 nodeMetadata.c_str(),
+                                                 execMetadata.c_str());
     try
     {
       cmd->doit();
@@ -3551,7 +3558,8 @@ SICALLBACK FabricCanvasEditNode_Init(XSI::CRef &in_ctxt)
   oArgs.Add(L"execPath",           XSI::CString());
   oArgs.Add(L"oldNodeName",        XSI::CString());
   oArgs.Add(L"desiredNewNodeName", XSI::CString());
-  oArgs.Add(L"uiMetadata", XSI::CString());
+  oArgs.Add(L"nodeMetadata", XSI::CString());
+  oArgs.Add(L"execMetadata", XSI::CString());
 
   return XSI::CStatus::OK;
 }
