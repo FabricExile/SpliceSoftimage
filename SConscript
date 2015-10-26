@@ -46,9 +46,9 @@ env.Append(CPPDEFINES = ["_SPLICE_SOFTIMAGE_VERSION="+str(SOFTIMAGE_VERSION[:4])
 qtDir = None
 if FABRIC_BUILD_OS == 'Windows':
   if FABRIC_BUILD_TYPE == 'Release':
-    qtDir = env.Dir('#').Dir('ThirdParty').Dir('PreBuilt').Dir(FABRIC_BUILD_OS).Dir(FABRIC_BUILD_ARCH).Dir('VS2012').Dir('Release').Dir('qt-fabric').Dir('4.8.6')
+    qtDir = env.Dir('#').Dir('ThirdParty').Dir('PreBuilt').Dir(FABRIC_BUILD_OS).Dir(FABRIC_BUILD_ARCH).Dir('VS2013').Dir('Release').Dir('qt-fabric').Dir('4.8.6')
   else:
-    qtDir = env.Dir('#').Dir('ThirdParty').Dir('PreBuilt').Dir(FABRIC_BUILD_OS).Dir(FABRIC_BUILD_ARCH).Dir('VS2012').Dir('Release').Dir('qt').Dir('4.8.6')
+    qtDir = env.Dir('#').Dir('ThirdParty').Dir('PreBuilt').Dir(FABRIC_BUILD_OS).Dir(FABRIC_BUILD_ARCH).Dir('VS2013').Dir('Release').Dir('qt').Dir('4.8.6')
 
 if os.environ.has_key('QT_DIR') and not os.path.exists(qtDir.abspath):
   qtDir = env.Dir(os.environ['QT_DIR'])
