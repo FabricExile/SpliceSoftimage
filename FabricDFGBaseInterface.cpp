@@ -1578,24 +1578,40 @@ void BaseInterface::SetValueOfArgPolygonMesh(FabricCore::Client &client, FabricC
   }
 }
 
-void BaseInterface::SetValueOfArgProperties(FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector<double> &val)
+void BaseInterface::SetValueOfArgFloat64Array(FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, int size, const double * val)
 {
 
   if (!binding.getExec().haveExecPort(argName))
   {
-    std::string s = "BaseInterface::SetValueOfArgProperties(): port not found.";
+    std::string s = "BaseInterface::SetValueOfArgFloat64(): port not found.";
     logErrorFunc(NULL, s.c_str(), s.length());
     return;
   }
 
   try
   {
-    for (LONG i=0;i<val.size();i++){
-      std::string m;
-      m  = "weight map val form plugin= " + std::to_string(val[i]);
-      logFunc(NULL, m.c_str(), m.length());
-    }
-    FabricCore::RTVal rtval = FabricCore::RTVal::ConstructExternalArray(client, "Float64", val.size(), (void *)val.data());
+    FabricCore::RTVal rtval = FabricCore::RTVal::ConstructExternalArray(client, "Float64", size, (void *)val);
+    binding.setArgValue(argName, rtval, false);
+  }
+  catch (FabricCore::Exception e)
+  {
+    logErrorFunc(NULL, e.getDesc_cstr(), e.getDescLength());
+  }
+}
+
+void BaseInterface::SetValueOfArgVec3Array(FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, int size, const float * val)
+{
+
+  if (!binding.getExec().haveExecPort(argName))
+  {
+    std::string s = "BaseInterface::SetValueOfArgVec3(): port not found.";
+    logErrorFunc(NULL, s.c_str(), s.length());
+    return;
+  }
+
+  try
+  {
+    FabricCore::RTVal rtval = FabricCore::RTVal::ConstructExternalArray(client, "Vec3", size, (void *)val);
     binding.setArgValue(argName, rtval, false);
   }
   catch (FabricCore::Exception e)

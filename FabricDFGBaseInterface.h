@@ -16,20 +16,20 @@ struct _polymesh;
 class DFGUICmdHandlerDCC;
 
 template <class T>
-class vectorWrapper : public std::vector<T>
+class wvector : public std::vector<T>
 {   
 public:
-  vectorWrapper() {
+  wvector() {
     this->_Myfirst = this->_Myend = this->_Mylast = NULL;
   }   
 
-  vectorWrapper(T* sourceArray, int arraySize)
+  wvector(T* sourceArray, int arraySize)
   {   
     this->_Myfirst = sourceArray;
     this->_Myend = this->_Mylast = sourceArray + arraySize;
   }   
 
-  ~vectorWrapper() {
+  ~wvector() {
     this->_Myfirst = this->_Myend = this->_Mylast = NULL;
   }   
 
@@ -165,8 +165,8 @@ class BaseInterface
   static void SetValueOfArgMat44        (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const std::vector <double> &val);
   static void SetValueOfArgXfo          (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const std::vector <double> &val);
   static void SetValueOfArgPolygonMesh  (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const _polymesh            &val);
-  static void SetValueOfArgProperties   (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const std::vector<double> &val);
-
+  static void SetValueOfArgFloat64Array (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, int size, const double *val);
+  static void SetValueOfArgVec3Array    (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, int size, const float *val);
 };
 
 #endif
