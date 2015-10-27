@@ -145,6 +145,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     REGISTER_DFGUICMD( in_reg, InstPreset );
     REGISTER_DFGUICMD( in_reg, MoveNodes );
     REGISTER_DFGUICMD( in_reg, Paste );
+    REGISTER_DFGUICMD( in_reg, RenameNode );
     REGISTER_DFGUICMD( in_reg, RenamePort );
     REGISTER_DFGUICMD( in_reg, RemoveNodes );
     REGISTER_DFGUICMD( in_reg, RemovePort );
@@ -154,7 +155,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     REGISTER_DFGUICMD( in_reg, SetExtDeps );
     REGISTER_DFGUICMD( in_reg, SetCode );
     REGISTER_DFGUICMD( in_reg, SetNodeComment );
-    REGISTER_DFGUICMD( in_reg, SetNodeTitle );
+    REGISTER_DFGUICMD( in_reg, SetTitle );
     REGISTER_DFGUICMD( in_reg, SetPortDefaultValue );
     REGISTER_DFGUICMD( in_reg, SetRefVarPath );
     REGISTER_DFGUICMD( in_reg, SplitFromPreset );
