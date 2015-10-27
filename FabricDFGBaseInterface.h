@@ -15,30 +15,6 @@
 struct _polymesh;
 class DFGUICmdHandlerDCC;
 
-template <class T>
-class wvector : public std::vector<T>
-{   
-public:
-  wvector() {
-    this->_Myfirst = this->_Myend = this->_Mylast = NULL;
-  }   
-
-  wvector(T* sourceArray, int arraySize)
-  {   
-    this->_Myfirst = sourceArray;
-    this->_Myend = this->_Mylast = sourceArray + arraySize;
-  }   
-
-  ~wvector() {
-    this->_Myfirst = this->_Myend = this->_Mylast = NULL;
-  }   
-
-  void wrapArray(T* sourceArray, int arraySize)
-  {   
-    this->_Myfirst = sourceArray;
-    this->_Myend = this->_Mylast = sourceArray + arraySize;
-  }   
-};  
 
 // a management class for client and host
 class BaseInterface

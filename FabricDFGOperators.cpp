@@ -1394,14 +1394,12 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                 if(clsProp.IsValid())
                 {
                   CClusterPropertyElementArray clsPropElem(clsProp.GetElements());
-                  //const double * weights = &clsPropElem.GetArray()[0];
-                  //std::vector<double> weights(w, w+clsPropElem.GetCount());
                   BaseInterface::SetValueOfArgFloat64Array(*client, binding, portName.GetAsciiString(), clsPropElem.GetCount(), &clsPropElem.GetArray()[0]);
                 }
               }
               else
               {
-                Application().LogMessage(L"ERROR: failed to get weight map", siWarningMsg);
+                Application().LogMessage(L"ERROR: failed to get WeightMap", siWarningMsg);
               }
             }
             else if (portResolvedType == L"Vec3<>")
@@ -1414,15 +1412,12 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                   CClusterPropertyElementArray clsPropElem(clsProp.GetElements());
                   CFloatArray values;
                   clsProp.GetValues(values);
-                  //const float * values = &clsPropElem.GetArray()[0];
-                  //double * w = &clsPropElem.GetArray()[0];
-                  //std::vector<double> weights(w, w+clsPropElem.GetCount());
                   BaseInterface::SetValueOfArgVec3Array(*client, binding, portName.GetAsciiString(), clsPropElem.GetCount(), &values[0]);
                 }
               }
               else
               {
-                Application().LogMessage(L"ERROR: failed to get ShapeProperty map", siWarningMsg);
+                Application().LogMessage(L"ERROR: failed to get ShapeProperty", siWarningMsg);
               }              
             }
           }
