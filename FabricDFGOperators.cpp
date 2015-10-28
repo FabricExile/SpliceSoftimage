@@ -20,6 +20,7 @@
 #include <xsi_gridwidget.h>
 #include <xsi_selection.h>
 #include <xsi_project.h>
+#include <xsi_scene.h>
 #include <xsi_port.h>
 #include <xsi_portgroup.h>
 #include <xsi_inputport.h>
@@ -1255,6 +1256,39 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
   FabricCore::Client                              *client         = pud->GetBaseInterface()->getClient();
   FabricCore::DFGBinding                           binding        = pud->GetBaseInterface()->getBinding();
   FabricCore::DFGExec                              exec           = binding.getExec();
+
+  // Fabric Engine (step 0): update the base interface's evalContext.
+  {
+    FabricCore::RTVal &evalContext = *baseInterface->getEvalContext();
+
+    if (!evalContext.isValid())
+    {
+      try
+      {
+        evalContext = FabricCore::RTVal::Create(*client, "EvalContext", 0, 0);
+        evalContext = evalContext.callMethod("EvalContext", "getInstance", 0, 0);
+        evalContext.setMember("host", FabricCore::RTVal::ConstructString(*client, "Softimage"));
+      }
+      catch(FabricCore::Exception e)
+      {
+        feLogError(e.getDesc_cstr());
+      }
+    }
+
+    if(evalContext.isValid())
+    {
+      try
+      {
+        evalContext.setMember("graph",           FabricCore::RTVal::ConstructString (*client, op.GetFullName().GetAsciiString()));
+        evalContext.setMember("time",            FabricCore::RTVal::ConstructFloat32(*client, (float)ctxt.GetTime().GetTime(CTime::Seconds)));
+        evalContext.setMember("currentFilePath", FabricCore::RTVal::ConstructString (*client, CString(Application().GetActiveProject().GetActiveScene().GetParameter(L"Filename").GetValue()).GetAsciiString()));
+      }
+      catch(FabricCore::Exception e)
+      {
+        feLogError(e.getDesc_cstr());
+      }
+    }
+  }
 
   // Fabric Engine (step 1): loop through all the DFG's input ports and set
   //                         their values from the matching XSI ports or parameters.
