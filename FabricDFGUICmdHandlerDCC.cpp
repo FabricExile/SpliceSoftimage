@@ -462,7 +462,7 @@ std::string DFGUICmdHandlerDCC::dfgDoAddPort(
 
 std::string DFGUICmdHandlerDCC::dfgDoCreatePreset(
   FabricCore::DFGBinding const &binding,
-  FTL::CStrRef execPath,
+  FTL::StrRef execPath,
   FabricCore::DFGExec const &exec,
   FTL::StrRef nodeName,
   FTL::StrRef presetDirPath,
@@ -1415,7 +1415,7 @@ FabricUI::DFG::DFGUICmd_AddPort *DFGUICmdHandlerDCC::createAndExecuteDFGCommand_
   return cmd;
 }
 
-FabricUI::DFG::DFGUICmd_EditPort *DFGUICmdHandlerDCC::createAndExecuteDFGCommand_CreatePreset(std::vector<std::string> &args)
+FabricUI::DFG::DFGUICmd_CreatePreset *DFGUICmdHandlerDCC::createAndExecuteDFGCommand_CreatePreset(std::vector<std::string> &args)
 {
   FabricUI::DFG::DFGUICmd_CreatePreset *cmd = NULL;
   {
@@ -1440,11 +1440,11 @@ FabricUI::DFG::DFGUICmd_EditPort *DFGUICmdHandlerDCC::createAndExecuteDFGCommand
       return cmd;
 
     cmd = new FabricUI::DFG::DFGUICmd_CreatePreset(binding,
-                                              execPath,
-                                              exec,
-                                              nodeName,
-                                              presetDirPath,
-                                              presetName);
+                                                   execPath,
+                                                   exec,
+                                                   nodeName,
+                                                   presetDirPath,
+                                                   presetName);
     try
     {
       cmd->doit();
@@ -2930,11 +2930,11 @@ SICALLBACK FabricCanvasCreatePreset_Init(XSI::CRef &in_ctxt)
   oCmd.EnableReturnValue(true);
 
   XSI::ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",            XSI::CString());
-  oArgs.Add(L"execPath",           XSI::CString());
-  oArgs.Add(L"nodeName",        XSI::CString());
+  oArgs.Add(L"binding",       XSI::CString());
+  oArgs.Add(L"execPath",      XSI::CString());
+  oArgs.Add(L"nodeName",      XSI::CString());
   oArgs.Add(L"presetDirPath", XSI::CString());
-  oArgs.Add(L"presetName",         XSI::CString());
+  oArgs.Add(L"presetName",    XSI::CString());
 
   return XSI::CStatus::OK;
 }
@@ -2953,7 +2953,7 @@ SICALLBACK FabricCanvasCreatePreset_Execute(XSI::CRef &in_ctxt)
     return XSI::CStatus::Fail;
 
   // store return value.
-  XSI::CString returnValue = cmd->getActualNewPortName().c_str();
+  XSI::CString returnValue = cmd->getPathname().c_str();
   if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", XSI::siCommentMsg);
   ctxt.PutAttribute(L"ReturnValue", returnValue);
 
