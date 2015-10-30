@@ -138,28 +138,29 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     REGISTER_DFGUICMD( in_reg, AddSet );
     REGISTER_DFGUICMD( in_reg, AddVar );
     REGISTER_DFGUICMD( in_reg, Connect );
+    REGISTER_DFGUICMD( in_reg, CreatePreset );
     REGISTER_DFGUICMD( in_reg, Disconnect );
+    REGISTER_DFGUICMD( in_reg, EditNode );
     REGISTER_DFGUICMD( in_reg, EditPort );
     REGISTER_DFGUICMD( in_reg, ExplodeNode );
     REGISTER_DFGUICMD( in_reg, ImplodeNodes );
     REGISTER_DFGUICMD( in_reg, InstPreset );
     REGISTER_DFGUICMD( in_reg, MoveNodes );
     REGISTER_DFGUICMD( in_reg, Paste );
-    REGISTER_DFGUICMD( in_reg, RenameNode );
-    REGISTER_DFGUICMD( in_reg, RenamePort );
     REGISTER_DFGUICMD( in_reg, RemoveNodes );
     REGISTER_DFGUICMD( in_reg, RemovePort );
+    REGISTER_DFGUICMD( in_reg, RenamePort );
+    REGISTER_DFGUICMD( in_reg, ReorderPorts );
     REGISTER_DFGUICMD( in_reg, ResizeBackDrop );
     REGISTER_DFGUICMD( in_reg, SetArgType );
     REGISTER_DFGUICMD( in_reg, SetArgValue );
-    REGISTER_DFGUICMD( in_reg, SetExtDeps );
     REGISTER_DFGUICMD( in_reg, SetCode );
+    REGISTER_DFGUICMD( in_reg, SetExtDeps );
     REGISTER_DFGUICMD( in_reg, SetNodeComment );
-    REGISTER_DFGUICMD( in_reg, SetTitle );
     REGISTER_DFGUICMD( in_reg, SetPortDefaultValue );
     REGISTER_DFGUICMD( in_reg, SetRefVarPath );
+    REGISTER_DFGUICMD( in_reg, SetTitle );
     REGISTER_DFGUICMD( in_reg, SplitFromPreset );
-    REGISTER_DFGUICMD( in_reg, ReorderPorts );
 
     // menu.
     in_reg.RegisterMenu(siMenuMainTopLevelID,       L"Fabric", true, true);

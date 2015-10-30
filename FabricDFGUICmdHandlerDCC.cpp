@@ -460,6 +460,29 @@ std::string DFGUICmdHandlerDCC::dfgDoAddPort(
   return result;
 }
 
+std::string DFGUICmdHandlerDCC::dfgDoCreatePreset(
+  FabricCore::DFGBinding const &binding,
+  FTL::StrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::StrRef nodeName,
+  FTL::StrRef presetDirPath,
+  FTL::StrRef presetName
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_CreatePreset::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getDCCObjectNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(nodeName);
+  args.push_back(presetDirPath);
+  args.push_back(presetName);
+
+  std::string result;
+  execCmd(cmdName, args, result);
+  return result;
+}
+
 std::string DFGUICmdHandlerDCC::dfgDoEditPort(
   FabricCore::DFGBinding const &binding,
   FTL::CStrRef execPath,
@@ -706,21 +729,25 @@ void DFGUICmdHandlerDCC::dfgDoSetCode(
   execCmd(cmdName, args, output);
 }
 
-std::string DFGUICmdHandlerDCC::dfgDoRenameNode(
+std::string DFGUICmdHandlerDCC::dfgDoEditNode(
   FabricCore::DFGBinding const &binding,
   FTL::CStrRef execPath,
   FabricCore::DFGExec const &exec,
-  FTL::CStrRef oldNodeName,
-  FTL::CStrRef desiredNewNodeName
+  FTL::StrRef oldNodeName,
+  FTL::StrRef desiredNewNodeName,
+  FTL::StrRef nodeMetadata,
+  FTL::StrRef execMetadata
   )
 {
-  std::string cmdName(FabricUI::DFG::DFGUICmd_RenameNode::CmdName());
+  std::string cmdName(FabricUI::DFG::DFGUICmd_EditNode::CmdName());
   std::vector<std::string> args;
 
   args.push_back(getDCCObjectNameFromBinding(binding));
   args.push_back(execPath);
   args.push_back(oldNodeName);
   args.push_back(desiredNewNodeName);
+  args.push_back(nodeMetadata);
+  args.push_back(execMetadata);
 
   std::string result;
   execCmd(cmdName, args, result);
@@ -934,6 +961,7 @@ FabricUI::DFG::DFGUICmd *DFGUICmdHandlerDCC::createAndExecuteDFGCommand(std::str
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_AddGet::             CmdName().c_str())    cmd = createAndExecuteDFGCommand_AddGet             (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_AddSet::             CmdName().c_str())    cmd = createAndExecuteDFGCommand_AddSet             (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_AddPort::            CmdName().c_str())    cmd = createAndExecuteDFGCommand_AddPort            (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_CreatePreset::           CmdName().c_str())    cmd = createAndExecuteDFGCommand_CreatePreset           (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_EditPort::           CmdName().c_str())    cmd = createAndExecuteDFGCommand_EditPort           (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_RemovePort::         CmdName().c_str())    cmd = createAndExecuteDFGCommand_RemovePort         (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_MoveNodes::          CmdName().c_str())    cmd = createAndExecuteDFGCommand_MoveNodes          (in_args);
@@ -944,7 +972,7 @@ FabricUI::DFG::DFGUICmd *DFGUICmdHandlerDCC::createAndExecuteDFGCommand(std::str
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_SetTitle::           CmdName().c_str())    cmd = createAndExecuteDFGCommand_SetTitle           (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_SetNodeComment::     CmdName().c_str())    cmd = createAndExecuteDFGCommand_SetNodeComment     (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_SetCode::            CmdName().c_str())    cmd = createAndExecuteDFGCommand_SetCode            (in_args);
-  else if (in_cmdName == FabricUI::DFG::DFGUICmd_RenameNode::         CmdName().c_str())    cmd = createAndExecuteDFGCommand_RenameNode         (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_EditNode::         CmdName().c_str())    cmd = createAndExecuteDFGCommand_EditNode         (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_RenamePort::         CmdName().c_str())    cmd = createAndExecuteDFGCommand_RenamePort         (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_Paste::              CmdName().c_str())    cmd = createAndExecuteDFGCommand_Paste              (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_SetArgType::         CmdName().c_str())    cmd = createAndExecuteDFGCommand_SetArgType         (in_args);
@@ -1374,6 +1402,49 @@ FabricUI::DFG::DFGUICmd_AddPort *DFGUICmdHandlerDCC::createAndExecuteDFGCommand_
                                               portToConnectWith,
                                               extDep,
                                               uiMetadata);
+    try
+    {
+      cmd->doit();
+    }
+    catch(FabricCore::Exception e)
+    {
+      feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+    }
+  }
+
+  return cmd;
+}
+
+FabricUI::DFG::DFGUICmd_CreatePreset *DFGUICmdHandlerDCC::createAndExecuteDFGCommand_CreatePreset(std::vector<std::string> &args)
+{
+  FabricUI::DFG::DFGUICmd_CreatePreset *cmd = NULL;
+  {
+    unsigned int ai = 0;
+
+    FabricCore::DFGBinding binding;
+    std::string execPath;
+    FabricCore::DFGExec exec;
+    if (!DecodeExec(args, ai, binding, execPath, exec))
+      return cmd;
+
+    std::string nodeName;
+    if (!DecodeString(args, ai, nodeName))
+      return cmd;
+
+    std::string presetDirPath;
+    if (!DecodeString(args, ai, presetDirPath))
+      return cmd;
+
+    std::string presetName;
+    if (!DecodeString(args, ai, presetName))
+      return cmd;
+
+    cmd = new FabricUI::DFG::DFGUICmd_CreatePreset(binding,
+                                                   execPath,
+                                                   exec,
+                                                   nodeName,
+                                                   presetDirPath,
+                                                   presetName);
     try
     {
       cmd->doit();
@@ -1846,9 +1917,9 @@ FabricUI::DFG::DFGUICmd_SetCode *DFGUICmdHandlerDCC::createAndExecuteDFGCommand_
   return cmd;
 }
 
-FabricUI::DFG::DFGUICmd_RenameNode *DFGUICmdHandlerDCC::createAndExecuteDFGCommand_RenameNode(std::vector<std::string> &args)
+FabricUI::DFG::DFGUICmd_EditNode *DFGUICmdHandlerDCC::createAndExecuteDFGCommand_EditNode(std::vector<std::string> &args)
 {
-  FabricUI::DFG::DFGUICmd_RenameNode *cmd = NULL;
+  FabricUI::DFG::DFGUICmd_EditNode *cmd = NULL;
   {
     unsigned int ai = 0;
 
@@ -1866,11 +1937,21 @@ FabricUI::DFG::DFGUICmd_RenameNode *DFGUICmdHandlerDCC::createAndExecuteDFGComma
     if (!DecodeString(args, ai, desiredNewNodeName))
       return cmd;
 
-    cmd = new FabricUI::DFG::DFGUICmd_RenameNode(binding,
+    std::string nodeMetadata;
+    if (!DecodeString(args, ai, nodeMetadata))
+      return cmd;
+
+    std::string execMetadata;
+    if (!DecodeString(args, ai, execMetadata))
+      return cmd;
+
+    cmd = new FabricUI::DFG::DFGUICmd_EditNode(binding,
                                                  execPath.c_str(),
                                                  exec,
                                                  oldNodeName.c_str(),
-                                                 desiredNewNodeName.c_str());
+                                                 desiredNewNodeName.c_str(),
+                                                 nodeMetadata.c_str(),
+                                                 execMetadata.c_str());
     try
     {
       cmd->doit();
@@ -2838,6 +2919,67 @@ SICALLBACK FabricCanvasAddPort_TermUndoRedo(XSI::CRef &ctxt)
   return XSI::CStatus::OK;
 }
 
+//        "CreatePreset"
+
+SICALLBACK FabricCanvasCreatePreset_Init(XSI::CRef &in_ctxt)
+{
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.EnableReturnValue(true);
+
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",       XSI::CString());
+  oArgs.Add(L"execPath",      XSI::CString());
+  oArgs.Add(L"nodeName",      XSI::CString());
+  oArgs.Add(L"presetDirPath", XSI::CString());
+  oArgs.Add(L"presetName",    XSI::CString());
+
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasCreatePreset_Execute(XSI::CRef &in_ctxt)
+{
+  // init.
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  CValueArrayToStdVector(tmp, args);
+
+  // create and execute the DFG command.
+  FabricUI::DFG::DFGUICmd_CreatePreset *cmd = DFGUICmdHandlerDCC::createAndExecuteDFGCommand_CreatePreset(args);
+  if (!cmd)
+    return XSI::CStatus::Fail;
+
+  // store return value.
+  XSI::CString returnValue = cmd->getPathname().c_str();
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", XSI::siCommentMsg);
+  ctxt.PutAttribute(L"ReturnValue", returnValue);
+
+  // done.
+  DFGUICmd_Finish(ctxt, cmd);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasCreatePreset_Undo(XSI::CRef &ctxt)
+{
+  DFGUICmd_Undo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasCreatePreset_Redo(XSI::CRef &ctxt)
+{
+  DFGUICmd_Redo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasCreatePreset_TermUndoRedo(XSI::CRef &ctxt)
+{
+  DFGUICmd_TermUndoRedo(ctxt);
+  return XSI::CStatus::OK;
+}
+
 //        "EditPort"
 
 SICALLBACK FabricCanvasEditPort_Init(XSI::CRef &in_ctxt)
@@ -3529,9 +3671,9 @@ SICALLBACK FabricCanvasSetCode_TermUndoRedo(XSI::CRef &ctxt)
   return XSI::CStatus::OK;
 }
 
-//        "RenameNode"
+//        "EditNode"
 
-SICALLBACK FabricCanvasRenameNode_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasEditNode_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -3544,11 +3686,13 @@ SICALLBACK FabricCanvasRenameNode_Init(XSI::CRef &in_ctxt)
   oArgs.Add(L"execPath",           XSI::CString());
   oArgs.Add(L"oldNodeName",        XSI::CString());
   oArgs.Add(L"desiredNewNodeName", XSI::CString());
+  oArgs.Add(L"nodeMetadata", XSI::CString());
+  oArgs.Add(L"execMetadata", XSI::CString());
 
   return XSI::CStatus::OK;
 }
 
-SICALLBACK FabricCanvasRenameNode_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasEditNode_Execute(XSI::CRef &in_ctxt)
 {
   // init.
   XSI::Context     ctxt(in_ctxt);
@@ -3557,7 +3701,7 @@ SICALLBACK FabricCanvasRenameNode_Execute(XSI::CRef &in_ctxt)
   CValueArrayToStdVector(tmp, args);
 
   // create and execute the DFG command.
-  FabricUI::DFG::DFGUICmd_RenameNode *cmd = DFGUICmdHandlerDCC::createAndExecuteDFGCommand_RenameNode(args);
+  FabricUI::DFG::DFGUICmd_EditNode *cmd = DFGUICmdHandlerDCC::createAndExecuteDFGCommand_EditNode(args);
   if (!cmd)
     return XSI::CStatus::Fail;
 
@@ -3571,19 +3715,19 @@ SICALLBACK FabricCanvasRenameNode_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK FabricCanvasRenameNode_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasEditNode_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK FabricCanvasRenameNode_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasEditNode_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK FabricCanvasRenameNode_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasEditNode_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;

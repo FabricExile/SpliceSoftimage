@@ -118,6 +118,15 @@ protected:
     FTL::CStrRef uiMetadata
     );
 
+  virtual std::string dfgDoCreatePreset(
+    FabricCore::DFGBinding const &binding,
+    FTL::StrRef execPath,
+    FabricCore::DFGExec const &exec,
+    FTL::StrRef nodeName,
+    FTL::StrRef presetDirPath,
+    FTL::StrRef presetName
+    );
+
   virtual std::string dfgDoEditPort(
     FabricCore::DFGBinding const &binding,
     FTL::CStrRef execPath,
@@ -198,12 +207,14 @@ protected:
     FTL::CStrRef code
     );
 
-  virtual std::string dfgDoRenameNode(
+  virtual std::string dfgDoEditNode(
     FabricCore::DFGBinding const &binding,
     FTL::CStrRef execPath,
     FabricCore::DFGExec const &exec,
-    FTL::CStrRef oldNodeName,
-    FTL::CStrRef desiredNewNodeName
+    FTL::StrRef oldNodeName,
+    FTL::StrRef desiredNewNodeName,
+    FTL::StrRef nodeMetadata,
+    FTL::StrRef execMetadata
     );
 
   virtual std::string dfgDoRenamePort(
@@ -283,6 +294,7 @@ public:
   static FabricUI::DFG::DFGUICmd *createAndExecuteDFGCommand(std::string &in_cmdName, std::vector<std::string> &in_args);
   static FabricUI::DFG::DFGUICmd_RemoveNodes *createAndExecuteDFGCommand_RemoveNodes(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_Connect *createAndExecuteDFGCommand_Connect(std::vector<std::string> &args);
+  static FabricUI::DFG::DFGUICmd_CreatePreset *createAndExecuteDFGCommand_CreatePreset(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_Disconnect *createAndExecuteDFGCommand_Disconnect(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_AddGraph *createAndExecuteDFGCommand_AddGraph(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_AddFunc *createAndExecuteDFGCommand_AddFunc(std::vector<std::string> &args);
@@ -301,7 +313,7 @@ public:
   static FabricUI::DFG::DFGUICmd_SetTitle *createAndExecuteDFGCommand_SetTitle(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_SetNodeComment *createAndExecuteDFGCommand_SetNodeComment(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_SetCode *createAndExecuteDFGCommand_SetCode(std::vector<std::string> &args);
-  static FabricUI::DFG::DFGUICmd_RenameNode *createAndExecuteDFGCommand_RenameNode(std::vector<std::string> &args);
+  static FabricUI::DFG::DFGUICmd_EditNode *createAndExecuteDFGCommand_EditNode(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_RenamePort *createAndExecuteDFGCommand_RenamePort(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_Paste *createAndExecuteDFGCommand_Paste(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_SetArgType *createAndExecuteDFGCommand_SetArgType(std::vector<std::string> &args);
