@@ -116,6 +116,10 @@ struct _portMapping
 
           && dfgPortDataType != L"Xfo"
 
+          && dfgPortDataType != L"Float32"
+
+          && dfgPortDataType != L"KeyframeTrack"
+
           && dfgPortDataType != L"PolygonMesh"
 
           && dfgPortDataType != L"Float64<>"

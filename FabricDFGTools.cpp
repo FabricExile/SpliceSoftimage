@@ -280,7 +280,7 @@ XSI::siClassID dfgTools::GetSiClassIdFromResolvedDataType(const XSI::CString &re
       || resDataType == L"UInt32"
       || resDataType == L"DataSize"
       || resDataType == L"UInt64"
-      /*|| resDataType == L"KeyframeTrack"*/)    return siParameterID;
+      || resDataType == L"KeyframeTrack")    return siParameterID;
 
   if (resDataType == L"Mat44" || resDataType == L"Xfo")         return siKinematicStateID;
 

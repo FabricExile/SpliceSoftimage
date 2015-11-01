@@ -1349,6 +1349,33 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                 }
               }
             }
+            else if (portResolvedType == L"KeyframeTrack")
+            {
+              if (xsiPortValue.m_t == CValue::siRef)
+              {
+                Parameter param(xsiPortValue);
+                if (param.IsValid())
+                {
+                  // put the XSI port's value into a std::vector.
+                  FCurve fc = param.Value();
+                  CFCurveKeyRefArray keys = fc.GetKeys();
+                  std::vector <double> val(7*keys.Count());
+                  for (int i = 0; i < keys.Count(); ++i)
+                  {
+                    FCureKey k = keys[i];
+                    val[ i] = k.GetTime(); // scaling.
+                    val[ i+1] = k.GetValue();
+                    val[ i+2] = k.GetInterpolation()+1; // need to convert to INT 1, 2, or 3?
+                    val[ i+3] = k.GetLeftTanX();    // orientation.
+                    val[ i+4] = k.GetLeftTanY();
+                    val[ i+5] = k.GetRightTanX();
+                    val[ i+6] = k.GetRightTanY();
+                  }
+                  // set the DFG port from the std::vector.
+                  BaseInterface::SetValueOfArgKeyframeTrack(*client, binding, portName.GetAsciiString(), val);
+                }
+              }
+            }
             //
             else if (portResolvedType == L"PolygonMesh")
             {
