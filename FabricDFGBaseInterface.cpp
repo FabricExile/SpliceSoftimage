@@ -1620,6 +1620,50 @@ void BaseInterface::SetValueOfArgVec3Array(FabricCore::Client &client, FabricCor
   }
 }
 
+void BaseInterface::SetValueOfArgKeyframeTrack(FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val)
+{
+  if (!binding.getExec().haveExecPort(argName))
+  {
+    std::string s = "BaseInterface::SetValueOfArgXfo(): port not found.";
+    logErrorFunc(NULL, s.c_str(), s.length());
+    return;
+  }
+
+  try
+  {
+    FabricCore::RTVal rtval;
+    FabricCore::RTVal color[4], inT[2], outT[2] kf[5] kft[5];
+
+    kft[0]   = FabricCore::RTVal::ConstructString(client, val.c_str());
+    kft[1]   = FabricCore::RTVal::Construct(client, "Color", 2, color);
+    kft[2]   = FabricCore::RTVal::ConstructFloat32(client, 0); //default value
+    kft[3]   = FabricCore::RTVal::ConstructUInt32(client, val); // interpolation
+    kft[4]   = FabricCore::RTVal::ConstructVariableArray(client, "Keyframe", val.size()/7, (void *)kf);
+
+    for (int i = 0; i < val.size(); i+7)
+    {      
+      kf[0] = FabricCore::RTVal::ConstructFloat32(client, valIsValid ? val[i*7] : 0);
+      kf[1] = FabricCore::RTVal::ConstructFloat32(client, valIsValid ? val[i*7+1] : 0);
+      kf[2] = FabricCore::RTVal::ConstructFloat32(client, valIsValid ? val[i*7+2] : 0);
+      inT[0] = FabricCore::RTVal::ConstructFloat32(client, val[i*7+3]);
+      inT[1] = FabricCore::RTVal::ConstructFloat32(client, val[i*7+4]);
+      kf[3] = FabricCore::RTVal::Construct(client, "Vec2", 3, inT);
+      outT[0] = FabricCore::RTVal::ConstructFloat32(client, val[i*7+5]);
+      outT[1] = FabricCore::RTVal::ConstructFloat32(client, val[i*7+6]);
+      kf[4] = FabricCore::RTVal::Construct(client, "Vec2", 3, outT);
+
+      kf[0] = 
+    }
+
+    rtval = FabricCore::RTVal::Construct(client, "KeyframeTrack", 5, kft);
+    binding.setArgValue(argName, rtval, false);
+  }
+  catch (FabricCore::Exception e)
+  {
+    logErrorFunc(NULL, e.getDesc_cstr(), e.getDescLength());
+  }
+}
+
 
 
 
