@@ -1330,3 +1330,69 @@ SICALLBACK FabricCanvasGetContextID_Execute(CRef &in_ctxt)
   
   return CStatus::OK;
 }
+
+// ---
+// command "FabricCanvasGetBindingID".
+// ---
+
+SICALLBACK FabricCanvasGetBindingID_Init(CRef &in_ctxt)
+{
+  Context ctxt(in_ctxt);
+  Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.PutDescription(L"returns the ID of the FabricCore DFGBinding used by a specified Canvas operator.");
+  oCmd.SetFlag(siNoLogging, false);
+  oCmd.EnableReturnValue(true) ;
+
+  ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"OperatorName", CString());
+
+  return CStatus::OK;
+}
+
+SICALLBACK FabricCanvasGetBindingID_Execute(CRef &in_ctxt)
+{
+  // init.
+  Context ctxt(in_ctxt);
+  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  if (args.GetCount() < 1 || CString(args[0]).IsEmpty())
+  { Application().LogMessage(L"empty or missing argument(s)", siErrorMsg);
+    return CStatus::OK; }
+  CString operatorName(args[0]);
+
+  // set ref at operator.
+  CRef ref;
+  ref.Set(operatorName);
+  if (!ref.IsValid())
+  { Application().LogMessage(L"failed to find an object called \"" + operatorName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+  if (ref.GetClassID() != siCustomOperatorID)
+  { Application().LogMessage(L"not a custom operator: \"" + operatorName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+
+  // get operator.
+  CustomOperator op(ref);
+  if (!op.IsValid())
+  { Application().LogMessage(L"failed to set custom operator from \"" + operatorName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+
+  // get op's _opUserData.
+  _opUserData *pud = _opUserData::GetUserData(op.GetObjectID());
+  if (!pud)
+  { Application().LogMessage(L"found no valid user data in custom operator \"" + operatorName + L"\"", siErrorMsg);
+    Application().LogMessage(L"... operator perhaps not CanvasOp?", siErrorMsg);
+    return CStatus::OK; }
+
+  // check if base interface exists.
+  if (!pud->GetBaseInterface())
+  { Application().LogMessage(L"no base interface found!", siErrorMsg);
+    return CStatus::OK; }
+
+  // get and return binding ID.
+  ULONG result = pud->GetBaseInterface()->getBinding().getBindingID();
+  ctxt.PutAttribute(L"ReturnValue", result);
+    
+  // done.
+  return CStatus::OK;
+}

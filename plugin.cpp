@@ -129,6 +129,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     cmdName = L"FabricCanvasSelectConnected";   in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
     cmdName = L"FabricCanvasLogStatus";         in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
     cmdName = L"FabricCanvasGetContextID";      in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
+    cmdName = L"FabricCanvasGetBindingID";      in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
 
     // commands for DFGUICmdHandler.
     REGISTER_DFGUICMD( in_reg, AddBackDrop );
