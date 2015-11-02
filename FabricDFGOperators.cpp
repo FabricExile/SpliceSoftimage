@@ -1154,11 +1154,6 @@ XSIPLUGINCALLBACK CStatus CanvasOp_PPGEvent(const CRef &in_ctxt)
             {
 
               // add code to be executed when pressing the " - " button in the tab "Advanced".
-              {
-                FabricCore::Client client = FabricSplice::ConstructClient();
-                CString result = client.getContextID();
-                Application().LogMessage(L"FabricSplice::ConstructClient().getContextID() = \"" + result + L"\"");
-              }
 
             }
             Application().LogMessage(L"------- debug output end -------");
