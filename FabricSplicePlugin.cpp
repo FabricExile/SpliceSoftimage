@@ -129,7 +129,7 @@ void xsiKLStatusFunc(const char * topicData, unsigned int topicLength,  const ch
     try
     {
       FabricInitQt();
-      FabricUI::HandleLicenseData(
+      FabricUI_HandleLicenseData(
         NULL,
         *client,
         message,
