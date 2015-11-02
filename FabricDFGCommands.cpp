@@ -28,6 +28,8 @@
 
 #include "FabricSpliceBaseInterface.h"
 
+#include <FabricSplice.h>
+
 #include <fstream>
 #include <streambuf>
 
@@ -1292,3 +1294,39 @@ SICALLBACK FabricCanvasLogStatus_Execute(CRef &in_ctxt)
   return CStatus::OK;
 }
 
+// ---
+// command "FabricCanvasGetContextID".
+// ---
+
+SICALLBACK FabricCanvasGetContextID_Init(CRef &in_ctxt)
+{
+  Context ctxt(in_ctxt);
+  Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.PutDescription(L"returns the FabricCore client contextID used by Canvas operators.");
+  oCmd.SetFlag(siNoLogging, false);
+  oCmd.EnableReturnValue(true) ;
+
+  ArgumentArray oArgs = oCmd.GetArguments();
+
+  return CStatus::OK;
+}
+
+SICALLBACK FabricCanvasGetContextID_Execute(CRef &in_ctxt)
+{
+  Context ctxt(in_ctxt);
+
+  try
+  {
+    FabricCore::Client client = FabricSplice::ConstructClient();
+    CString result = client.getContextID();
+    ctxt.PutAttribute(L"ReturnValue", result);
+  }
+  catch(FabricSplice::Exception e)
+  {
+    feLogError(e.what());
+  }
+  
+  return CStatus::OK;
+}

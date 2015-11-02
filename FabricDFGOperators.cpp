@@ -50,6 +50,8 @@
 #include "FabricDFGWidget.h"
 #include <Persistence/RTValToJSONEncoder.hpp>
 
+#include <FabricSplice.h>
+
 std::map <unsigned int, _opUserData *>  _opUserData::s_instances;
 std::vector<_portMapping>               _opUserData::s_newOp_portmap;
 std::vector<std::string>                _opUserData::s_newOp_expressions;
@@ -1152,6 +1154,11 @@ XSIPLUGINCALLBACK CStatus CanvasOp_PPGEvent(const CRef &in_ctxt)
             {
 
               // add code to be executed when pressing the " - " button in the tab "Advanced".
+              {
+                FabricCore::Client client = FabricSplice::ConstructClient();
+                CString result = client.getContextID();
+                Application().LogMessage(L"FabricSplice::ConstructClient().getContextID() = \"" + result + L"\"");
+              }
 
             }
             Application().LogMessage(L"------- debug output end -------");
