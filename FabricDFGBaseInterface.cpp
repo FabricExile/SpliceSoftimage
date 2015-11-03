@@ -65,6 +65,7 @@ BaseInterface::BaseInterface(void (*in_logFunc)     (void *, const char *, unsig
       s_client.loadExtension("Math",     "", false);
       s_client.loadExtension("Geometry", "", false);
       s_client.loadExtension("FileIO",   "", false);
+      s_client.loadExtension("Animation",   "", false);
 
       // create a host for Canvas
       s_host = s_client.getDFGHost();
