@@ -1279,9 +1279,13 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
     {
       try
       {
+        Project project = Application().GetActiveProject();
         evalContext.setMember("graph",           FabricCore::RTVal::ConstructString (*client, op.GetFullName().GetAsciiString()));
         evalContext.setMember("time",            FabricCore::RTVal::ConstructFloat32(*client, (float)ctxt.GetTime().GetTime(CTime::Seconds)));
-        evalContext.setMember("currentFilePath", FabricCore::RTVal::ConstructString (*client, CString(Application().GetActiveProject().GetActiveScene().GetParameter(L"Filename").GetValue()).GetAsciiString()));
+        evalContext.setMember("timeStep",        FabricCore::RTVal::ConstructFloat32(*client, (float)ctxt.GetTime().GetFrameRate()));
+        evalContext.setMember("firstFrame",      FabricCore::RTVal::ConstructFloat32(*client, float(Property(project.GetProperties().GetItem(L"Play Control")).GetParameter(L"In").GetValue())));
+        evalContext.setMember("lastFrame",       FabricCore::RTVal::ConstructFloat32(*client, float(Property(project.GetProperties().GetItem(L"Play Control")).GetParameter(L"Out").GetValue())));
+        evalContext.setMember("currentFilePath", FabricCore::RTVal::ConstructString (*client, CString(project.GetActiveScene().GetParameter(L"Filename").GetValue()).GetAsciiString()));
       }
       catch(FabricCore::Exception e)
       {

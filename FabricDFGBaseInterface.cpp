@@ -1140,7 +1140,7 @@ int BaseInterface::GetArgValuePolygonMesh(FabricCore::DFGBinding &binding,
   return errID;
 }
 
-int BaseInterface::GetArgValueFloat64Array(FabricCore::DFGBinding &binding, char const * argName, vector<double> &out, bool strict)
+int BaseInterface::GetArgValueFloat64Array(FabricCore::DFGBinding &binding, char const * argName, std::vector<double> &out, bool strict)
 {
   // set out from port value.
   try
