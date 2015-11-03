@@ -145,6 +145,8 @@ class BaseInterface
   static void SetValueOfArgPolygonMesh  (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const _polymesh            &val);
   static void SetValueOfArgFloat64Array (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, int size, const double *    val);
   static void SetValueOfArgVec3Array    (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, int size, const float *     val);
+  static void SetValueOfArgKeyframeTrack(FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const std::vector <double> &val);
+
 };
 
 #endif

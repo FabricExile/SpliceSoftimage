@@ -41,6 +41,8 @@
 #include <xsi_iceattributedataarray.h>
 #include <xsi_iceattributedataarray2D.h>
 #include <xsi_color4f.h>
+#include <xsi_fcurve.h>
+#include <xsi_fcurvekey.h>
 
 #include "plugin.h"
 #include "FabricDFGPlugin.h"
@@ -1395,12 +1397,12 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                 if (param.IsValid())
                 {
                   // put the XSI port's value into a std::vector.
-                  FCurve fc = param.Value();
+                  FCurve fc = param.GetValue();
                   CFCurveKeyRefArray keys = fc.GetKeys();
-                  std::vector <double> val(7*keys.Count());
-                  for (int i = 0; i < keys.Count(); ++i)
+                  std::vector <double> val(7*keys.GetCount());
+                  for (int i = 0; i < keys.GetCount(); ++i)
                   {
-                    FCureKey k = keys[i];
+                    FCurveKey k = keys[i];
                     val[ i] = k.GetTime(); // scaling.
                     val[ i+1] = k.GetValue();
                     val[ i+2] = k.GetInterpolation()+1; // need to convert to INT 1, 2, or 3?
@@ -2039,7 +2041,11 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
 
                   || pmap.dfgPortDataType == L"Float64<>"
 
-                  || pmap.dfgPortDataType == L"Vec3<>")
+                  || pmap.dfgPortDataType == L"Vec3<>"
+
+                  || pmap.dfgPortDataType == L"Float32"
+
+                  || pmap.dfgPortDataType == L"KeyframeTrack")
               {
                 cvaMapType.Add( L"XSI Port" );
                 cvaMapType.Add( DFG_PORT_MAPTYPE_XSI_PORT );

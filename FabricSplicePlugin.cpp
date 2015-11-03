@@ -24,6 +24,7 @@
 #include <xsi_clusterpropertybuilder.h>
 #include <xsi_property.h>
 #include <xsi_argument.h>
+#include <xsi_fcurve.h>
 
 #include <boost/filesystem.hpp>
 

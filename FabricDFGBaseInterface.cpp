@@ -1670,17 +1670,47 @@ void BaseInterface::SetValueOfArgKeyframeTrack(FabricCore::Client &client, Fabri
   try
   {
     FabricCore::RTVal rtval;
-    FabricCore::RTVal color[4], inT[2], outT[2] kf[5] kft[5];
+    FabricCore::RTVal color[4], inT[2], outT[2], kf[5], kft[5];
 
-    kft[0]   = FabricCore::RTVal::ConstructString(client, val.c_str());
+    rtval = FabricSplice::constructObjectRTVal("KeyframeTrack");
+    FabricCore::RTVal keysVal = rtval.maybeGetMember("keys");
+    FabricCore::RTVal colorVal = FabricSplice::constructRTVal("Color");
+    FabricCore::RTVal numKeysVal = FabricSplice::constructUInt32RTVal(val.size()/7);
+    keysVal.callMethod("", "resize", 1, &numKeysVal);
+
+    rtval.setMember("name", FabricSplice::constructStringRTVal(argName));
+    colorVal.setMember("r", FabricSplice::constructFloat64RTVal(0.0));
+    colorVal.setMember("g", FabricSplice::constructFloat64RTVal(0.0));
+    colorVal.setMember("b", FabricSplice::constructFloat64RTVal(0.0));
+    colorVal.setMember("a", FabricSplice::constructFloat64RTVal(1.0));
+    rtval.setMember("color", colorVal);
+    rtval.setMember("defaultInterpolation", FabricSplice::constructSInt32RTVal(2));
+    rtval.setMember("defaultValue", FabricSplice::constructFloat64RTVal(0.0));
+
+/*   kft[0]   = FabricCore::RTVal::ConstructString(client, argName);
     kft[1]   = FabricCore::RTVal::Construct(client, "Color", 2, color);
-    kft[2]   = FabricCore::RTVal::ConstructFloat32(client, 0); //default value
-    kft[3]   = FabricCore::RTVal::ConstructUInt32(client, val); // interpolation
+    kft[2]   = FabricCore::RTVal::ConstructFloat32(client, 0); // default value
+    kft[3]   = FabricCore::RTVal::ConstructUInt32(client, 2); // default interpolation
     kft[4]   = FabricCore::RTVal::ConstructVariableArray(client, "Keyframe", val.size()/7, (void *)kf);
+*/
+    for (int i = 0; i < val.size()/7; i++)
+    {
+      FabricCore::RTVal keyVal = FabricSplice::constructRTVal("Keyframe");
+      FabricCore::RTVal inTangentVal = FabricSplice::constructRTVal("Vec2");
+      FabricCore::RTVal outTangentVal = FabricSplice::constructRTVal("Vec2");
 
-    for (int i = 0; i < val.size(); i+7)
-    {      
-      kf[0] = FabricCore::RTVal::ConstructFloat32(client, valIsValid ? val[i*7] : 0);
+      keyVal.setMember("time", FabricSplice::constructFloat64RTVal(val[i*7]));
+      keyVal.setMember("value", FabricSplice::constructFloat64RTVal(val[i*7+1]));
+      keyVal.setMember("interpolation", FabricSplice::constructSInt32RTVal(val[i*7+2]));
+
+      inTangentVal.setMember("x", FabricSplice::constructFloat64RTVal(val[i*7+3]));
+      inTangentVal.setMember("y", FabricSplice::constructFloat64RTVal(val[i*7+4]));
+
+      outTangentVal.setMember("x", FabricSplice::constructFloat64RTVal(val[i*7+5]));
+      outTangentVal.setMember("y", FabricSplice::constructFloat64RTVal(val[i*7+6]));
+
+      keysVal.setArrayElement(i, keyVal);
+      /*kf[0] = FabricCore::RTVal::ConstructFloat32(client, valIsValid ? val[i*7] : 0);
       kf[1] = FabricCore::RTVal::ConstructFloat32(client, valIsValid ? val[i*7+1] : 0);
       kf[2] = FabricCore::RTVal::ConstructFloat32(client, valIsValid ? val[i*7+2] : 0);
       inT[0] = FabricCore::RTVal::ConstructFloat32(client, val[i*7+3]);
@@ -1690,10 +1720,10 @@ void BaseInterface::SetValueOfArgKeyframeTrack(FabricCore::Client &client, Fabri
       outT[1] = FabricCore::RTVal::ConstructFloat32(client, val[i*7+6]);
       kf[4] = FabricCore::RTVal::Construct(client, "Vec2", 3, outT);
 
-      kf[0] = 
+      kf[0] = */
     }
-
-    rtval = FabricCore::RTVal::Construct(client, "KeyframeTrack", 5, kft);
+    rtval.setMember("keys", keysVal);
+    //rtval = FabricCore::RTVal::Construct(client, "KeyframeTrack", 5, kft);
     binding.setArgValue(argName, rtval, false);
   }
   catch (FabricCore::Exception e)

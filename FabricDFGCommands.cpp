@@ -203,7 +203,8 @@ SICALLBACK FabricCanvasOpApply_Execute(CRef &in_ctxt)
       if (classID == siUnknownClassID)
       { Application().LogMessage(L"The DFG port \"" + pmap.dfgPortName + "\" cannot be exposed as a XSI Port (data type \"" + pmap.dfgPortDataType + "\" not yet supported)" , siWarningMsg);
         continue; }
-
+      Application().LogMessage(CString(pmap.dfgPortDataType));
+      Application().LogMessage(CString(classID));
       // create port group.
       CRef pgRef = newOp.AddPortGroup(pmap.dfgPortName, 0, 1);
       if (!pgRef.IsValid())
