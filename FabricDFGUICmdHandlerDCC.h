@@ -176,11 +176,10 @@ protected:
     QPointF pos
     );
 
-  virtual void dfgDoSetNodeTitle(
+  virtual void dfgDoSetTitle(
     FabricCore::DFGBinding const &binding,
     FTL::CStrRef execPath,
     FabricCore::DFGExec const &exec,
-    FTL::CStrRef nodeName,
     FTL::CStrRef title
     );
 
@@ -197,6 +196,16 @@ protected:
     FTL::CStrRef execPath,
     FabricCore::DFGExec const &exec,
     FTL::CStrRef code
+    );
+
+  virtual std::string dfgDoEditNode(
+    FabricCore::DFGBinding const &binding,
+    FTL::CStrRef execPath,
+    FabricCore::DFGExec const &exec,
+    FTL::StrRef oldNodeName,
+    FTL::StrRef desiredNewNodeName,
+    FTL::StrRef nodeMetadata,
+    FTL::StrRef execMetadata
     );
 
   virtual std::string dfgDoRenamePort(
@@ -291,9 +300,10 @@ public:
   static FabricUI::DFG::DFGUICmd_ImplodeNodes *createAndExecuteDFGCommand_ImplodeNodes(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_ExplodeNode *createAndExecuteDFGCommand_ExplodeNode(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_AddBackDrop *createAndExecuteDFGCommand_AddBackDrop(std::vector<std::string> &args);
-  static FabricUI::DFG::DFGUICmd_SetNodeTitle *createAndExecuteDFGCommand_SetNodeTitle(std::vector<std::string> &args);
+  static FabricUI::DFG::DFGUICmd_SetTitle *createAndExecuteDFGCommand_SetTitle(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_SetNodeComment *createAndExecuteDFGCommand_SetNodeComment(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_SetCode *createAndExecuteDFGCommand_SetCode(std::vector<std::string> &args);
+  static FabricUI::DFG::DFGUICmd_EditNode *createAndExecuteDFGCommand_EditNode(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_RenamePort *createAndExecuteDFGCommand_RenamePort(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_Paste *createAndExecuteDFGCommand_Paste(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_SetArgType *createAndExecuteDFGCommand_SetArgType(std::vector<std::string> &args);

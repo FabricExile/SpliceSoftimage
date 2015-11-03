@@ -20,6 +20,7 @@
 #include <xsi_gridwidget.h>
 #include <xsi_selection.h>
 #include <xsi_project.h>
+#include <xsi_scene.h>
 #include <xsi_port.h>
 #include <xsi_portgroup.h>
 #include <xsi_inputport.h>
@@ -1256,6 +1257,39 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
   FabricCore::DFGBinding                           binding        = pud->GetBaseInterface()->getBinding();
   FabricCore::DFGExec                              exec           = binding.getExec();
 
+  // Fabric Engine (step 0): update the base interface's evalContext.
+  {
+    FabricCore::RTVal &evalContext = *baseInterface->getEvalContext();
+
+    if (!evalContext.isValid())
+    {
+      try
+      {
+        evalContext = FabricCore::RTVal::Create(*client, "EvalContext", 0, 0);
+        evalContext = evalContext.callMethod("EvalContext", "getInstance", 0, 0);
+        evalContext.setMember("host", FabricCore::RTVal::ConstructString(*client, "Softimage"));
+      }
+      catch(FabricCore::Exception e)
+      {
+        feLogError(e.getDesc_cstr());
+      }
+    }
+
+    if(evalContext.isValid())
+    {
+      try
+      {
+        evalContext.setMember("graph",           FabricCore::RTVal::ConstructString (*client, op.GetFullName().GetAsciiString()));
+        evalContext.setMember("time",            FabricCore::RTVal::ConstructFloat32(*client, (float)ctxt.GetTime().GetTime(CTime::Seconds)));
+        evalContext.setMember("currentFilePath", FabricCore::RTVal::ConstructString (*client, CString(Application().GetActiveProject().GetActiveScene().GetParameter(L"Filename").GetValue()).GetAsciiString()));
+      }
+      catch(FabricCore::Exception e)
+      {
+        feLogError(e.getDesc_cstr());
+      }
+    }
+  }
+
   // Fabric Engine (step 1): loop through all the DFG's input ports and set
   //                         their values from the matching XSI ports or parameters.
   if (pud->execFabricStep12)
@@ -1413,6 +1447,10 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
               }
               storable = false;
             }
+            else if (portResolvedType == L"Lines")
+            {
+
+            }
             else if (portResolvedType == L"Float64<>")
             {
               if (xsiPortValue.m_t == CValue::siRef)
@@ -1568,7 +1606,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
             {
               KinematicState kineOut(ctxt.GetOutputTarget());
               MATH::CTransformation t;
-              if(val.size() == 16)
+              if(val.size() == 16) //Mat44
               {
                 MATH::CMatrix4 m;
                 m.SetValue(0, 0, val[ 0]); // row 0.
@@ -1589,7 +1627,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                 m.SetValue(3, 3, val[15]);
                 t.SetMatrix4(m);
               }
-              else
+              else // Xfo
               {
                 t.SetScalingFromValues(val[0],val[1],val[2]);
                 MATH::CQuaternion quat(val[3], val[4],val[5],val[6]);
@@ -1819,6 +1857,30 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
               }
             }
           }
+          else if (outputPort.GetTarget().GetClassID() == siNurbsCurveID)
+          {
+          }
+          else if (outputPort.GetTarget().GetClassID() == siClusterPropertyID)
+          {
+            std::vector<double> out;
+            if (BaseInterface::GetArgValueFloat64Array(binding, portName.GetAsciiString(), out) != 0)
+            {
+              Application().LogMessage(functionName + L": BaseInterface::GetArgValueMat44(port) failed.", siWarningMsg);
+            }
+            ClusterProperty clsProp((CRef)ctxt.GetOutputTarget());
+            CClusterPropertyElementArray clsPropElem(clsProp.GetElements());
+            if(out.size() == clsPropElem.GetCount())
+            {
+              CDoubleArray XsiValues;
+              XsiValues.Attach(&out[0], clsProp.GetValueSize() * clsPropElem.GetCount());
+              clsPropElem.PutArray(XsiValues);
+            }
+            else
+              Application().LogMessage(L"failed to set WeightMap data (wrong array size)", siErrorMsg);
+          }
+          else if (outputPort.GetTarget().GetClassID() == siShapeKeyID)
+          {
+          }
           else
           {
             CString emptyString;
@@ -1969,6 +2031,8 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
 
                   || pmap.dfgPortDataType == L"PolygonMesh"
 
+                  || pmap.dfgPortDataType == L"Lines"
+
                   || pmap.dfgPortDataType == L"Float64<>"
 
                   || pmap.dfgPortDataType == L"Vec3<>")
@@ -1984,6 +2048,8 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
                   || pmap.dfgPortDataType == L"Xfo"
 
                   || pmap.dfgPortDataType == L"PolygonMesh"
+
+                  || pmap.dfgPortDataType == L"Lines"
 
                   || pmap.dfgPortDataType == L"Float64<>"
 

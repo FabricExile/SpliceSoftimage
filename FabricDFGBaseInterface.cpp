@@ -115,6 +115,8 @@ BaseInterface::~BaseInterface()
 
   m_binding = FabricCore::DFGBinding();
 
+  m_evalContext = FabricCore::RTVal();
+
   delete m_cmdHandler;
 
   if (it != s_instances.end())
@@ -172,6 +174,11 @@ FabricCore::DFGHost BaseInterface::getHost()
 FabricCore::DFGBinding BaseInterface::getBinding()
 {
   return m_binding;
+}
+
+FabricCore::RTVal *BaseInterface::getEvalContext()
+{
+  return &m_evalContext;
 }
 
 FabricServices::ASTWrapper::KLASTManager *BaseInterface::getManager()
@@ -1133,8 +1140,38 @@ int BaseInterface::GetArgValuePolygonMesh(FabricCore::DFGBinding &binding,
   return errID;
 }
 
-int BaseInterface::GetArgValueProperties(FabricCore::DFGBinding &binding, char const * argName, std::vector <double> &out, bool strict)
+int BaseInterface::GetArgValueFloat64Array(FabricCore::DFGBinding &binding, char const * argName, vector<double> &out, bool strict)
 {
+  // set out from port value.
+  try
+  {
+    // invalid port?
+    if (!binding.getExec().haveExecPort(argName))
+      return -2;
+
+    std::string resolvedType = binding.getExec().getExecPortResolvedType(argName);
+    FabricCore::RTVal rtval  = binding.getArgValue(argName);
+
+    if      (resolvedType.length() == 0)      return -1;
+
+    else if (resolvedType == "Float64<>" && rtval.isArray())
+    {
+      FabricCore::RTVal dataRtVal = rtval.callMethod("Data", "data", 0, 0);
+      out.resize(dataRtVal.getArraySize());
+      memcpy(&out[0], (double*)dataRtVal.getData(), dataRtVal.getArraySize() + sizeof(double));
+      //out.data = (double*)dataRtVal.getData();
+    }
+
+    else
+      return -1;
+  }
+  catch (FabricCore::Exception e)
+  {
+    logErrorFunc(NULL, e.getDesc_cstr(), e.getDescLength());
+    return -4;
+  }
+
+  // done.
   return 0;
 }
 

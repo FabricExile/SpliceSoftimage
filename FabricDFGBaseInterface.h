@@ -36,6 +36,7 @@ class BaseInterface
   static FabricCore::Client                       *getClient();
   static FabricCore::DFGHost                       getHost();
   FabricCore::DFGBinding                           getBinding();
+  FabricCore::RTVal                               *getEvalContext();
   static FabricServices::ASTWrapper::KLASTManager *getManager();
   DFGUICmdHandlerDCC                              *getCmdHandler();
 
@@ -65,6 +66,7 @@ class BaseInterface
   static FabricCore::DFGHost                       s_host;
   static FabricServices::ASTWrapper::KLASTManager *s_manager;
   FabricCore::DFGBinding                           m_binding;
+  FabricCore::RTVal                                m_evalContext;
   DFGUICmdHandlerDCC                              *m_cmdHandler;
   static std::map<unsigned int, BaseInterface*>    s_instances;
 
@@ -104,8 +106,8 @@ class BaseInterface
   static int GetArgValueRGBA        (FabricCore::DFGBinding &binding, char const *argName, std::vector <double> &out, bool strict = false);
   static int GetArgValueQuat        (FabricCore::DFGBinding &binding, char const *argName, std::vector <double> &out, bool strict = false);
   static int GetArgValueMat44       (FabricCore::DFGBinding &binding, char const *argName, std::vector <double> &out, bool strict = false);
-  static int GetArgValueProperties  (FabricCore::DFGBinding &binding, char const *argName, std::vector <double> &out, bool strict = false);
-
+  static int GetArgValueFloat64Array(FabricCore::DFGBinding &binding, char const *argName, std::vector <double> &out, bool strict = false);
+  static int GetArgValueVec3Array   (FabricCore::DFGBinding &binding, char const *argName, std::vector <double> &out, bool strict = false);
   // gets the value of a "PolygonMesh" argument (= port).
   // params:  binding     ref at binding.
   //          argName     name of the argument (= the "port").
@@ -141,8 +143,8 @@ class BaseInterface
   static void SetValueOfArgMat44        (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const std::vector <double> &val);
   static void SetValueOfArgXfo          (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const std::vector <double> &val);
   static void SetValueOfArgPolygonMesh  (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const _polymesh            &val);
-  static void SetValueOfArgFloat64Array (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, int size, const double *val);
-  static void SetValueOfArgVec3Array    (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, int size, const float *val);
+  static void SetValueOfArgFloat64Array (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, int size, const double *    val);
+  static void SetValueOfArgVec3Array    (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, int size, const float *     val);
 };
 
 #endif

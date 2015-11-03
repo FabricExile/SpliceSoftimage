@@ -286,6 +286,8 @@ XSI::siClassID dfgTools::GetSiClassIdFromResolvedDataType(const XSI::CString &re
 
   if (resDataType == L"PolygonMesh")                            return siPolygonMeshID;
 
+  if (resDataType == L"Lines")                                  return siNurbsCurveID;
+
   if (resDataType == L"Float64<>" )                             return siClusterPropertyID;
 
   if (resDataType == L"Vec3<>" )                                return siShapeKeyID;  

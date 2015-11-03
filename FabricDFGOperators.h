@@ -464,7 +464,7 @@ struct _polymesh
     clear();
 
     // get RTVal.
-    FabricCore::RTVal rtMesh = binding.getArgValue(argName);
+    //FabricCore::RTVal rtMesh = binding.getArgValue(argName); // Not used???
 
     // get the mesh data (except for the vertex normals/UVWs/colors).
     int retGet = BaseInterface::GetArgValuePolygonMesh( binding,

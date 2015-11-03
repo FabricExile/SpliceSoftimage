@@ -650,20 +650,18 @@ void DFGUICmdHandlerDCC::dfgDoAddBackDrop(
   execCmd(cmdName, args, output);
 }
 
-void DFGUICmdHandlerDCC::dfgDoSetNodeTitle(
+void DFGUICmdHandlerDCC::dfgDoSetTitle(
   FabricCore::DFGBinding const &binding,
   FTL::CStrRef execPath,
   FabricCore::DFGExec const &exec,
-  FTL::CStrRef nodeName,
   FTL::CStrRef title
   )
 {
-  std::string cmdName(FabricUI::DFG::DFGUICmd_SetNodeTitle::CmdName());
+  std::string cmdName(FabricUI::DFG::DFGUICmd_SetTitle::CmdName());
   std::vector<std::string> args;
 
   args.push_back(getDCCObjectNameFromBinding(binding));
   args.push_back(execPath);
-  args.push_back(nodeName);
   args.push_back(title);
 
   std::string output;
@@ -706,6 +704,31 @@ void DFGUICmdHandlerDCC::dfgDoSetCode(
 
   std::string output;
   execCmd(cmdName, args, output);
+}
+
+std::string DFGUICmdHandlerDCC::dfgDoEditNode(
+  FabricCore::DFGBinding const &binding,
+  FTL::CStrRef execPath,
+  FabricCore::DFGExec const &exec,
+  FTL::StrRef oldNodeName,
+  FTL::StrRef desiredNewNodeName,
+  FTL::StrRef nodeMetadata,
+  FTL::StrRef execMetadata
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_EditNode::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getDCCObjectNameFromBinding(binding));
+  args.push_back(execPath);
+  args.push_back(oldNodeName);
+  args.push_back(desiredNewNodeName);
+  args.push_back(nodeMetadata);
+  args.push_back(execMetadata);
+
+  std::string result;
+  execCmd(cmdName, args, result);
+  return result;
 }
 
 std::string DFGUICmdHandlerDCC::dfgDoRenamePort(
@@ -922,9 +945,10 @@ FabricUI::DFG::DFGUICmd *DFGUICmdHandlerDCC::createAndExecuteDFGCommand(std::str
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_ImplodeNodes::       CmdName().c_str())    cmd = createAndExecuteDFGCommand_ImplodeNodes       (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_ExplodeNode::        CmdName().c_str())    cmd = createAndExecuteDFGCommand_ExplodeNode        (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_AddBackDrop::        CmdName().c_str())    cmd = createAndExecuteDFGCommand_AddBackDrop        (in_args);
-  else if (in_cmdName == FabricUI::DFG::DFGUICmd_SetNodeTitle::       CmdName().c_str())    cmd = createAndExecuteDFGCommand_SetNodeTitle       (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_SetTitle::           CmdName().c_str())    cmd = createAndExecuteDFGCommand_SetTitle           (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_SetNodeComment::     CmdName().c_str())    cmd = createAndExecuteDFGCommand_SetNodeComment     (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_SetCode::            CmdName().c_str())    cmd = createAndExecuteDFGCommand_SetCode            (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_EditNode::         CmdName().c_str())    cmd = createAndExecuteDFGCommand_EditNode         (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_RenamePort::         CmdName().c_str())    cmd = createAndExecuteDFGCommand_RenamePort         (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_Paste::              CmdName().c_str())    cmd = createAndExecuteDFGCommand_Paste              (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_SetArgType::         CmdName().c_str())    cmd = createAndExecuteDFGCommand_SetArgType         (in_args);
@@ -1722,9 +1746,9 @@ FabricUI::DFG::DFGUICmd_AddBackDrop *DFGUICmdHandlerDCC::createAndExecuteDFGComm
   return cmd;
 }
 
-FabricUI::DFG::DFGUICmd_SetNodeTitle *DFGUICmdHandlerDCC::createAndExecuteDFGCommand_SetNodeTitle(std::vector<std::string> &args)
+FabricUI::DFG::DFGUICmd_SetTitle *DFGUICmdHandlerDCC::createAndExecuteDFGCommand_SetTitle(std::vector<std::string> &args)
 {
-  FabricUI::DFG::DFGUICmd_SetNodeTitle *cmd = NULL;
+  FabricUI::DFG::DFGUICmd_SetTitle *cmd = NULL;
   {
     unsigned int ai = 0;
 
@@ -1734,19 +1758,14 @@ FabricUI::DFG::DFGUICmd_SetNodeTitle *DFGUICmdHandlerDCC::createAndExecuteDFGCom
     if (!DecodeExec(args, ai, binding, execPath, exec))
       return cmd;
 
-    std::string nodeName;
-    if (!DecodeName(args, ai, nodeName))
-      return cmd;
-
     std::string title;
     if (!DecodeName(args, ai, title))
       return cmd;
 
-    cmd = new FabricUI::DFG::DFGUICmd_SetNodeTitle(binding,
-                                                   execPath.c_str(),
-                                                   exec,
-                                                   nodeName.c_str(),
-                                                   title.c_str());
+    cmd = new FabricUI::DFG::DFGUICmd_SetTitle(binding,
+                                               execPath.c_str(),
+                                               exec,
+                                               title.c_str());
     try
     {
       cmd->doit();
@@ -1818,6 +1837,54 @@ FabricUI::DFG::DFGUICmd_SetCode *DFGUICmdHandlerDCC::createAndExecuteDFGCommand_
                                               execPath.c_str(),
                                               exec,
                                               code.c_str());
+    try
+    {
+      cmd->doit();
+    }
+    catch(FabricCore::Exception e)
+    {
+      feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+    }
+  }
+
+  return cmd;
+}
+
+FabricUI::DFG::DFGUICmd_EditNode *DFGUICmdHandlerDCC::createAndExecuteDFGCommand_EditNode(std::vector<std::string> &args)
+{
+  FabricUI::DFG::DFGUICmd_EditNode *cmd = NULL;
+  {
+    unsigned int ai = 0;
+
+    FabricCore::DFGBinding binding;
+    std::string execPath;
+    FabricCore::DFGExec exec;
+    if (!DecodeExec(args, ai, binding, execPath, exec))
+      return cmd;
+
+    std::string oldNodeName;
+    if (!DecodeString(args, ai, oldNodeName))
+      return cmd;
+
+    std::string desiredNewNodeName;
+    if (!DecodeString(args, ai, desiredNewNodeName))
+      return cmd;
+
+    std::string nodeMetadata;
+    if (!DecodeString(args, ai, nodeMetadata))
+      return cmd;
+
+    std::string execMetadata;
+    if (!DecodeString(args, ai, execMetadata))
+      return cmd;
+
+    cmd = new FabricUI::DFG::DFGUICmd_EditNode(binding,
+                                                 execPath.c_str(),
+                                                 exec,
+                                                 oldNodeName.c_str(),
+                                                 desiredNewNodeName.c_str(),
+                                                 nodeMetadata.c_str(),
+                                                 execMetadata.c_str());
     try
     {
       cmd->doit();
@@ -3313,9 +3380,9 @@ SICALLBACK FabricCanvasAddBackDrop_TermUndoRedo(XSI::CRef &ctxt)
   return XSI::CStatus::OK;
 }
 
-//        "SetNodeTitle"
+//        "SetTitle"
 
-SICALLBACK FabricCanvasSetNodeTitle_Init(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasSetTitle_Init(XSI::CRef &in_ctxt)
 {
   XSI::Context ctxt(in_ctxt);
   XSI::Command oCmd;
@@ -3326,13 +3393,12 @@ SICALLBACK FabricCanvasSetNodeTitle_Init(XSI::CRef &in_ctxt)
   XSI::ArgumentArray oArgs = oCmd.GetArguments();
   oArgs.Add(L"binding",  XSI::CString());
   oArgs.Add(L"execPath", XSI::CString());
-  oArgs.Add(L"nodeName", XSI::CString());
   oArgs.Add(L"title",    XSI::CString());
 
   return XSI::CStatus::OK;
 }
 
-SICALLBACK FabricCanvasSetNodeTitle_Execute(XSI::CRef &in_ctxt)
+SICALLBACK FabricCanvasSetTitle_Execute(XSI::CRef &in_ctxt)
 {
   // init.
   XSI::Context     ctxt(in_ctxt);
@@ -3341,7 +3407,7 @@ SICALLBACK FabricCanvasSetNodeTitle_Execute(XSI::CRef &in_ctxt)
   CValueArrayToStdVector(tmp, args);
 
   // create and execute the DFG command.
-  FabricUI::DFG::DFGUICmd_SetNodeTitle *cmd = DFGUICmdHandlerDCC::createAndExecuteDFGCommand_SetNodeTitle(args);
+  FabricUI::DFG::DFGUICmd_SetTitle *cmd = DFGUICmdHandlerDCC::createAndExecuteDFGCommand_SetTitle(args);
   if (!cmd)
     return XSI::CStatus::Fail;
 
@@ -3350,19 +3416,19 @@ SICALLBACK FabricCanvasSetNodeTitle_Execute(XSI::CRef &in_ctxt)
   return XSI::CStatus::OK;
 }
 
-SICALLBACK FabricCanvasSetNodeTitle_Undo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasSetTitle_Undo(XSI::CRef &ctxt)
 {
   DFGUICmd_Undo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK FabricCanvasSetNodeTitle_Redo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasSetTitle_Redo(XSI::CRef &ctxt)
 {
   DFGUICmd_Redo(ctxt);
   return XSI::CStatus::OK;
 }
 
-SICALLBACK FabricCanvasSetNodeTitle_TermUndoRedo(XSI::CRef &ctxt)
+SICALLBACK FabricCanvasSetTitle_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
@@ -3472,6 +3538,68 @@ SICALLBACK FabricCanvasSetCode_Redo(XSI::CRef &ctxt)
 }
 
 SICALLBACK FabricCanvasSetCode_TermUndoRedo(XSI::CRef &ctxt)
+{
+  DFGUICmd_TermUndoRedo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+//        "EditNode"
+
+SICALLBACK FabricCanvasEditNode_Init(XSI::CRef &in_ctxt)
+{
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.EnableReturnValue(true);
+
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",            XSI::CString());
+  oArgs.Add(L"execPath",           XSI::CString());
+  oArgs.Add(L"oldNodeName",        XSI::CString());
+  oArgs.Add(L"desiredNewNodeName", XSI::CString());
+  oArgs.Add(L"nodeMetadata", XSI::CString());
+  oArgs.Add(L"execMetadata", XSI::CString());
+
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasEditNode_Execute(XSI::CRef &in_ctxt)
+{
+  // init.
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  CValueArrayToStdVector(tmp, args);
+
+  // create and execute the DFG command.
+  FabricUI::DFG::DFGUICmd_EditNode *cmd = DFGUICmdHandlerDCC::createAndExecuteDFGCommand_EditNode(args);
+  if (!cmd)
+    return XSI::CStatus::Fail;
+
+  // store return value.
+  XSI::CString returnValue = cmd->getActualNewNodeName().c_str();
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", XSI::siCommentMsg);
+  ctxt.PutAttribute(L"ReturnValue", returnValue);
+
+  // done.
+  DFGUICmd_Finish(ctxt, cmd);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasEditNode_Undo(XSI::CRef &ctxt)
+{
+  DFGUICmd_Undo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasEditNode_Redo(XSI::CRef &ctxt)
+{
+  DFGUICmd_Redo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasEditNode_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
