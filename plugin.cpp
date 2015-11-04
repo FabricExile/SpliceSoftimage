@@ -184,6 +184,11 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
   for (LONG i=0;i<ccnames.GetCount();i++)
     Application().LogMessage(L"    " + ccnames[i]);
 
+  if (Application().IsInteractive())
+    FabricSplice::SetLicenseType(FabricCore::ClientLicenseType_Interactive);
+  else
+    FabricSplice::SetLicenseType(FabricCore::ClientLicenseType_Compute);
+
   // done.
   return CStatus::OK;
 }
