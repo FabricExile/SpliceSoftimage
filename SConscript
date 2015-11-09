@@ -169,6 +169,8 @@ softimageFiles.append(env.Install(os.path.join(STAGE_DIR.abspath, 'Data', 'Compo
 softimageFiles.append(env.Install(os.path.join(STAGE_DIR.abspath, 'Data', 'Compounds'), os.path.join('ICE_Compounds', 'Fabric Canvas Set UVWs.xsicompound')))
 softimageFiles.append(env.Install(os.path.join(STAGE_DIR.abspath, 'Data', 'Compounds'), os.path.join('ICE_Compounds', 'Fabric Canvas Set Colors.xsicompound')))
 
+softimageFiles.append(env.Install(os.path.join(STAGE_DIR.abspath, 'Application', 'Plugins'), 'FabricCanvasInspectOp.vbs'))
+
 softimageFiles.append(env.Install(STAGE_DIR, env.File('license.txt')))
 
 # also install the FabricCore dynamic library

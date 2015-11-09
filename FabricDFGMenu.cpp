@@ -24,6 +24,8 @@ XSIPLUGINCALLBACK CStatus Fabric_Init( CRef &in_ctxt )
   menu.AddCallbackItem("Create Null with Graph",              "FabricCanvas_Menu_CreateNullWithOp",       item);
   menu.AddCallbackItem("Create Polymesh with Graph",          "FabricCanvas_Menu_CreatePolymeshWithOp",   item);
   menu.AddSeparatorItem();
+  menu.AddCallbackItem("Inspect Canvas Op",                   "FabricCanvas_Menu_InspectCanvasOp",        item);
+  menu.AddSeparatorItem();
   menu.AddCallbackItem("Load Graph",                          "FabricCanvas_Menu_ImportGraph",            item);
   menu.AddCallbackItem("Save Graph",                          "FabricCanvas_Menu_ExportGraph",            item);
   menu.AddSeparatorItem();
@@ -146,6 +148,16 @@ SICALLBACK FabricCanvas_Menu_CreatePolymeshWithOp(XSI::CRef&)
 
   // done.
   dfgTools::ClearUndoHistory();
+  return CStatus::OK;
+}
+
+SICALLBACK FabricCanvas_Menu_InspectCanvasOp(XSI::CRef&)
+{
+  // execute command.
+  CValueArray args;
+  Application().ExecuteCommand(L"FabricCanvasInspectOp", args, CValue());
+
+  // done.
   return CStatus::OK;
 }
 
