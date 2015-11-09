@@ -184,11 +184,6 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
   for (LONG i=0;i<ccnames.GetCount();i++)
     Application().LogMessage(L"    " + ccnames[i]);
 
-  if (Application().IsInteractive())
-    FabricSplice::SetLicenseType(FabricCore::ClientLicenseType_Interactive);
-  else
-    FabricSplice::SetLicenseType(FabricCore::ClientLicenseType_Compute);
-
   // done.
   return CStatus::OK;
 }
@@ -303,6 +298,12 @@ CStatus helpFnct_siEventOpenSave(CRef &ctxt, int openSave)
 
 XSIPLUGINCALLBACK CStatus FabricCanvasOnStartup_OnEvent(CRef &ctxt)
 {
+  // set the license type.
+  if (Application().IsInteractive())
+    FabricSplice::SetLicenseType(FabricCore::ClientLicenseType_Interactive);
+  else
+    FabricSplice::SetLicenseType(FabricCore::ClientLicenseType_Compute);
+
   // done.
   // /note: we return 1 (i.e. "true") instead of CStatus::OK or else the event gets aborted).
   return 1;
