@@ -42,7 +42,7 @@
 using namespace XSI;
 
 // FabricDFG's helper function for the save scene events.
-CStatus helpFnct_siEventOpenSave(CRef &ctxt, int openSave);
+CStatus helpFnct_siEventOpenSave(CRef &ctxt, int doWhat, CRef &modelRef);
 
 void xsiLogFunc(const char * message, unsigned int length)
 {
@@ -296,7 +296,7 @@ XSIPLUGINCALLBACK CStatus FabricSpliceOpenEndScene_OnEvent(CRef & ctxt)
   FabricSpliceNewScene_OnEvent(ctxt);
 
   // before returning we also call the FabricDFG onOpen function.
-  helpFnct_siEventOpenSave(ctxt, 1);
+  helpFnct_siEventOpenSave(ctxt, 1, CRef());
 
   // done.
   return 1;
@@ -350,6 +350,11 @@ XSIPLUGINCALLBACK CStatus FabricSpliceImport_OnEvent(CRef & ctxt)
   {
     xsiLogErrorFunc(e.getDesc_cstr());
   }
+
+  // before returning we also call the FabricDFG onOpen function.
+  helpFnct_siEventOpenSave(ctxt, 1, modelRef);
+
+  // done.
   return true;
 }
 
@@ -427,6 +432,11 @@ XSIPLUGINCALLBACK CStatus FabricSpliceBeginExport_OnEvent(CRef & ctxt)
   {
     xsiLogErrorFunc(e.getDesc_cstr());
   }
+
+  // before returning we also call the FabricDFG onSave function.
+  helpFnct_siEventOpenSave(ctxt, 0, CRef());
+
+  // done.
   return true;
 }
 
@@ -531,8 +541,10 @@ CStatus onSaveScene(CRef & ctxt)
     instances[i]->getInterf()->storePersistenceData(fileName);
   }
 
-  helpFnct_siEventOpenSave(ctxt, 0);  // before returning we also call the FabricDFG onSave function.
+  // before returning we also call the FabricDFG onSave function.
+  helpFnct_siEventOpenSave(ctxt, 0, CRef());
 
+  // done.
   return true;
 }
 

@@ -207,13 +207,15 @@ SICALLBACK XSIUnloadPlugin(const PluginRegistrar& in_reg)
 // siEvent + event  helper functions.
 // ----------------------------------
 
-CStatus helpFnct_siEventOpenSave(CRef &ctxt, int openSave)
+CStatus helpFnct_siEventOpenSave(CRef &ctxt, int doWhat, CRef &modelRef)
 {
   Context context(ctxt);
 
   /*
-      openSave == 0: store DFG JSON in op's persistenceData parameter (e.g. before saving a scene).
-      openSave == 1: set DFG JSON from op's persistenceData parameter (e.g. after loading a scene).
+      doWhat == 0: store DFG JSON in op's persistenceData parameter (e.g. before saving a scene).
+      doWhat == 1: set DFG JSON from op's persistenceData parameter (e.g. after loading a scene or importing a model).
+
+      note: if doWhat == 1 and model.IsValid() then we are importing a model.
   */
 
   std::map <unsigned int, _opUserData *> &s_instances = *_opUserData::GetStaticMapOfInstances();
@@ -245,8 +247,9 @@ CStatus helpFnct_siEventOpenSave(CRef &ctxt, int openSave)
       continue; }
 
     // store JSON in parameter persistenceData.
-    if (openSave == 0)
+    if (doWhat == 0)
     {
+      // do it.
       Application().LogMessage(L"storing DFG JSON for CanvasOp(opObjID = " + CString(op.GetObjectID()) + L")");
       try
       {
@@ -263,8 +266,30 @@ CStatus helpFnct_siEventOpenSave(CRef &ctxt, int openSave)
     }
 
     // set DFG JSON from parameter persistenceData.
-    else if (openSave == 1)
+    else if (doWhat == 1)
     {
+      // if we are importing a model then we need to check whether
+      // the current operator is parented under the model or not.
+      if (modelRef.IsValid())
+      {
+        X3DObject prnt = op.GetParent3DObject();
+        bool isPartOfModelHierarchy = false;
+
+        while (   prnt.IsValid()
+               && prnt.GetName() != L"Scene_Root"
+               && !isPartOfModelHierarchy)
+        {
+          if (prnt.GetRef() == modelRef)
+            isPartOfModelHierarchy = true;
+          else
+            prnt = prnt.GetParent3DObject();
+        }
+
+        if (!isPartOfModelHierarchy)
+          continue;
+      }
+
+      // do it.
       Application().LogMessage(L"setting DFG JSON from CanvasOp(opObjID = " + CString(op.GetObjectID()) + L")");
       try
       {
