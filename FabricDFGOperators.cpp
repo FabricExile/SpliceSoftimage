@@ -1627,7 +1627,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                       {
                         Application().LogMessage(L"something's wrong with the ICE data \"" + name + L"\", data2D.GetCount() is " + CString(data2D.GetCount()) + L" but we expected 1.", siErrorMsg);
                       }
-                      else
+                      else if (polymesh.numSamples > 0)
                       {
                         // init temporary array.
                         T *tmp = NULL;
@@ -1683,7 +1683,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                       {
                         Application().LogMessage(L"something's wrong with the ICE data \"" + name + L"\", data2D.GetCount() is " + CString(data2D.GetCount()) + L" but we expected 1.", siErrorMsg);
                       }
-                      else
+                      else if (polymesh.numSamples > 0)
                       {
                         // init temporary array.
                         T *tmp = NULL;
@@ -1739,7 +1739,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                       {
                         Application().LogMessage(L"something's wrong with the ICE data \"" + name + L"\", data2D.GetCount() is " + CString(data2D.GetCount()) + L" but we expected 1.", siErrorMsg);
                       }
-                      else
+                      else if (polymesh.numSamples > 0)
                       {
                         // init temporary array.
                         T *tmp = NULL;
