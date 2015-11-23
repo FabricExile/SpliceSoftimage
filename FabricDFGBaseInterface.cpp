@@ -901,8 +901,29 @@ int BaseInterface::GetArgValueMat44(FabricCore::DFGBinding &binding, char const 
                                                 out.push_back(rtRow.maybeGetMember("t").getFloat32());
                                               }
                                             }
-    else
-      return -1;
+    else if (!strict)
+    {
+        if      (resolvedType == "Xfo")     {
+                                              FabricCore::RTVal rtmat44 = rtval.callMethod("Mat44", "toMat44", 0, NULL);
+                                              char member[32];
+                                              FabricCore::RTVal rtRow;
+                                              for (int i = 0; i < 4; i++)
+                                              {
+                                                #ifdef _WIN32
+                                                  sprintf_s(member, sizeof(member), "row%ld", i);
+                                                #else
+                                                  snprintf(member, sizeof(member), "row%ld", i);
+                                                #endif
+                                                rtRow = rtmat44.maybeGetMember(member);
+                                                out.push_back(rtRow.maybeGetMember("x").getFloat32());
+                                                out.push_back(rtRow.maybeGetMember("y").getFloat32());
+                                                out.push_back(rtRow.maybeGetMember("z").getFloat32());
+                                                out.push_back(rtRow.maybeGetMember("t").getFloat32());
+                                              }
+                                            }
+        else
+          return -1;
+    }
   }
   catch (FabricCore::Exception e)
   {

@@ -113,6 +113,7 @@ struct _portMapping
     else if (mapType == DFG_PORT_MAPTYPE_XSI_PORT)
     {
       if (   dfgPortDataType != L"Mat44"
+          && dfgPortDataType != L"Xfo"
 
           && dfgPortDataType != L"PolygonMesh")
         return false;

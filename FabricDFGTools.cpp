@@ -281,7 +281,8 @@ XSI::siClassID dfgTools::GetSiClassIdFromResolvedDataType(const XSI::CString &re
       || resDataType == L"DataSize"
       || resDataType == L"UInt64")    return siParameterID;
 
-  if (resDataType == L"Mat44")        return siKinematicStateID;
+  if (   resDataType == L"Mat44"
+      || resDataType == L"Xfo")       return siKinematicStateID;
 
   if (resDataType == L"PolygonMesh")  return siPolygonMeshID;
   

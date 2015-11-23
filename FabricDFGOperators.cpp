@@ -1918,6 +1918,7 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
             else if (pmap.dfgPortType == DFG_PORT_TYPE_OUT)
             {
               if (   pmap.dfgPortDataType == L"Mat44"
+                  || pmap.dfgPortDataType == L"Xfo"
 
                   || pmap.dfgPortDataType == L"PolygonMesh")
               {
