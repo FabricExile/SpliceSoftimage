@@ -1477,6 +1477,48 @@ void BaseInterface::SetValueOfArgMat44(FabricCore::Client &client, FabricCore::D
   }
 }
 
+void BaseInterface::SetValueOfArgXfo(FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val)
+{
+  if (!binding.getExec().haveExecPort(argName))
+  {
+    std::string s = "BaseInterface::SetValueOfArgMat44(): port not found.";
+    logErrorFunc(NULL, s.c_str(), s.length());
+    return;
+  }
+
+  try
+  {
+    FabricCore::RTVal rtval;
+    FabricCore::RTVal sc[3], xyz[3], ori[2], tr[3], xfo[3];
+    const bool valIsValid = (val.size() >= 10);
+
+    xyz[0] = FabricCore::RTVal::ConstructFloat32(client, valIsValid ? val[4] : 0);
+    xyz[1] = FabricCore::RTVal::ConstructFloat32(client, valIsValid ? val[5] : 0);
+    xyz[2] = FabricCore::RTVal::ConstructFloat32(client, valIsValid ? val[6] : 0);
+    ori[0] = FabricCore::RTVal::Construct(client, "Vec3", 3, xyz);
+    ori[1] = FabricCore::RTVal::ConstructFloat32(client, valIsValid ? val[3] : 0);
+
+    tr[0] = FabricCore::RTVal::ConstructFloat32(client, valIsValid ? val[7] : 0);
+    tr[1] = FabricCore::RTVal::ConstructFloat32(client, valIsValid ? val[8] : 0);
+    tr[2] = FabricCore::RTVal::ConstructFloat32(client, valIsValid ? val[9] : 0);
+
+    sc[0] = FabricCore::RTVal::ConstructFloat32(client, valIsValid ? val[0] : 0);
+    sc[1] = FabricCore::RTVal::ConstructFloat32(client, valIsValid ? val[1] : 0);
+    sc[2] = FabricCore::RTVal::ConstructFloat32(client, valIsValid ? val[2] : 0);
+
+    xfo[1]   = FabricCore::RTVal::Construct(client, "Vec3", 3, tr);
+    xfo[0]   = FabricCore::RTVal::Construct(client, "Quat", 2, ori);
+    xfo[2]   = FabricCore::RTVal::Construct(client, "Vec3", 3, sc);
+
+    rtval = FabricCore::RTVal::Construct(client, "Xfo", 3, xfo);
+    binding.setArgValue(argName, rtval, false);
+  }
+  catch (FabricCore::Exception e)
+  {
+    logErrorFunc(NULL, e.getDesc_cstr(), e.getDescLength());
+  }
+}
+
 void BaseInterface::SetValueOfArgPolygonMesh(FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const _polymesh &val)
 {
   if (!binding.getExec().haveExecPort(argName))

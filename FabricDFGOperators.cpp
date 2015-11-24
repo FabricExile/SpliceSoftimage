@@ -1363,6 +1363,33 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                 }
               }
             }
+            else if (portResolvedType == L"Xfo")
+            {
+              if (xsiPortValue.m_t == CValue::siRef)
+              {
+                KinematicState ks(xsiPortValue);
+                if (ks.IsValid())
+                {
+                  // put the XSI port's value into a std::vector.
+                  MATH::CTransformation t = ks.GetTransform();
+                  MATH::CQuaternion     q = t.GetRotationQuaternion();
+                  std::vector <double> val(10);
+                  val[0] = t.GetSclX();   // scaling.
+                  val[1] = t.GetSclY();
+                  val[2] = t.GetSclZ();
+                  val[3] = q.GetW();      // orientation.
+                  val[4] = q.GetX();
+                  val[5] = q.GetY();
+                  val[6] = q.GetZ();
+                  val[7] = t.GetPosX();   // positions
+                  val[8] = t.GetPosY();
+                  val[9] = t.GetPosZ();
+
+                  // set the DFG port from the std::vector.
+                  BaseInterface::SetValueOfArgXfo(*client, binding, portName.GetAsciiString(), val);
+                }
+              }
+            }
 
             //
             else if (portResolvedType == L"PolygonMesh")
@@ -1908,6 +1935,7 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
                 cvaMapType.Add( DFG_PORT_MAPTYPE_XSI_PARAMETER );
               }
               if (   pmap.dfgPortDataType == L"Mat44"
+                  || pmap.dfgPortDataType == L"Xfo"
 
                   || pmap.dfgPortDataType == L"PolygonMesh")
               {
