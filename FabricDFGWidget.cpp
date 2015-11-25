@@ -23,60 +23,7 @@
 #include <iostream>
 #include <fstream>
 
-#include <DFG/DFGCombinedWidget.h>
-
 using namespace XSI;
-
-class FabricDFGWidget : public DFG::DFGCombinedWidget
-{
- public:
-
-  FabricDFGWidget(QWidget *parent) : DFGCombinedWidget(parent)
-  {
-  }
-
-  virtual void onUndo()
-  {
-    Application().ExecuteCommand(L"Undo", CValueArray(), CValue());
-  }
-
-  virtual void onRedo()
-  {
-    Application().ExecuteCommand(L"Redo", CValueArray(), CValue());
-  }
-
-  static void log(void *userData, const char *message, unsigned int length)
-  {
-    std::string mess = std::string("[CANVAS] ") + (message ? message : "");
-    feLog(userData, mess.c_str(), mess.length());
-  }
-
-  bool eventFilter(QObject *watched, QEvent *event)
-  {
-    if (event->type() == QEvent::KeyPress)
-    {
-      QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
-      switch (keyEvent->key())
-      {
-        case 89:  // redo.
-        {
-          Application().ExecuteCommand(L"Redo", CValueArray(), CValue());
-          return true;
-        } 
-        case 90:  // undo.
-        {
-          Application().ExecuteCommand(L"Undo", CValueArray(), CValue());
-          return true;
-        } 
-        default:
-        {
-          break;
-        }
-      }
-    }
-    return false;
-  }
-};
 
 struct _windowData
 {
@@ -190,6 +137,7 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
   }
 
   // show/execute qtDialog (without showing the dock dialog qtDock).
+  pud->GetBaseInterface()->setWidget(winData.qtDFGWidget);
   try
   {
     winData.qtDialog->exec();
@@ -205,6 +153,7 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
 
   // clean up.
   winData.qtDock->close();
+  pud->GetBaseInterface()->setWidget(NULL);
   try
   {
     delete winData.qtDFGWidget;

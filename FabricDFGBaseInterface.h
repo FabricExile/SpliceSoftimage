@@ -13,6 +13,7 @@
 #include <map>
 
 struct _polymesh;
+class FabricDFGWidget;
 class DFGUICmdHandlerDCC;
 
 // a management class for client and host
@@ -49,8 +50,13 @@ class BaseInterface
 
   // binding notifications.
   static void bindingNotificationCallback(void *userData, char const *jsonCString, uint32_t jsonLength);
+  void setWidget(FabricDFGWidget *widget)  {  m_widget = widget; }
+  FabricDFGWidget *getWidget(void)         {  return m_widget;   }
 
  private:
+
+  // binding notifications.
+  FabricDFGWidget *m_widget;
 
   // logging.
   static void logFunc(void *userData, const char *message, unsigned int length);

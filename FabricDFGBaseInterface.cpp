@@ -1,7 +1,14 @@
+#include <xsi_application.h>
+#include <xsi_context.h>
+#include <xsi_desktop.h>
+#include <xsi_status.h>
+
 #include "FabricDFGUICmdHandlerDCC.h"
 #include "FabricDFGBaseInterface.h"
 #include "FabricDFGPlugin.h"
+#include "FabricDFGWidget.h"
 #include "FabricDFGOperators.h"
+#include "FabricDFGUICmdHandlerDCC.h"
 
 #include "FabricSplicePlugin.h"
 
@@ -25,6 +32,9 @@ BaseInterface::BaseInterface(void (*in_logFunc)     (void *, const char *, unsig
 {
   // init splice.
   xsiInitializeSplice();
+
+  // init misc members.
+  m_widget = NULL;
 
   // set log functions.
   // (note: this is probably not necessary since the logging is done by the FabricSplice client).
@@ -231,11 +241,53 @@ void BaseInterface::bindingNotificationCallback(void *userData, char const *json
   if (!userData || !jsonCString)
     return;
 
-  //
-  // NOTHING HERE.
-  //
-  // we ignore the notifications, because Canvas in Softimage is (pseudo) modal dialog.
-  //
+  // get the notification's description.
+  FabricCore::Variant notification = FabricCore::Variant::CreateFromJSON(jsonCString, jsonLength);
+  const FabricCore::Variant *vDesc = notification.getDictValue("desc");
+  if (!vDesc)   return;
+  std::string nDesc = vDesc->getStringData();
+
+  // handle notification.
+  if      (nDesc == "")
+  {
+    // do nothing.
+  }
+
+  else if (nDesc == "dirty")
+  {
+    // we ignore this notification, because Canvas in Softimage is a (pseudo) modal dialog.
+  }
+
+  else if (nDesc == "argTypeChanged")
+  {
+    // we ignore this notification, because Canvas in Softimage is a (pseudo) modal dialog.
+  }
+
+  else if (nDesc == "argRenamed")
+  {
+    // we ignore this notification, because Canvas in Softimage is a (pseudo) modal dialog.
+  }
+
+  else if (nDesc == "argRemoved")
+  {
+    // we ignore this notification, because Canvas in Softimage is a (pseudo) modal dialog.
+  }
+
+  else if(   nDesc == "varInserted"
+          || nDesc == "varRemoved" )
+  {
+    BaseInterface *interf = static_cast<BaseInterface *>(userData);
+
+    if (   interf->getWidget()
+        && interf->getWidget()->getDfgWidget()
+        && interf->getWidget()->getDfgWidget()->getUIController())
+    interf->getWidget()->getDfgWidget()->getUIController()->emitVarsChanged();
+  }
+
+  else
+  {
+    // do nothing.
+  }
 }
 
 void BaseInterface::logFunc(void *userData, const char *message, unsigned int length)
