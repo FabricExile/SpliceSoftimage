@@ -34,8 +34,8 @@ class BaseInterface
 
   // accessors
   static FabricCore::Client                       *getClient();
-  static FabricCore::DFGHost                       getHost();
-  FabricCore::DFGBinding                           getBinding();
+  static FabricCore::DFGHost                      *getHost();
+  FabricCore::DFGBinding                          *getBinding();
   FabricCore::RTVal                               *getEvalContext();
   static FabricServices::ASTWrapper::KLASTManager *getManager();
   DFGUICmdHandlerDCC                              *getCmdHandler();

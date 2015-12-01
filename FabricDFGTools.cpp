@@ -137,12 +137,12 @@ bool dfgTools::GetOperatorPortMapping(XSI::CRef &in_op, std::vector<_portMapping
 
   // check if the Fabric stuff is not valid.
   if (   !pud->GetBaseInterface()
-      || !pud->GetBaseInterface()->getBinding().isValid())
+      || !pud->GetBaseInterface()->getBinding()->isValid())
   { out_err = L"failed to get base interface or graph.";
     return false; }
 
   // get the graph ports.
-  FabricCore::DFGExec exec = pud->GetBaseInterface()->getBinding().getExec();
+  FabricCore::DFGExec exec = pud->GetBaseInterface()->getBinding()->getExec();
   if (exec.getExecPortCount() == 0)
     return true;
 
@@ -1140,6 +1140,7 @@ bool dfgTools::GetGeometryFromX3DObject(const XSI::X3DObject &in_x3DObj, double 
   CFloatArray   nodeNormals      (0);
   CFloatArray   nodeUVWs         (0);
   CFloatArray   nodeColors       (0);
+  CString       emptyStr;
   if (!GetGeometryFromX3DObject(in_x3DObj,
                                 in_currFrame,
                                 false,
@@ -1151,10 +1152,10 @@ bool dfgTools::GetGeometryFromX3DObject(const XSI::X3DObject &in_x3DObj, double 
                                 useNodeNormals, true, nodeNormals, true,
                                 useNodeUVWs,          nodeUVWs,    true,
                                 useNodeColors,        nodeColors,  true,
-                                CString(),
-                                CString(),
-                                CString(),
-                                CString(),
+                                emptyStr,
+                                emptyStr,
+                                emptyStr,
+                                emptyStr,
                                 out_errmsg,
                                 out_wrnmsg ) )
   {
@@ -1210,7 +1211,7 @@ LONG dfgTools::GetUndoLevels(void)
 
 bool dfgTools::SetUndoLevels(LONG undoLevels)
 {
-  bool ret = (Application().GetPreferences().SetPreferenceValue(L"General.undo", CValue(__max(0, undoLevels))) == CStatus::OK);
+  bool ret = (Application().GetPreferences().SetPreferenceValue(L"General.undo", CValue(std::max(0, undoLevels))) == CStatus::OK);
   if (!ret) Application().LogMessage(L"failed to set the current amount of undo levels to " + CString(undoLevels) + L".", siWarningMsg);
   return ret;
 }

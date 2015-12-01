@@ -50,7 +50,7 @@ if FABRIC_BUILD_OS == 'Windows':
   else:
     qtDir = env.Dir('#').Dir('ThirdParty').Dir('PreBuilt').Dir(FABRIC_BUILD_OS).Dir(FABRIC_BUILD_ARCH).Dir('VS2013').Dir('Release').Dir('qt').Dir('4.8.6')
 
-if os.environ.has_key('QT_DIR') and not os.path.exists(qtDir.abspath):
+if os.environ.has_key('QT_DIR'):
   qtDir = env.Dir(os.environ['QT_DIR'])
 
 if qtDir:
@@ -97,8 +97,6 @@ env.Append(CPPPATH = [os.path.join(os.environ['FABRIC_DIR'], 'include')])
 env.Append(CPPPATH = [os.path.join(os.environ['FABRIC_DIR'], 'include', 'FabricServices')])
 env.Append(CPPPATH = [uiSconscript.dir])
 
-qtIncludeDir = '/usr/include/Qt'
-qtMocBin = '/usr/lib64/qt4/bin/moc'
 if qtDir:
   qtIncludeDir = os.path.join(qtDir.abspath, 'include', 'Qt')
   qtMocBin = os.path.join(qtDir.abspath, 'bin', 'moc')
@@ -115,6 +113,7 @@ uiLibs = SConscript(uiSconscript, exports = {
   'buildOS': FABRIC_BUILD_OS,
   'buildArch': FABRIC_BUILD_ARCH,
   'stageDir': env.Dir('#').Dir('stage').Dir('lib'),
+  'shibokenPysideDir': env.Dir(os.environ['SHIBOKEN_PYSIDE_DIR']),
   },
   duplicate=0,
   variant_dir = env.Dir('FabricUI')

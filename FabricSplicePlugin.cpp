@@ -296,7 +296,8 @@ XSIPLUGINCALLBACK CStatus FabricSpliceOpenEndScene_OnEvent(CRef & ctxt)
   FabricSpliceNewScene_OnEvent(ctxt);
 
   // before returning we also call the FabricDFG onOpen function.
-  helpFnct_siEventOpenSave(ctxt, 1, CRef());
+  CRef ref;
+  helpFnct_siEventOpenSave(ctxt, 1, ref);
 
   // done.
   return 1;
@@ -434,7 +435,8 @@ XSIPLUGINCALLBACK CStatus FabricSpliceBeginExport_OnEvent(CRef & ctxt)
   }
 
   // before returning we also call the FabricDFG onSave function.
-  helpFnct_siEventOpenSave(ctxt, 0, CRef());
+  CRef ref;
+  helpFnct_siEventOpenSave(ctxt, 0, ref);
 
   // done.
   return true;
@@ -542,7 +544,8 @@ CStatus onSaveScene(CRef & ctxt)
   }
 
   // before returning we also call the FabricDFG onSave function.
-  helpFnct_siEventOpenSave(ctxt, 0, CRef());
+  CRef ref;
+  helpFnct_siEventOpenSave(ctxt, 0, ref);
 
   // done.
   return true;
