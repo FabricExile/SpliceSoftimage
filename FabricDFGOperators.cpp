@@ -79,7 +79,8 @@ XSI::CRef recreateOperator(XSI::CustomOperator op, XSI::CString &dfgJSON)
     // delete the old operator.
     args.Clear();
     args.Add(op.GetFullName());
-    Application().ExecuteCommand(L"DeleteObj", args, CValue());
+    CValue val;
+    Application().ExecuteCommand(L"DeleteObj", args, val);
 
     // transfer expressions, if any, from old operator to new one.
     if ((_opUserData::s_newOp_expressions.size() & 0x0001) == 0)
@@ -94,7 +95,8 @@ XSI::CRef recreateOperator(XSI::CustomOperator op, XSI::CString &dfgJSON)
           {
             CString pName(_opUserData::s_newOp_expressions[i + 0].c_str());
             Parameter p = op.GetParameter(pName);
-            if (!p.IsValid() || !p.AddExpression(CString(_opUserData::s_newOp_expressions[i + 1].c_str())).IsValid())
+            CString expr(_opUserData::s_newOp_expressions[i + 1].c_str());
+            if (!p.IsValid() || !p.AddExpression(expr).IsValid())
               Application().LogMessage(L"failed to add expression for parameter \"" + pName + L"\"", siWarningMsg);
           }
         }
@@ -104,7 +106,7 @@ XSI::CRef recreateOperator(XSI::CustomOperator op, XSI::CString &dfgJSON)
           args.Add(CustomOperator(newOpRef).GetUniqueName() + L"." + CString(_opUserData::s_newOp_expressions[i + 0].c_str()));
           args.Add(CString(_opUserData::s_newOp_expressions[i + 1].c_str()));
           args.Add(true);
-          Application().ExecuteCommand(L"AddExpr", args, CValue());
+          Application().ExecuteCommand(L"AddExpr", args, val);
         }
       }
     }
@@ -376,7 +378,8 @@ void CanvasOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
   {
     // get the current port mapping.
     std::vector <_portMapping> portmap;
-    if (dfgTools::GetOperatorPortMapping(op, portmap, CString()))
+    CString str;
+    if (dfgTools::GetOperatorPortMapping(op, portmap, str))
     {
       // check if all the DFG input ports have a corresponding XSI parameter.
       if (!outOfSync)
@@ -708,15 +711,16 @@ XSIPLUGINCALLBACK CStatus CanvasOp_PPGEvent(const CRef &in_ctxt)
     {
       // get the current port mapping.
       std::vector <_portMapping> portmap_old;
-      dfgTools::GetOperatorPortMapping(op, portmap_old, CString());
+      CString str;
+      dfgTools::GetOperatorPortMapping(op, portmap_old, str);
 
       // open canvas.
       CString title = L"Canvas - " + op.GetParent3DObject().GetName();
-      if (OpenCanvas(_opUserData::GetUserData(op.GetObjectID()), title.GetAsciiString()) == OPENCANVAS_RETURN_VALS::SUCCESS)
+      if (OpenCanvas(_opUserData::GetUserData(op.GetObjectID()), title.GetAsciiString()) == SUCCESS)
       {
         // get the new port mapping.
         std::vector <_portMapping> portmap_new;
-        dfgTools::GetOperatorPortMapping(op, portmap_new, CString());
+        dfgTools::GetOperatorPortMapping(op, portmap_new, str);
 
         // refresh, if necessary, the PPG.
         bool refresh = (portmap_old.size() != portmap_new.size());
@@ -979,23 +983,26 @@ XSIPLUGINCALLBACK CStatus CanvasOp_PPGEvent(const CRef &in_ctxt)
     else if (btnName == L"BtnSelConnectAll")
     {
       CValueArray args;
+      CValue val;
       args.Add(op.GetUniqueName());
       args.Add((LONG)0);
-      Application().ExecuteCommand(L"FabricCanvasSelectConnected", args, CValue());
+      Application().ExecuteCommand(L"FabricCanvasSelectConnected", args, val);
     }
     else if (btnName == L"BtnSelConnectIn")
     {
       CValueArray args;
+      CValue val;
       args.Add(op.GetUniqueName());
       args.Add((LONG)-1);
-      Application().ExecuteCommand(L"FabricCanvasSelectConnected", args, CValue());
+      Application().ExecuteCommand(L"FabricCanvasSelectConnected", args, val);
     }
     else if (btnName == L"BtnSelConnectOut")
     {
       CValueArray args;
+      CValue val;
       args.Add(op.GetUniqueName());
       args.Add((LONG)+1);
-      Application().ExecuteCommand(L"FabricCanvasSelectConnected", args, CValue());
+      Application().ExecuteCommand(L"FabricCanvasSelectConnected", args, val);
     }
     else if (btnName == L"BtnImportGraph")
     {
@@ -1031,9 +1038,10 @@ XSIPLUGINCALLBACK CStatus CanvasOp_PPGEvent(const CRef &in_ctxt)
 
       // export.
       CValueArray args;
+      CValue val;
       args.Add(op.GetUniqueName());
       args.Add(fileName);
-      Application().ExecuteCommand(L"FabricCanvasExportGraph", args, CValue());
+      Application().ExecuteCommand(L"FabricCanvasExportGraph", args, val);
     }
     else if (btnName == L"BtnUpdatePPG")
     {
@@ -1055,7 +1063,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_PPGEvent(const CRef &in_ctxt)
         Application().LogMessage(L"{", siInfoMsg);
 
         // log (graph ports).
-        FabricCore::DFGExec exec = pud->GetBaseInterface()->getBinding().getExec();
+        FabricCore::DFGExec exec = pud->GetBaseInterface()->getBinding()->getExec();
         Application().LogMessage(L"    amount of graph ports: " + CString((LONG)exec.getExecPortCount()), siInfoMsg);
         for (int i=0;i<exec.getExecPortCount();i++)
         {
@@ -1135,9 +1143,10 @@ XSIPLUGINCALLBACK CStatus CanvasOp_PPGEvent(const CRef &in_ctxt)
     else if (btnName == L"BtnLogGraphFile")
     {
       CValueArray args;
+      CValue val;
       args.Add(op.GetUniqueName());
       args.Add(L"console");
-      Application().ExecuteCommand(L"FabricCanvasExportGraph", args, CValue());
+      Application().ExecuteCommand(L"FabricCanvasExportGraph", args, val);
     }
     else if (btnName == L"BtnDebug")
     {
@@ -1145,7 +1154,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_PPGEvent(const CRef &in_ctxt)
       if (pud)
         if (pud->GetBaseInterface())
         {
-          FabricCore::DFGExec graph = pud->GetBaseInterface()->getBinding().getExec();
+          FabricCore::DFGExec graph = pud->GetBaseInterface()->getBinding()->getExec();
           if (graph.isValid())
           {
             static ULONG i = 0;
@@ -1261,8 +1270,8 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
   // get pointers/refs at binding, graph & co.
   BaseInterface                                   *baseInterface  = pud->GetBaseInterface();
   FabricCore::Client                              *client         = pud->GetBaseInterface()->getClient();
-  FabricCore::DFGBinding                           binding        = pud->GetBaseInterface()->getBinding();
-  FabricCore::DFGExec                              exec           = binding.getExec();
+  FabricCore::DFGBinding                          *binding        = pud->GetBaseInterface()->getBinding();
+  FabricCore::DFGExec                              exec           = binding->getExec();
 
   // Fabric Engine (step 0): update the base interface's evalContext.
   {
@@ -1359,7 +1368,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                   val[15] = m.GetValue(3, 3);
 
                   // set the DFG port from the std::vector.
-                  BaseInterface::SetValueOfArgMat44(*client, binding, portName.GetAsciiString(), val);
+                  BaseInterface::SetValueOfArgMat44(*client, *binding, portName.GetAsciiString(), val);
                 }
               }
             }
@@ -1386,7 +1395,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                   val[9] = t.GetPosZ();
 
                   // set the DFG port from the std::vector.
-                  BaseInterface::SetValueOfArgXfo(*client, binding, portName.GetAsciiString(), val);
+                  BaseInterface::SetValueOfArgXfo(*client, *binding, portName.GetAsciiString(), val);
                 }
               }
             }
@@ -1417,7 +1426,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                     if (verbose)  Application().LogMessage(functionName + L": polygon mesh \"" + ref.GetAsText() + L"\": #vertices = " + CString((ULONG)val.numVertices) + L"  #polygons = " + CString((ULONG)val.numPolygons) + L"  #samples = " + CString((ULONG)val.numSamples));
 
                     // set the DFG port from val.
-                    BaseInterface::SetValueOfArgPolygonMesh(*client, binding, portName.GetAsciiString(), val);
+                    BaseInterface::SetValueOfArgPolygonMesh(*client, *binding, portName.GetAsciiString(), val);
                   }
                   else
                   {
@@ -1448,7 +1457,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
             //
             if      (   portResolvedType == "Boolean")    {
                                                               bool val = (bool)xsiValue;
-                                                              BaseInterface::SetValueOfArgBoolean(*client, binding, portName.GetAsciiString(), val);
+                                                              BaseInterface::SetValueOfArgBoolean(*client, *binding, portName.GetAsciiString(), val);
                                                             }
             else if (   portResolvedType == "Integer"
                      || portResolvedType == "SInt8"
@@ -1456,7 +1465,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                      || portResolvedType == "SInt32"
                      || portResolvedType == "SInt64" )    {
                                                               int val = (int)(LONG)xsiValue;
-                                                              BaseInterface::SetValueOfArgSInt(*client, binding, portName.GetAsciiString(), val);
+                                                              BaseInterface::SetValueOfArgSInt(*client, *binding, portName.GetAsciiString(), val);
                                                             }
             else if (   portResolvedType == "Byte"
                      || portResolvedType == "UInt8"
@@ -1468,17 +1477,17 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                      || portResolvedType == "DataSize"
                      || portResolvedType == "UInt64" )    {
                                                               unsigned int val = (unsigned int)(ULONG)xsiValue;
-                                                              BaseInterface::SetValueOfArgUInt(*client, binding, portName.GetAsciiString(), val);
+                                                              BaseInterface::SetValueOfArgUInt(*client, *binding, portName.GetAsciiString(), val);
                                                             }
             else if (   portResolvedType == "Scalar"
                      || portResolvedType == "Float32"
                      || portResolvedType == "Float64")    {
                                                               double val = (double)xsiValue;
-                                                              BaseInterface::SetValueOfArgFloat(*client, binding, portName.GetAsciiString(), val);
+                                                              BaseInterface::SetValueOfArgFloat(*client, *binding, portName.GetAsciiString(), val);
                                                             }
             else if (   portResolvedType == "String" )    {
                                                               std::string val = CString(xsiValue).GetAsciiString();
-                                                              BaseInterface::SetValueOfArgString(*client, binding, portName.GetAsciiString(), val);
+                                                              BaseInterface::SetValueOfArgString(*client, *binding, portName.GetAsciiString(), val);
                                                             }
             else
             {
@@ -1512,7 +1521,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
     pud->execFabricStep12 = false;
     try
     {
-      binding.execute();
+      binding->execute();
     }
     catch (FabricCore::Exception e)
     {
@@ -1524,7 +1533,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
   // Fabric Engine (step 3): set the XSI output port from the matching DFG output port and/or set the ICE data.
   {
     CString portName = outputPort.GetName();
-    FabricCore::DFGExec exec = binding.getExec();
+    FabricCore::DFGExec exec = binding->getExec();
 
     try
     {
@@ -1543,7 +1552,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
           else if (outputPort.GetTarget().GetClassID() == siKinematicStateID)
           {
             std::vector <double> val;
-            if (BaseInterface::GetArgValueMat44(binding, portName.GetAsciiString(), val) != 0)
+            if (BaseInterface::GetArgValueMat44(*binding, portName.GetAsciiString(), val) != 0)
               Application().LogMessage(functionName + L": BaseInterface::GetArgValueMat44(port) failed.", siWarningMsg);
             else
             {
@@ -1579,7 +1588,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
             {
               _polymesh polymesh;
 
-              int ret = polymesh.setFromDFGArg(binding, portName.GetAsciiString());
+              int ret = polymesh.setFromDFGArg(*binding, portName.GetAsciiString());
               if (ret)
                 Application().LogMessage(functionName + L": failed to get mesh from DFG port \"" + portName + L"\" (returned " + CString(ret) + L")", siWarningMsg);
               else
@@ -1624,9 +1633,9 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                   {
                     typedef                 MATH::CVector3f T;
                     CString                 name          = L"FabricCanvasDataArrayNormalsPerNode";
-                    siICENodeDataType       typeData      = siICENodeDataType::siICENodeDataVector3;
-                    siICENodeStructureType  typeStructure = siICENodeStructureType::siICENodeStructureArray;
-                    siICENodeContextType    typeContext   = siICENodeContextType::siICENodeContextSingleton;
+                    siICENodeDataType       typeData      = siICENodeDataVector3;
+                    siICENodeStructureType  typeStructure = siICENodeStructureArray;
+                    siICENodeContextType    typeContext   = siICENodeContextSingleton;
                     ICEAttribute            attr          = xsiPolymesh.GetICEAttributeFromName(name);
                     if (!attr.IsValid())    attr          = xsiPolymesh.AddICEAttribute(name, typeData, typeStructure, typeContext);
                     if (!attr.IsValid())
@@ -1680,9 +1689,9 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                   {
                     typedef                 MATH::CVector3f T;
                     CString                 name          = L"FabricCanvasDataArrayUVWPerNode";
-                    siICENodeDataType       typeData      = siICENodeDataType::siICENodeDataVector3;
-                    siICENodeStructureType  typeStructure = siICENodeStructureType::siICENodeStructureArray;
-                    siICENodeContextType    typeContext   = siICENodeContextType::siICENodeContextSingleton;
+                    siICENodeDataType       typeData      = siICENodeDataVector3;
+                    siICENodeStructureType  typeStructure = siICENodeStructureArray;
+                    siICENodeContextType    typeContext   = siICENodeContextSingleton;
                     ICEAttribute            attr          = xsiPolymesh.GetICEAttributeFromName(name);
                     if (!attr.IsValid())    attr          = xsiPolymesh.AddICEAttribute(name, typeData, typeStructure, typeContext);
                     if (!attr.IsValid())
@@ -1736,9 +1745,9 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                   {
                     typedef                 MATH::CColor4f  T;
                     CString                 name          = L"FabricCanvasDataArrayColorPerNode";
-                    siICENodeDataType       typeData      = siICENodeDataType::siICENodeDataColor4;
-                    siICENodeStructureType  typeStructure = siICENodeStructureType::siICENodeStructureArray;
-                    siICENodeContextType    typeContext   = siICENodeContextType::siICENodeContextSingleton;
+                    siICENodeDataType       typeData      = siICENodeDataColor4;
+                    siICENodeStructureType  typeStructure = siICENodeStructureArray;
+                    siICENodeContextType    typeContext   = siICENodeContextSingleton;
                     ICEAttribute            attr          = xsiPolymesh.GetICEAttributeFromName(name);
                     if (!attr.IsValid())    attr          = xsiPolymesh.AddICEAttribute(name, typeData, typeStructure, typeContext);
                     if (!attr.IsValid())

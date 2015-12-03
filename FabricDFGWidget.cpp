@@ -49,9 +49,9 @@ const char *GetOpenCanvasErrorDescription(OPENCANVAS_RETURN_VALS in_errID)
   static const char str_UNKNOWN     [] = "failed to open Canvas: unknown error";
   switch (in_errID)
   {
-    case OPENCANVAS_RETURN_VALS::SUCCESS:       return str_SUCCESS;
-    case OPENCANVAS_RETURN_VALS::ALREADY_OPEN:  return str_ALREADY_OPEN;
-    case OPENCANVAS_RETURN_VALS::NULL_POINTER:  return str_NULL_POINTER;
+    case SUCCESS:       return str_SUCCESS;
+    case ALREADY_OPEN:  return str_ALREADY_OPEN;
+    case NULL_POINTER:  return str_NULL_POINTER;
     default:                                    return str_UNKNOWN;
   }
 }
@@ -65,16 +65,16 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
   if (s_canvasIsOpen)
   {
     Application().LogMessage(L"Not opening Canvas... reason: there already is an open Canvas window.", siWarningMsg);
-    return OPENCANVAS_RETURN_VALS::ALREADY_OPEN;
+    return ALREADY_OPEN;
   }
 
   // init Qt app, if necessary.
   FabricInitQt();
 
   // check.
-  if (!qApp)                    return OPENCANVAS_RETURN_VALS::NULL_POINTER;
-  if (!pud)                     return OPENCANVAS_RETURN_VALS::NULL_POINTER;
-  if (!pud->GetBaseInterface()) return OPENCANVAS_RETURN_VALS::NULL_POINTER;
+  if (!qApp)                    return NULL_POINTER;
+  if (!pud)                     return NULL_POINTER;
+  if (!pud->GetBaseInterface()) return NULL_POINTER;
 
   // set flag to block any further canvas.
   s_canvasIsOpen = true;
@@ -111,12 +111,14 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
     config.graphConfig.sidePanelBackgroundColor . setRgb(137, 136, 135);
 
     // init the DFG widget.
+    FTL::StrRef emptyStr;
+    FabricCore::DFGExec exec = pud->GetBaseInterface()->getBinding()->getExec();
     winData.qtDFGWidget->init(*pud->GetBaseInterface()->getClient(),
                                pud->GetBaseInterface()->getManager(),
-                               pud->GetBaseInterface()->getHost(),
-                               pud->GetBaseInterface()->getBinding(),
-                               "",
-                               pud->GetBaseInterface()->getBinding().getExec(),
+                              *pud->GetBaseInterface()->getHost(),
+                              *pud->GetBaseInterface()->getBinding(),
+                               emptyStr,
+                               exec,
                                pud->GetBaseInterface()->getCmdHandler(),
                                false,
                                config
@@ -179,7 +181,7 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
   s_canvasIsOpen = false;
 
   // done.
-  return OPENCANVAS_RETURN_VALS::SUCCESS;
+  return SUCCESS;
 }
 
 void FabricInitQt()

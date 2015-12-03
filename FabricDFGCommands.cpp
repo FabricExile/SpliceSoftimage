@@ -54,7 +54,7 @@ SICALLBACK FabricCanvasOpApply_Init(CRef &in_ctxt)
   oArgs.Add(L"dfgJSON",        CString());    // JSON string for the new op's graph.
   oArgs.Add(L"OpenPPG",        false);        // true: open PPG after creation.
   oArgs.Add(L"otherOpName",    CString());    // optional name of a dfgSoftimage operator. If set then the parameter values, animations, etc. are copied to the new operator's parameters.
-  oArgs.Add(L"CreateSpliceOp", 2L);           // 0: no, 1: yes, 2: yes, but only if the object has no SpliceOp yet.
+  oArgs.Add(L"CreateSpliceOp", LONG(2));           // 0: no, 1: yes, 2: yes, but only if the object has no SpliceOp yet.
 
   return CStatus::OK;
 }
@@ -103,13 +103,16 @@ SICALLBACK FabricCanvasOpApply_Execute(CRef &in_ctxt)
   {
     // create a SpliceOp before creating the CanvasOp?
     // (note: adding a SpliceOp to the object prevents things from going wrong when loading a scene into XSI that has one or more CanvasOp.)
+    XSI::CString spliceOpName(L"SpliceOp");
+    XSI::CRefArray args0;
     if (    createSpliceOp == 1
-        || (createSpliceOp == 2 && dfgTools::GetRefsAtOps(obj, CString(L"SpliceOp"), XSI::CRefArray()) == 0)  )
+        || (createSpliceOp == 2 && dfgTools::GetRefsAtOps(obj, spliceOpName, args0) == 0)  )
     {
       CValueArray args;
+      CValue val;
       args.Add(L"newSplice");
       args.Add(L"{\"targets\":\"" + objectName + L".kine.global\", \"portName\":\"matrix\", \"portMode\":\"io\"}");
-      Application().ExecuteCommand(L"fabricSplice", args, CValue());
+      Application().ExecuteCommand(L"fabricSplice", args, val);
     }
 
     // create the CanvasOp operator
@@ -392,8 +395,9 @@ SICALLBACK FabricCanvasOpApply_Execute(CRef &in_ctxt)
     if (openPPG)
     {
       CValueArray args;
+      CValue val;
       args.Add(newOp.GetUniqueName());
-      Application().ExecuteCommand(L"InspectObj", args, CValue());
+      Application().ExecuteCommand(L"InspectObj", args, val);
     }
   } while (false);
 
@@ -928,7 +932,7 @@ SICALLBACK FabricCanvasImportGraph_Execute(CRef &in_ctxt)
   std::vector <_portMapping> portmap_new;
   try
   {
-    FabricCore::DFGExec exec = pud->GetBaseInterface()->getBinding().getExec();
+    FabricCore::DFGExec exec = pud->GetBaseInterface()->getBinding()->getExec();
     portmap_new.resize(exec.getExecPortCount());
     for (int i=0;i<exec.getExecPortCount();i++)
     {
@@ -992,19 +996,21 @@ SICALLBACK FabricCanvasImportGraph_Execute(CRef &in_ctxt)
       // create a new operator based on the imported JSON file and portmap_new.
       _opUserData::s_newOp_portmap = portmap_new;
       CValueArray args;
+      CValue val;
       args.Add(op.GetParent3DObject().GetFullName());
       args.Add(CString(json.c_str()));
       args.Add(true);
       args.Add(op.GetFullName());
-      if (Application().ExecuteCommand(L"FabricCanvasOpApply", args, CValue()) == CStatus::OK)
+      if (Application().ExecuteCommand(L"FabricCanvasOpApply", args, val) == CStatus::OK)
       {
         // store return value in context, "true" meaning that the operator was recreated.
         ctxt.PutAttribute(L"ReturnValue", true);
 
         // delete the old operator.
         CValueArray args;
+        CValue val;
         args.Add(op.GetFullName());
-        Application().ExecuteCommand(L"DeleteObj", args, CValue());
+        Application().ExecuteCommand(L"DeleteObj", args, val);
       }
     }
   }
@@ -1091,7 +1097,7 @@ SICALLBACK FabricCanvasExportGraph_Execute(CRef &in_ctxt)
     // set meta data.
     try
     {
-      FabricCore::DFGExec exec = pud->GetBaseInterface()->getBinding().getExec();
+      FabricCore::DFGExec exec = pud->GetBaseInterface()->getBinding()->getExec();
       for (int i=0;i<exec.getExecPortCount();i++)
       {
         // mapType.
@@ -1390,7 +1396,7 @@ SICALLBACK FabricCanvasGetBindingID_Execute(CRef &in_ctxt)
     return CStatus::OK; }
 
   // get and return binding ID.
-  ULONG result = pud->GetBaseInterface()->getBinding().getBindingID();
+  ULONG result = pud->GetBaseInterface()->getBinding()->getBindingID();
   ctxt.PutAttribute(L"ReturnValue", result);
     
   // done.

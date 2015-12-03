@@ -90,10 +90,11 @@ SICALLBACK FabricCanvas_Menu_CreateDFGOp(XSI::CRef&)
   for (int i=0;i<targetObjects.GetCount();i++)
   {
     CValueArray args;
+    CValue val;
     args.Add(targetObjects[i]);
     args.Add(L"");
     args.Add(true);
-    Application().ExecuteCommand(L"FabricCanvasOpApply", args, CValue());
+    Application().ExecuteCommand(L"FabricCanvasOpApply", args, val);
   }
 
   // done.
@@ -116,10 +117,11 @@ SICALLBACK FabricCanvas_Menu_CreateNullWithOp(XSI::CRef&)
 
   // execute command.
   CValueArray args;
+  CValue val;
   args.Add(obj.GetFullName());
   args.Add(L"");
   args.Add(true);
-  Application().ExecuteCommand(L"FabricCanvasOpApply", args, CValue());
+  Application().ExecuteCommand(L"FabricCanvasOpApply", args, val);
 
   // done.
   dfgTools::ClearUndoHistory();
@@ -141,10 +143,11 @@ SICALLBACK FabricCanvas_Menu_CreatePolymeshWithOp(XSI::CRef&)
 
   // execute command.
   CValueArray args;
+  CValue val;
   args.Add(obj.GetFullName());
   args.Add(L"");
   args.Add(true);
-  Application().ExecuteCommand(L"FabricCanvasOpApply", args, CValue());
+  Application().ExecuteCommand(L"FabricCanvasOpApply", args, val);
 
   // done.
   dfgTools::ClearUndoHistory();
@@ -155,7 +158,8 @@ SICALLBACK FabricCanvas_Menu_InspectCanvasOp(XSI::CRef&)
 {
   // execute command.
   CValueArray args;
-  Application().ExecuteCommand(L"FabricCanvasInspectOp", args, CValue());
+  CValue val;
+  Application().ExecuteCommand(L"FabricCanvasInspectOp", args, val);
 
   // done.
   return CStatus::OK;
@@ -164,10 +168,11 @@ SICALLBACK FabricCanvas_Menu_InspectCanvasOp(XSI::CRef&)
 SICALLBACK FabricCanvas_Menu_OnlineHelp(XSI::CRef&)
 {
   CValueArray args;
+  CValue val;
   args.Add(L"http://docs.fabric-engine.com/FabricEngine/latest/HTML/");
   args.Add(true);
   args.Add((LONG)1);
-  Application().ExecuteCommand(L"OpenNetView", args, CValue());
+  Application().ExecuteCommand(L"OpenNetView", args, val);
   return CStatus::OK;
 }
 
@@ -206,7 +211,8 @@ SICALLBACK FabricCanvas_Menu_ImportGraph(XSI::CRef&)
     { toolkit.MsgBox(L"The selection cannot be used for this operation.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
       return CStatus::OK; }
     CRefArray opRefs;
-    int numOps = dfgTools::GetRefsAtOps(obj, CString(L"CanvasOp"), opRefs);
+    CString canvasOpName(L"CanvasOp");
+    int numOps = dfgTools::GetRefsAtOps(obj, canvasOpName, opRefs);
     if (numOps < 1)
     { toolkit.MsgBox(L"No valid custom operator found to perform this operation.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
       return CStatus::OK; }
@@ -227,9 +233,10 @@ SICALLBACK FabricCanvas_Menu_ImportGraph(XSI::CRef&)
 
   // execute command.
   CValueArray args;
+  CValue val;
   args.Add(op.GetUniqueName());
   args.Add(fileName);
-  Application().ExecuteCommand(L"FabricCanvasImportGraph", args, CValue());
+  Application().ExecuteCommand(L"FabricCanvasImportGraph", args, val);
 
   // done.
   dfgTools::ClearUndoHistory();
@@ -271,7 +278,8 @@ SICALLBACK FabricCanvas_Menu_ExportGraph(XSI::CRef&)
     { toolkit.MsgBox(L"The selection cannot be used for this operation.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
       return CStatus::OK; }
     CRefArray opRefs;
-    int numOps = dfgTools::GetRefsAtOps(obj, CString(L"CanvasOp"), opRefs);
+    CString canvasOpName(L"CanvasOp");
+    int numOps = dfgTools::GetRefsAtOps(obj, canvasOpName, opRefs);
     if (numOps < 1)
     { toolkit.MsgBox(L"No valid custom operator found to perform this operation.", siMsgOkOnly | siMsgInformation, msgBoxtitle, ret);
       return CStatus::OK; }
@@ -292,9 +300,10 @@ SICALLBACK FabricCanvas_Menu_ExportGraph(XSI::CRef&)
 
   // execute command.
   CValueArray args;
+  CValue val;
   args.Add(op.GetUniqueName());
   args.Add(fileName);
-  Application().ExecuteCommand(L"FabricCanvasExportGraph", args, CValue());
+  Application().ExecuteCommand(L"FabricCanvasExportGraph", args, val);
 
   // done.
   return CStatus::OK;
@@ -303,7 +312,8 @@ SICALLBACK FabricCanvas_Menu_ExportGraph(XSI::CRef&)
 SICALLBACK FabricCanvas_Menu_LogStatus(XSI::CRef&)
 {
   CValueArray args;
-  Application().ExecuteCommand(L"FabricCanvasLogStatus", args, CValue());
+  CValue val;
+  Application().ExecuteCommand(L"FabricCanvasLogStatus", args, val);
   return CStatus::OK;
 }
 
