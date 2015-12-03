@@ -565,7 +565,7 @@ void CanvasOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
           pi.PutAttribute(siUINoLabel,              true);
           pi.PutAttribute(siUIWidthPercentage,      100);
           pi.PutAttribute(siUIGridLockRowHeader,    false);
-          pi.PutAttribute(siUIGridSelectionMode,    modelIsRegular ? siSelectionCell : siSelectionNone);
+          pi.PutAttribute(siUIGridSelectionMode,    siSelectionCell);
           pi.PutAttribute(siUIGridReadOnlyColumns,  "1:1:1:1:1");
         }
         else
