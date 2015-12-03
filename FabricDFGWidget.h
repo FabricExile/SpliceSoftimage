@@ -27,12 +27,16 @@ class FabricDFGWidget : public FabricUI::DFG::DFGCombinedWidget
 
   virtual void onUndo()
   {
-    XSI::Application().ExecuteCommand(L"Undo", XSI::CValueArray(), XSI::CValue());
+    XSI::CValueArray args;
+    XSI::CValue val;
+    XSI::Application().ExecuteCommand(L"Undo", args, val);
   }
 
   virtual void onRedo()
   {
-    XSI::Application().ExecuteCommand(L"Redo", XSI::CValueArray(), XSI::CValue());
+    XSI::CValueArray args;
+    XSI::CValue val;
+    XSI::Application().ExecuteCommand(L"Redo", args, val);
   }
 
   static void log(void *userData, const char *message, unsigned int length)
@@ -50,12 +54,16 @@ class FabricDFGWidget : public FabricUI::DFG::DFGCombinedWidget
       {
         case 89:  // redo.
         {
-          XSI::Application().ExecuteCommand(L"Redo", XSI::CValueArray(), XSI::CValue());
+          XSI::CValueArray args;
+          XSI::CValue val;
+          XSI::Application().ExecuteCommand(L"Redo", args, val);
           return true;
         }
         case 90:  // undo.
         {
-          XSI::Application().ExecuteCommand(L"Undo", XSI::CValueArray(), XSI::CValue());
+          XSI::CValueArray args;
+          XSI::CValue val;
+          XSI::Application().ExecuteCommand(L"Undo", args, val);
           return true;
         }
         default:

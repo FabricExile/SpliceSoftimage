@@ -174,14 +174,19 @@ FabricCore::Client *BaseInterface::getClient()
   return &s_client;
 }
 
-FabricCore::DFGHost BaseInterface::getHost()
+FabricCore::DFGHost *BaseInterface::getHost()
 {
-  return s_host;
+  return &s_host;
 }
 
-FabricCore::DFGBinding BaseInterface::getBinding()
+FabricCore::DFGBinding *BaseInterface::getBinding()
 {
-  return m_binding;
+  return &m_binding;
+}
+
+FabricCore::RTVal *BaseInterface::getEvalContext()
+{
+  return &m_evalContext;
 }
 
 FabricCore::RTVal *BaseInterface::getEvalContext()

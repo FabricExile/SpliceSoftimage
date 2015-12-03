@@ -916,7 +916,7 @@ void DFGUICmdHandlerDCC::dfgDoReorderPorts(
 std::string DFGUICmdHandlerDCC::getDCCObjectNameFromBinding(FabricCore::DFGBinding const &binding)
 {
   // try to get the XSI operator's name for this binding.
-  if (m_parentBaseInterface && m_parentBaseInterface->getBinding() == binding)
+  if (m_parentBaseInterface && *m_parentBaseInterface->getBinding() == binding)
   {
     unsigned int opObjID = _opUserData::GetOperatorObjectID(m_parentBaseInterface);
     if (opObjID != UINT_MAX)
@@ -942,7 +942,7 @@ FabricCore::DFGBinding DFGUICmdHandlerDCC::getBindingFromDCCObjectName(std::stri
   XSI::CustomOperator op(opRef);
   BaseInterface *baseInterface = _opUserData::GetBaseInterface(op.GetObjectID());
   if (baseInterface)
-    return baseInterface->getBinding();
+    return *baseInterface->getBinding();
 
   // not found.
   return FabricCore::DFGBinding();
