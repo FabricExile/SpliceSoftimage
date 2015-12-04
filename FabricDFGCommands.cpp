@@ -93,6 +93,10 @@ SICALLBACK FabricCanvasOpApply_Execute(CRef &in_ctxt)
   { Application().LogMessage(L"failed to create X3DObject for \"" + objectName + L"\"", siErrorMsg);
     portmap.clear();
     return CStatus::OK; }
+  if (dfgTools::belongsToRefModel(obj))
+  { Application().LogMessage(L"\"" + objectName + L"\" belongs to a reference model.", siErrorMsg);
+    portmap.clear();
+    return CStatus::OK; }
 
   // memorize current undo levels and then set them to zero.
   const LONG memUndoLevels = dfgTools::GetUndoLevels();
@@ -454,6 +458,11 @@ SICALLBACK FabricCanvasOpConnectPort_Execute(CRef &in_ctxt)
   { Application().LogMessage(L"failed to set custom operator from \"" + operatorName + L"\"", siErrorMsg);
     return CStatus::OK; }
 
+  // under ref model?
+  if (dfgTools::belongsToRefModel(op))
+  { Application().LogMessage(L"the operator belongs to a reference model.", siErrorMsg);
+    return CStatus::OK; }
+
   // get op's _opUserData.
   _opUserData *pud = _opUserData::GetUserData(op.GetObjectID());
   if (!pud)
@@ -622,6 +631,11 @@ SICALLBACK FabricCanvasOpPortMapDefine_Execute(CRef &in_ctxt)
   CustomOperator op(ref);
   if (!op.IsValid())
   { Application().LogMessage(L"failed to set custom operator from \"" + operatorName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+
+  // under ref model?
+  if (dfgTools::belongsToRefModel(op))
+  { Application().LogMessage(L"the operator belongs to a reference model.", siErrorMsg);
     return CStatus::OK; }
 
   // get op's _opUserData.
@@ -879,6 +893,11 @@ SICALLBACK FabricCanvasImportGraph_Execute(CRef &in_ctxt)
   CustomOperator op(ref);
   if (!op.IsValid())
   { Application().LogMessage(L"failed to set custom operator from \"" + operatorName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+
+  // under ref model?
+  if (dfgTools::belongsToRefModel(op))
+  { Application().LogMessage(L"the operator belongs to a reference model.", siErrorMsg);
     return CStatus::OK; }
 
   // get op's _opUserData.

@@ -365,16 +365,9 @@ void CanvasOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
   const LONG btnTSCx = 90;
   const LONG btnTSCy = 22;
 
-  // get the Model to which op belongs and set the
-  // modelIsRegular flag. This flag will then be
-  // used to disable/mute certain UI functionality
-  // if the model is a reference model.
-  bool modelIsRegular = true;
-  {
-    Model m = op.GetParent3DObject().GetModel();
-    if (m.IsValid() && m.GetModelKind() != siModelKind_Regular)
-      modelIsRegular = false;
-  }
+  // set the modelIsRegular flag depending on whether
+  // the operator is under a reference or a regular model.
+  bool modelIsRegular = !dfgTools::belongsToRefModel(op);
 
   // update the grid data.
   const int dfgPortsNumRows = CanvasOp_UpdateGridData_dfgPorts(op);

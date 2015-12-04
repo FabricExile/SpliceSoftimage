@@ -1224,3 +1224,13 @@ bool dfgTools::ClearUndoHistory(void)
   return true;
 }
 
+bool dfgTools::belongsToRefModel(const XSI::CustomOperator &op)
+{
+  return belongsToRefModel(op.GetParent3DObject());
+}
+
+bool dfgTools::belongsToRefModel(const XSI::X3DObject &obj)
+{
+  Model m = obj.GetModel();
+  return (m.IsValid() && m.GetModelKind() != siModelKind_Regular);
+}
