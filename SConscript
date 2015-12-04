@@ -43,6 +43,10 @@ elif FABRIC_BUILD_OS == 'Linux':
 env.MergeFlags(softimageFlags)
 env.Append(CPPDEFINES = ["_SPLICE_SOFTIMAGE_VERSION="+str(SOFTIMAGE_VERSION[:4])])
 
+shibokenPysideDir = env.Dir('')
+if FABRIC_BUILD_OS == 'Linux':
+  shibokenPysideDir = env.Dir(os.environ['SHIBOKEN_PYSIDE_DIR'])
+
 qtDir = None
 if FABRIC_BUILD_OS == 'Windows':
   if FABRIC_BUILD_TYPE == 'Release':
@@ -113,7 +117,7 @@ uiLibs = SConscript(uiSconscript, exports = {
   'buildOS': FABRIC_BUILD_OS,
   'buildArch': FABRIC_BUILD_ARCH,
   'stageDir': env.Dir('#').Dir('stage').Dir('lib'),
-  'shibokenPysideDir': env.Dir(os.environ['SHIBOKEN_PYSIDE_DIR']),
+  'shibokenPysideDir': shibokenPysideDir,
   },
   duplicate=0,
   variant_dir = env.Dir('FabricUI')

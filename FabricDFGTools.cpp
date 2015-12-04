@@ -1211,7 +1211,7 @@ LONG dfgTools::GetUndoLevels(void)
 
 bool dfgTools::SetUndoLevels(LONG undoLevels)
 {
-  bool ret = (Application().GetPreferences().SetPreferenceValue(L"General.undo", CValue(std::max(0, undoLevels))) == CStatus::OK);
+  bool ret = (Application().GetPreferences().SetPreferenceValue(L"General.undo", CValue(std::max((LONG)0, undoLevels))) == CStatus::OK);
   if (!ret) Application().LogMessage(L"failed to set the current amount of undo levels to " + CString(undoLevels) + L".", siWarningMsg);
   return ret;
 }
