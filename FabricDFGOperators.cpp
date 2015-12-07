@@ -367,6 +367,10 @@ void CanvasOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
   const LONG btnTSCx = 90;
   const LONG btnTSCy = 22;
 
+  // set the modelIsRegular flag depending on whether
+  // the operator is under a reference or a regular model.
+  bool modelIsRegular = !dfgTools::belongsToRefModel(op);
+
   // update the grid data.
   const int dfgPortsNumRows = CanvasOp_UpdateGridData_dfgPorts(op);
 
@@ -480,13 +484,14 @@ void CanvasOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
           oLayout.AddItem(L"FabricActive", L"Execute Graph");
           oLayout.AddSpacer(0, 0);
           pi = oLayout.AddButton(L"BtnOpenCanvas", L"Open Canvas");
+          pi.PutAttribute(siUIButtonDisable, !modelIsRegular);
           pi.PutAttribute(siUICX, btnCx);
           pi.PutAttribute(siUICY, btnCy);
         oLayout.EndRow();
       oLayout.EndGroup();
       oLayout.AddSpacer(0, 12);
 
-      if (outOfSync)
+      if (outOfSync && modelIsRegular)
       {
         oLayout.AddGroup(L"", false);
           oLayout.AddRow();
@@ -535,6 +540,7 @@ void CanvasOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
           oLayout.AddItem(L"FabricActive", L"Execute Graph");
           oLayout.AddSpacer(0, 0);
           pi = oLayout.AddButton(L"BtnOpenCanvas", L"Open Canvas");
+          pi.PutAttribute(siUIButtonDisable, !modelIsRegular);
           pi.PutAttribute(siUICX, btnCx);
           pi.PutAttribute(siUICY, btnCy);
         oLayout.EndRow();
@@ -555,7 +561,7 @@ void CanvasOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
           pi.PutAttribute(siUINoLabel,              true);
           pi.PutAttribute(siUIWidthPercentage,      100);
           pi.PutAttribute(siUIGridLockRowHeader,    false);
-          pi.PutAttribute(siUIGridSelectionMode,    siSelectionCell);
+          pi.PutAttribute(siUIGridSelectionMode,    modelIsRegular ? siSelectionCell : siSelectionNone);
           pi.PutAttribute(siUIGridReadOnlyColumns,  "1:1:1:1:1");
         }
         else
@@ -573,17 +579,20 @@ void CanvasOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
             oLayout.AddGroup(L"", false);
               pi = oLayout.AddButton(L"BtnPortsDefineTT", L"Define Type/Target");
               pi.PutAttribute(siUIButtonDisable, dfgPortsNumRows == 0);
+              pi.PutAttribute(siUIButtonDisable, !modelIsRegular);
               pi.PutAttribute(siUICX, btnTx);
               pi.PutAttribute(siUICY, btnTy);
               oLayout.AddSpacer(0, btnTy);
               oLayout.AddRow();
                 pi = oLayout.AddButton(L"BtnRecreateOpInfo", L" ? ");
+                pi.PutAttribute(siUIButtonDisable, !modelIsRegular);
                 pi.PutAttribute(siUICX, 20);
                 pi.PutAttribute(siUICY, btnTy);
                 pi = oLayout.AddButton(L"BtnRecreateOp", L"Sync Op");
+                pi.PutAttribute(siUIButtonDisable, !modelIsRegular);
                 pi.PutAttribute(siUICX, btnTx - 32);
                 pi.PutAttribute(siUICY, btnTy);
-                if (outOfSync)
+                if (outOfSync && modelIsRegular)
                 {
                   pi = oLayout.AddItem(L"myBitmapWidget", L"myBitmapWidget", siControlBitmap);
                   pi.PutAttribute(siUINoLabel, true);
@@ -593,15 +602,15 @@ void CanvasOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
             oLayout.EndGroup();
             oLayout.AddGroup(L"", false);
               pi = oLayout.AddButton(L"BtnPortConnectPick", L"Connect (Pick)");
-              pi.PutAttribute(siUIButtonDisable, dfgPortsNumRows == 0);
+              pi.PutAttribute(siUIButtonDisable, dfgPortsNumRows == 0 || !modelIsRegular);
               pi.PutAttribute(siUICX, btnTx);
               pi.PutAttribute(siUICY, btnTy);
               pi = oLayout.AddButton(L"BtnPortConnectSelf", L"Connect with Self");
-              pi.PutAttribute(siUIButtonDisable, dfgPortsNumRows == 0);
+              pi.PutAttribute(siUIButtonDisable, dfgPortsNumRows == 0 || !modelIsRegular);
               pi.PutAttribute(siUICX, btnTx);
               pi.PutAttribute(siUICY, btnTy);
               pi = oLayout.AddButton(L"BtnPortDisconnect", L"Disconnect");
-              pi.PutAttribute(siUIButtonDisable, dfgPortsNumRows == 0);
+              pi.PutAttribute(siUIButtonDisable, dfgPortsNumRows == 0 || !modelIsRegular);
               pi.PutAttribute(siUICX, btnTx);
               pi.PutAttribute(siUICY, btnTy);
             oLayout.EndGroup();
@@ -630,6 +639,7 @@ void CanvasOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
         oLayout.AddGroup(L"File");
           oLayout.AddRow();
             pi = oLayout.AddButton(L"BtnImportGraph", L"Import Graph");
+            pi.PutAttribute(siUIButtonDisable, !modelIsRegular);
             pi.PutAttribute(siUICX, btnTx);
             pi.PutAttribute(siUICY, btnTy);
             pi = oLayout.AddButton(L"BtnExportGraph", L"Export Graph");

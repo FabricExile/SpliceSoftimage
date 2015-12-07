@@ -90,6 +90,10 @@ class dfgTools
 
   // clears the Softimage undo/redo history and returns true on success.
   static bool ClearUndoHistory(void);
+
+  // returns true if the operator/object belongs to a reference model.
+  static bool belongsToRefModel(const XSI::CustomOperator &op);
+  static bool belongsToRefModel(const XSI::X3DObject &obj);
 };
 
 #endif
