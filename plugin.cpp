@@ -4,6 +4,7 @@
 #include <xsi_pluginregistrar.h>
 #include <xsi_uitoolkit.h>
 #include <xsi_plugin.h>
+#include <xsi_utils.h>
 
 #include "plugin.h"
 #include "FabricDFGBaseInterface.h"
@@ -34,33 +35,59 @@ using namespace XSI;
 // load plugin.
 SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
 {
-  // check if the Fabric environment variables are set.
-  const int numEnvVars = 3;
-  std::string envVarNames   [numEnvVars];
-  std::string envVarExamples[numEnvVars];
-  envVarNames   [0] = "FABRIC_DIR";
-  envVarNames   [1] = "FABRIC_DFG_PATH";
-  envVarNames   [2] = "FABRIC_EXTS_PATH";
-  #ifdef _WIN32
-    envVarExamples[0] = "<Fabric-Installation-Path>";
-    envVarExamples[1] = "<Fabric-Installation-Path>\\Presets\\DFG";
-    envVarExamples[2] = "<Fabric-Installation-Path>\\Exts";
-  #else
-    envVarExamples[0] = "<Fabric-Installation-Path>";
-    envVarExamples[1] = "<Fabric-Installation-Path>/Presets/DFG";
-    envVarExamples[2] = "<Fabric-Installation-Path>/Exts";
-  #endif
-  for (int i=0;i<numEnvVars;i++)
-  {
-    // get the environment variable's value.
-    char *envVarValue  = getenv(envVarNames[i].c_str());
+  // the possible Fabric path.
+  CString possibleFabricPath = in_reg.GetOriginPath() + CUtils::Slash() + L".." + CUtils::Slash() + L".." + CUtils::Slash() + L".." + CUtils::Slash() + L"..";
 
-    // no value found?
-    if (!envVarValue || envVarValue[0] == '\0')
+  // check if the Fabric environment variables are
+  // ok and set them automatically if required.
+  {
+    CString eVar;
+    char   *eVarVal;
+    CString fabricPath = L"";
+
+    eVar    = L"FABRIC_DIR";
+    eVarVal = getenv(eVar.GetAsciiString());
+    if (!eVarVal || eVarVal[0] == '\0')
     {
-      // log error.
-      std::string t = "The environment variable " + envVarNames[i] + " is not set. Please make sure that " + envVarNames[i] + " is set and points to \"" + envVarExamples[i] + "\".";
-      Application().LogMessage(L"[Fabric]: " + CString(t.c_str()), siErrorMsg);
+      fabricPath = possibleFabricPath;
+      Application().LogMessage(L"the environment variable " + eVar + " is not set (=> it will be set automatically for this session).", siCommentMsg);
+      #ifdef _WIN32
+        CString cmd = "set " + eVar + "=\"" + fabricPath + L"\"";
+      #else
+        CString cmd = "export " + eVar + "=\"" + fabricPath + L"\"";
+      #endif
+      Application().LogMessage(L"execute system(" + cmd + ")", siCommentMsg);
+      system(cmd.GetAsciiString());
+    }
+    else
+      fabricPath = eVarVal;
+
+    eVar    = L"FABRIC_EXTS_PATH";
+    eVarVal = getenv(eVar.GetAsciiString());
+    if (!eVarVal || eVarVal[0] == '\0')
+    {
+      Application().LogMessage(L"the environment variable " + eVar + " is not set (=> it will be set automatically for this session).", siCommentMsg);
+      #ifdef _WIN32
+        CString cmd = "set " + eVar + "=\"" + fabricPath + CUtils::Slash() + L"Exts" + L"\"";
+      #else
+        CString cmd = "set " + eVar + "=\"" + fabricPath + CUtils::Slash() + L"Exts" + L"\"";
+      #endif
+      Application().LogMessage(L"execute system(" + cmd + ")", siCommentMsg);
+      system(cmd.GetAsciiString());
+    }
+
+    eVar    = L"FABRIC_DFG_PATH";
+    eVarVal = getenv(eVar.GetAsciiString());
+    if (!eVarVal || eVarVal[0] == '\0')
+    {
+      Application().LogMessage(L"the environment variable " + eVar + " is not set (=> it will be set automatically for this session).", siCommentMsg);
+      #ifdef _WIN32
+        CString cmd = "set " + eVar + "=\"" + fabricPath + CUtils::Slash() + L"Presets" + CUtils::Slash() + L"DFG" + L"\"";
+      #else
+        CString cmd = "set " + eVar + "=\"" + fabricPath + CUtils::Slash() + L"Presets" + CUtils::Slash() + L"DFG" + L"\"";
+      #endif
+      Application().LogMessage(L"execute system(" + cmd + ")", siCommentMsg);
+      system(cmd.GetAsciiString());
     }
   }
 
