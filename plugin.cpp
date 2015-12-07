@@ -38,8 +38,8 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
   // the possible Fabric path.
   CString possibleFabricPath = in_reg.GetOriginPath() + CUtils::Slash() + L".." + CUtils::Slash() + L".." + CUtils::Slash() + L".." + CUtils::Slash() + L"..";
 
-  // check if the Fabric environment variables
-  // are ok and set them manually if required.
+  // check if the Fabric environment variables are
+  // ok and set them automatically if required.
   {
     CString eVar;
     char   *eVarVal;
@@ -50,7 +50,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     if (!eVarVal || eVarVal[0] == '\0')
     {
       fabricPath = possibleFabricPath;
-      Application().LogMessage(L"the environment variable " + eVar + " is not set, setting it manually.", siCommentMsg);
+      Application().LogMessage(L"the environment variable " + eVar + " is not set (=> it will be set automatically for this session).", siCommentMsg);
       #ifdef _WIN32
         CString cmd = "set " + eVar + "=\"" + fabricPath + L"\"";
       #else
@@ -66,7 +66,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     eVarVal = getenv(eVar.GetAsciiString());
     if (!eVarVal || eVarVal[0] == '\0')
     {
-      Application().LogMessage(L"the environment variable " + eVar + " is not set, setting it manually.", siCommentMsg);
+      Application().LogMessage(L"the environment variable " + eVar + " is not set (=> it will be set automatically for this session).", siCommentMsg);
       #ifdef _WIN32
         CString cmd = "set " + eVar + "=\"" + fabricPath + CUtils::Slash() + L"Exts" + L"\"";
       #else
@@ -80,7 +80,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     eVarVal = getenv(eVar.GetAsciiString());
     if (!eVarVal || eVarVal[0] == '\0')
     {
-      Application().LogMessage(L"the environment variable " + eVar + " is not set, setting it manually.", siCommentMsg);
+      Application().LogMessage(L"the environment variable " + eVar + " is not set (=> it will be set automatically for this session).", siCommentMsg);
       #ifdef _WIN32
         CString cmd = "set " + eVar + "=\"" + fabricPath + CUtils::Slash() + L"Presets" + CUtils::Slash() + L"DFG" + L"\"";
       #else
