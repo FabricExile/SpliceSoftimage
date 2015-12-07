@@ -193,13 +193,3 @@ void FabricInitQt()
     new QApplication(argc, NULL);
   }
 }
-
-void FabricInitQt()
-{
-  if (!qApp)
-  {
-    Application().LogMessage(L"allocating an instance of QApplication", siCommentMsg);
-    int argc = 0;
-    new QApplication(argc, NULL);
-  }
-}

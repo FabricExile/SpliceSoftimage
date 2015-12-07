@@ -1455,7 +1455,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                   val[9] = t.GetPosZ();
 
                   // set the DFG port from the std::vector.
-                  BaseInterface::SetValueOfArgXfo(*client, binding, portName.GetAsciiString(), val);
+                  BaseInterface::SetValueOfArgXfo(*client, *binding, portName.GetAsciiString(), val);
                 }
               }
             }

@@ -189,11 +189,6 @@ FabricCore::RTVal *BaseInterface::getEvalContext()
   return &m_evalContext;
 }
 
-FabricCore::RTVal *BaseInterface::getEvalContext()
-{
-  return &m_evalContext;
-}
-
 FabricServices::ASTWrapper::KLASTManager *BaseInterface::getManager()
 {
   return s_manager;
