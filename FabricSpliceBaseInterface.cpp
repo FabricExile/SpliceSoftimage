@@ -784,6 +784,7 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
   // transferOutputPort will reset the counter once all outputs
   // have been transfered.
   std::map<std::string, portInfo>::iterator outPortIt = _ports.find(outPortName);
+
   if(outPortIt != _ports.end())
   {
     if(outPortIt->second.dataType == "Mat44[]")
@@ -2180,7 +2181,11 @@ bool FabricSpliceBaseInterface::processNameChange(CString prevFullPath, CString 
   {
     CString portName = it->first.c_str();
     FabricSplice::Port_Mode portMode = it->second.portMode;
-    it->second.clearPorts();
+
+    // FE-5848
+    // (the map only contains indices and flags, so it need not be cleared.)
+    //it->second.clearPorts();
+
     CString targets = it->second.targets;
     CString newTargets;
     CStringArray parts = targets.Split(L",");
