@@ -53,7 +53,7 @@ protected:
     FTL::CStrRef dstPath
     );
 
-  virtual std::string dfgDoAddGraph(
+  virtual QString dfgDoAddGraph(
     FabricCore::DFGBinding const &binding,
     FTL::CStrRef execPath,
     FabricCore::DFGExec const &exec,
@@ -61,7 +61,7 @@ protected:
     QPointF pos
     );
 
-  virtual std::string dfgDoAddFunc(
+  virtual QString dfgDoAddFunc(
     FabricCore::DFGBinding const &binding,
     FTL::CStrRef execPath,
     FabricCore::DFGExec const &exec,
@@ -70,7 +70,7 @@ protected:
     QPointF pos
     );
 
-  virtual std::string dfgDoInstPreset(
+  virtual QString dfgDoInstPreset(
     FabricCore::DFGBinding const &binding,
     FTL::CStrRef execPath,
     FabricCore::DFGExec const &exec,
@@ -78,7 +78,7 @@ protected:
     QPointF pos
     );
 
-  virtual std::string dfgDoAddVar(
+  virtual QString dfgDoAddVar(
     FabricCore::DFGBinding const &binding,
     FTL::CStrRef execPath,
     FabricCore::DFGExec const &exec,
@@ -88,7 +88,7 @@ protected:
     QPointF pos
     );
 
-  virtual std::string dfgDoAddGet(
+  virtual QString dfgDoAddGet(
     FabricCore::DFGBinding const &binding,
     FTL::CStrRef execPath,
     FabricCore::DFGExec const &exec,
@@ -97,7 +97,7 @@ protected:
     QPointF pos
     );
 
-  virtual std::string dfgDoAddSet(
+  virtual QString dfgDoAddSet(
     FabricCore::DFGBinding const &binding,
     FTL::CStrRef execPath,
     FabricCore::DFGExec const &exec,
@@ -149,8 +149,8 @@ protected:
     FabricCore::DFGBinding const &binding,
     FTL::CStrRef execPath,
     FabricCore::DFGExec const &exec,
-    FTL::ArrayRef<FTL::StrRef> nodeNames,
-    FTL::ArrayRef<QPointF> newTopLeftPoss
+    QString<QString> nodeNames,
+    QString<QPointF> newTopLeftPoss
     );
 
   virtual void dfgDoResizeBackDrop(
@@ -162,19 +162,19 @@ protected:
     QSizeF newSize
     );
 
-  virtual std::string dfgDoImplodeNodes(
+  virtual QString dfgDoImplodeNodes(
     FabricCore::DFGBinding const &binding,
     FTL::CStrRef execPath,
     FabricCore::DFGExec const &exec,
-    FTL::ArrayRef<FTL::StrRef> nodeNames,
-    FTL::CStrRef desiredNodeName
+    QList<QString> nodeNames,
+    QString desiredNodeName
     );
 
-  virtual std::vector<std::string> dfgDoExplodeNode(
+  virtual QList<QString> dfgDoExplodeNode(
     FabricCore::DFGBinding const &binding,
     FTL::CStrRef execPath,
     FabricCore::DFGExec const &exec,
-    FTL::CStrRef nodeName
+    QString nodeName
     );
 
   virtual void dfgDoAddBackDrop(
@@ -183,13 +183,6 @@ protected:
     FabricCore::DFGExec const &exec,
     FTL::CStrRef title,
     QPointF pos
-    );
-
-  virtual void dfgDoSetTitle(
-    FabricCore::DFGBinding const &binding,
-    FTL::CStrRef execPath,
-    FabricCore::DFGExec const &exec,
-    FTL::CStrRef title
     );
 
   virtual void dfgDoSetNodeComment(
@@ -231,12 +224,6 @@ protected:
     FabricCore::DFGExec const &exec,
     FTL::CStrRef json,
     QPointF cursorPos
-    );
-
-  virtual void dfgDoSetArgType(
-    FabricCore::DFGBinding const &binding,
-    FTL::CStrRef argName,
-    FTL::CStrRef typeName
     );
 
   virtual void dfgDoSetArgValue(
@@ -310,13 +297,11 @@ public:
   static FabricUI::DFG::DFGUICmd_ImplodeNodes *createAndExecuteDFGCommand_ImplodeNodes(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_ExplodeNode *createAndExecuteDFGCommand_ExplodeNode(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_AddBackDrop *createAndExecuteDFGCommand_AddBackDrop(std::vector<std::string> &args);
-  static FabricUI::DFG::DFGUICmd_SetTitle *createAndExecuteDFGCommand_SetTitle(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_SetNodeComment *createAndExecuteDFGCommand_SetNodeComment(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_SetCode *createAndExecuteDFGCommand_SetCode(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_EditNode *createAndExecuteDFGCommand_EditNode(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_RenamePort *createAndExecuteDFGCommand_RenamePort(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_Paste *createAndExecuteDFGCommand_Paste(std::vector<std::string> &args);
-  static FabricUI::DFG::DFGUICmd_SetArgType *createAndExecuteDFGCommand_SetArgType(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_SetArgValue *createAndExecuteDFGCommand_SetArgValue(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_SetExtDeps *createAndExecuteDFGCommand_SetExtDeps(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_SetPortDefaultValue *createAndExecuteDFGCommand_SetPortDefaultValue(std::vector<std::string> &args);
