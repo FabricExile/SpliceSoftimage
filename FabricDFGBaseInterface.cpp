@@ -12,9 +12,7 @@
 
 #include "FabricSplicePlugin.h"
 
-#ifdef USE_FABRICSPLICE__CLIENT
-  #include "FabricSplice.h"
-#endif
+#include "FabricSplice.h"
 
 #include <algorithm>
 #include <sstream>
@@ -55,20 +53,8 @@ BaseInterface::BaseInterface(void (*in_logFunc)     (void *, const char *, unsig
     try
     {
       // create a client
-      #ifdef USE_FABRICSPLICE__CLIENT
-      {
-        const int guarded = 1;
-        s_client = FabricSplice::ConstructClient(guarded);
-      }
-      #else
-      {
-        FabricCore::Client::CreateOptions options;
-        memset(&options, 0, sizeof(options));
-        options.guarded = 1;
-        options.optimizationType = FabricCore::ClientOptimizationType_Background;
-        s_client = FabricCore::Client(&logFunc, NULL, &options);
-      }
-      #endif
+      const int guarded = 1;
+      s_client = FabricSplice::ConstructClient(guarded);
 
       // load basic extensions
       s_client.loadExtension("Math",     "", false);
@@ -137,16 +123,8 @@ BaseInterface::~BaseInterface()
         printf("Destructing client...\n");
         delete(s_manager);
         s_host = FabricCore::DFGHost();
-        #ifdef USE_FABRICSPLICE__CLIENT
-        {
-          FabricSplice::DestroyClient();
-          s_client.invalidate();
-        }
-        #else
-        {
-          s_client = FabricCore::Client();
-        }
-        #endif
+        FabricSplice::DestroyClient();
+        s_client.invalidate();
       }
       catch (FabricCore::Exception e)
       {
