@@ -69,6 +69,7 @@ XSI::CRef recreateOperator(XSI::CustomOperator op, XSI::CString &dfgJSON)
   CValue newOpRef;
 
   CValueArray args;
+  CValue retVal;
   args.Add(op.GetParent3DObject().GetFullName());
   args.Add(dfgJSON);
   args.Add(true);
@@ -79,8 +80,7 @@ XSI::CRef recreateOperator(XSI::CustomOperator op, XSI::CString &dfgJSON)
     // delete the old operator.
     args.Clear();
     args.Add(op.GetFullName());
-    CValue val;
-    Application().ExecuteCommand(L"DeleteObj", args, val);
+    Application().ExecuteCommand(L"DeleteObj", args, retVal);
 
     // transfer expressions, if any, from old operator to new one.
     if ((_opUserData::s_newOp_expressions.size() & 0x0001) == 0)
@@ -106,7 +106,7 @@ XSI::CRef recreateOperator(XSI::CustomOperator op, XSI::CString &dfgJSON)
           args.Add(CustomOperator(newOpRef).GetUniqueName() + L"." + CString(_opUserData::s_newOp_expressions[i + 0].c_str()));
           args.Add(CString(_opUserData::s_newOp_expressions[i + 1].c_str()));
           args.Add(true);
-          Application().ExecuteCommand(L"AddExpr", args, val);
+          Application().ExecuteCommand(L"AddExpr", args, retVal);
         }
       }
     }
@@ -782,6 +782,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_PPGEvent(const CRef &in_ctxt)
         // re-create operator.
         recreateOperator(op, dfgJSON);
         dfgTools::ClearUndoHistory();
+        ctxt.PutAttribute(L"Close", true);
       }
     }
     else if (btnName == L"BtnRecreateOp")
@@ -813,6 +814,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_PPGEvent(const CRef &in_ctxt)
       // re-create operator.
       recreateOperator(op, dfgJSON);
       dfgTools::ClearUndoHistory();
+      ctxt.PutAttribute(L"Close", true);
     }
     else if (btnName == L"BtnRecreateOpInfo")
     {
@@ -1029,7 +1031,11 @@ XSIPLUGINCALLBACK CStatus CanvasOp_PPGEvent(const CRef &in_ctxt)
       args.Add(fileName);
       if (Application().ExecuteCommand(L"FabricCanvasImportGraph", args, opWasRecreated) == CStatus::OK)
       {
-        if (!opWasRecreated)
+        if (opWasRecreated)
+        {
+          ctxt.PutAttribute(L"Close", true);
+        }
+        else
         {
           PPGLayout oLayout = op.GetPPGLayout();
           CanvasOp_DefineLayout(oLayout, op);
