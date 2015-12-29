@@ -84,11 +84,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     }
     if (!getEnvironmentVariable(L"FABRIC_DFG_USER_PATH").IsEmpty())
     {
-      #ifdef _WIN32
-        CString delimiter = L";";
-      #else
-        CString delimiter = L":";
-      #endif
+      CString delimiter = (CUtils::IsWindowsOS() ? L";" : L":");
       setEnvironmentVariable(var, getEnvironmentVariable(var) + delimiter + getEnvironmentVariable(L"FABRIC_DFG_USER_PATH"));
     }
   }
