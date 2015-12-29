@@ -82,11 +82,6 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     {
       setEnvironmentVariable(var, fabricPath + CUtils::Slash() + L"Presets" + CUtils::Slash() + L"DFG");
     }
-    if (!getEnvironmentVariable(L"FABRIC_DFG_USER_PATH").IsEmpty())
-    {
-      CString delimiter = (CUtils::IsWindowsOS() ? L";" : L":");
-      setEnvironmentVariable(var, getEnvironmentVariable(var) + delimiter + getEnvironmentVariable(L"FABRIC_DFG_USER_PATH"));
-    }
   }
 
   // set plugin's name, version and author.
