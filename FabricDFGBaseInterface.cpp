@@ -1107,7 +1107,7 @@ int BaseInterface::GetArgValuePolygonMesh(FabricCore::DFGBinding &binding,
           // fill output array(s).
           std::vector <FabricCore::RTVal> args(2);
           args[0] = FabricCore::RTVal::ConstructExternalArray(*getClient(), "Float32", data.size(), (void *)data.data());
-          args[1] = FabricCore::RTVal::ConstructUInt32       (*getClient(), 3);
+          args[1] = FabricCore::RTVal::ConstructUInt32       (*getClient(), 3);  
           rtMesh.callMethod("", "getUVsAsExternalArray", 2, &args[0]);
         }
       }
