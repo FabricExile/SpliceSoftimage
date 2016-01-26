@@ -204,7 +204,10 @@ bool dfgTools::GetOperatorPortMapping(XSI::CRef &in_op, std::vector<_portMapping
                 if (   port.IsValid()
                     && port.GetName() == pmap.dfgPortName
                     && port.IsConnected())
-                    pmap.mapTarget = port.GetTarget().GetAsText();
+                {
+                  if (pmap.mapTarget.IsEmpty())   pmap.mapTarget  = port.GetTarget().GetAsText();
+                  else                            pmap.mapTarget += L";" + port.GetTarget().GetAsText();
+                }
               }
 
               // done.
@@ -233,7 +236,9 @@ bool dfgTools::GetOperatorPortMapping(XSI::CRef &in_op, std::vector<_portMapping
               if (   port.IsValid()
                   && port.GetName() == pmap.dfgPortName
                   && port.IsConnected())
-                  pmap.mapTarget = port.GetTarget().GetAsText();
+              {
+                pmap.mapTarget = port.GetTarget().GetAsText();
+              }
             }
 
             // done.
@@ -279,12 +284,14 @@ XSI::siClassID dfgTools::GetSiClassIdFromResolvedDataType(const XSI::CString &re
       || resDataType == L"Size"
       || resDataType == L"UInt32"
       || resDataType == L"DataSize"
-      || resDataType == L"UInt64")    return siParameterID;
+      || resDataType == L"UInt64")      return siParameterID;
 
   if (   resDataType == L"Mat44"
-      || resDataType == L"Xfo")       return siKinematicStateID;
+      || resDataType == L"Mat44[]"
+      || resDataType == L"Xfo"
+      || resDataType == L"Xfo[]")       return siKinematicStateID;
 
-  if (resDataType == L"PolygonMesh")  return siPolygonMeshID;
+  if (resDataType == L"PolygonMesh")    return siPolygonMeshID;
   
   return siUnknownClassID;  // no match.
 }

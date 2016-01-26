@@ -214,7 +214,7 @@ SICALLBACK FabricCanvasOpApply_Execute(CRef &in_ctxt)
         continue; }
 
       // create port group.
-      CRef pgRef = newOp.AddPortGroup(pmap.dfgPortName, 0, 1);
+      CRef pgRef = newOp.AddPortGroup(pmap.dfgPortName, 0, pmap.portDataTypeIsArray() ? 99999 : 1);
       if (!pgRef.IsValid())
       { Application().LogMessage(L"failed to create port group for \"" + pmap.dfgPortName + "\"", siErrorMsg);
         continue; }

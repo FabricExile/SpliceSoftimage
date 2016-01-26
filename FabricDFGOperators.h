@@ -112,11 +112,24 @@ struct _portMapping
     }
     else if (mapType == DFG_PORT_MAPTYPE_XSI_PORT)
     {
-      if (   dfgPortDataType != L"Mat44"
-          && dfgPortDataType != L"Xfo"
+      if (dfgPortType == DFG_PORT_TYPE_IN)
+      {
+        if (   dfgPortDataType != L"Mat44"
+            && dfgPortDataType != L"Mat44[]"
+            && dfgPortDataType != L"Xfo"
+            && dfgPortDataType != L"Xfo[]"
 
-          && dfgPortDataType != L"PolygonMesh")
-        return false;
+            && dfgPortDataType != L"PolygonMesh")
+          return false;
+      }
+      else
+      {
+        if (   dfgPortDataType != L"Mat44"
+            && dfgPortDataType != L"Xfo"
+
+            && dfgPortDataType != L"PolygonMesh")
+          return false;
+      }
     }
     else if (mapType == DFG_PORT_MAPTYPE_XSI_ICE_PORT)
     {
@@ -129,6 +142,12 @@ struct _portMapping
 
     // it's all good.
     return true;
+  }
+
+  // returns true if the port data type is an array (i.e. "[]").
+  bool portDataTypeIsArray(void)
+  {
+    return (dfgPortDataType.ReverseFindString("[]") != UINT_MAX);
   }
 
   // returns true if the two port mappings match (same name, type, etc.).

@@ -1322,39 +1322,6 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
     }
   }
 
-  // Fabric Engine (step 0): update the base interface's evalContext.
-  {
-    FabricCore::RTVal &evalContext = *baseInterface->getEvalContext();
-
-    if (!evalContext.isValid())
-    {
-      try
-      {
-        evalContext = FabricCore::RTVal::Create(*client, "EvalContext", 0, 0);
-        evalContext = evalContext.callMethod("EvalContext", "getInstance", 0, 0);
-        evalContext.setMember("host", FabricCore::RTVal::ConstructString(*client, "Softimage"));
-      }
-      catch(FabricCore::Exception e)
-      {
-        feLogError(e.getDesc_cstr());
-      }
-    }
-
-    if(evalContext.isValid())
-    {
-      try
-      {
-        evalContext.setMember("graph",           FabricCore::RTVal::ConstructString (*client, op.GetFullName().GetAsciiString()));
-        evalContext.setMember("time",            FabricCore::RTVal::ConstructFloat32(*client, (float)ctxt.GetTime().GetTime(CTime::Seconds)));
-        evalContext.setMember("currentFilePath", FabricCore::RTVal::ConstructString (*client, CString(Application().GetActiveProject().GetActiveScene().GetParameter(L"Filename").GetValue()).GetAsciiString()));
-      }
-      catch(FabricCore::Exception e)
-      {
-        feLogError(e.getDesc_cstr());
-      }
-    }
-  }
-
   // Fabric Engine (step 1): loop through all the DFG's input ports and set
   //                         their values from the matching XSI ports or parameters.
   if (pud->execFabricStep12)
@@ -1993,7 +1960,9 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
                 cvaMapType.Add( DFG_PORT_MAPTYPE_XSI_PARAMETER );
               }
               if (   pmap.dfgPortDataType == L"Mat44"
+                  || pmap.dfgPortDataType == L"Mat44[]"
                   || pmap.dfgPortDataType == L"Xfo"
+                  || pmap.dfgPortDataType == L"Xfo[]"
 
                   || pmap.dfgPortDataType == L"PolygonMesh")
               {
