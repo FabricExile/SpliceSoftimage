@@ -1586,6 +1586,53 @@ void BaseInterface::SetValueOfArgXfo(FabricCore::Client &client, FabricCore::DFG
   }
 }
 
+void BaseInterface::SetValueOfArgXfoArray(FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val)
+{
+  if (!binding.getExec().haveExecPort(argName))
+  {
+    std::string s = "BaseInterface::SetValueOfArgMat44(): port not found.";
+    logErrorFunc(NULL, s.c_str(), s.length());
+    return;
+  }
+
+  try
+  {
+    FabricCore::RTVal rtval;
+    FabricCore::RTVal sc[3], xyz[3], ori[2], tr[3], xfo[3];
+    int numChunks = val.size() / 10;
+    rtval = FabricCore::RTVal::ConstructVariableArray(client, "Xfo");
+    sc[0] = FabricSplice::constructUInt32RTVal(numChunks);
+    rtval.callMethod("", "resize", 1, sc);
+    for (int ci = 0; ci < numChunks; ci++)
+    {
+      xyz[0] = FabricCore::RTVal::ConstructFloat32(client, val[4]);
+      xyz[1] = FabricCore::RTVal::ConstructFloat32(client, val[5]);
+      xyz[2] = FabricCore::RTVal::ConstructFloat32(client, val[6]);
+      ori[0] = FabricCore::RTVal::Construct(client, "Vec3", 3, xyz);
+      ori[1] = FabricCore::RTVal::ConstructFloat32(client, val[3]);
+
+      tr[0] = FabricCore::RTVal::ConstructFloat32(client, val[7]);
+      tr[1] = FabricCore::RTVal::ConstructFloat32(client, val[8]);
+      tr[2] = FabricCore::RTVal::ConstructFloat32(client, val[9]);
+
+      sc[0] = FabricCore::RTVal::ConstructFloat32(client, val[0]);
+      sc[1] = FabricCore::RTVal::ConstructFloat32(client, val[1]);
+      sc[2] = FabricCore::RTVal::ConstructFloat32(client, val[2]);
+
+      xfo[1]   = FabricCore::RTVal::Construct(client, "Vec3", 3, tr);
+      xfo[0]   = FabricCore::RTVal::Construct(client, "Quat", 2, ori);
+      xfo[2]   = FabricCore::RTVal::Construct(client, "Vec3", 3, sc);
+
+      rtval.setArrayElement(ci, FabricCore::RTVal::Construct(client, "Xfo", 3, xfo));
+    }
+    binding.setArgValue(argName, rtval, false);
+  }
+  catch (FabricCore::Exception e)
+  {
+    logErrorFunc(NULL, e.getDesc_cstr(), e.getDescLength());
+  }
+}
+
 void BaseInterface::SetValueOfArgPolygonMesh(FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const _polymesh &val)
 {
   if (!binding.getExec().haveExecPort(argName))

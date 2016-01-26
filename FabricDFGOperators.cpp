@@ -1407,7 +1407,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                   val[4] = q.GetX();
                   val[5] = q.GetY();
                   val[6] = q.GetZ();
-                  val[7] = t.GetPosX();   // positions
+                  val[7] = t.GetPosX();   // position.
                   val[8] = t.GetPosY();
                   val[9] = t.GetPosZ();
 
@@ -1507,7 +1507,32 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
             }
             else if (portResolvedType == L"Xfo[]")
             {
-              Application().LogMessage(L"not yet implemented", siErrorMsg);
+              // put the XSI port groups's values into a std::vector.
+              MATH::CTransformation t;
+              MATH::CQuaternion     q;
+              std::vector <double> val(10 * portGroup.GetInstanceCount());
+              for (LONG i=0;i<portGroup.GetInstanceCount();i++)
+              {
+                CValue xsiPortValue = op.GetInputValue(portName, portName, i);
+                KinematicState ks(xsiPortValue);
+                if (ks.IsValid())   t = ks.GetTransform();
+                else                t . SetIdentity();
+                q = t.GetRotationQuaternion();
+                LONG vi = 10 * i;
+                val[vi + 0] = t.GetSclX();   // scaling.
+                val[vi + 1] = t.GetSclY();
+                val[vi + 2] = t.GetSclZ();
+                val[vi + 3] = q.GetW();      // orientation.
+                val[vi + 4] = q.GetX();
+                val[vi + 5] = q.GetY();
+                val[vi + 6] = q.GetZ();
+                val[vi + 7] = t.GetPosX();   // position.
+                val[vi + 8] = t.GetPosY();
+                val[vi + 9] = t.GetPosZ();
+              }
+
+              // set the DFG port from the std::vector.
+              BaseInterface::SetValueOfArgXfoArray(*client, *binding, portName.GetAsciiString(), val);
             }
           }
         }
