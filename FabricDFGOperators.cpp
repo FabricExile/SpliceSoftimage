@@ -1337,12 +1337,13 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
         if (exec.getExecPortType(i) != FabricCore::DFGPortType_In)
           continue;
 
-        CString portName = exec.getExecPortName(i);
-        CString portResolvedType = exec.getExecPortResolvedType(i);
+        CString portName                = exec.getExecPortName(i);
+        CString portResolvedType        = exec.getExecPortResolvedType(i);
+        bool    portResolvedTypeIsArray = (portResolvedType.ReverseFindString(L"[]") != UINT_MAX);
         bool storable = true;
 
-        // find a matching XSI port.
-        if (!done)
+        // find a matching XSI port (singleton).
+        if (!done && !portResolvedTypeIsArray)
         {
           CValue xsiPortValue = op.GetInputValue(portName, portName);
           if (!xsiPortValue.IsEmpty())
@@ -1452,6 +1453,61 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                 }
               }
               storable = false;
+            }
+          }
+        }
+
+        // find a matching XSI port (array).
+        if (!done && portResolvedTypeIsArray)
+        {
+          PortGroup portGroup(dfgTools::GetPortGroupRef(op, portName));
+          if (portGroup.IsValid())
+          {
+            done = true;
+
+            //
+            if (verbose) Application().LogMessage(functionName + L": transfer xsi port data to dfg port \"" + portName + L"\"");
+
+            if      (portResolvedType == L"")
+            {
+              // do nothing.
+            }
+            else if (portResolvedType == L"Mat44[]")
+            {
+              // put the XSI port groups's values into a std::vector.
+              MATH::CMatrix4 m;
+              std::vector <double> val(16 * portGroup.GetInstanceCount());
+              for (LONG i=0;i<portGroup.GetInstanceCount();i++)
+              {
+                CValue xsiPortValue = op.GetInputValue(portName, portName, i);
+                KinematicState ks(xsiPortValue);
+                if (ks.IsValid())   m = ks.GetTransform().GetMatrix4();
+                else                m . SetIdentity();
+                LONG vi = 16 * i;
+                val[vi + 0] = m.GetValue(0, 0); // row 0.
+                val[vi + 1] = m.GetValue(1, 0);
+                val[vi + 2] = m.GetValue(2, 0);
+                val[vi + 3] = m.GetValue(3, 0);
+                val[vi + 4] = m.GetValue(0, 1); // row 1.
+                val[vi + 5] = m.GetValue(1, 1);
+                val[vi + 6] = m.GetValue(2, 1);
+                val[vi + 7] = m.GetValue(3, 1);
+                val[vi + 8] = m.GetValue(0, 2); // row 2.
+                val[vi + 9] = m.GetValue(1, 2);
+                val[vi +10] = m.GetValue(2, 2);
+                val[vi +11] = m.GetValue(3, 2);
+                val[vi +12] = m.GetValue(0, 3); // row 3.
+                val[vi +13] = m.GetValue(1, 3);
+                val[vi +14] = m.GetValue(2, 3);
+                val[vi +15] = m.GetValue(3, 3);
+              }
+
+              // set the DFG port from the std::vector.
+              BaseInterface::SetValueOfArgMat44Array(*client, *binding, portName.GetAsciiString(), val);
+            }
+            else if (portResolvedType == L"Xfo[]")
+            {
+              Application().LogMessage(L"not yet implemented", siErrorMsg);
             }
           }
         }

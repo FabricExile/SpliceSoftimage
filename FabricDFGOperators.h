@@ -147,7 +147,7 @@ struct _portMapping
   // returns true if the port data type is an array (i.e. "[]").
   bool portDataTypeIsArray(void)
   {
-    return (dfgPortDataType.ReverseFindString("[]") != UINT_MAX);
+    return (dfgPortDataType.ReverseFindString(L"[]") != UINT_MAX);
   }
 
   // returns true if the two port mappings match (same name, type, etc.).

@@ -544,6 +544,18 @@ XSI::CString &dfgTools::GetSiClassIdDescription(const XSI::siClassID in_siClassI
   return out_description;
 }
 
+XSI::CRef dfgTools::GetPortGroupRef(const XSI::CustomOperator &op, XSI::CString &portGroupName)
+{
+  if (op.IsValid())
+  {
+    CRefArray refs = op.GetPortGroups();
+    for (LONG i=0;i<refs.GetCount();i++)
+      if (PortGroup(refs[i]).GetName() == portGroupName)
+        return refs[i];
+  }
+  return CRef();
+}
+
 bool dfgTools::FileExists(const char *filePath)
 {
   if (!filePath)  return false;

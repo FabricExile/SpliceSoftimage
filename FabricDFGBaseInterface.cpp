@@ -1507,6 +1507,43 @@ void BaseInterface::SetValueOfArgMat44(FabricCore::Client &client, FabricCore::D
   }
 }
 
+void BaseInterface::SetValueOfArgMat44Array(FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val)
+{
+  if (!binding.getExec().haveExecPort(argName))
+  {
+    std::string s = "BaseInterface::SetValueOfArgMat44Array(): port not found.";
+    logErrorFunc(NULL, s.c_str(), s.length());
+    return;
+  }
+  try
+  {
+    FabricCore::RTVal rtval;
+    FabricCore::RTVal xyzt[4], v[4];
+    int numChunks = val.size() / 16;
+    rtval = FabricCore::RTVal::ConstructVariableArray(client, "Mat44");
+    v[0] = FabricSplice::constructUInt32RTVal(numChunks);
+    rtval.callMethod("", "resize", 1, v);
+    for (int ci = 0; ci < numChunks; ci++)
+    {
+      for (int i = 0; i < 4; i++)
+      {
+        int offset = ci * 16 + i * 4;
+        xyzt[0] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 0]);
+        xyzt[1] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 1]);
+        xyzt[2] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 2]);
+        xyzt[3] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 3]);
+        v[i]    = FabricCore::RTVal::Construct(client, "Vec4", 4, xyzt);
+      }
+      rtval.setArrayElement(ci, FabricCore::RTVal::Construct(client, "Mat44", 4, v));
+    }
+    binding.setArgValue(argName, rtval, false);
+  }
+  catch (FabricCore::Exception e)
+  {
+    logErrorFunc(NULL, e.getDesc_cstr(), e.getDescLength());
+  }
+}
+
 void BaseInterface::SetValueOfArgXfo(FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val)
 {
   if (!binding.getExec().haveExecPort(argName))

@@ -37,6 +37,9 @@ class dfgTools
   // gets the description of a siCLassID.
   static XSI::CString &GetSiClassIdDescription(const XSI::siClassID in_siClassID, XSI::CString &out_description);
 
+  // returns the CRef of a port group.
+  static XSI::CRef GetPortGroupRef(const XSI::CustomOperator &op, XSI::CString &portGroupName);
+
   // checks the existence of a file.
   // params:  filePath    path and filename
   // returns: true if file exists.
