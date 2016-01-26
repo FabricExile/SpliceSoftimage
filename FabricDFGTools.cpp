@@ -544,7 +544,7 @@ XSI::CString &dfgTools::GetSiClassIdDescription(const XSI::siClassID in_siClassI
   return out_description;
 }
 
-XSI::CRef dfgTools::GetPortGroupRef(const XSI::CustomOperator &op, XSI::CString &portGroupName)
+XSI::CRef dfgTools::GetPortGroupRef(const XSI::CustomOperator &op, const XSI::CString &portGroupName)
 {
   if (op.IsValid())
   {
@@ -554,6 +554,60 @@ XSI::CRef dfgTools::GetPortGroupRef(const XSI::CustomOperator &op, XSI::CString 
         return refs[i];
   }
   return CRef();
+}
+
+bool dfgTools::isConnectedToPortGroup(const XSI::CustomOperator &op, const XSI::CString &portGroupName, const XSI::CRef &objRef)
+{
+  if (op.IsValid())
+  {
+    PortGroup portGroup(GetPortGroupRef(op, portGroupName));
+    if (portGroup.IsValid())
+    {
+      for (LONG i=0;i<portGroup.GetInstanceCount();i++)
+      {
+        Port port(op.GetPort(portGroupName, portGroupName, i));
+        if (port.IsValid() && port.IsConnected() && port.GetTarget() == objRef)
+          return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool dfgTools::DisconnectFromPortGroup(XSI::CustomOperator &op, const XSI::CString &portGroupName, const XSI::CRef &objRef)
+{
+  if (op.IsValid())
+  {
+    PortGroup portGroup(GetPortGroupRef(op, portGroupName));
+    if (portGroup.IsValid())
+    {
+      for (LONG i=0;i<portGroup.GetInstanceCount();i++)
+      {
+        Port port(op.GetPort(portGroupName, portGroupName, i));
+        if (port.IsValid() && port.IsConnected() && port.GetTarget() == objRef)
+          return (op.DisconnectGroup(portGroup.GetIndex(), i, true) == CStatus::OK);
+      }
+    }
+  }
+  return false;
+}
+
+bool dfgTools::DisconnectedAllFromPortGroup(XSI::CustomOperator &op, const XSI::CString &portGroupName)
+{
+  if (op.IsValid())
+  {
+    PortGroup portGroup(GetPortGroupRef(op, portGroupName));
+    if (portGroup.IsValid())
+    {
+      while (portGroup.GetInstanceCount() > 0)
+      {
+        if (op.DisconnectGroup(portGroup.GetIndex(), 0, true) != CStatus::OK)
+          return false;
+      }
+      return true;
+    }
+  }
+  return false;
 }
 
 bool dfgTools::FileExists(const char *filePath)

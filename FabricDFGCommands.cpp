@@ -310,16 +310,20 @@ SICALLBACK FabricCanvasOpApply_Execute(CRef &in_ctxt)
                     Application().LogMessage(L"unable to find matching port group for \"" + o.dfgPortName + L"\"", siWarningMsg);
                   else
                   {
-                    // set target ref.
-                    CRef targetRef;
-                    if (targetRef.Set(o.mapTarget) != CStatus::OK)
-                      Application().LogMessage(L"failed to set target ref for \"" + o.mapTarget + L"\"", siWarningMsg);
-                    else
+                    CStringArray targets = o.mapTarget.Split(L";");
+                    for (LONG i=0;i<targets.GetCount();i++)
                     {
-                      // connect.
-                      LONG instance;
-                      if (newOp.ConnectToGroup(portgroup.GetIndex(), targetRef, instance) != CStatus::OK)
-                        Application().LogMessage(L"failed to connect \"" + targetRef.GetAsText() + "\"", siWarningMsg);
+                      // set target ref.
+                      CRef targetRef;
+                      if (targetRef.Set(targets[i]) != CStatus::OK)
+                        Application().LogMessage(L"failed to set target ref for \"" + targets[i] + L"\"", siWarningMsg);
+                      else
+                      {
+                        // connect.
+                        LONG instance;
+                        if (newOp.ConnectToGroup(portgroup.GetIndex(), targetRef, instance) != CStatus::OK)
+                          Application().LogMessage(L"failed to connect \"" + targetRef.GetAsText() + "\"", siWarningMsg);
+                      }
                     }
                   }
                 }
@@ -428,7 +432,7 @@ SICALLBACK FabricCanvasOpConnectPort_Init(CRef &in_ctxt)
   ArgumentArray oArgs = oCmd.GetArguments();
   oArgs.Add(L"OperatorName", CString());
   oArgs.Add(L"portName",     CString());
-  oArgs.Add(L"targetName",   CString());  // if empty then disconnect port.
+  oArgs.Add(L"targetName",   CString());  // if empty then disconnect everything from the port.
 
   return CStatus::OK;
 }

@@ -37,7 +37,7 @@ struct _portMapping
 
   // mapping.
   DFG_PORT_MAPTYPE mapType;       // specifies how the DFG port is to be mapped/exposed.
-  XSI::CString mapTarget;         // if mapType == "XSIPort" then the full name of the target (or L"" for no target).
+  XSI::CString mapTarget;         // if mapType == "XSIPort" then the full name of the target(s) separated by semicolons (or L"" for no target).
 
   // misc.
   XSI::CValue xsiDefaultValue;    // the default value (only used when mapType == DFG_PORT_MAPTYPE_XSI_PARAMETER).

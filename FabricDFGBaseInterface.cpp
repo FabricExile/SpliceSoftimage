@@ -1605,19 +1605,21 @@ void BaseInterface::SetValueOfArgXfoArray(FabricCore::Client &client, FabricCore
     rtval.callMethod("", "resize", 1, sc);
     for (int ci = 0; ci < numChunks; ci++)
     {
-      xyz[0] = FabricCore::RTVal::ConstructFloat32(client, val[4]);
-      xyz[1] = FabricCore::RTVal::ConstructFloat32(client, val[5]);
-      xyz[2] = FabricCore::RTVal::ConstructFloat32(client, val[6]);
+      int offset = ci * 10;
+
+      xyz[0] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 4]);
+      xyz[1] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 5]);
+      xyz[2] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 6]);
       ori[0] = FabricCore::RTVal::Construct(client, "Vec3", 3, xyz);
-      ori[1] = FabricCore::RTVal::ConstructFloat32(client, val[3]);
+      ori[1] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 3]);
 
-      tr[0] = FabricCore::RTVal::ConstructFloat32(client, val[7]);
-      tr[1] = FabricCore::RTVal::ConstructFloat32(client, val[8]);
-      tr[2] = FabricCore::RTVal::ConstructFloat32(client, val[9]);
+      tr[0] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 7]);
+      tr[1] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 8]);
+      tr[2] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 9]);
 
-      sc[0] = FabricCore::RTVal::ConstructFloat32(client, val[0]);
-      sc[1] = FabricCore::RTVal::ConstructFloat32(client, val[1]);
-      sc[2] = FabricCore::RTVal::ConstructFloat32(client, val[2]);
+      sc[0] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 0]);
+      sc[1] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 1]);
+      sc[2] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 2]);
 
       xfo[1]   = FabricCore::RTVal::Construct(client, "Vec3", 3, tr);
       xfo[0]   = FabricCore::RTVal::Construct(client, "Quat", 2, ori);
