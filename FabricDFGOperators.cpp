@@ -1121,6 +1121,11 @@ XSIPLUGINCALLBACK CStatus CanvasOp_PPGEvent(const CRef &in_ctxt)
             // done?
             if (portgroup.GetInstanceCount() == 0)
               break;
+
+            // note: we leave here due to a bug in the SDK (XSI somehow doesn't
+            // correctly update the operators port group instances and disconnects
+            // the wrong objects if we continue the picking session).
+            break;
           }
         }
         else if (btnName == L"BtnPortDisconnectAll")

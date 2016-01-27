@@ -732,8 +732,8 @@ SICALLBACK FabricCanvasOpDisconnectPort_Execute(CRef &in_ctxt)
     // split the target names and check a few things.
     CStringArray targetNames = targetNamesRaw.Split(L";");
     if (targetNames.GetCount() > 1)
-    { Application().LogMessage(L"Because of a bug in the SDK one cannot disconnect more than one object at a time.", siWarningMsg);
-      Application().LogMessage(L"Workaround: call this command separately for each object you want to disconnect.",  siWarningMsg);
+    { Application().LogMessage(L"Because of a bug in the SDK one cannot disconnect more than one object at a time.", siErrorMsg);
+      Application().LogMessage(L"Workaround: call this command separately for each object you want to disconnect.",  siErrorMsg);
       return CStatus::OK; }
 
      // do it.
