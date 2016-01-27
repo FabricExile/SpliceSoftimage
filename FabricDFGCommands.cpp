@@ -538,7 +538,7 @@ SICALLBACK FabricCanvasOpConnectPort_Execute(CRef &in_ctxt)
     { Application().LogMessage(L"cannot connect more than one object to a singleton port.", siErrorMsg);
       return CStatus::OK; }
 
-
+     // do it.
     for (LONG i=0;i<targetNames.GetCount();i++)
     {
       // get target name.
@@ -729,8 +729,14 @@ SICALLBACK FabricCanvasOpDisconnectPort_Execute(CRef &in_ctxt)
   // case 2: disconnect targetNamesRaw from port.
   else
   {
-    // split the target name and do it.
+    // split the target names and check a few things.
     CStringArray targetNames = targetNamesRaw.Split(L";");
+    if (targetNames.GetCount() > 1)
+    { Application().LogMessage(L"Because of a bug in the SDK one cannot disconnect more than one object at a time.", siWarningMsg);
+      Application().LogMessage(L"Workaround: call this command separately for each object you want to disconnect.",  siWarningMsg);
+      return CStatus::OK; }
+
+     // do it.
     for (LONG i=0;i<targetNames.GetCount();i++)
     {
       // get target name.
