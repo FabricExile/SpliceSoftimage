@@ -729,13 +729,8 @@ SICALLBACK FabricCanvasOpDisconnectPort_Execute(CRef &in_ctxt)
   // case 2: disconnect targetNamesRaw from port.
   else
   {
-    // split the target names and check a few things.
+    // split the target name and do it.
     CStringArray targetNames = targetNamesRaw.Split(L";");
-    if (targetNames.GetCount() > 1 && !pmap.portDataTypeIsArray())
-    { Application().LogMessage(L"cannot connect more than one object to a singleton port.", siErrorMsg);
-      return CStatus::OK; }
-
-
     for (LONG i=0;i<targetNames.GetCount();i++)
     {
       // get target name.
@@ -785,11 +780,6 @@ SICALLBACK FabricCanvasOpDisconnectPort_Execute(CRef &in_ctxt)
           return CStatus::OK;
         }
       }
-
-      // check if the connection doesn't exist.
-      if (!dfgTools::isConnectedToPortGroup(op, portName, targetRef))
-      { Application().LogMessage(L"\"" + targetRef.GetAsText() + "\" is not connected to \"" + portName + L"\".", siWarningMsg);
-        continue; }
 
       // if the connection exists then disconnect it.
       if (dfgTools::isConnectedToPortGroup(op, portName, targetRef))
