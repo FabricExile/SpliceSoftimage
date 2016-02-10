@@ -184,12 +184,31 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
   return SUCCESS;
 }
 
+class CanvasApp final : public QApplication
+{
+public:
+  CanvasApp(int &argc, char **argv) : QApplication(argc, argv) {}
+
+  virtual bool notify(QObject *receiver, QEvent *event) override
+  {
+    try
+    {
+      return QApplication::notify(receiver, event);
+    }
+    catch(FabricCore::Exception e)
+    {
+      printf("Exception: %s\n", e.getDesc_cstr());
+    }
+    return false;
+  }
+};
+
 void FabricInitQt()
 {
   if (!qApp)
   {
     Application().LogMessage(L"allocating an instance of QApplication", siCommentMsg);
     int argc = 0;
-    new QApplication(argc, NULL);
+    new CanvasApp(argc, NULL);
   }
 }
