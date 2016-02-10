@@ -184,12 +184,12 @@ OPENCANVAS_RETURN_VALS OpenCanvas(_opUserData *pud, const char *winTitle)
   return SUCCESS;
 }
 
-class CanvasApp final : public QApplication
+class CanvasApp /* final */ : public QApplication
 {
 public:
   CanvasApp(int &argc, char **argv) : QApplication(argc, argv) {}
 
-  virtual bool notify(QObject *receiver, QEvent *event) override
+  virtual bool notify(QObject *receiver, QEvent *event) /* override */
   {
     try
     {
