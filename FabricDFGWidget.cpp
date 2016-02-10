@@ -197,6 +197,7 @@ public:
     }
     catch(FabricCore::Exception e)
     {
+      feLogError(std::string("Exception: ") + e.getDesc_cstr());
       printf("Exception: %s\n", e.getDesc_cstr());
     }
     return false;
