@@ -912,6 +912,32 @@ void DFGUICmdHandlerDCC::dfgDoReorderPorts(
   execCmd(cmdName, args, output);
 }
 
+void DFGUICmdHandlerDCC::dfgDoDismissLoadDiags(
+  FabricCore::DFGBinding const &binding,
+  QList<int> diagIndices
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_DismissLoadDiags::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getDCCObjectNameFromBinding(binding));
+
+  char n[64];
+  std::string indicesStr = "[";
+  for(int i=0;i<indices.size();i++)
+  {
+    if(i > 0)
+      indicesStr += ", ";
+    sprintf(n, "%d", diagIndices[i]);
+    indicesStr += n;
+  }
+  indicesStr += "]";
+  args.push_back(indicesStr);
+
+  std::string output;
+  execCmd(cmdName, args, output);
+}
+
 
 std::string DFGUICmdHandlerDCC::getDCCObjectNameFromBinding(FabricCore::DFGBinding const &binding)
 {
@@ -982,6 +1008,7 @@ FabricUI::DFG::DFGUICmd *DFGUICmdHandlerDCC::createAndExecuteDFGCommand(std::str
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_SetRefVarPath::      CmdName().c_str())    cmd = createAndExecuteDFGCommand_SetRefVarPath      (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_SplitFromPreset::    CmdName().c_str())    cmd = createAndExecuteDFGCommand_SplitFromPreset    (in_args);
   else if (in_cmdName == FabricUI::DFG::DFGUICmd_ReorderPorts::       CmdName().c_str())    cmd = createAndExecuteDFGCommand_ReorderPorts       (in_args);
+  else if (in_cmdName == FabricUI::DFG::DFGUICmd_DismissLoadDiags::       CmdName().c_str())    cmd = createAndExecuteDFGCommand_DismissLoadDiags       (in_args);
   return cmd;
 }
 
@@ -2238,6 +2265,53 @@ FabricUI::DFG::DFGUICmd_ReorderPorts *DFGUICmdHandlerDCC::createAndExecuteDFGCom
     cmd = new FabricUI::DFG::DFGUICmd_ReorderPorts(binding,
                                                     execPath.c_str(),
                                                     exec,
+                                                    indices);
+    try
+    {
+      cmd->doit();
+    }
+    catch(FabricCore::Exception e)
+    {
+      feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+    }
+  }
+
+  return cmd;
+}
+
+FabricUI::DFG::DFGUICmd_DismissLoadDiags *DFGUICmdHandlerDCC::createAndExecuteDFGCommand_DismissLoadDiags(std::vector<std::string> &args)
+{
+  FabricUI::DFG::DFGUICmd_DismissLoadDiags *cmd = NULL;
+  {
+    unsigned int ai = 0;
+
+    FabricCore::DFGBinding binding;
+    if (!DecodeBinding(args, ai, binding))
+      return cmd;
+
+    std::string indicesStr;
+    if (!DecodeName(args, ai, indicesStr))
+      return cmd;
+
+    std::vector<unsigned int> indices;
+    try
+    {
+      FTL::JSONStrWithLoc jsonStrWithLoc( indicesStr.c_str() );
+      FTL::OwnedPtr<FTL::JSONArray> jsonArray(
+        FTL::JSONValue::Decode( jsonStrWithLoc )->cast<FTL::JSONArray>()
+        );
+      for( size_t i=0; i < jsonArray->size(); i++ )
+      {
+        indices.push_back ( jsonArray->get(i)->getSInt32Value() );
+      }
+    }
+    catch ( FabricCore::Exception e )
+    {
+      feLogError("indices argument not valid json.");
+      return cmd;
+    }
+
+    cmd = new FabricUI::DFG::DFGUICmd_DismissLoadDiags(binding,
                                                     indices);
     try
     {
@@ -4134,6 +4208,60 @@ SICALLBACK FabricCanvasReorderPorts_Redo(XSI::CRef &ctxt)
 }
 
 SICALLBACK FabricCanvasReorderPorts_TermUndoRedo(XSI::CRef &ctxt)
+{
+  DFGUICmd_TermUndoRedo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+//        "DismissLoadDiags"
+
+SICALLBACK FabricCanvasDismissLoadDiags_Init(XSI::CRef &in_ctxt)
+{
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.EnableReturnValue(false);
+
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",  XSI::CString());
+  oArgs.Add(L"execPath", XSI::CString());
+  oArgs.Add(L"indices",  XSI::CString());
+
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasDismissLoadDiags_Execute(XSI::CRef &in_ctxt)
+{
+  // init.
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  CValueArrayToStdVector(tmp, args);
+
+  // create and execute the DFG command.
+  FabricUI::DFG::DFGUICmd_DismissLoadDiags *cmd = DFGUICmdHandlerDCC::createAndExecuteDFGCommand_DismissLoadDiags(args);
+  if (!cmd)
+    return XSI::CStatus::Fail;
+
+  // done.
+  DFGUICmd_Finish(ctxt, cmd);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasDismissLoadDiags_Undo(XSI::CRef &ctxt)
+{
+  DFGUICmd_Undo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasDismissLoadDiags_Redo(XSI::CRef &ctxt)
+{
+  DFGUICmd_Redo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasDismissLoadDiags_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;

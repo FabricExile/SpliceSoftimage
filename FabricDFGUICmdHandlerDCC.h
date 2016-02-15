@@ -280,6 +280,11 @@ protected:
     FabricCore::DFGExec const &exec,
     const std::vector<unsigned int> &indices
     );
+  
+  virtual void dfgDoDismissLoadDiags(
+    FabricCore::DFGBinding const &binding,
+    QList<int> diagIndices
+    );
 
 protected:
     
@@ -323,6 +328,7 @@ public:
   static FabricUI::DFG::DFGUICmd_SetRefVarPath *createAndExecuteDFGCommand_SetRefVarPath(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_SplitFromPreset *createAndExecuteDFGCommand_SplitFromPreset(std::vector<std::string> &args);
   static FabricUI::DFG::DFGUICmd_ReorderPorts *createAndExecuteDFGCommand_ReorderPorts(std::vector<std::string> &args);
+  static FabricUI::DFG::DFGUICmd_DismissLoadDiags *createAndExecuteDFGCommand_DismissLoadDiags(std::vector<std::string> &args);
 };
 
 #endif
