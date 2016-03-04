@@ -69,6 +69,7 @@ XSI::CRef recreateOperator(XSI::CustomOperator op, XSI::CString &dfgJSON)
   CValue newOpRef;
 
   CValueArray args;
+  CValue retVal;
   args.Add(op.GetParent3DObject().GetFullName());
   args.Add(dfgJSON);
   args.Add(true);
@@ -79,8 +80,7 @@ XSI::CRef recreateOperator(XSI::CustomOperator op, XSI::CString &dfgJSON)
     // delete the old operator.
     args.Clear();
     args.Add(op.GetFullName());
-    CValue val;
-    Application().ExecuteCommand(L"DeleteObj", args, val);
+    Application().ExecuteCommand(L"DeleteObj", args, retVal);
 
     // transfer expressions, if any, from old operator to new one.
     if ((_opUserData::s_newOp_expressions.size() & 0x0001) == 0)
@@ -106,7 +106,7 @@ XSI::CRef recreateOperator(XSI::CustomOperator op, XSI::CString &dfgJSON)
           args.Add(CustomOperator(newOpRef).GetUniqueName() + L"." + CString(_opUserData::s_newOp_expressions[i + 0].c_str()));
           args.Add(CString(_opUserData::s_newOp_expressions[i + 1].c_str()));
           args.Add(true);
-          Application().ExecuteCommand(L"AddExpr", args, val);
+          Application().ExecuteCommand(L"AddExpr", args, retVal);
         }
       }
     }
@@ -353,15 +353,19 @@ void CanvasOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
 
   // button size (Open Canvas).
   const LONG btnCx = 100;
-  const LONG btnCy = 28;
+  const LONG btnCy = 26;
 
   // button size (Refresh).
   const LONG btnRx = 93;
-  const LONG btnRy = 28;
+  const LONG btnRy = 26;
 
   // button size (tools).
   const LONG btnTx = 112;
-  const LONG btnTy = 24;
+  const LONG btnTy = 22;
+
+  // button size (tools connect/disconnect).
+  const LONG btnTCx = 100;
+  const LONG btnTCy = 22;
 
   // button size (tools - select connected).
   const LONG btnTSCx = 90;
@@ -603,16 +607,20 @@ void CanvasOp_DefineLayout(PPGLayout &oLayout, CustomOperator &op)
             oLayout.AddGroup(L"", false);
               pi = oLayout.AddButton(L"BtnPortConnectPick", L"Connect (Pick)");
               pi.PutAttribute(siUIButtonDisable, dfgPortsNumRows == 0 || !modelIsRegular);
-              pi.PutAttribute(siUICX, btnTx);
-              pi.PutAttribute(siUICY, btnTy);
+              pi.PutAttribute(siUICX, btnTCx + 30);
+              pi.PutAttribute(siUICY, btnTCy);
               pi = oLayout.AddButton(L"BtnPortConnectSelf", L"Connect with Self");
               pi.PutAttribute(siUIButtonDisable, dfgPortsNumRows == 0 || !modelIsRegular);
-              pi.PutAttribute(siUICX, btnTx);
-              pi.PutAttribute(siUICY, btnTy);
-              pi = oLayout.AddButton(L"BtnPortDisconnect", L"Disconnect");
+              pi.PutAttribute(siUICX, btnTCx + 20);
+              pi.PutAttribute(siUICY, btnTCy);
+              pi = oLayout.AddButton(L"BtnPortDisconnectPick", L"Disconnect (Pick)");
               pi.PutAttribute(siUIButtonDisable, dfgPortsNumRows == 0 || !modelIsRegular);
-              pi.PutAttribute(siUICX, btnTx);
-              pi.PutAttribute(siUICY, btnTy);
+              pi.PutAttribute(siUICX, btnTCx + 10);
+              pi.PutAttribute(siUICY, btnTCy);
+              pi = oLayout.AddButton(L"BtnPortDisconnectAll", L"Disconnect All");
+              pi.PutAttribute(siUIButtonDisable, dfgPortsNumRows == 0 || !modelIsRegular);
+              pi.PutAttribute(siUICX, btnTCx + 0);
+              pi.PutAttribute(siUICY, btnTCy);
             oLayout.EndGroup();
           oLayout.EndRow();
         oLayout.EndGroup();
@@ -782,6 +790,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_PPGEvent(const CRef &in_ctxt)
         // re-create operator.
         recreateOperator(op, dfgJSON);
         dfgTools::ClearUndoHistory();
+        ctxt.PutAttribute(L"Close", true);
       }
     }
     else if (btnName == L"BtnRecreateOp")
@@ -813,6 +822,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_PPGEvent(const CRef &in_ctxt)
       // re-create operator.
       recreateOperator(op, dfgJSON);
       dfgTools::ClearUndoHistory();
+      ctxt.PutAttribute(L"Close", true);
     }
     else if (btnName == L"BtnRecreateOpInfo")
     {
@@ -829,8 +839,13 @@ XSIPLUGINCALLBACK CStatus CanvasOp_PPGEvent(const CRef &in_ctxt)
     }
     else if (   btnName == L"BtnPortConnectPick"
              || btnName == L"BtnPortConnectSelf"
-             || btnName == L"BtnPortDisconnect")
+             || btnName == L"BtnPortDisconnectPick"
+             || btnName == L"BtnPortDisconnectAll")
     {
+      // ~~~~~
+      // step 1: do the common things.
+      // ~~~~~
+
       LONG ret;
 
       // get grid and its widget.
@@ -858,7 +873,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_PPGEvent(const CRef &in_ctxt)
       { toolkit.MsgBox(L"No port selected.\n\nPlease select a single port and try again.", siMsgOkOnly, "CanvasOp", ret);
         return CStatus::OK; }
 
-      // get the name of the selected port as well as its port mapping.
+      // get the name of the selected port and its port mapping.
       CString selPortName = g.GetCell(0, selRow);
       _portMapping pmap;
       {
@@ -883,109 +898,247 @@ XSIPLUGINCALLBACK CStatus CanvasOp_PPGEvent(const CRef &in_ctxt)
       { toolkit.MsgBox(L"Selected port Type/Target is not \"XSI Port\".", siMsgOkOnly, "CanvasOp", ret);
         return CStatus::OK; }
 
-      // find the port group.
-      PortGroup portgroup;
-      CRefArray pgRef = op.GetPortGroups();
-      for (int i=0;i<pgRef.GetCount();i++)
-      {
-        PortGroup pg(pgRef[i]);
-        if (   pg.IsValid()
-            && pg.GetName() == pmap.dfgPortName)
-          {
-            portgroup.SetObject(pgRef[i]);
-            break;
-          }
-      }
+      // get the port group.
+      CString portgroupName = pmap.dfgPortName;
+      PortGroup portgroup(dfgTools::GetPortGroupRef(op, portgroupName));
       if (!portgroup.IsValid())
       { toolkit.MsgBox(L"Unable to find matching port group.", siMsgOkOnly | siMsgExclamation, "CanvasOp", ret);
         return CStatus::OK; }
 
-      // set target.
-      CRef targetRef;
-      if (btnName == L"BtnPortConnectPick")
+      // ~~~~~
+      // step 2: do the button specific things.
+      // ~~~~~
+      
+      // connect things.
+      if (btnName.FindString(L"BtnPortConnect") == 0)
       {
-        CValueArray args(7);
-        args[0] = siGenericObjectFilter;
-        args[1] = L"Pick";
-        args[2] = L"Pick";
-        args[5] = 0;
-        CValue emptyValue;
-        if (Application().ExecuteCommand(L"PickElement", args, emptyValue) == CStatus::Fail)
-        { Application().LogMessage(L"PickElement failed.", siWarningMsg);
-          return CStatus::OK; }
-        if ((LONG)args[4] == 0)
-        { Application().LogMessage(L"canceled by user.", siWarningMsg);
-          return CStatus::OK; }
-        targetRef = args[3];
-      }
-      else if (btnName == L"BtnPortConnectSelf")
-      {
-        targetRef = op.GetParent3DObject().GetRef();
-      }
-
-      // check/correct target's siClassID and CRef.
-      if (   btnName == L"BtnPortConnectPick"
-          || btnName == L"BtnPortConnectSelf")
-      {
-        siClassID portClassID = dfgTools::GetSiClassIdFromResolvedDataType(pmap.dfgPortDataType);
-        if (targetRef.GetClassID() != portClassID)
+        if (btnName == L"BtnPortConnectPick")
         {
-          bool err = true;
-
-          // kinematics?
-          if (portClassID == siKinematicStateID)
+          while (true)
           {
-            CRef tmp;
-            tmp.Set(targetRef.GetAsText() + L".kine.global");
-            if (tmp.IsValid())
+            // pick target.
+            CRef targetRef;
+            CValueArray args(7);
+            args[0] = siGenericObjectFilter;
+            args[1] = L"Pick";
+            args[2] = L"Pick";
+            args[5] = 0;
+            CValue emptyValue;
+            if (Application().ExecuteCommand(L"PickElement", args, emptyValue) == CStatus::Fail)
+            { Application().LogMessage(L"PickElement failed.", siWarningMsg);
+              break; }
+            if ((LONG)args[4] == 0)
+              break;
+            targetRef = args[3];
+
+            // check/correct target's siClassID and CRef.
+            siClassID portClassID = dfgTools::GetSiClassIdFromResolvedDataType(pmap.dfgPortDataType);
+            if (targetRef.GetClassID() != portClassID)
             {
-              targetRef = tmp;
-              err = false;
+              bool err = true;
+
+              // kinematics?
+              if (portClassID == siKinematicStateID)
+              {
+                CRef tmp;
+                tmp.Set(targetRef.GetAsText() + L".kine.global");
+                if (tmp.IsValid())
+                {
+                  targetRef = tmp;
+                  err = false;
+                }
+              }
+
+              // polygon mesh?
+              if (portClassID == siPolygonMeshID)
+              {
+                CRef tmp;
+                tmp.Set(targetRef.GetAsText() + L".polymsh");
+                if (tmp.IsValid())
+                {
+                  targetRef = tmp;
+                  err = false;
+                }
+              }
+
+              //
+              if (err)
+              {
+                CString emptyString;
+                Application().LogMessage(L"the picked element has the type \"" + targetRef.GetClassIDName() + L"\", but the port needs the type \"" + dfgTools::GetSiClassIdDescription(portClassID, emptyString) + L"\".", siErrorMsg);
+                continue;
+              }
+            }
+
+            // check if the connection already exists.
+            if (dfgTools::isConnectedToPortGroup(op, portgroupName, targetRef))
+            { Application().LogMessage(L"\"" + targetRef.GetAsText() + "\" is already connected to \"" + portgroupName + L"\".", siWarningMsg);
+              continue; }
+
+            // if the port group only allows one connection then disconnect any current ones.
+            if (portgroup.GetMax() == 1)
+              if (!dfgTools::DisconnectedAllFromPortGroup(op, portgroupName))
+              { Application().LogMessage(L"DisconnectedAllFromPortGroup() failed.", siWarningMsg);
+                break; }
+
+            // connect.
+            Application().LogMessage(L"connecting \"" + targetRef.GetAsText() + L"\".", siInfoMsg);
+            LONG instance;
+            if (op.ConnectToGroup(portgroup.GetIndex(), targetRef, instance) != CStatus::OK)
+            { Application().LogMessage(L"failed to connect \"" + targetRef.GetAsText() + "\"", siErrorMsg);
+              continue; }
+
+            // leave?
+            if (portgroup.GetMax() <= 1)
+              break;
+          }
+        }
+        else if (btnName == L"BtnPortConnectSelf")
+        {
+          // set target ref and check/correct its siClassID and CRef.
+          CRef targetRef = op.GetParent3DObject().GetRef();
+          siClassID portClassID = dfgTools::GetSiClassIdFromResolvedDataType(pmap.dfgPortDataType);
+          if (targetRef.GetClassID() != portClassID)
+          {
+            bool err = true;
+
+            // kinematics?
+            if (portClassID == siKinematicStateID)
+            {
+              CRef tmp;
+              tmp.Set(targetRef.GetAsText() + L".kine.global");
+              if (tmp.IsValid())
+              {
+                targetRef = tmp;
+                err = false;
+              }
+            }
+
+            // polygon mesh?
+            if (portClassID == siPolygonMeshID)
+            {
+              CRef tmp;
+              tmp.Set(targetRef.GetAsText() + L".polymsh");
+              if (tmp.IsValid())
+              {
+                targetRef = tmp;
+                err = false;
+              }
+            }
+
+            //
+            if (err)
+            {
+              CString emptyString;
+              Application().LogMessage(L"the element has the type \"" + targetRef.GetClassIDName() + L"\", but the port needs the type \"" + dfgTools::GetSiClassIdDescription(portClassID, emptyString) + L"\".", siErrorMsg);
+              return CStatus::OK;
             }
           }
 
-          // polygon mesh?
-          if (portClassID == siPolygonMeshID)
-          {
-            CRef tmp;
-            tmp.Set(targetRef.GetAsText() + L".polymsh");
-            if (tmp.IsValid())
-            {
-              targetRef = tmp;
-              err = false;
-            }
-          }
+          // check if the connection already exists.
+          if (dfgTools::isConnectedToPortGroup(op, portgroupName, targetRef))
+          { Application().LogMessage(L"\"" + targetRef.GetAsText() + "\" is already connected to \"" + portgroupName + L"\".", siWarningMsg);
+            return CStatus::OK; }
 
-          //
-          if (err)
+          // if the port group only allows one connection then disconnect any current ones.
+          if (portgroup.GetMax() == 1)
+            if (!dfgTools::DisconnectedAllFromPortGroup(op, portgroupName))
+            { Application().LogMessage(L"DisconnectedAllFromPortGroup() failed.", siWarningMsg);
+              return CStatus::OK; }
+
+          // connect.
+          Application().LogMessage(L"connecting \"" + targetRef.GetAsText() + L"\".", siInfoMsg);
+          LONG instance;
+          if (op.ConnectToGroup(portgroup.GetIndex(), targetRef, instance) != CStatus::OK)
+          { Application().LogMessage(L"failed to connect \"" + targetRef.GetAsText() + "\"", siErrorMsg);
+            return CStatus::OK; }
+        }
+      }
+      // disconnect things.
+      else
+      {
+        if (btnName == L"BtnPortDisconnectPick")
+        {
+          while (true)
           {
-            CString emptyString;
-            Application().LogMessage(L"the picked element has the type \"" + targetRef.GetClassIDName() + L"\", but the port needs the type \"" + dfgTools::GetSiClassIdDescription(portClassID, emptyString) + L"\".", siErrorMsg);
-            return CStatus::OK;
+            op.SetObject(ctxt.GetSource());
+
+            // pick target.
+            CRef targetRef;
+            CValueArray args(7);
+            args[0] = siGenericObjectFilter;
+            args[1] = L"Pick";
+            args[2] = L"Pick";
+            args[5] = 0;
+            CValue emptyValue;
+            if (Application().ExecuteCommand(L"PickElement", args, emptyValue) == CStatus::Fail)
+            { Application().LogMessage(L"PickElement failed.", siWarningMsg);
+              break; }
+            if ((LONG)args[4] == 0)
+              break;
+            targetRef = args[3];
+
+            // check/correct target's siClassID and CRef.
+            siClassID portClassID = dfgTools::GetSiClassIdFromResolvedDataType(pmap.dfgPortDataType);
+            if (targetRef.GetClassID() != portClassID)
+            {
+              // kinematics?
+              if (portClassID == siKinematicStateID)
+              {
+                CRef tmp;
+                tmp.Set(targetRef.GetAsText() + L".kine.global");
+                if (tmp.IsValid())
+                {
+                  targetRef = tmp;
+                }
+              }
+
+              // polygon mesh?
+              if (portClassID == siPolygonMeshID)
+              {
+                CRef tmp;
+                tmp.Set(targetRef.GetAsText() + L".polymsh");
+                if (tmp.IsValid())
+                {
+                  targetRef = tmp;
+                }
+              }
+            }
+
+            // if the connection exists then disconnect it.
+            if (dfgTools::isConnectedToPortGroup(op, portgroupName, targetRef))
+            {
+              Application().LogMessage(L"disconnecting \"" + targetRef.GetAsText() + L"\".", siInfoMsg);
+              LONG instance;
+              if (!dfgTools::DisconnectFromPortGroup(op, portgroupName, targetRef))
+              { Application().LogMessage(L"failed to disconnect \"" + targetRef.GetAsText() + "\"", siErrorMsg);
+                continue; }
+            }
+            else
+            { Application().LogMessage(L"\"" + targetRef.GetAsText() + "\" is not connected to \"" + portgroupName + L"\".", siWarningMsg);
+              continue; }
+
+            // done?
+            if (portgroup.GetInstanceCount() == 0)
+              break;
+
+            // note: we leave here due to a bug in the SDK (XSI somehow doesn't
+            // correctly update the operators port group instances and disconnects
+            // the wrong objects if we continue the picking session).
+            break;
           }
+        }
+        else if (btnName == L"BtnPortDisconnectAll")
+        {
+          if (!dfgTools::DisconnectedAllFromPortGroup(op, portgroupName))
+            Application().LogMessage(L"DisconnectedAllFromPortGroup() failed.", siWarningMsg);
         }
       }
 
-      // disconnect any existing connection.
-      while (portgroup.GetInstanceCount() > 0)
-      {
-        if (op.DisconnectGroup(portgroup.GetIndex(), 0, true) != CStatus::OK)
-        { Application().LogMessage(L"op.DisconnectGroup() failed.", siWarningMsg);
-          break; }
-      }
+      // ~~~~~
+      // step 3: refresh layout..
+      // ~~~~~
 
-      // connect.
-      if (   btnName == L"BtnPortConnectPick"
-          || btnName == L"BtnPortConnectSelf")
-      {
-        Application().LogMessage(L"connecting \"" + targetRef.GetAsText() + L"\".", siInfoMsg);
-        LONG instance;
-        if (op.ConnectToGroup(portgroup.GetIndex(), targetRef, instance) != CStatus::OK)
-        { Application().LogMessage(L"failed to connect \"" + targetRef.GetAsText() + "\"", siErrorMsg);
-          return CStatus::OK; }
-      }
-
-      // refresh layout.
       PPGLayout oLayout = op.GetPPGLayout();
       CanvasOp_DefineLayout(oLayout, op);
       ctxt.PutAttribute(L"Refresh", true);
@@ -1029,7 +1182,11 @@ XSIPLUGINCALLBACK CStatus CanvasOp_PPGEvent(const CRef &in_ctxt)
       args.Add(fileName);
       if (Application().ExecuteCommand(L"FabricCanvasImportGraph", args, opWasRecreated) == CStatus::OK)
       {
-        if (!opWasRecreated)
+        if (opWasRecreated)
+        {
+          ctxt.PutAttribute(L"Close", true);
+        }
+        else
         {
           PPGLayout oLayout = op.GetPPGLayout();
           CanvasOp_DefineLayout(oLayout, op);
@@ -1316,39 +1473,6 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
     }
   }
 
-  // Fabric Engine (step 0): update the base interface's evalContext.
-  {
-    FabricCore::RTVal &evalContext = *baseInterface->getEvalContext();
-
-    if (!evalContext.isValid())
-    {
-      try
-      {
-        evalContext = FabricCore::RTVal::Create(*client, "EvalContext", 0, 0);
-        evalContext = evalContext.callMethod("EvalContext", "getInstance", 0, 0);
-        evalContext.setMember("host", FabricCore::RTVal::ConstructString(*client, "Softimage"));
-      }
-      catch(FabricCore::Exception e)
-      {
-        feLogError(e.getDesc_cstr());
-      }
-    }
-
-    if(evalContext.isValid())
-    {
-      try
-      {
-        evalContext.setMember("graph",           FabricCore::RTVal::ConstructString (*client, op.GetFullName().GetAsciiString()));
-        evalContext.setMember("time",            FabricCore::RTVal::ConstructFloat32(*client, (float)ctxt.GetTime().GetTime(CTime::Seconds)));
-        evalContext.setMember("currentFilePath", FabricCore::RTVal::ConstructString (*client, CString(Application().GetActiveProject().GetActiveScene().GetParameter(L"Filename").GetValue()).GetAsciiString()));
-      }
-      catch(FabricCore::Exception e)
-      {
-        feLogError(e.getDesc_cstr());
-      }
-    }
-  }
-
   // Fabric Engine (step 1): loop through all the DFG's input ports and set
   //                         their values from the matching XSI ports or parameters.
   if (pud->execFabricStep12)
@@ -1364,12 +1488,13 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
         if (exec.getExecPortType(i) != FabricCore::DFGPortType_In)
           continue;
 
-        CString portName = exec.getExecPortName(i);
-        CString portResolvedType = exec.getExecPortResolvedType(i);
+        CString portName                = exec.getExecPortName(i);
+        CString portResolvedType        = exec.getExecPortResolvedType(i);
+        bool    portResolvedTypeIsArray = (portResolvedType.ReverseFindString(L"[]") != UINT_MAX);
         bool storable = true;
 
-        // find a matching XSI port.
-        if (!done)
+        // find a matching XSI port (singleton).
+        if (!done && !portResolvedTypeIsArray)
         {
           CValue xsiPortValue = op.GetInputValue(portName, portName);
           if (!xsiPortValue.IsEmpty())
@@ -1433,34 +1558,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                   val[4] = q.GetX();
                   val[5] = q.GetY();
                   val[6] = q.GetZ();
-                  val[7] = t.GetPosX();   // positions
-                  val[8] = t.GetPosY();
-                  val[9] = t.GetPosZ();
-
-                  // set the DFG port from the std::vector.
-                  BaseInterface::SetValueOfArgXfo(*client, *binding, portName.GetAsciiString(), val);
-                }
-              }
-            }
-            else if (portResolvedType == L"Xfo")
-            {
-              if (xsiPortValue.m_t == CValue::siRef)
-              {
-                KinematicState ks(xsiPortValue);
-                if (ks.IsValid())
-                {
-                  // put the XSI port's value into a std::vector.
-                  MATH::CTransformation t = ks.GetTransform();
-                  MATH::CQuaternion     q = t.GetRotationQuaternion();
-                  std::vector <double> val(10);
-                  val[0] = t.GetSclX();   // scaling.
-                  val[1] = t.GetSclY();
-                  val[2] = t.GetSclZ();
-                  val[3] = q.GetW();      // orientation.
-                  val[4] = q.GetX();
-                  val[5] = q.GetY();
-                  val[6] = q.GetZ();
-                  val[7] = t.GetPosX();   // positions
+                  val[7] = t.GetPosX();   // position.
                   val[8] = t.GetPosY();
                   val[9] = t.GetPosZ();
 
@@ -1506,6 +1604,86 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                 }
               }
               storable = false;
+            }
+          }
+        }
+
+        // find a matching XSI port (array).
+        if (!done && portResolvedTypeIsArray)
+        {
+          PortGroup portGroup(dfgTools::GetPortGroupRef(op, portName));
+          if (portGroup.IsValid())
+          {
+            done = true;
+
+            //
+            if (verbose) Application().LogMessage(functionName + L": transfer xsi port data to dfg port \"" + portName + L"\"");
+
+            if      (portResolvedType == L"")
+            {
+              // do nothing.
+            }
+            else if (portResolvedType == L"Mat44[]")
+            {
+              // put the XSI port groups's values into a std::vector.
+              MATH::CMatrix4 m;
+              std::vector <double> val(16 * portGroup.GetInstanceCount());
+              for (LONG i=0;i<portGroup.GetInstanceCount();i++)
+              {
+                CValue xsiPortValue = op.GetInputValue(portName, portName, i);
+                KinematicState ks(xsiPortValue);
+                if (ks.IsValid())   m = ks.GetTransform().GetMatrix4();
+                else                m . SetIdentity();
+                LONG vi = 16 * i;
+                val[vi + 0] = m.GetValue(0, 0); // row 0.
+                val[vi + 1] = m.GetValue(1, 0);
+                val[vi + 2] = m.GetValue(2, 0);
+                val[vi + 3] = m.GetValue(3, 0);
+                val[vi + 4] = m.GetValue(0, 1); // row 1.
+                val[vi + 5] = m.GetValue(1, 1);
+                val[vi + 6] = m.GetValue(2, 1);
+                val[vi + 7] = m.GetValue(3, 1);
+                val[vi + 8] = m.GetValue(0, 2); // row 2.
+                val[vi + 9] = m.GetValue(1, 2);
+                val[vi +10] = m.GetValue(2, 2);
+                val[vi +11] = m.GetValue(3, 2);
+                val[vi +12] = m.GetValue(0, 3); // row 3.
+                val[vi +13] = m.GetValue(1, 3);
+                val[vi +14] = m.GetValue(2, 3);
+                val[vi +15] = m.GetValue(3, 3);
+              }
+
+              // set the DFG port from the std::vector.
+              BaseInterface::SetValueOfArgMat44Array(*client, *binding, portName.GetAsciiString(), val);
+            }
+            else if (portResolvedType == L"Xfo[]")
+            {
+              // put the XSI port groups's values into a std::vector.
+              MATH::CTransformation t;
+              MATH::CQuaternion     q;
+              std::vector <double> val(10 * portGroup.GetInstanceCount());
+              for (LONG i=0;i<portGroup.GetInstanceCount();i++)
+              {
+                CValue xsiPortValue = op.GetInputValue(portName, portName, i);
+                KinematicState ks(xsiPortValue);
+                if (ks.IsValid())   t = ks.GetTransform();
+                else                t . SetIdentity();
+                q = t.GetRotationQuaternion();
+                LONG vi = 10 * i;
+                val[vi + 0] = t.GetSclX();   // scaling.
+                val[vi + 1] = t.GetSclY();
+                val[vi + 2] = t.GetSclZ();
+                val[vi + 3] = q.GetW();      // orientation.
+                val[vi + 4] = q.GetX();
+                val[vi + 5] = q.GetY();
+                val[vi + 6] = q.GetZ();
+                val[vi + 7] = t.GetPosX();   // position.
+                val[vi + 8] = t.GetPosY();
+                val[vi + 9] = t.GetPosZ();
+              }
+
+              // set the DFG port from the std::vector.
+              BaseInterface::SetValueOfArgXfoArray(*client, *binding, portName.GetAsciiString(), val);
             }
           }
         }
@@ -2014,7 +2192,9 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
                 cvaMapType.Add( DFG_PORT_MAPTYPE_XSI_PARAMETER );
               }
               if (   pmap.dfgPortDataType == L"Mat44"
+                  || pmap.dfgPortDataType == L"Mat44[]"
                   || pmap.dfgPortDataType == L"Xfo"
+                  || pmap.dfgPortDataType == L"Xfo[]"
 
                   || pmap.dfgPortDataType == L"PolygonMesh")
               {

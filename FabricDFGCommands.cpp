@@ -214,7 +214,7 @@ SICALLBACK FabricCanvasOpApply_Execute(CRef &in_ctxt)
         continue; }
 
       // create port group.
-      CRef pgRef = newOp.AddPortGroup(pmap.dfgPortName, 0, 1);
+      CRef pgRef = newOp.AddPortGroup(pmap.dfgPortName, 0, pmap.portDataTypeIsArray() ? 99999 : 1);
       if (!pgRef.IsValid())
       { Application().LogMessage(L"failed to create port group for \"" + pmap.dfgPortName + "\"", siErrorMsg);
         continue; }
@@ -310,16 +310,20 @@ SICALLBACK FabricCanvasOpApply_Execute(CRef &in_ctxt)
                     Application().LogMessage(L"unable to find matching port group for \"" + o.dfgPortName + L"\"", siWarningMsg);
                   else
                   {
-                    // set target ref.
-                    CRef targetRef;
-                    if (targetRef.Set(o.mapTarget) != CStatus::OK)
-                      Application().LogMessage(L"failed to set target ref for \"" + o.mapTarget + L"\"", siWarningMsg);
-                    else
+                    CStringArray targets = o.mapTarget.Split(L";");
+                    for (LONG i=0;i<targets.GetCount();i++)
                     {
-                      // connect.
-                      LONG instance;
-                      if (newOp.ConnectToGroup(portgroup.GetIndex(), targetRef, instance) != CStatus::OK)
-                        Application().LogMessage(L"failed to connect \"" + targetRef.GetAsText() + "\"", siWarningMsg);
+                      // set target ref.
+                      CRef targetRef;
+                      if (targetRef.Set(targets[i]) != CStatus::OK)
+                        Application().LogMessage(L"failed to set target ref for \"" + targets[i] + L"\"", siWarningMsg);
+                      else
+                      {
+                        // connect.
+                        LONG instance;
+                        if (newOp.ConnectToGroup(portgroup.GetIndex(), targetRef, instance) != CStatus::OK)
+                          Application().LogMessage(L"failed to connect \"" + targetRef.GetAsText() + "\"", siWarningMsg);
+                      }
                     }
                   }
                 }
@@ -426,9 +430,10 @@ SICALLBACK FabricCanvasOpConnectPort_Init(CRef &in_ctxt)
   oCmd.EnableReturnValue(true);   // returns 'true' on success.
 
   ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"OperatorName", CString());
-  oArgs.Add(L"portName",     CString());
-  oArgs.Add(L"targetName",   CString());  // if empty then disconnect port.
+  oArgs.Add(L"OperatorName",            CString());
+  oArgs.Add(L"portName",                CString());
+  oArgs.Add(L"targetNames",             CString());   // semicolon separated target names. if empty then disconnect everything from the port.
+  oArgs.Add(L"checkIfAlreadyConnected", true);        // if true then check if the target is already connected.
 
   return CStatus::OK;
 }
@@ -439,12 +444,13 @@ SICALLBACK FabricCanvasOpConnectPort_Execute(CRef &in_ctxt)
   Context ctxt(in_ctxt);
   ctxt.PutAttribute(L"ReturnValue", false); // init return value.
   CValueArray args = ctxt.GetAttribute(L"Arguments");
-  if (args.GetCount() < 3 || CString(args[0]).IsEmpty())
+  if (args.GetCount() < 4 || CString(args[0]).IsEmpty())
   { Application().LogMessage(L"empty or missing argument(s)", siErrorMsg);
     return CStatus::OK; }
-  CString operatorName          ( args[0] );
-  CString portName              = args[1];
-  CString targetName            = args[2];
+  CString operatorName            ( args[0] );
+  CString portName                = args[1];
+  CString targetNamesRaw          = args[2];
+  bool    checkIfAlreadyConnected = args[3];
 
   // set ref at operator.
   CRef ref;
@@ -505,7 +511,7 @@ SICALLBACK FabricCanvasOpConnectPort_Execute(CRef &in_ctxt)
   {
     PortGroup pg(pgRef[i]);
     if (   pg.IsValid()
-        && pg.GetName() == pmap.dfgPortName)
+        && pg.GetName() == portName)
       {
         portgroup.SetObject(pgRef[i]);
         break;
@@ -515,72 +521,284 @@ SICALLBACK FabricCanvasOpConnectPort_Execute(CRef &in_ctxt)
   { Application().LogMessage(L"unable to find matching port group.", siErrorMsg);
     return CStatus::OK; }
 
-  // set target ref.
-  CRef targetRef;
-  if (targetName != L"")
+  // case 1: disconnect all.
+  if (targetNamesRaw == L"")
   {
-    if (targetRef.Set(targetName) != CStatus::OK)
-    { Application().LogMessage(L"failed to set target ref.", siErrorMsg);
+    if (!dfgTools::DisconnectedAllFromPortGroup(op, portName))
+    { Application().LogMessage(L"DisconnectedAllFromPortGroup() failed.", siErrorMsg);
       return CStatus::OK; }
   }
 
-  // check/correct target's siClassID and CRef.
-  if (targetName != L"")
+  // case 2: connect targetNamesRaw to port.
+  else
   {
-    siClassID portClassID = dfgTools::GetSiClassIdFromResolvedDataType(pmap.dfgPortDataType);
-    if (targetRef.GetClassID() != portClassID)
+    // split the target names and check a few things.
+    CStringArray targetNames = targetNamesRaw.Split(L";");
+    if (targetNames.GetCount() > 1 && !pmap.portDataTypeIsArray())
+    { Application().LogMessage(L"cannot connect more than one object to a singleton port.", siErrorMsg);
+      return CStatus::OK; }
+
+     // do it.
+    for (LONG i=0;i<targetNames.GetCount();i++)
     {
-      bool err = true;
+      // get target name.
+      CString targetName = targetNames[i];
+      if (targetName.IsEmpty())
+        continue;
 
-      // kinematics?
-      if (portClassID == siKinematicStateID)
+      // set target ref and check/correct its siClassID and CRef.
+      CRef targetRef;
+      if (targetRef.Set(targetName) != CStatus::OK)
+      { Application().LogMessage(L"failed to set target ref.", siErrorMsg);
+        return CStatus::OK; }
+      siClassID portClassID = dfgTools::GetSiClassIdFromResolvedDataType(pmap.dfgPortDataType);
+      if (targetRef.GetClassID() != portClassID)
       {
-        CRef tmp;
-        tmp.Set(targetRef.GetAsText() + L".kine.global");
-        if (tmp.IsValid())
+        bool err = true;
+
+        // kinematics?
+        if (portClassID == siKinematicStateID)
         {
-          targetRef = tmp;
-          err = false;
+          CRef tmp;
+          tmp.Set(targetRef.GetAsText() + L".kine.global");
+          if (tmp.IsValid())
+          {
+            targetRef = tmp;
+            err = false;
+          }
+        }
+
+        // polygon mesh?
+        if (portClassID == siPolygonMeshID)
+        {
+          CRef tmp;
+          tmp.Set(targetRef.GetAsText() + L".polymsh");
+          if (tmp.IsValid())
+          {
+            targetRef = tmp;
+            err = false;
+          }
+        }
+
+        //
+        if (err)
+        {
+          CString emptyString;
+          Application().LogMessage(L"the target has the type \"" + targetRef.GetClassIDName() + L"\", but the port needs the type \"" + dfgTools::GetSiClassIdDescription(portClassID, emptyString) + L"\".", siErrorMsg);
+          return CStatus::OK;
         }
       }
 
-      // polygon mesh?
-      if (portClassID == siPolygonMeshID)
-      {
-        CRef tmp;
-        tmp.Set(targetRef.GetAsText() + L".polymsh");
-        if (tmp.IsValid())
-        {
-          targetRef = tmp;
-          err = false;
-        }
-      }
+      // check if the connection already exists.
+      if (checkIfAlreadyConnected)
+        if (dfgTools::isConnectedToPortGroup(op, portName, targetRef))
+        { Application().LogMessage(L"\"" + targetRef.GetAsText() + "\" is already connected to \"" + portName + L"\".", siWarningMsg);
+          continue; }
 
-      //
-      if (err)
-      {
-        CString emptyString;
-        Application().LogMessage(L"the target has the type \"" + targetRef.GetClassIDName() + L"\", but the port needs the type \"" + dfgTools::GetSiClassIdDescription(portClassID, emptyString) + L"\".", siErrorMsg);
-        return CStatus::OK;
-      }
+      // if singleton port then disconnect existing connection.
+      if (!pmap.portDataTypeIsArray())
+        if (!dfgTools::DisconnectedAllFromPortGroup(op, portName))
+        { Application().LogMessage(L"DisconnectedAllFromPortGroup() failed.", siErrorMsg);
+          return CStatus::OK; }
+
+      // connect.
+      LONG instance;
+      if (op.ConnectToGroup(portgroup.GetIndex(), targetRef, instance) != CStatus::OK)
+      { Application().LogMessage(L"failed to connect \"" + targetRef.GetAsText() + "\"", siErrorMsg);
+        return CStatus::OK; }
     }
   }
 
-  // disconnect any existing connection.
-  while (portgroup.GetInstanceCount() > 0)
+  // done.
+  ctxt.PutAttribute(L"ReturnValue", true);
+  return CStatus::OK;
+}
+
+// ---
+// command "FabricCanvasOpDisconnectPort".
+// ---
+
+SICALLBACK FabricCanvasOpDisconnectPort_Init(CRef &in_ctxt)
+{
+  Context ctxt(in_ctxt);
+  Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.PutDescription(L"disconnects things from a port of a Canvas operator.");
+  oCmd.SetFlag(siNoLogging, false);
+  oCmd.EnableReturnValue(true);   // returns 'true' on success.
+
+  ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"OperatorName",            CString());
+  oArgs.Add(L"portName",                CString());
+  oArgs.Add(L"targetNames",             CString());   // if empty then disconnect everything from the port.
+
+  return CStatus::OK;
+}
+
+SICALLBACK FabricCanvasOpDisconnectPort_Execute(CRef &in_ctxt)
+{
+  // init.
+  Context ctxt(in_ctxt);
+  ctxt.PutAttribute(L"ReturnValue", false); // init return value.
+  CValueArray args = ctxt.GetAttribute(L"Arguments");
+  if (args.GetCount() < 3 || CString(args[0]).IsEmpty())
+  { Application().LogMessage(L"empty or missing argument(s)", siErrorMsg);
+    return CStatus::OK; }
+  CString operatorName            ( args[0] );
+  CString portName                = args[1];
+  CString targetNamesRaw          = args[2];
+
+  // set ref at operator.
+  CRef ref;
+  ref.Set(operatorName);
+  if (!ref.IsValid())
+  { Application().LogMessage(L"failed to find an object called \"" + operatorName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+  if (ref.GetClassID() != siCustomOperatorID)
+  { Application().LogMessage(L"not a custom operator: \"" + operatorName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+
+  // get operator.
+  CustomOperator op(ref);
+  if (!op.IsValid())
+  { Application().LogMessage(L"failed to set custom operator from \"" + operatorName + L"\"", siErrorMsg);
+    return CStatus::OK; }
+
+  // under ref model?
+  if (dfgTools::belongsToRefModel(op))
+  { Application().LogMessage(L"the operator belongs to a reference model.", siErrorMsg);
+    return CStatus::OK; }
+
+  // get op's _opUserData.
+  _opUserData *pud = _opUserData::GetUserData(op.GetObjectID());
+  if (!pud)
+  { Application().LogMessage(L"found no valid user data in custom operator \"" + operatorName + L"\"", siErrorMsg);
+    Application().LogMessage(L"... operator perhaps not CanvasOp?", siErrorMsg);
+    return CStatus::OK; }
+
+  // get the port's port mapping.
+  _portMapping pmap;
   {
-    if (op.DisconnectGroup(portgroup.GetIndex(), 0, true) != CStatus::OK)
-    { Application().LogMessage(L"op.DisconnectGroup() failed.", siWarningMsg);
-      break; }
+    std::vector<_portMapping> tmp;
+    CString err;
+    dfgTools::GetOperatorPortMapping(op, tmp, err);
+    for (int i=0;i<tmp.size();i++)
+      if (portName == tmp[i].dfgPortName)
+      {
+        pmap = tmp[i];
+        break;
+      }
+  }
+  if (pmap.dfgPortName != portName)
+  { Application().LogMessage(L"failed to find port \"" + portName + "\"", siErrorMsg);
+    return CStatus::OK; }
+  if (   pmap.dfgPortType != DFG_PORT_TYPE_IN
+      && pmap.dfgPortType != DFG_PORT_TYPE_OUT)
+  { Application().LogMessage(L"port has unsupported type (neither \"In\" nor \"Out\").", siErrorMsg);
+    return CStatus::OK; }
+  if (pmap.mapType != DFG_PORT_MAPTYPE_XSI_PORT)
+  { Application().LogMessage(L"selected port Type/Target is not \"XSI Port\".", siErrorMsg);
+    return CStatus::OK; }
+
+  // find the port group.
+  PortGroup portgroup;
+  CRefArray pgRef = op.GetPortGroups();
+  for (int i=0;i<pgRef.GetCount();i++)
+  {
+    PortGroup pg(pgRef[i]);
+    if (   pg.IsValid()
+        && pg.GetName() == portName)
+      {
+        portgroup.SetObject(pgRef[i]);
+        break;
+      }
+  }
+  if (!portgroup.IsValid())
+  { Application().LogMessage(L"unable to find matching port group.", siErrorMsg);
+    return CStatus::OK; }
+
+  // case 1: disconnect all.
+  if (targetNamesRaw == L"")
+  {
+    if (!dfgTools::DisconnectedAllFromPortGroup(op, portName))
+    { Application().LogMessage(L"DisconnectedAllFromPortGroup() failed.", siErrorMsg);
+      return CStatus::OK; }
   }
 
-  // connect.
-  if (targetName != L"")
+  // case 2: disconnect targetNamesRaw from port.
+  else
   {
-    LONG instance;
-    if (op.ConnectToGroup(portgroup.GetIndex(), targetRef, instance) != CStatus::OK)
-    { Application().LogMessage(L"failed to connect \"" + targetRef.GetAsText() + "\"", siErrorMsg);
+    // split the target names and check a few things.
+    CStringArray targetNames = targetNamesRaw.Split(L";");
+    if (targetNames.GetCount() > 1)
+    { Application().LogMessage(L"Because of a bug in the SDK one cannot disconnect more than one object at a time.", siErrorMsg);
+      Application().LogMessage(L"Workaround: call this command separately for each object you want to disconnect.",  siErrorMsg);
       return CStatus::OK; }
+
+     // do it.
+    for (LONG i=0;i<targetNames.GetCount();i++)
+    {
+      // get target name.
+      CString targetName = targetNames[i];
+      if (targetName.IsEmpty())
+        continue;
+
+      // set target ref and check/correct its siClassID and CRef.
+      CRef targetRef;
+      if (targetRef.Set(targetName) != CStatus::OK)
+      { Application().LogMessage(L"failed to set target ref.", siErrorMsg);
+        return CStatus::OK; }
+      siClassID portClassID = dfgTools::GetSiClassIdFromResolvedDataType(pmap.dfgPortDataType);
+      if (targetRef.GetClassID() != portClassID)
+      {
+        bool err = true;
+
+        // kinematics?
+        if (portClassID == siKinematicStateID)
+        {
+          CRef tmp;
+          tmp.Set(targetRef.GetAsText() + L".kine.global");
+          if (tmp.IsValid())
+          {
+            targetRef = tmp;
+            err = false;
+          }
+        }
+
+        // polygon mesh?
+        if (portClassID == siPolygonMeshID)
+        {
+          CRef tmp;
+          tmp.Set(targetRef.GetAsText() + L".polymsh");
+          if (tmp.IsValid())
+          {
+            targetRef = tmp;
+            err = false;
+          }
+        }
+
+        //
+        if (err)
+        {
+          CString emptyString;
+          Application().LogMessage(L"the target has the type \"" + targetRef.GetClassIDName() + L"\", but the port needs the type \"" + dfgTools::GetSiClassIdDescription(portClassID, emptyString) + L"\".", siErrorMsg);
+          return CStatus::OK;
+        }
+      }
+
+      // if the connection exists then disconnect it.
+      if (dfgTools::isConnectedToPortGroup(op, portName, targetRef))
+      {
+        LONG instance;
+        if (!dfgTools::DisconnectFromPortGroup(op, portName, targetRef))
+        { Application().LogMessage(L"failed to disconnect \"" + targetRef.GetAsText() + "\"", siErrorMsg);
+          return CStatus::OK; }
+      }
+      else
+      { Application().LogMessage(L"\"" + targetRef.GetAsText() + "\" is not connected to \"" + portName + L"\".", siWarningMsg);
+        continue; }
+    }
   }
 
   // done.

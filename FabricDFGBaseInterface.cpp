@@ -12,9 +12,7 @@
 
 #include "FabricSplicePlugin.h"
 
-#ifdef USE_FABRICSPLICE__CLIENT
-  #include "FabricSplice.h"
-#endif
+#include "FabricSplice.h"
 
 #include <algorithm>
 #include <sstream>
@@ -55,20 +53,8 @@ BaseInterface::BaseInterface(void (*in_logFunc)     (void *, const char *, unsig
     try
     {
       // create a client
-      #ifdef USE_FABRICSPLICE__CLIENT
-      {
-        const int guarded = 1;
-        s_client = FabricSplice::ConstructClient(guarded);
-      }
-      #else
-      {
-        FabricCore::Client::CreateOptions options;
-        memset(&options, 0, sizeof(options));
-        options.guarded = 1;
-        options.optimizationType = FabricCore::ClientOptimizationType_Background;
-        s_client = FabricCore::Client(&logFunc, NULL, &options);
-      }
-      #endif
+      const int guarded = 1;
+      s_client = FabricSplice::ConstructClient(guarded);
 
       // load basic extensions
       s_client.loadExtension("Math",     "", false);
@@ -137,16 +123,8 @@ BaseInterface::~BaseInterface()
         printf("Destructing client...\n");
         delete(s_manager);
         s_host = FabricCore::DFGHost();
-        #ifdef USE_FABRICSPLICE__CLIENT
-        {
-          FabricSplice::DestroyClient();
-          s_client.invalidate();
-        }
-        #else
-        {
-          s_client = FabricCore::Client();
-        }
-        #endif
+        FabricSplice::DestroyClient();
+        s_client.invalidate();
       }
       catch (FabricCore::Exception e)
       {
@@ -1129,7 +1107,7 @@ int BaseInterface::GetArgValuePolygonMesh(FabricCore::DFGBinding &binding,
           // fill output array(s).
           std::vector <FabricCore::RTVal> args(2);
           args[0] = FabricCore::RTVal::ConstructExternalArray(*getClient(), "Float32", data.size(), (void *)data.data());
-          args[1] = FabricCore::RTVal::ConstructUInt32       (*getClient(), 3);  
+          args[1] = FabricCore::RTVal::ConstructUInt32       (*getClient(), 3);
           rtMesh.callMethod("", "getUVsAsExternalArray", 2, &args[0]);
         }
       }
@@ -1529,6 +1507,43 @@ void BaseInterface::SetValueOfArgMat44(FabricCore::Client &client, FabricCore::D
   }
 }
 
+void BaseInterface::SetValueOfArgMat44Array(FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val)
+{
+  if (!binding.getExec().haveExecPort(argName))
+  {
+    std::string s = "BaseInterface::SetValueOfArgMat44Array(): port not found.";
+    logErrorFunc(NULL, s.c_str(), s.length());
+    return;
+  }
+  try
+  {
+    FabricCore::RTVal rtval;
+    FabricCore::RTVal xyzt[4], v[4];
+    int numChunks = val.size() / 16;
+    rtval = FabricCore::RTVal::ConstructVariableArray(client, "Mat44");
+    v[0] = FabricSplice::constructUInt32RTVal(numChunks);
+    rtval.callMethod("", "resize", 1, v);
+    for (int ci = 0; ci < numChunks; ci++)
+    {
+      for (int i = 0; i < 4; i++)
+      {
+        int offset = ci * 16 + i * 4;
+        xyzt[0] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 0]);
+        xyzt[1] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 1]);
+        xyzt[2] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 2]);
+        xyzt[3] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 3]);
+        v[i]    = FabricCore::RTVal::Construct(client, "Vec4", 4, xyzt);
+      }
+      rtval.setArrayElement(ci, FabricCore::RTVal::Construct(client, "Mat44", 4, v));
+    }
+    binding.setArgValue(argName, rtval, false);
+  }
+  catch (FabricCore::Exception e)
+  {
+    logErrorFunc(NULL, e.getDesc_cstr(), e.getDescLength());
+  }
+}
+
 void BaseInterface::SetValueOfArgXfo(FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val)
 {
   if (!binding.getExec().haveExecPort(argName))
@@ -1563,6 +1578,55 @@ void BaseInterface::SetValueOfArgXfo(FabricCore::Client &client, FabricCore::DFG
     xfo[2]   = FabricCore::RTVal::Construct(client, "Vec3", 3, sc);
 
     rtval = FabricCore::RTVal::Construct(client, "Xfo", 3, xfo);
+    binding.setArgValue(argName, rtval, false);
+  }
+  catch (FabricCore::Exception e)
+  {
+    logErrorFunc(NULL, e.getDesc_cstr(), e.getDescLength());
+  }
+}
+
+void BaseInterface::SetValueOfArgXfoArray(FabricCore::Client &client, FabricCore::DFGBinding &binding, char const * argName, const std::vector <double> &val)
+{
+  if (!binding.getExec().haveExecPort(argName))
+  {
+    std::string s = "BaseInterface::SetValueOfArgMat44(): port not found.";
+    logErrorFunc(NULL, s.c_str(), s.length());
+    return;
+  }
+
+  try
+  {
+    FabricCore::RTVal rtval;
+    FabricCore::RTVal sc[3], xyz[3], ori[2], tr[3], xfo[3];
+    int numChunks = val.size() / 10;
+    rtval = FabricCore::RTVal::ConstructVariableArray(client, "Xfo");
+    sc[0] = FabricSplice::constructUInt32RTVal(numChunks);
+    rtval.callMethod("", "resize", 1, sc);
+    for (int ci = 0; ci < numChunks; ci++)
+    {
+      int offset = ci * 10;
+
+      xyz[0] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 4]);
+      xyz[1] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 5]);
+      xyz[2] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 6]);
+      ori[0] = FabricCore::RTVal::Construct(client, "Vec3", 3, xyz);
+      ori[1] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 3]);
+
+      tr[0] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 7]);
+      tr[1] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 8]);
+      tr[2] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 9]);
+
+      sc[0] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 0]);
+      sc[1] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 1]);
+      sc[2] = FabricCore::RTVal::ConstructFloat32(client, val[offset + 2]);
+
+      xfo[1]   = FabricCore::RTVal::Construct(client, "Vec3", 3, tr);
+      xfo[0]   = FabricCore::RTVal::Construct(client, "Quat", 2, ori);
+      xfo[2]   = FabricCore::RTVal::Construct(client, "Vec3", 3, sc);
+
+      rtval.setArrayElement(ci, FabricCore::RTVal::Construct(client, "Xfo", 3, xfo));
+    }
     binding.setArgValue(argName, rtval, false);
   }
   catch (FabricCore::Exception e)

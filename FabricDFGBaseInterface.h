@@ -6,8 +6,6 @@
 #pragma warning(disable : 4800)     // forcing value to bool 'true' or 'false'.
 #pragma warning(disable : 4806)     // unsafe operation: no value of type 'bool' promoted to type ...etc.
 
-#define USE_FABRICSPLICE__CLIENT    // if defined then FabricSplice::ConstructClient()/DestroyClient() is used instead of FabricCore::Client(...).
-
 // includes.
 #include <ASTWrapper/KLASTManager.h>
 #include <map>
@@ -145,7 +143,9 @@ class BaseInterface
   static void SetValueOfArgRGBA         (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const std::vector <double> &val);
   static void SetValueOfArgQuat         (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const std::vector <double> &val);
   static void SetValueOfArgMat44        (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const std::vector <double> &val);
+  static void SetValueOfArgMat44Array   (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const std::vector <double> &val);
   static void SetValueOfArgXfo          (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const std::vector <double> &val);
+  static void SetValueOfArgXfoArray     (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const std::vector <double> &val);
   static void SetValueOfArgPolygonMesh  (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const _polymesh            &val);
 };
 

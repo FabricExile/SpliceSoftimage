@@ -204,7 +204,10 @@ bool dfgTools::GetOperatorPortMapping(XSI::CRef &in_op, std::vector<_portMapping
                 if (   port.IsValid()
                     && port.GetName() == pmap.dfgPortName
                     && port.IsConnected())
-                    pmap.mapTarget = port.GetTarget().GetAsText();
+                {
+                  if (pmap.mapTarget.IsEmpty())   pmap.mapTarget  = port.GetTarget().GetAsText();
+                  else                            pmap.mapTarget += L";" + port.GetTarget().GetAsText();
+                }
               }
 
               // done.
@@ -233,7 +236,9 @@ bool dfgTools::GetOperatorPortMapping(XSI::CRef &in_op, std::vector<_portMapping
               if (   port.IsValid()
                   && port.GetName() == pmap.dfgPortName
                   && port.IsConnected())
-                  pmap.mapTarget = port.GetTarget().GetAsText();
+              {
+                pmap.mapTarget = port.GetTarget().GetAsText();
+              }
             }
 
             // done.
@@ -279,12 +284,14 @@ XSI::siClassID dfgTools::GetSiClassIdFromResolvedDataType(const XSI::CString &re
       || resDataType == L"Size"
       || resDataType == L"UInt32"
       || resDataType == L"DataSize"
-      || resDataType == L"UInt64")    return siParameterID;
+      || resDataType == L"UInt64")      return siParameterID;
 
   if (   resDataType == L"Mat44"
-      || resDataType == L"Xfo")       return siKinematicStateID;
+      || resDataType == L"Mat44[]"
+      || resDataType == L"Xfo"
+      || resDataType == L"Xfo[]")       return siKinematicStateID;
 
-  if (resDataType == L"PolygonMesh")  return siPolygonMeshID;
+  if (resDataType == L"PolygonMesh")    return siPolygonMeshID;
   
   return siUnknownClassID;  // no match.
 }
@@ -535,6 +542,72 @@ XSI::CString &dfgTools::GetSiClassIdDescription(const XSI::siClassID in_siClassI
   }
 
   return out_description;
+}
+
+XSI::CRef dfgTools::GetPortGroupRef(const XSI::CustomOperator &op, const XSI::CString &portGroupName)
+{
+  if (op.IsValid())
+  {
+    CRefArray refs = op.GetPortGroups();
+    for (LONG i=0;i<refs.GetCount();i++)
+      if (PortGroup(refs[i]).GetName() == portGroupName)
+        return refs[i];
+  }
+  return CRef();
+}
+
+bool dfgTools::isConnectedToPortGroup(const XSI::CustomOperator &op, const XSI::CString &portGroupName, const XSI::CRef &objRef)
+{
+  if (op.IsValid())
+  {
+    PortGroup portGroup(GetPortGroupRef(op, portGroupName));
+    if (portGroup.IsValid())
+    {
+      for (LONG i=0;i<portGroup.GetInstanceCount();i++)
+      {
+        Port port(op.GetPort(portGroupName, portGroupName, i));
+        if (port.IsValid() && port.IsConnected() && port.GetTarget() == objRef)
+          return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool dfgTools::DisconnectFromPortGroup(XSI::CustomOperator &op, const XSI::CString &portGroupName, const XSI::CRef &objRef)
+{
+  if (op.IsValid())
+  {
+    PortGroup portGroup(GetPortGroupRef(op, portGroupName));
+    if (portGroup.IsValid())
+    {
+      for (LONG i=0;i<portGroup.GetInstanceCount();i++)
+      {
+        Port port(op.GetPort(portGroupName, portGroupName, i));
+        if (port.IsValid() && port.IsConnected() && port.GetTarget() == objRef)
+          return (op.DisconnectGroup(portGroup.GetIndex(), i, true) == CStatus::OK);
+      }
+    }
+  }
+  return false;
+}
+
+bool dfgTools::DisconnectedAllFromPortGroup(XSI::CustomOperator &op, const XSI::CString &portGroupName)
+{
+  if (op.IsValid())
+  {
+    PortGroup portGroup(GetPortGroupRef(op, portGroupName));
+    if (portGroup.IsValid())
+    {
+      while (portGroup.GetInstanceCount() > 0)
+      {
+        if (op.DisconnectGroup(portGroup.GetIndex(), 0, true) != CStatus::OK)
+          return false;
+      }
+      return true;
+    }
+  }
+  return false;
 }
 
 bool dfgTools::FileExists(const char *filePath)

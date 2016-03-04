@@ -37,6 +37,18 @@ class dfgTools
   // gets the description of a siCLassID.
   static XSI::CString &GetSiClassIdDescription(const XSI::siClassID in_siClassID, XSI::CString &out_description);
 
+  // returns the CRef of a port group.
+  static XSI::CRef GetPortGroupRef(const XSI::CustomOperator &op, const XSI::CString &portGroupName);
+
+  // returns true if the object is connected to the port group.
+  static bool isConnectedToPortGroup(const XSI::CustomOperator &op, const XSI::CString &portGroupName, const XSI::CRef &objRef);
+
+  // disconnects an object from a port group and returns true on success.
+  static bool DisconnectFromPortGroup(XSI::CustomOperator &op, const XSI::CString &portGroupName, const XSI::CRef &objRef);
+
+  // disconnects everything from a port group and returns true on success.
+  static bool DisconnectedAllFromPortGroup(XSI::CustomOperator &op, const XSI::CString &portGroupName);
+
   // checks the existence of a file.
   // params:  filePath    path and filename
   // returns: true if file exists.

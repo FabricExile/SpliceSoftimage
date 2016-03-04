@@ -32,62 +32,55 @@ using namespace XSI;
     ccnames.Add( cmdName.c_str() );                             \
   }
 
+// returns the value of the environment variable varName.
+CString getEnvironmentVariable(CString varName)
+{
+  CValueArray args;
+  args.Add(varName);
+  CValue retVal;
+  Application().ExecuteScriptProcedure(L"function feGetEnvItem(varName) \n feGetEnvItem = XSIUtils.Environment.item(varName) \n end function",
+                                       L"VBScript",
+                                       L"feGetEnvItem",
+                                       args,
+                                       retVal);
+  return retVal.GetAsText();
+}
+
+// sets the value of the environment variable varName.
+void setEnvironmentVariable(CString varName, CString varValue)
+{
+  Application().ExecuteScriptCode(L"XSIUtils.Environment.setItem \"" + varName + L"\", \"" + varValue + L"\"", L"VBScript");
+}
+
 // load plugin.
 SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
 {
   // the possible Fabric path.
   CString possibleFabricPath = in_reg.GetOriginPath() + CUtils::Slash() + L".." + CUtils::Slash() + L".." + CUtils::Slash() + L".." + CUtils::Slash() + L"..";
 
-  // check if the Fabric environment variables are
-  // ok and set them automatically if required.
+  // check the Fabric environment variables and set them automatically if needed.
   {
-    CString eVar;
-    char   *eVarVal;
+    CString var;
     CString fabricPath = L"";
 
-    eVar    = L"FABRIC_DIR";
-    eVarVal = getenv(eVar.GetAsciiString());
-    if (!eVarVal || eVarVal[0] == '\0')
+    var = L"FABRIC_DIR";
+    fabricPath = getEnvironmentVariable(var);
+    if (fabricPath.IsEmpty())
     {
       fabricPath = possibleFabricPath;
-      Application().LogMessage(L"the environment variable " + eVar + " is not set (=> it will be set automatically for this session).", siCommentMsg);
-      #ifdef _WIN32
-        CString cmd = "set " + eVar + "=\"" + fabricPath + L"\"";
-      #else
-        CString cmd = "export " + eVar + "=\"" + fabricPath + L"\"";
-      #endif
-      Application().LogMessage(L"execute system(" + cmd + ")", siCommentMsg);
-      system(cmd.GetAsciiString());
-    }
-    else
-      fabricPath = eVarVal;
-
-    eVar    = L"FABRIC_EXTS_PATH";
-    eVarVal = getenv(eVar.GetAsciiString());
-    if (!eVarVal || eVarVal[0] == '\0')
-    {
-      Application().LogMessage(L"the environment variable " + eVar + " is not set (=> it will be set automatically for this session).", siCommentMsg);
-      #ifdef _WIN32
-        CString cmd = "set " + eVar + "=\"" + fabricPath + CUtils::Slash() + L"Exts" + L"\"";
-      #else
-        CString cmd = "set " + eVar + "=\"" + fabricPath + CUtils::Slash() + L"Exts" + L"\"";
-      #endif
-      Application().LogMessage(L"execute system(" + cmd + ")", siCommentMsg);
-      system(cmd.GetAsciiString());
+      setEnvironmentVariable(var, fabricPath);
     }
 
-    eVar    = L"FABRIC_DFG_PATH";
-    eVarVal = getenv(eVar.GetAsciiString());
-    if (!eVarVal || eVarVal[0] == '\0')
+    var = L"FABRIC_EXTS_PATH";
+    if (getEnvironmentVariable(var).IsEmpty())
     {
-      Application().LogMessage(L"the environment variable " + eVar + " is not set (=> it will be set automatically for this session).", siCommentMsg);
-      #ifdef _WIN32
-        CString cmd = "set " + eVar + "=\"" + fabricPath + CUtils::Slash() + L"Presets" + CUtils::Slash() + L"DFG" + L"\"";
-      #else
-        CString cmd = "set " + eVar + "=\"" + fabricPath + CUtils::Slash() + L"Presets" + CUtils::Slash() + L"DFG" + L"\"";
-      #endif
-      Application().LogMessage(L"execute system(" + cmd + ")", siCommentMsg);
-      system(cmd.GetAsciiString());
+      setEnvironmentVariable(var, fabricPath + CUtils::Slash() + L"Exts");
+    }
+
+    var = L"FABRIC_DFG_PATH";
+    if (getEnvironmentVariable(var).IsEmpty())
+    {
+      setEnvironmentVariable(var, fabricPath + CUtils::Slash() + L"Presets" + CUtils::Slash() + L"DFG");
     }
   }
 
@@ -150,6 +143,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     cmdName = L"FabricCanvasOpApply";           in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
     cmdName = L"FabricCanvasOpPortMapDefine";   in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
     cmdName = L"FabricCanvasOpConnectPort";     in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
+    cmdName = L"FabricCanvasOpDisconnectPort";  in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
     cmdName = L"FabricCanvasOpPortMapQuery";    in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
     cmdName = L"FabricCanvasImportGraph";       in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
     cmdName = L"FabricCanvasExportGraph";       in_reg.RegisterCommand(cmdName, cmdName);   ccnames.Add(cmdName);
@@ -169,6 +163,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     REGISTER_DFGUICMD( in_reg, Connect );
     REGISTER_DFGUICMD( in_reg, CreatePreset );
     REGISTER_DFGUICMD( in_reg, Disconnect );
+    REGISTER_DFGUICMD( in_reg, DismissLoadDiags );
     REGISTER_DFGUICMD( in_reg, EditNode );
     REGISTER_DFGUICMD( in_reg, EditPort );
     REGISTER_DFGUICMD( in_reg, ExplodeNode );
