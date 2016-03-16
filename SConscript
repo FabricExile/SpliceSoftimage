@@ -19,7 +19,6 @@ Import(
   'spliceFlags',
   'commandsFlags',
   'astWrapperFlags',
-  'legacyBoostFlags',
   'codeCompletionFlags',
   )
 
@@ -65,7 +64,6 @@ env.MergeFlags(sharedCapiFlags)
 env.MergeFlags(spliceFlags)
 
 if FABRIC_BUILD_OS == 'Linux':
-  env.Append(LIBS=['boost_filesystem', 'boost_system'])
   exportsFile = env.File('Linux.exports').srcnode()
   env.Append(SHLINKFLAGS = ['-Wl,--version-script='+str(exportsFile)])
 elif FABRIC_BUILD_OS == 'Windows':
@@ -75,7 +73,6 @@ elif FABRIC_BUILD_OS == 'Windows':
 if len(commandsFlags.keys()) > 0:
   env.MergeFlags(commandsFlags)
   env.MergeFlags(astWrapperFlags)
-  env.MergeFlags(legacyBoostFlags)
   env.MergeFlags(codeCompletionFlags)
 else:
   if FABRIC_BUILD_OS == 'Windows':

@@ -18,8 +18,6 @@
 #include <xsi_utils.h>
 #include <xsi_customoperator.h>
 
-#include <boost/filesystem.hpp>
-
 // project includes
 #include "FabricSplicePlugin.h"
 #include "FabricSpliceDialogs.h"
@@ -612,95 +610,3 @@ SICALLBACK fabricSplice_Execute(CRef & in_ctxt)
   return xsiErrorOccured();
 }
 
-SICALLBACK proceedToNextScene_Init(CRef & in_ctxt)
-{
-  Context ctxt( in_ctxt );
-  Command oCmd;
-  oCmd = ctxt.GetSource();
-  oCmd.PutDescription(L"Loads the next scene in sequence.");
-  oCmd.SetFlag(siNoLogging,false);
-  oCmd.EnableReturnValue( true ) ;
-  ArgumentArray oArgs = oCmd.GetArguments();
-  return CStatus::OK;
-}
-
-SICALLBACK proceedToNextScene_Execute(CRef & in_ctxt)
-{
-  CStatus status = CStatus::OK;
-
-  CString sceneFileName = xsiGetLastLoadedScene();
-
-  boost::filesystem::path currentSample = sceneFileName.GetAsciiString();
-  boost::filesystem::path samplesDir = currentSample.parent_path();
-
-#if BOOST_VERSION >= 105500
-  while(samplesDir.stem().string() != "Samples" && samplesDir.stem().string() != "Splice") {
-#else
-  while(samplesDir.stem() != "Samples" && samplesDir.stem() != "Splice") {
-#endif
-    samplesDir = samplesDir.parent_path();
-    if(samplesDir.empty()) {
-      Application().LogMessage("You can only use proceedToNextScene on the Fabric Engine sample scenes.", siWarningMsg);
-      return status;
-    }
-  }
-
-  std::vector<boost::filesystem::path> sampleScenes;
-  std::vector<boost::filesystem::path> folders;
-  folders.push_back(samplesDir);
-  for(size_t i=0;i<folders.size();i++)
-  {
-    if(!boost::filesystem::exists(folders[i]))
-      continue;
-    if(!boost::filesystem::is_directory(folders[i]))
-      continue;
-    
-    boost::filesystem::directory_iterator end_iter;
-    for( boost::filesystem::directory_iterator dir_iter(folders[i]) ; dir_iter != end_iter ; ++dir_iter)
-    {
-      if(boost::filesystem::is_directory(dir_iter->path()))
-      {
-        folders.push_back(dir_iter->path());
-      }
-#if BOOST_VERSION >= 105500
-      else if(dir_iter->path().extension().string() == ".scn" || 
-        dir_iter->path().extension().string() == ".Scn" ||
-        dir_iter->path().extension().string() == ".SCN")
-#else
-      else if(dir_iter->path().extension() == ".scn" || 
-        dir_iter->path().extension() == ".Scn" ||
-        dir_iter->path().extension() == ".SCN")
-#endif
-      {
-        sampleScenes.push_back(dir_iter->path());
-      }
-    }
-  }
-
-  boost::filesystem::path nextSample;
-  for(size_t i=0;i<sampleScenes.size();i++) {
-
-    if(sampleScenes[i] == currentSample)
-    {
-      if(i < sampleScenes.size() - 1)
-        nextSample = sampleScenes[i+1];
-      else
-        nextSample = sampleScenes[0];
-      break;
-    }
-  }
-
-  if(!nextSample.empty()) {
-
-    Application().LogMessage("Opening next scene: "+CString(nextSample.string().c_str()));
-
-    CValueArray args(3);
-    args[0] = CString(nextSample.string().c_str());
-    args[1] = false;
-    args[2] = false;
-    CValue returnVal;
-    Application().ExecuteCommand("OpenScene", args, returnVal);
-  }
-
-  return status;
-}

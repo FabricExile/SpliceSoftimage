@@ -25,7 +25,7 @@
 #include <xsi_property.h>
 #include <xsi_argument.h>
 
-#include <boost/filesystem.hpp>
+#include <FTL/FS.h>
 
 #include <Licensing/Licensing.h>
 
@@ -192,11 +192,10 @@ void xsiInitializeSplice()
 
   CString workgroupFolder = xsiGetWorkgroupPath();
   CString extFolder = workgroupFolder + "/../../Exts"; // above the 'DCCIntegrations' folder
-  if(boost::filesystem::exists(extFolder.GetAsciiString()))
+  if(FTL::FSExists(extFolder.GetAsciiString()))
   {
-    boost::filesystem::path extFolderAbs = boost::filesystem::canonical(extFolder.GetAsciiString());
-    extFolderAbs.make_preferred();
-    FabricSplice::addExtFolder(extFolderAbs.string().c_str());
+    // FE-6319 FIXME this needs to be investigated
+    FabricSplice::addExtFolder(extFolder.GetAsciiString());
   }
   else
     xsiLogErrorFunc("The standard fabric exts folder '"+extFolder+" does not exist.");

@@ -15,7 +15,7 @@ if 'clean' in COMMAND_LINE_TARGETS:
   Return()
 
 # check environment variables
-for var in ['FABRIC_DIR', 'FABRIC_SPLICE_VERSION', 'FABRIC_BUILD_OS', 'FABRIC_BUILD_ARCH', 'FABRIC_BUILD_TYPE', 'BOOST_DIR', 'SOFTIMAGE_INCLUDE_DIR', 'SOFTIMAGE_LIB_DIR', 'SOFTIMAGE_VERSION', 'FABRIC_UI_DIR']:
+for var in ['FABRIC_DIR', 'FABRIC_SPLICE_VERSION', 'FABRIC_BUILD_OS', 'FABRIC_BUILD_ARCH', 'FABRIC_BUILD_TYPE', 'SOFTIMAGE_INCLUDE_DIR', 'SOFTIMAGE_LIB_DIR', 'SOFTIMAGE_VERSION', 'FABRIC_UI_DIR']:
   if not os.environ.has_key(var):
     print 'The environment variable %s is not defined.' % var
     exit(0)
@@ -30,8 +30,7 @@ commandsFlags = {}
 astWrapperFlags = {}
 astWrapperFlags = {}
 codeCompletionFlags = {}
-legacyBoostFlags = {}
-Export('commandsFlags', 'astWrapperFlags', 'legacyBoostFlags', 'codeCompletionFlags')
+Export('commandsFlags', 'astWrapperFlags', 'codeCompletionFlags')
 
 env = Environment(MSVC_VERSION = "12.0")
 
@@ -54,7 +53,6 @@ if os.path.exists(spliceApiDir.abspath):
       'FABRIC_BUILD_OS': os.environ['FABRIC_BUILD_OS'],
       'FABRIC_BUILD_ARCH': os.environ['FABRIC_BUILD_ARCH'],
       'STAGE_DIR': spliceEnv.Dir('.build').Dir('SpliceAPI').Dir('.stage'),
-      'BOOST_DIR': os.environ['BOOST_DIR']
     },
     duplicate=0,
     variant_dir = spliceEnv.Dir('.build').Dir('SpliceAPI')
@@ -77,7 +75,6 @@ else:
     'FABRIC_BUILD_OS': os.environ['FABRIC_BUILD_OS'],
     'FABRIC_BUILD_ARCH': os.environ['FABRIC_BUILD_ARCH'],
     'STAGE_DIR': spliceEnv.Dir('.stage').Dir('DCCIntegrations').Dir('FabricSoftimage'+os.environ['SOFTIMAGE_VERSION']),
-    'BOOST_DIR': os.environ['BOOST_DIR'],
     'SOFTIMAGE_INCLUDE_DIR': os.environ['SOFTIMAGE_INCLUDE_DIR'],
     'SOFTIMAGE_LIB_DIR': os.environ['SOFTIMAGE_LIB_DIR'],
     'SOFTIMAGE_VERSION': os.environ['SOFTIMAGE_VERSION']
