@@ -145,7 +145,10 @@ void xsiKLStatusFunc(const char * topicData, unsigned int topicLength,  const ch
     }
   }
   else
-    Application().LogMessage(CString("[KL Status]: ")+CString(messageData, messageLength), siVerboseMsg);
+  {
+    /* [FE-6245] we don't log the KL status messages.
+       Application().LogMessage(CString("[KL Status]: ")+CString(messageData, messageLength), siVerboseMsg); */
+  }
 }
 
 CString xsiGetWorkgroupPath()
