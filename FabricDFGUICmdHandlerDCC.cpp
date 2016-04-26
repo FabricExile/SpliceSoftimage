@@ -325,8 +325,8 @@ void DFGUICmdHandlerDCC::dfgDoDisconnect(
   FabricCore::DFGBinding const &binding,
   QString execPath,
   FabricCore::DFGExec const &exec,
-  QString srcPort, 
-  QString dstPort
+  QStringList srcPorts,
+  QStringList dstPorts
   )
 {
   std::string cmdName(FabricUI::DFG::DFGUICmd_Disconnect::CmdName());
@@ -334,8 +334,8 @@ void DFGUICmdHandlerDCC::dfgDoDisconnect(
 
   args.push_back(getDCCObjectNameFromBinding(binding));
   args.push_back(ToStdString(execPath));
-  args.push_back(ToStdString(srcPort));
-  args.push_back(ToStdString(dstPort));
+  args.push_back(EncodeNames(srcPorts));
+  args.push_back(EncodeNames(dstPorts));
 
   std::string output;
   execCmd(cmdName, args, output);
@@ -1116,19 +1116,21 @@ FabricUI::DFG::DFGUICmd_Disconnect *DFGUICmdHandlerDCC::createAndExecuteDFGComma
     if (!DecodeExec(args, ai, binding, execPath, exec))
       return cmd;
 
-    QString srcPortPath;
-    if (!DecodeName(args, ai, srcPortPath))
+    QString srcPortPathsString;
+    QStringList srcPortPaths;
+    if (!DecodeNames(args, ai, srcPortPathsString, srcPortPaths))
       return cmd;
 
-    QString dstPortPath;
-    if (!DecodeName(args, ai, dstPortPath))
+    QString dstPortPathsString;
+    QStringList dstPortPaths;
+    if (!DecodeNames(args, ai, dstPortPathsString, dstPortPaths))
       return cmd;
     
     cmd = new FabricUI::DFG::DFGUICmd_Disconnect(binding,
                                                  execPath,
                                                  exec,
-                                                 srcPortPath,
-                                                 dstPortPath);
+                                                 srcPortPaths,
+                                                 dstPortPaths);
     try
     {
       cmd->doit();
