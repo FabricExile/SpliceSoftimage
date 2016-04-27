@@ -1338,10 +1338,10 @@ SICALLBACK FabricCanvasExportGraph_Execute(CRef &in_ctxt)
       for (int i=0;i<exec.getExecPortCount();i++)
       {
         // mapType.
-        exec.setExecPortMetadata(exec.getExecPortName(i), "XSI_mapType",      hasValidPortMap ? CString((LONG)pmap[i].mapType).GetAsciiString()       : NULL, false);
+        exec.setExecPortMetadata(exec.getExecPortName(i), "XSI_mapType",      hasValidPortMap ? CString((LONG)pmap[i].mapType).GetAsciiString()       : NULL, false /* canUndo */);
 
         // value.
-        exec.setExecPortMetadata(exec.getExecPortName(i), "XSI_defaultValue", hasValidPortMap ? pmap[i].xsiDefaultValue.GetAsText().GetAsciiString()  : NULL, false);
+        exec.setExecPortMetadata(exec.getExecPortName(i), "XSI_defaultValue", hasValidPortMap ? pmap[i].xsiDefaultValue.GetAsText().GetAsciiString()  : NULL, false /* canUndo */);
       }
     }
     catch (FabricCore::Exception e)

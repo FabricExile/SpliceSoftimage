@@ -1751,7 +1751,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
           // TODO: handle this in a "clean" way; here we are not in the context of an undo-able command.
           //       We would need that the DFG knows which binding types are "stored" as attributes on the
           //       DCC side and set these as persistable in the source "addPort" command.
-          exec.setExecPortMetadata( portName.GetAsciiString(), DFG_METADATA_UIPERSISTVALUE, "true" );
+          exec.setExecPortMetadata( portName.GetAsciiString(), DFG_METADATA_UIPERSISTVALUE, "true", false /* canUndo */ );
         }
       }
     }
