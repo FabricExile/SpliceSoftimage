@@ -61,7 +61,9 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
   // check the Fabric environment variables and set them automatically if needed.
   {
     CString var;
-    CString fabricPath = L"";
+    CString fabricPath  = L"";
+    CString factoryPath = L"";
+    CString delimiter   = (CUtils::IsWindowsOS() ? L";" : L":");
 
     var = L"FABRIC_DIR";
     fabricPath = getEnvironmentVariable(var);
@@ -70,18 +72,19 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
       fabricPath = possibleFabricPath;
       setEnvironmentVariable(var, fabricPath);
     }
+    Application().LogMessage(var + L"=" + getEnvironmentVariable(var));
 
     var = L"FABRIC_EXTS_PATH";
-    if (getEnvironmentVariable(var).IsEmpty())
-    {
-      setEnvironmentVariable(var, fabricPath + CUtils::Slash() + L"Exts");
-    }
+    factoryPath = fabricPath + CUtils::Slash() + L"Exts";
+    if (getEnvironmentVariable(var).FindString(factoryPath) == UINT_MAX)
+      setEnvironmentVariable(var, factoryPath + delimiter + getEnvironmentVariable(var));
+    Application().LogMessage(var + L"=" + getEnvironmentVariable(var));
 
     var = L"FABRIC_DFG_PATH";
-    if (getEnvironmentVariable(var).IsEmpty())
-    {
-      setEnvironmentVariable(var, fabricPath + CUtils::Slash() + L"Presets" + CUtils::Slash() + L"DFG");
-    }
+    factoryPath = fabricPath + CUtils::Slash() + L"Presets" + CUtils::Slash() + L"DFG";
+    if (getEnvironmentVariable(var).FindString(factoryPath) == UINT_MAX)
+      setEnvironmentVariable(var, factoryPath + delimiter + getEnvironmentVariable(var));
+    Application().LogMessage(var + L"=" + getEnvironmentVariable(var));
   }
 
   // set plugin's name, version and author.
