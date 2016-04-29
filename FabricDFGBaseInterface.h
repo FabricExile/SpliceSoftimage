@@ -117,17 +117,17 @@ class BaseInterface
   //          strict      true: the type must match perfectly, false: the type must 'kind of' match and will be converted if necessary (and if possible).
   // returns: 0 on success, -1 wrong port type, -2 invalid port, -3 memory error, -4 Fabric exception.
   static int GetArgValuePolygonMesh(FabricCore::DFGBinding    &binding,
-                                     char const               *argName,
-                                     unsigned int             &out_numVertices,                       // amount of vertices.
-                                     unsigned int             &out_numPolygons,                       // amount of polygons.
-                                     unsigned int             &out_numSamples,                        // amount of samples.
-                                     std::vector <float>      *out_positions              = NULL,     // vertex positions (as a flat array).
-                                     std::vector <uint32_t>   *out_polygonNumVertices     = NULL,     // polygon vertex counts.
-                                     std::vector <uint32_t>   *out_polygonVertices        = NULL,     // polygon vertex indices.
-                                     std::vector <float>      *out_polygonNodeNormals     = NULL,     // polygon node normals.
-                                     std::vector <float>      *out_polygonNodeUVWs        = NULL,     // polygon node UVWs.
-                                     std::vector <float>      *out_polygonNodeColors      = NULL,     // polygon node colors.
-                                     bool                      strict                     = false);
+                                    char const                *argName,
+                                    int                       &out_numVertices,                       // amount of vertices.
+                                    int                       &out_numPolygons,                       // amount of polygons.
+                                    int                       &out_numSamples,                        // amount of samples.
+                                    std::vector <float>       *out_positions              = NULL,     // vertex positions (as a flat array).
+                                    std::vector <uint32_t>    *out_polygonNumVertices     = NULL,     // polygon vertex counts.
+                                    std::vector <uint32_t>    *out_polygonVertices        = NULL,     // polygon vertex indices.
+                                    std::vector <float>       *out_polygonNodeNormals     = NULL,     // polygon node normals.
+                                    std::vector <float>       *out_polygonNodeUVWs        = NULL,     // polygon node UVWs.
+                                    std::vector <float>       *out_polygonNodeColors      = NULL,     // polygon node colors.
+                                    bool                       strict                     = false);
 
   // sets the value of an argument (= a port).
   static void SetValueOfArgBoolean      (FabricCore::Client &client, FabricCore::DFGBinding &binding, char const *argName, const bool                  val);

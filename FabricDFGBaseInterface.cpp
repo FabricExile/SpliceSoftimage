@@ -965,18 +965,18 @@ int BaseInterface::GetArgValueMat44(FabricCore::DFGBinding &binding, char const 
   return 0;
 }
 
-int BaseInterface::GetArgValuePolygonMesh(FabricCore::DFGBinding &binding,
-                                           char const * argName,
-                                           unsigned int                            &out_numVertices,
-                                           unsigned int                            &out_numPolygons,
-                                           unsigned int                            &out_numSamples,
-                                           std::vector <float>                     *out_positions,
-                                           std::vector <uint32_t>                  *out_polygonNumVertices,
-                                           std::vector <uint32_t>                  *out_polygonVertices,
-                                           std::vector <float>                     *out_polygonNodeNormals,
-                                           std::vector <float>                     *out_polygonNodeUVWs,
-                                           std::vector <float>                     *out_polygonNodeColors,
-                                           bool                                     strict)
+int BaseInterface::GetArgValuePolygonMesh(FabricCore::DFGBinding  &binding,
+                                          char const              *argName,
+                                          int                     &out_numVertices,
+                                          int                     &out_numPolygons,
+                                          int                     &out_numSamples,
+                                          std::vector <float>     *out_positions,
+                                          std::vector <uint32_t>  *out_polygonNumVertices,
+                                          std::vector <uint32_t>  *out_polygonVertices,
+                                          std::vector <float>     *out_polygonNodeNormals,
+                                          std::vector <float>     *out_polygonNodeUVWs,
+                                          std::vector <float>     *out_polygonNodeColors,
+                                          bool                     strict)
 {
   // init output.
   out_numVertices = 0;
