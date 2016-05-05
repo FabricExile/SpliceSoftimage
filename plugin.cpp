@@ -85,6 +85,11 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     if (getEnvironmentVariable(var).FindString(factoryPath) == UINT_MAX)
       setEnvironmentVariable(var, factoryPath + delimiter + getEnvironmentVariable(var));
     Application().LogMessage(var + L"=" + getEnvironmentVariable(var));
+    
+    var = L"PYTHONPATH";
+    CString fabricPythonPath = in_reg.GetOriginPath() + CUtils::Slash() + L".." + CUtils::Slash() + L".." + CUtils::Slash() + L"python" + CUtils::Slash() + L"2.7";
+    setEnvironmentVariable(var, getEnvironmentVariable(var) + delimiter + fabricPythonPath);
+    Application().LogMessage(var + L"=" + getEnvironmentVariable(var));            
   }
 
   // set plugin's name, version and author.
