@@ -87,7 +87,7 @@ SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
     Application().LogMessage(var + L"=" + getEnvironmentVariable(var));
     
     var = L"PYTHONPATH";
-    CString fabricPythonPath = in_reg.GetOriginPath() + CUtils::Slash() + L".." + CUtils::Slash() + L".." + CUtils::Slash() + L"python" + CUtils::Slash() + L"2.7";
+    CString fabricPythonPath = in_reg.GetOriginPath() + L".." + CUtils::Slash() + L".." + CUtils::Slash() + L"python" + CUtils::Slash() + L"2.7";
     setEnvironmentVariable(var, getEnvironmentVariable(var) + delimiter + fabricPythonPath);
     Application().LogMessage(var + L"=" + getEnvironmentVariable(var));            
   }
