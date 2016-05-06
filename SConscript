@@ -171,6 +171,8 @@ softimageFiles.append(env.Install(os.path.join(STAGE_DIR.abspath, 'Data', 'Compo
 
 softimageFiles.append(env.Install(os.path.join(STAGE_DIR.abspath, 'Application', 'Plugins'), 'FabricCanvasInspectOp.vbs'))
 
+softimageFiles.append(env.Install(os.path.join(STAGE_DIR.abspath, 'Application', 'Plugins'), 'FabricEnginePython.py'))
+
 softimageFiles.append(env.Install(STAGE_DIR, env.File('license.txt')))
 
 # also install the FabricCore dynamic library
