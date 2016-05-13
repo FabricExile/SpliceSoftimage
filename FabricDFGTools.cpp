@@ -1292,9 +1292,20 @@ bool dfgTools::SetUndoLevels(LONG undoLevels)
 bool dfgTools::ClearUndoHistory(void)
 {
   LONG n = GetUndoLevels();
-  if (n < 0)              return false;
-  if (!SetUndoLevels(0))  return false;
-  if (!SetUndoLevels(n))  return false;
+
+  if (n < 0)
+    return false;
+
+  if (!SetUndoLevels(0))
+    return false;
+
+  if (!SetUndoLevels(n))
+  {
+    Application().LogMessage(L"Failed to set the amount of undo levels back to " + CString(n) + L"!", siErrorMsg);
+    Application().LogMessage(L"Please go into the Softimage preferences and set the amount of undo levels back to your desired amount.", siErrorMsg);
+    return false;
+  }
+
   return true;
 }
 
