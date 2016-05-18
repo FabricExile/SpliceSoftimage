@@ -39,6 +39,10 @@ class FabricDFGWidget : public FabricUI::DFG::DFGCombinedWidget
     XSI::Application().ExecuteCommand(L"Redo", args, val);
   }
 
+  virtual void onSelectCanvasNodeInDCC()
+  {
+  }
+
   static void log(void *userData, const char *message, unsigned int length)
   {
     std::string mess = std::string("[CANVAS] ") + (message ? message : "");
