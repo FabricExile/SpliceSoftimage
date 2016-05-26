@@ -43,6 +43,14 @@ class FabricDFGWidget : public FabricUI::DFG::DFGCombinedWidget
   {
   }
 
+  virtual void onImportGraphInDCC()
+  {
+  }
+
+  virtual void onExportGraphInDCC()
+  {
+  }
+
   static void log(void *userData, const char *message, unsigned int length)
   {
     std::string mess = std::string("[CANVAS] ") + (message ? message : "");
