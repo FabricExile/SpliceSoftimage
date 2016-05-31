@@ -192,16 +192,6 @@ void xsiInitializeSplice()
   FabricSplice::Logging::setKLReportFunc(xsiKLReportFunc);
   FabricSplice::Logging::setKLStatusFunc(xsiKLStatusFunc);
   FabricSplice::Logging::setCompilerErrorFunc(xsiCompilerErrorFunc);
-
-  CString workgroupFolder = xsiGetWorkgroupPath();
-  CString extFolder = workgroupFolder + "/../../Exts"; // above the 'DCCIntegrations' folder
-  if(FTL::FSExists(extFolder.GetAsciiString()))
-  {
-    // FE-6319 FIXME this needs to be investigated
-    FabricSplice::addExtFolder(extFolder.GetAsciiString());
-  }
-  else
-    xsiLogErrorFunc("The standard fabric exts folder '"+extFolder+" does not exist.");
 }
 
 XSIPLUGINCALLBACK CStatus FabricSpliceNewScene_OnEvent(CRef & ctxt)
