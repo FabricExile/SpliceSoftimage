@@ -127,6 +127,8 @@ struct _portMapping
         if (   dfgPortDataType != L"Mat44"
             && dfgPortDataType != L"Xfo"
 
+            && dfgPortDataType != L"Boolean"
+
             && dfgPortDataType != L"PolygonMesh")
           return false;
       }

@@ -2047,6 +2047,22 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
               }
             }
           }
+          else if (outputPort.GetTarget().GetClassID() == siParameterID/*siPropertyID*/)
+          {
+            Application().LogMessage(L"[DEBUG] ping");
+            bool val;
+            if (BaseInterface::GetArgValueBoolean(*binding, portName.GetAsciiString(), val) != 0)
+              Application().LogMessage(functionName + L": BaseInterface::GetArgValueBoolean(port) failed.", siWarningMsg);
+            else
+            {
+              OutputPort portOut(ctxt.GetOutputPort());
+              if (!portOut.IsValid())
+                Application().LogMessage(L"[DEBUG] not valid");
+              else
+                Application().LogMessage(L"[DEBUG] " + portOut.GetFullName());
+              portOut.PutValue(val);
+            }
+          }
           else
           {
             CString emptyString;
@@ -2206,6 +2222,8 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
             {
               if (   pmap.dfgPortDataType == L"Mat44"
                   || pmap.dfgPortDataType == L"Xfo"
+
+                  || pmap.dfgPortDataType == L"Boolean"
 
                   || pmap.dfgPortDataType == L"PolygonMesh")
               {
