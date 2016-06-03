@@ -54,7 +54,7 @@ SICALLBACK FabricCanvasOpApply_Init(CRef &in_ctxt)
   oArgs.Add(L"dfgJSON",        CString());    // JSON string for the new op's graph.
   oArgs.Add(L"OpenPPG",        false);        // true: open PPG after creation.
   oArgs.Add(L"otherOpName",    CString());    // optional name of a dfgSoftimage operator. If set then the parameter values, animations, etc. are copied to the new operator's parameters.
-  oArgs.Add(L"CreateSpliceOp", LONG(2));           // 0: no, 1: yes, 2: yes, but only if the object has no SpliceOp yet.
+  oArgs.Add(L"CreateSpliceOp", LONG(2));      // 0: no, 1: yes, 2: yes, but only if the object has no SpliceOp yet.
 
   return CStatus::OK;
 }
@@ -398,6 +398,111 @@ SICALLBACK FabricCanvasOpApply_Execute(CRef &in_ctxt)
         }
       }
     }
+
+    // create custom parameter set for the output xsi ports.
+    do
+    {
+      // first we check if there are any output ports that need to be exposed as parameters.
+      bool hasPorts = false;
+      for (int i=0;i<portmap.size();i++)
+      {
+        _portMapping &pmap = portmap[i];
+        if (   pmap.dfgPortType == DFG_PORT_TYPE_OUT
+            && pmap.mapType     == DFG_PORT_MAPTYPE_XSI_PORT
+            && dfgTools::GetSiClassIdFromResolvedDataType(pmap.dfgPortDataType) == siParameterID)
+        {
+          hasPorts = true;
+          break;
+        }
+      }
+      if (!hasPorts)
+        break;
+
+      // create the custom parameter set.
+      CustomProperty prop;
+      if (obj.AddCustomProperty(L"CanvasOut", false, prop) != CStatus::OK)
+      {
+        Application().LogMessage(L"failed to create CanvasOut custom property.", siWarningMsg);
+        break;
+      }
+
+      // create the parameters
+      Factory oFactory = Application().GetFactory();
+      for (int i=0;i<portmap.size();i++)
+      {
+        _portMapping &pmap = portmap[i];
+        if (   pmap.dfgPortType == DFG_PORT_TYPE_OUT
+            && pmap.mapType     == DFG_PORT_MAPTYPE_XSI_PORT
+            && dfgTools::GetSiClassIdFromResolvedDataType(pmap.dfgPortDataType) == siParameterID)
+        {
+          // create parameter.
+          Parameter param;
+          bool success = false;
+          if      (   pmap.dfgPortDataType == L"Boolean")
+          {
+            success = (prop.AddParameter( pmap.dfgPortName, CValue::siBool,
+                                          siPersistable | siAnimatable | siKeyable | siReadOnly,
+                                          L"", L"",
+                                          CValue(), CValue(), CValue(), CValue(), CValue(),
+                                          param) == CStatus::OK);
+          }
+          else if (   pmap.dfgPortDataType == L"Scalar"
+                   || pmap.dfgPortDataType == L"Float32"
+                   || pmap.dfgPortDataType == L"Float64")
+          {
+            success = (prop.AddParameter( pmap.dfgPortName, CValue::siDouble,
+                                          siPersistable | siAnimatable | siKeyable | siReadOnly,
+                                          L"", L"",
+                                          CValue(), CValue(), CValue(), CValue(), CValue(),
+                                          param) == CStatus::OK);
+          }
+          else if (   pmap.dfgPortDataType == L"Integer"
+                   || pmap.dfgPortDataType == L"SInt8"
+                   || pmap.dfgPortDataType == L"SInt16"
+                   || pmap.dfgPortDataType == L"SInt32"
+                   || pmap.dfgPortDataType == L"SInt64"
+
+                   || pmap.dfgPortDataType == L"Byte"
+                   || pmap.dfgPortDataType == L"UInt8"
+                   || pmap.dfgPortDataType == L"UInt16"
+                   || pmap.dfgPortDataType == L"Count"
+                   || pmap.dfgPortDataType == L"Index"
+                   || pmap.dfgPortDataType == L"Size"
+                   || pmap.dfgPortDataType == L"UInt32"
+                   || pmap.dfgPortDataType == L"DataSize"
+                   || pmap.dfgPortDataType == L"UInt64")
+          {
+            success = (prop.AddParameter( pmap.dfgPortName, CValue::siInt4,
+                                          siPersistable | siAnimatable | siKeyable | siReadOnly,
+                                          L"", L"",
+                                          CValue(), CValue(), CValue(), CValue(), CValue(),
+                                          param) == CStatus::OK);
+          }
+          if (!success || !param.IsValid())
+          {
+            Application().LogMessage(L"failed to create CanvasOut parameter \"" + pmap.dfgPortName + L"\n.", siWarningMsg);
+            continue;
+          }
+
+          // connect parameter with the XSI port.
+          CRef targetRef = param.GetRef();
+          CString portgroupName = pmap.dfgPortName;
+          PortGroup portgroup(dfgTools::GetPortGroupRef(newOp, portgroupName));
+          if (!portgroup.IsValid())
+          { Application().LogMessage(L"failed to connect \"" + targetRef.GetAsText() + "\"", siWarningMsg);
+            continue; }
+          else
+          {
+            LONG instance;
+            if (newOp.ConnectToGroup(portgroup.GetIndex(), targetRef, instance) != CStatus::OK)
+            { Application().LogMessage(L"failed to connect \"" + targetRef.GetAsText() + "\"", siWarningMsg);
+              continue; }
+          }
+        }
+      }
+
+
+    } while (false);
 
     // display operator's property page?
     if (openPPG)

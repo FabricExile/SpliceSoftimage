@@ -2047,15 +2047,15 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
               }
             }
           }
-          else if (outputPort.GetTarget().GetClassID() == siParameterID) /* here I would expect siParameterID, but in fact I get siPropertyID*/
+          else if (outputPort.GetTarget().GetClassID() == siCustomPropertyID)
           {
-            bool val;
-            if (BaseInterface::GetArgValueBoolean(*binding, portName.GetAsciiString(), val) != 0)
-              Application().LogMessage(functionName + L": BaseInterface::GetArgValueBoolean(port) failed.", siWarningMsg);
+            double val;
+            if (BaseInterface::GetArgValueFloat(*binding, portName.GetAsciiString(), val) != 0)
+              Application().LogMessage(functionName + L": BaseInterface::GetArgValueFloat(port) failed.", siWarningMsg);
             else
             {
-              Parameter paramOut(ctxt.GetOutputTarget());
-              paramOut.PutValue(val);
+              CustomProperty propOut(ctxt.GetOutputTarget());
+              propOut.PutParameterValue(portName, val);
             }
           }
           else
@@ -2219,6 +2219,26 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
                   || pmap.dfgPortDataType == L"Xfo"
 
                   || pmap.dfgPortDataType == L"Boolean"
+
+                  || pmap.dfgPortDataType == L"Scalar"
+                  || pmap.dfgPortDataType == L"Float32"
+                  || pmap.dfgPortDataType == L"Float64"
+
+                  || pmap.dfgPortDataType == L"Integer"
+                  || pmap.dfgPortDataType == L"SInt8"
+                  || pmap.dfgPortDataType == L"SInt16"
+                  || pmap.dfgPortDataType == L"SInt32"
+                  || pmap.dfgPortDataType == L"SInt64"
+
+                  || pmap.dfgPortDataType == L"Byte"
+                  || pmap.dfgPortDataType == L"UInt8"
+                  || pmap.dfgPortDataType == L"UInt16"
+                  || pmap.dfgPortDataType == L"Count"
+                  || pmap.dfgPortDataType == L"Index"
+                  || pmap.dfgPortDataType == L"Size"
+                  || pmap.dfgPortDataType == L"UInt32"
+                  || pmap.dfgPortDataType == L"DataSize"
+                  || pmap.dfgPortDataType == L"UInt64"
 
                   || pmap.dfgPortDataType == L"PolygonMesh")
               {

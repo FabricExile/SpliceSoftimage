@@ -129,6 +129,26 @@ struct _portMapping
 
             && dfgPortDataType != L"Boolean"
 
+            && dfgPortDataType != L"Scalar"
+            && dfgPortDataType != L"Float32"
+            && dfgPortDataType != L"Float64"
+
+            && dfgPortDataType != L"Integer"
+            && dfgPortDataType != L"SInt8"
+            && dfgPortDataType != L"SInt16"
+            && dfgPortDataType != L"SInt32"
+            && dfgPortDataType != L"SInt64"
+
+            && dfgPortDataType != L"Byte"
+            && dfgPortDataType != L"UInt8"
+            && dfgPortDataType != L"UInt16"
+            && dfgPortDataType != L"Count"
+            && dfgPortDataType != L"Index"
+            && dfgPortDataType != L"Size"
+            && dfgPortDataType != L"UInt32"
+            && dfgPortDataType != L"DataSize"
+            && dfgPortDataType != L"UInt64"
+
             && dfgPortDataType != L"PolygonMesh")
           return false;
       }
