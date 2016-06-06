@@ -2055,7 +2055,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
             else
             {
               CustomProperty propOut(ctxt.GetOutputTarget());
-              propOut.PutParameterValue(portName, val);
+              propOut.PutParameterValue(L"value", val);
             }
           }
           else
@@ -2217,6 +2217,10 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
             {
               if (   pmap.dfgPortDataType == L"Mat44"
                   || pmap.dfgPortDataType == L"Xfo"
+                  
+                  /* we do not expose this in the UI, because this
+                     is an undocumented "hack" that was implemented
+                     for Kraken.
 
                   || pmap.dfgPortDataType == L"Boolean"
 
@@ -2239,6 +2243,7 @@ int Dialog_DefinePortMapping(std::vector<_portMapping> &io_pmap)
                   || pmap.dfgPortDataType == L"UInt32"
                   || pmap.dfgPortDataType == L"DataSize"
                   || pmap.dfgPortDataType == L"UInt64"
+                  */
 
                   || pmap.dfgPortDataType == L"PolygonMesh")
               {
