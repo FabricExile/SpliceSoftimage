@@ -56,7 +56,9 @@ void setEnvironmentVariable(CString varName, CString varValue)
 SICALLBACK XSILoadPlugin(PluginRegistrar& in_reg)
 {
   // the possible Fabric path.
-  CString possibleFabricPath = in_reg.GetOriginPath() + CUtils::Slash() + L".." + CUtils::Slash() + L".." + CUtils::Slash() + L".." + CUtils::Slash() + L"..";
+  CString originPath = in_reg.GetOriginPath();
+  originPath.TrimRight(CUtils::Slash());
+  CString possibleFabricPath = originPath + CUtils::Slash() + L".." + CUtils::Slash() + L".." + CUtils::Slash() + L".." + CUtils::Slash() + L"..";
 
   // check the Fabric environment variables and set them automatically if needed.
   {
