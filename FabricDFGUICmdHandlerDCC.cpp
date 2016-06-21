@@ -799,7 +799,7 @@ QString DFGUICmdHandlerDCC::dfgDoRenamePort(
   FabricCore::DFGBinding const &binding,
   QString execPath,
   FabricCore::DFGExec const &exec,
-  QString oldPortName,
+  QString portPath,
   QString desiredNewPortName
   )
 {
@@ -808,7 +808,7 @@ QString DFGUICmdHandlerDCC::dfgDoRenamePort(
 
   args.push_back(getDCCObjectNameFromBinding(binding));
   args.push_back(ToStdString(execPath));
-  args.push_back(ToStdString(oldPortName));
+  args.push_back(ToStdString(portPath));
   args.push_back(ToStdString(desiredNewPortName));
 
   std::string result;
