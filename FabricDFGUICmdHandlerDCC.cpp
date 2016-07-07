@@ -3418,12 +3418,48 @@ SICALLBACK FabricCanvasAddPort_TermUndoRedo(XSI::CRef &ctxt)
 
 SICALLBACK FabricCanvasAddInstPort_Init(XSI::CRef &in_ctxt)
 {
-  // TODO
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.EnableReturnValue(true);
+
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",         XSI::CString());
+  oArgs.Add(L"execPath",        XSI::CString());
+  oArgs.Add(L"instName",        XSI::CString());
+  oArgs.Add(L"desiredPortName", XSI::CString());
+  oArgs.Add(L"portType",        XSI::CString());
+  oArgs.Add(L"typeSpec",        XSI::CString());
+  oArgs.Add(L"pathToConnect",   XSI::CString());
+  oArgs.Add(L"connectType",     XSI::CString());
+  oArgs.Add(L"extDep",          XSI::CString());
+  oArgs.Add(L"uiMetadata",      XSI::CString());
+
+  return XSI::CStatus::OK;
 }
 
 SICALLBACK FabricCanvasAddInstPort_Execute(XSI::CRef &in_ctxt)
 {
-  // TODO
+  // init.
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  CValueArrayToStdVector(tmp, args);
+
+  // create and execute the DFG command.
+  FabricUI::DFG::DFGUICmd_AddInstPort *cmd = DFGUICmdHandlerDCC::createAndExecuteDFGCommand_AddInstPort(args);
+  if (!cmd)
+    return XSI::CStatus::Fail;
+
+  // store return value.
+  XSI::CString returnValue = cmd->getActualPortName().toUtf8().data();
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", XSI::siCommentMsg);
+  ctxt.PutAttribute(L"ReturnValue", returnValue);
+
+  // done.
+  DFGUICmd_Finish(ctxt, cmd);
+  return XSI::CStatus::OK;
 }
 
 SICALLBACK FabricCanvasAddInstPort_Undo(XSI::CRef &ctxt)
@@ -3448,12 +3484,47 @@ SICALLBACK FabricCanvasAddInstPort_TermUndoRedo(XSI::CRef &ctxt)
 
 SICALLBACK FabricCanvasAddInstBlockPort_Init(XSI::CRef &in_ctxt)
 {
-  // TODO
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.EnableReturnValue(true);
+
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",         XSI::CString());
+  oArgs.Add(L"execPath",        XSI::CString());
+  oArgs.Add(L"instName",        XSI::CString());
+  oArgs.Add(L"blockName",       XSI::CString());
+  oArgs.Add(L"desiredPortName", XSI::CString());
+  oArgs.Add(L"typeSpec",        XSI::CString());
+  oArgs.Add(L"pathToConnect",   XSI::CString());
+  oArgs.Add(L"extDep",          XSI::CString());
+  oArgs.Add(L"metaData",        XSI::CString());
+
+  return XSI::CStatus::OK;
 }
 
 SICALLBACK FabricCanvasAddInstBlockPort_Execute(XSI::CRef &in_ctxt)
 {
-  // TODO
+  // init.
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  CValueArrayToStdVector(tmp, args);
+
+  // create and execute the DFG command.
+  FabricUI::DFG::DFGUICmd_AddInstBlockPort *cmd = DFGUICmdHandlerDCC::createAndExecuteDFGCommand_AddInstBlockPort(args);
+  if (!cmd)
+    return XSI::CStatus::Fail;
+
+  // store return value.
+  XSI::CString returnValue = cmd->getActualPortName().toUtf8().data();
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", XSI::siCommentMsg);
+  ctxt.PutAttribute(L"ReturnValue", returnValue);
+
+  // done.
+  DFGUICmd_Finish(ctxt, cmd);
+  return XSI::CStatus::OK;
 }
 
 SICALLBACK FabricCanvasAddInstBlockPort_Undo(XSI::CRef &ctxt)
@@ -4643,12 +4714,43 @@ SICALLBACK FabricCanvasDismissLoadDiags_TermUndoRedo(XSI::CRef &ctxt)
 
 SICALLBACK FabricCanvasAddBlock_Init(XSI::CRef &in_ctxt)
 {
-  // TODO
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.EnableReturnValue(true);
+
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",     XSI::CString());
+  oArgs.Add(L"execPath",    XSI::CString());
+  oArgs.Add(L"desiredName", XSI::CString());
+  oArgs.Add(L"xPos",        XSI::CString());
+  oArgs.Add(L"yPos",        XSI::CString());
+
+  return XSI::CStatus::OK;
 }
 
 SICALLBACK FabricCanvasAddBlock_Execute(XSI::CRef &in_ctxt)
 {
-  // TODO
+  // init.
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  CValueArrayToStdVector(tmp, args);
+
+  // create and execute the DFG command.
+  FabricUI::DFG::DFGUICmd_AddBlock *cmd = DFGUICmdHandlerDCC::createAndExecuteDFGCommand_AddBlock(args);
+  if (!cmd)
+    return XSI::CStatus::Fail;
+
+  // store return value.
+  XSI::CString returnValue = cmd->getActualName().toUtf8().data();
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", XSI::siCommentMsg);
+  ctxt.PutAttribute(L"ReturnValue", returnValue);
+
+  // done.
+  DFGUICmd_Finish(ctxt, cmd);
+  return XSI::CStatus::OK;
 }
 
 SICALLBACK FabricCanvasAddBlock_Undo(XSI::CRef &ctxt)
@@ -4673,12 +4775,48 @@ SICALLBACK FabricCanvasAddBlock_TermUndoRedo(XSI::CRef &ctxt)
 
 SICALLBACK FabricCanvasAddBlockPort_Init(XSI::CRef &in_ctxt)
 {
-  // TODO
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.EnableReturnValue(true);
+
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",         XSI::CString());
+  oArgs.Add(L"execPath",        XSI::CString());
+  oArgs.Add(L"blockName",       XSI::CString());
+  oArgs.Add(L"desiredPortName", XSI::CString());
+  oArgs.Add(L"portType",        XSI::CString());
+  oArgs.Add(L"typeSpec",        XSI::CString());
+  oArgs.Add(L"pathToConnect",   XSI::CString());
+  oArgs.Add(L"connectType",     XSI::CString());
+  oArgs.Add(L"extDep",          XSI::CString());
+  oArgs.Add(L"uiMetadata",      XSI::CString());
+
+  return XSI::CStatus::OK;
 }
 
 SICALLBACK FabricCanvasAddBlockPort_Execute(XSI::CRef &in_ctxt)
 {
-  // TODO
+  // init.
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  CValueArrayToStdVector(tmp, args);
+
+  // create and execute the DFG command.
+  FabricUI::DFG::DFGUICmd_AddBlockPort *cmd = DFGUICmdHandlerDCC::createAndExecuteDFGCommand_AddBlockPort(args);
+  if (!cmd)
+    return XSI::CStatus::Fail;
+
+  // store return value.
+  XSI::CString returnValue = cmd->getActualPortName().toUtf8().data();
+  if (DFGUICmdHandlerLOG) XSI::Application().LogMessage(L"[DFGUICmd] storing return value \"" + returnValue + L"\"", XSI::siCommentMsg);
+  ctxt.PutAttribute(L"ReturnValue", returnValue);
+
+  // done.
+  DFGUICmd_Finish(ctxt, cmd);
+  return XSI::CStatus::OK;
 }
 
 SICALLBACK FabricCanvasAddBlockPort_Undo(XSI::CRef &ctxt)
