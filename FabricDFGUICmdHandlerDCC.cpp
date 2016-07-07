@@ -533,7 +533,49 @@ QString DFGUICmdHandlerDCC::dfgDoAddInstPort(
     QString metaData
     )
 {
-  // TODO
+  std::string cmdName(FabricUI::DFG::DFGUICmd_AddPort::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getDCCObjectNameFromBinding(binding));
+  args.push_back(ToStdString(execPath));
+  args.push_back(ToStdString(instName));
+  args.push_back(ToStdString(desiredPortName));
+  FTL::CStrRef portTypeStr;
+  switch ( portType )
+  {
+    case FabricCore::DFGPortType_In:
+      portTypeStr = FTL_STR("In");
+      break;
+    case FabricCore::DFGPortType_IO:
+      portTypeStr = FTL_STR("IO");
+      break;
+    case FabricCore::DFGPortType_Out:
+      portTypeStr = FTL_STR("Out");
+      break;
+  }
+  args.push_back(portTypeStr);
+  args.push_back(ToStdString(typeSpec));
+  args.push_back(ToStdString(pathToConnect));
+  FTL::CStrRef connectTypeStr;
+  switch ( connectType )
+  {
+    case FabricCore::DFGPortType_In:
+      connectTypeStr = FTL_STR("In");
+      break;
+    case FabricCore::DFGPortType_IO:
+      connectTypeStr = FTL_STR("IO");
+      break;
+    case FabricCore::DFGPortType_Out:
+      connectTypeStr = FTL_STR("Out");
+      break;
+  }
+  args.push_back(connectTypeStr);
+  args.push_back(ToStdString(extDep));
+  args.push_back(ToStdString(metaData));
+
+  std::string result;
+  execCmd(cmdName, args, result);
+  return ToQString( result );
 }
 
 QString DFGUICmdHandlerDCC::dfgDoAddInstBlockPort(
@@ -549,7 +591,22 @@ QString DFGUICmdHandlerDCC::dfgDoAddInstBlockPort(
     QString metaData
     )
 {
-  // TODO
+  std::string cmdName(FabricUI::DFG::DFGUICmd_AddInstBlockPort::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getDCCObjectNameFromBinding(binding));
+  args.push_back(ToStdString(execPath));
+  args.push_back(ToStdString(instName));
+  args.push_back(ToStdString(blockName));
+  args.push_back(ToStdString(desiredPortName));
+  args.push_back(ToStdString(typeSpec));
+  args.push_back(ToStdString(pathToConnect));
+  args.push_back(ToStdString(extDep));
+  args.push_back(ToStdString(metaData));
+
+  std::string result;
+  execCmd(cmdName, args, result);
+  return ToQString( result );
 }
 
 QString DFGUICmdHandlerDCC::dfgDoCreatePreset(
@@ -1004,7 +1061,17 @@ QString DFGUICmdHandlerDCC::dfgDoAddBlock(
     QPointF pos
     )
 {
-  // TODO
+  std::string cmdName(FabricUI::DFG::DFGUICmd_AddBlock::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getDCCObjectNameFromBinding(binding));
+  args.push_back(ToStdString(execPath));
+  args.push_back(ToStdString(desiredName));
+  EncodePosition(pos, args);
+
+  QString result;
+  execCmd(cmdName, args, result);
+  return result;
 }
 
 QString DFGUICmdHandlerDCC::dfgDoAddBlockPort(
@@ -1021,7 +1088,49 @@ QString DFGUICmdHandlerDCC::dfgDoAddBlockPort(
     QString metaData
     )
 {
-  // TODO
+  std::string cmdName(FabricUI::DFG::DFGUICmd_AddBlockPort::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getDCCObjectNameFromBinding(binding));
+  args.push_back(ToStdString(execPath));
+  args.push_back(ToStdString(blockName));
+  args.push_back(ToStdString(desiredPortName));
+  FTL::CStrRef portTypeStr;
+  switch ( portType )
+  {
+    case FabricCore::DFGPortType_In:
+      portTypeStr = FTL_STR("In");
+      break;
+    case FabricCore::DFGPortType_IO:
+      portTypeStr = FTL_STR("IO");
+      break;
+    case FabricCore::DFGPortType_Out:
+      portTypeStr = FTL_STR("Out");
+      break;
+  }
+  args.push_back(portTypeStr);
+  args.push_back(ToStdString(typeSpec));
+  args.push_back(ToStdString(pathToConnect));
+  FTL::CStrRef connectTypeStr;
+  switch ( connectType )
+  {
+    case FabricCore::DFGPortType_In:
+      connectTypeStr = FTL_STR("In");
+      break;
+    case FabricCore::DFGPortType_IO:
+      connectTypeStr = FTL_STR("IO");
+      break;
+    case FabricCore::DFGPortType_Out:
+      connectTypeStr = FTL_STR("Out");
+      break;
+  }
+  args.push_back(connectTypeStr);
+  args.push_back(ToStdString(extDep));
+  args.push_back(ToStdString(metaData));
+
+  std::string result;
+  execCmd(cmdName, args, result);
+  return ToQString( result );
 }
 
 
@@ -1533,12 +1642,157 @@ FabricUI::DFG::DFGUICmd_AddPort *DFGUICmdHandlerDCC::createAndExecuteDFGCommand_
 
 FabricUI::DFG::DFGUICmd_AddInstPort *DFGUICmdHandlerDCC::createAndExecuteDFGCommand_AddInstPort(std::vector<std::string> &args)
 {
-  // TODO
+  FabricUI::DFG::DFGUICmd_AddInstPort *cmd = NULL;
+  {
+    unsigned int ai = 0;
+
+    FabricCore::DFGBinding binding;
+    QString execPath;
+    FabricCore::DFGExec exec;
+    if (!DecodeExec(args, ai, binding, execPath, exec))
+      return cmd;
+
+    QString instName;
+    if (!DecodeString(args, ai, instName))
+      return cmd;
+
+    QString desiredPortName;
+    if (!DecodeString(args, ai, desiredPortName))
+      return cmd;
+
+    QString portTypeString;
+    if (!DecodeString(args, ai, portTypeString))
+      return cmd;
+    FabricCore::DFGPortType portType;
+    if      (portTypeString == "In"  || portTypeString == "in" )  portType = FabricCore::DFGPortType_In;
+    else if (portTypeString == "IO"  || portTypeString == "io" )  portType = FabricCore::DFGPortType_IO;
+    else if (portTypeString == "Out" || portTypeString == "out")  portType = FabricCore::DFGPortType_Out;
+    else
+    {
+      std::string msg = "[DFGUICmd] Unrecognize port type \"";
+      msg += ToStdString( portTypeString );
+      msg += "\"";
+      feLogError(msg);
+      return cmd;
+    }
+
+    QString typeSpec;
+    if (!DecodeString(args, ai, typeSpec))
+      return cmd;
+
+    QString pathToConnect;
+    if (!DecodeString(args, ai, pathToConnect))
+      return cmd;
+
+    QString connectTypeString;
+    if (!DecodeString(args, ai, connectTypeString))
+      return cmd;
+    FabricCore::DFGPortType connectType;
+    if      (connectTypeString == "In"  || connectTypeString == "in" )  connectType = FabricCore::DFGPortType_In;
+    else if (connectTypeString == "IO"  || connectTypeString == "io" )  connectType = FabricCore::DFGPortType_IO;
+    else if (connectTypeString == "Out" || connectTypeString == "out")  connectType = FabricCore::DFGPortType_Out;
+    else
+    {
+      std::string msg = "[DFGUICmd] Unrecognize connect type \"";
+      msg += ToStdString( connectTypeString );
+      msg += "\"";
+      feLogError(msg);
+      return cmd;
+    }
+
+    QString extDep;
+    if (!DecodeString(args, ai, extDep))
+      return cmd;
+
+    QString uiMetadata;
+    if (!DecodeString(args, ai, uiMetadata))
+      return cmd;
+
+    cmd = new FabricUI::DFG::DFGUICmd_AddInstPort(binding,
+                                                  execPath,
+                                                  exec,
+                                                  instName,
+                                                  desiredPortName,
+                                                  portType,
+                                                  typeSpec,
+                                                  pathToConnect,
+                                                  connectType,
+                                                  extDep,
+                                                  uiMetadata);
+    try
+    {
+      cmd->doit();
+    }
+    catch(FabricCore::Exception e)
+    {
+      feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+    }
+  }
+
+  return cmd;
 }
 
 FabricUI::DFG::DFGUICmd_AddInstBlockPort *DFGUICmdHandlerDCC::createAndExecuteDFGCommand_AddInstBlockPort(std::vector<std::string> &args)
 {
-  // TODO
+  FabricUI::DFG::DFGUICmd_AddInstBlockPort *cmd = NULL;
+  {
+    unsigned int ai = 0;
+
+    FabricCore::DFGBinding binding;
+    QString execPath;
+    FabricCore::DFGExec exec;
+    if (!DecodeExec(args, ai, binding, execPath, exec))
+      return cmd;
+
+    QString instName;
+    if (!DecodeString(args, ai, instName))
+      return cmd;
+
+    QString blockName;
+    if (!DecodeString(args, ai, blockName))
+      return cmd;
+
+    QString desiredPortName;
+    if (!DecodeString(args, ai, desiredPortName))
+      return cmd;
+
+    QString typeSpec;
+    if (!DecodeString(args, ai, typeSpec))
+      return cmd;
+
+    QString pathToConnect;
+    if (!DecodeString(args, ai, pathToConnect))
+      return cmd;
+
+    QString extDep;
+    if (!DecodeString(args, ai, extDep))
+      return cmd;
+
+    QString uiMetadata;
+    if (!DecodeString(args, ai, uiMetadata))
+      return cmd;
+
+    cmd = new FabricUI::DFG::DFGUICmd_AddInstBlockPort(binding,
+                                                       execPath,
+                                                       exec,
+                                                       instName,
+                                                       blockName,
+                                                       desiredPortName,
+                                                       typeSpec,
+                                                       pathToConnect,
+                                                       extDep,
+                                                       uiMetadata);
+    try
+    {
+      cmd->doit();
+    }
+    catch(FabricCore::Exception e)
+    {
+      feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+    }
+  }
+
+  return cmd;
 }
 
 FabricUI::DFG::DFGUICmd_CreatePreset *DFGUICmdHandlerDCC::createAndExecuteDFGCommand_CreatePreset(std::vector<std::string> &args)
@@ -2363,12 +2617,132 @@ FabricUI::DFG::DFGUICmd_DismissLoadDiags *DFGUICmdHandlerDCC::createAndExecuteDF
 
 FabricUI::DFG::DFGUICmd_AddBlock *DFGUICmdHandlerDCC::createAndExecuteDFGCommand_AddBlock(std::vector<std::string> &args)
 {
-  // TODO
+  FabricUI::DFG::DFGUICmd_AddBlock *cmd = NULL;
+  {
+    unsigned int ai = 0;
+
+    FabricCore::DFGBinding binding;
+    QString execPath;
+    FabricCore::DFGExec exec;
+    if (!DecodeExec(args, ai, binding, execPath, exec))
+      return cmd;
+
+    QString desiredName;
+    if (!DecodeString(args, ai, desiredName))
+      return cmd;
+
+    QPointF position;
+    if (!DecodePosition(args, ai, position))
+      return cmd;
+
+    cmd = new FabricUI::DFG::DFGUICmd_AddBlock(binding,
+                                               execPath,
+                                               exec,
+                                               desiredName,
+                                               position);
+    try
+    {
+      cmd->doit();
+    }
+    catch(FabricCore::Exception e)
+    {
+      feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+    }
+  }
+
+  return cmd;
 }
 
 FabricUI::DFG::DFGUICmd_AddBlockPort *DFGUICmdHandlerDCC::createAndExecuteDFGCommand_AddBlockPort(std::vector<std::string> &args)
 {
-  // TODO
+  FabricUI::DFG::DFGUICmd_AddBlockPort *cmd = NULL;
+  {
+    unsigned int ai = 0;
+
+    FabricCore::DFGBinding binding;
+    QString execPath;
+    FabricCore::DFGExec exec;
+    if (!DecodeExec(args, ai, binding, execPath, exec))
+      return cmd;
+
+    QString blockName;
+    if (!DecodeString(args, ai, blockName))
+      return cmd;
+
+    QString desiredPortName;
+    if (!DecodeString(args, ai, desiredPortName))
+      return cmd;
+
+    QString portTypeString;
+    if (!DecodeString(args, ai, portTypeString))
+      return cmd;
+    FabricCore::DFGPortType portType;
+    if      (portTypeString == "In"  || portTypeString == "in" )  portType = FabricCore::DFGPortType_In;
+    else if (portTypeString == "IO"  || portTypeString == "io" )  portType = FabricCore::DFGPortType_IO;
+    else if (portTypeString == "Out" || portTypeString == "out")  portType = FabricCore::DFGPortType_Out;
+    else
+    {
+      std::string msg = "[DFGUICmd] Unrecognize port type \"";
+      msg += ToStdString( portTypeString );
+      msg += "\"";
+      feLogError(msg);
+      return cmd;
+    }
+
+    QString typeSpec;
+    if (!DecodeString(args, ai, typeSpec))
+      return cmd;
+
+    QString pathToConnect;
+    if (!DecodeString(args, ai, pathToConnect))
+      return cmd;
+
+    QString connectTypeString;
+    if (!DecodeString(args, ai, connectTypeString))
+      return cmd;
+    FabricCore::DFGPortType connectType;
+    if      (connectTypeString == "In"  || connectTypeString == "in" )  connectType = FabricCore::DFGPortType_In;
+    else if (connectTypeString == "IO"  || connectTypeString == "io" )  connectType = FabricCore::DFGPortType_IO;
+    else if (connectTypeString == "Out" || connectTypeString == "out")  connectType = FabricCore::DFGPortType_Out;
+    else
+    {
+      std::string msg = "[DFGUICmd] Unrecognize connect type \"";
+      msg += ToStdString( connectTypeString );
+      msg += "\"";
+      feLogError(msg);
+      return cmd;
+    }
+
+    QString extDep;
+    if (!DecodeString(args, ai, extDep))
+      return cmd;
+
+    QString metaData;
+    if (!DecodeString(args, ai, metaData))
+      return cmd;
+
+    cmd = new FabricUI::DFG::DFGUICmd_AddBlockPort(binding,
+                                                   execPath,
+                                                   exec,
+                                                   blockName,
+                                                   desiredPortName,
+                                                   portType,
+                                                   typeSpec,
+                                                   pathToConnect,
+                                                   connectType,
+                                                   extDep,
+                                                   metaData);
+    try
+    {
+      cmd->doit();
+    }
+    catch(FabricCore::Exception e)
+    {
+      feLogError(e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
+    }
+  }
+
+  return cmd;
 }
 
 
