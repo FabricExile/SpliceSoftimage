@@ -3040,6 +3040,66 @@ SICALLBACK FabricCanvasAddPort_TermUndoRedo(XSI::CRef &ctxt)
   return XSI::CStatus::OK;
 }
 
+//        "AddInstPort"
+
+SICALLBACK FabricCanvasAddInstPort_Init(XSI::CRef &in_ctxt)
+{
+  // TODO
+}
+
+SICALLBACK FabricCanvasAddInstPort_Execute(XSI::CRef &in_ctxt)
+{
+  // TODO
+}
+
+SICALLBACK FabricCanvasAddInstPort_Undo(XSI::CRef &ctxt)
+{
+  DFGUICmd_Undo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasAddInstPort_Redo(XSI::CRef &ctxt)
+{
+  DFGUICmd_Redo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasAddInstPort_TermUndoRedo(XSI::CRef &ctxt)
+{
+  DFGUICmd_TermUndoRedo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+//        "AddInstBlockPort"
+
+SICALLBACK FabricCanvasAddInstBlockPort_Init(XSI::CRef &in_ctxt)
+{
+  // TODO
+}
+
+SICALLBACK FabricCanvasAddInstBlockPort_Execute(XSI::CRef &in_ctxt)
+{
+  // TODO
+}
+
+SICALLBACK FabricCanvasAddInstBlockPort_Undo(XSI::CRef &ctxt)
+{
+  DFGUICmd_Undo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasAddInstBlockPort_Redo(XSI::CRef &ctxt)
+{
+  DFGUICmd_Redo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasAddInstBlockPort_TermUndoRedo(XSI::CRef &ctxt)
+{
+  DFGUICmd_TermUndoRedo(ctxt);
+  return XSI::CStatus::OK;
+}
+
 //        "CreatePreset"
 
 SICALLBACK FabricCanvasCreatePreset_Init(XSI::CRef &in_ctxt)
@@ -3269,113 +3329,6 @@ SICALLBACK FabricCanvasMoveNodes_Redo(XSI::CRef &ctxt)
 }
 
 SICALLBACK FabricCanvasMoveNodes_TermUndoRedo(XSI::CRef &ctxt)
-{
-  DFGUICmd_TermUndoRedo(ctxt);
-  return XSI::CStatus::OK;
-}
-
-//        "SetExtDeps"
-
-SICALLBACK FabricCanvasSetExtDeps_Init(XSI::CRef &in_ctxt)
-{
-  XSI::Context ctxt(in_ctxt);
-  XSI::Command oCmd;
-
-  oCmd = ctxt.GetSource();
-  oCmd.EnableReturnValue(false);
-
-  XSI::ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",   XSI::CString());
-  oArgs.Add(L"execPath",  XSI::CString());
-  oArgs.Add(L"extDeps",   XSI::CString());
-
-  return XSI::CStatus::OK;
-}
-
-SICALLBACK FabricCanvasSetExtDeps_Execute(XSI::CRef &in_ctxt)
-{
-  // init.
-  XSI::Context     ctxt(in_ctxt);
-  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
-  std::vector<std::string> args;
-  CValueArrayToStdVector(tmp, args);
-
-  // create and execute the DFG command.
-  FabricUI::DFG::DFGUICmd_SetExtDeps *cmd = DFGUICmdHandlerDCC::createAndExecuteDFGCommand_SetExtDeps(args);
-  if (!cmd)
-    return XSI::CStatus::Fail;
-
-  // done.
-  DFGUICmd_Finish(ctxt, cmd);
-  return XSI::CStatus::OK;
-}
-
-SICALLBACK FabricCanvasSetExtDeps_Undo(XSI::CRef &ctxt)
-{
-  DFGUICmd_Undo(ctxt);
-  return XSI::CStatus::OK;
-}
-
-SICALLBACK FabricCanvasSetExtDeps_Redo(XSI::CRef &ctxt)
-{
-  DFGUICmd_Redo(ctxt);
-  return XSI::CStatus::OK;
-}
-
-SICALLBACK FabricCanvasSetExtDeps_TermUndoRedo(XSI::CRef &ctxt)
-{
-  DFGUICmd_TermUndoRedo(ctxt);
-  return XSI::CStatus::OK;
-}
-
-//        "SplitFromPreset"
-
-SICALLBACK FabricCanvasSplitFromPreset_Init(XSI::CRef &in_ctxt)
-{
-  XSI::Context ctxt(in_ctxt);
-  XSI::Command oCmd;
-
-  oCmd = ctxt.GetSource();
-  oCmd.EnableReturnValue(false);
-
-  XSI::ArgumentArray oArgs = oCmd.GetArguments();
-  oArgs.Add(L"binding",   XSI::CString());
-  oArgs.Add(L"execPath",  XSI::CString());
-
-  return XSI::CStatus::OK;
-}
-
-SICALLBACK FabricCanvasSplitFromPreset_Execute(XSI::CRef &in_ctxt)
-{
-  // init.
-  XSI::Context     ctxt(in_ctxt);
-  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
-  std::vector<std::string> args;
-  CValueArrayToStdVector(tmp, args);
-
-  // create and execute the DFG command.
-  FabricUI::DFG::DFGUICmd_SplitFromPreset *cmd = DFGUICmdHandlerDCC::createAndExecuteDFGCommand_SplitFromPreset(args);
-  if (!cmd)
-    return XSI::CStatus::Fail;
-
-  // done.
-  DFGUICmd_Finish(ctxt, cmd);
-  return XSI::CStatus::OK;
-}
-
-SICALLBACK FabricCanvasSplitFromPreset_Undo(XSI::CRef &ctxt)
-{
-  DFGUICmd_Undo(ctxt);
-  return XSI::CStatus::OK;
-}
-
-SICALLBACK FabricCanvasSplitFromPreset_Redo(XSI::CRef &ctxt)
-{
-  DFGUICmd_Redo(ctxt);
-  return XSI::CStatus::OK;
-}
-
-SICALLBACK FabricCanvasSplitFromPreset_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
@@ -4151,6 +4104,113 @@ SICALLBACK FabricCanvasReorderPorts_TermUndoRedo(XSI::CRef &ctxt)
   return XSI::CStatus::OK;
 }
 
+//        "SetExtDeps"
+
+SICALLBACK FabricCanvasSetExtDeps_Init(XSI::CRef &in_ctxt)
+{
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.EnableReturnValue(false);
+
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",   XSI::CString());
+  oArgs.Add(L"execPath",  XSI::CString());
+  oArgs.Add(L"extDeps",   XSI::CString());
+
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasSetExtDeps_Execute(XSI::CRef &in_ctxt)
+{
+  // init.
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  CValueArrayToStdVector(tmp, args);
+
+  // create and execute the DFG command.
+  FabricUI::DFG::DFGUICmd_SetExtDeps *cmd = DFGUICmdHandlerDCC::createAndExecuteDFGCommand_SetExtDeps(args);
+  if (!cmd)
+    return XSI::CStatus::Fail;
+
+  // done.
+  DFGUICmd_Finish(ctxt, cmd);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasSetExtDeps_Undo(XSI::CRef &ctxt)
+{
+  DFGUICmd_Undo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasSetExtDeps_Redo(XSI::CRef &ctxt)
+{
+  DFGUICmd_Redo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasSetExtDeps_TermUndoRedo(XSI::CRef &ctxt)
+{
+  DFGUICmd_TermUndoRedo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+//        "SplitFromPreset"
+
+SICALLBACK FabricCanvasSplitFromPreset_Init(XSI::CRef &in_ctxt)
+{
+  XSI::Context ctxt(in_ctxt);
+  XSI::Command oCmd;
+
+  oCmd = ctxt.GetSource();
+  oCmd.EnableReturnValue(false);
+
+  XSI::ArgumentArray oArgs = oCmd.GetArguments();
+  oArgs.Add(L"binding",   XSI::CString());
+  oArgs.Add(L"execPath",  XSI::CString());
+
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasSplitFromPreset_Execute(XSI::CRef &in_ctxt)
+{
+  // init.
+  XSI::Context     ctxt(in_ctxt);
+  XSI::CValueArray tmp = ctxt.GetAttribute(L"Arguments");
+  std::vector<std::string> args;
+  CValueArrayToStdVector(tmp, args);
+
+  // create and execute the DFG command.
+  FabricUI::DFG::DFGUICmd_SplitFromPreset *cmd = DFGUICmdHandlerDCC::createAndExecuteDFGCommand_SplitFromPreset(args);
+  if (!cmd)
+    return XSI::CStatus::Fail;
+
+  // done.
+  DFGUICmd_Finish(ctxt, cmd);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasSplitFromPreset_Undo(XSI::CRef &ctxt)
+{
+  DFGUICmd_Undo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasSplitFromPreset_Redo(XSI::CRef &ctxt)
+{
+  DFGUICmd_Redo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasSplitFromPreset_TermUndoRedo(XSI::CRef &ctxt)
+{
+  DFGUICmd_TermUndoRedo(ctxt);
+  return XSI::CStatus::OK;
+}
+
 //        "DismissLoadDiags"
 
 SICALLBACK FabricCanvasDismissLoadDiags_Init(XSI::CRef &in_ctxt)
@@ -4200,6 +4260,66 @@ SICALLBACK FabricCanvasDismissLoadDiags_Redo(XSI::CRef &ctxt)
 }
 
 SICALLBACK FabricCanvasDismissLoadDiags_TermUndoRedo(XSI::CRef &ctxt)
+{
+  DFGUICmd_TermUndoRedo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+//        "AddBlock"
+
+SICALLBACK FabricCanvasAddBlock_Init(XSI::CRef &in_ctxt)
+{
+  // TODO
+}
+
+SICALLBACK FabricCanvasAddBlock_Execute(XSI::CRef &in_ctxt)
+{
+  // TODO
+}
+
+SICALLBACK FabricCanvasAddBlock_Undo(XSI::CRef &ctxt)
+{
+  DFGUICmd_Undo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasAddBlock_Redo(XSI::CRef &ctxt)
+{
+  DFGUICmd_Redo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasAddBlock_TermUndoRedo(XSI::CRef &ctxt)
+{
+  DFGUICmd_TermUndoRedo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+//        "AddBlockPort"
+
+SICALLBACK FabricCanvasAddBlockPort_Init(XSI::CRef &in_ctxt)
+{
+  // TODO
+}
+
+SICALLBACK FabricCanvasAddBlockPort_Execute(XSI::CRef &in_ctxt)
+{
+  // TODO
+}
+
+SICALLBACK FabricCanvasAddBlockPort_Undo(XSI::CRef &ctxt)
+{
+  DFGUICmd_Undo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasAddBlockPort_Redo(XSI::CRef &ctxt)
+{
+  DFGUICmd_Redo(ctxt);
+  return XSI::CStatus::OK;
+}
+
+SICALLBACK FabricCanvasAddBlockPort_TermUndoRedo(XSI::CRef &ctxt)
 {
   DFGUICmd_TermUndoRedo(ctxt);
   return XSI::CStatus::OK;
