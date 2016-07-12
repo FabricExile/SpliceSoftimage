@@ -638,6 +638,7 @@ QString DFGUICmdHandlerDCC::dfgDoEditPort(
   FabricCore::DFGExec const &exec,
   QString oldPortName,
   QString desiredNewPortName,
+  FabricCore::DFGPortType portType,
   QString typeSpec,
   QString extDep,
   QString uiMetadata
@@ -650,6 +651,20 @@ QString DFGUICmdHandlerDCC::dfgDoEditPort(
   args.push_back(ToStdString(execPath));
   args.push_back(ToStdString(oldPortName));
   args.push_back(ToStdString(desiredNewPortName));
+  FTL::CStrRef portTypeStr;
+  switch ( portType )
+  {
+    case FabricCore::DFGPortType_In:
+      portTypeStr = FTL_STR("In");
+      break;
+    case FabricCore::DFGPortType_IO:
+      portTypeStr = FTL_STR("IO");
+      break;
+    case FabricCore::DFGPortType_Out:
+      portTypeStr = FTL_STR("Out");
+      break;
+  }
+  args.push_back(portTypeStr);
   args.push_back(ToStdString(typeSpec));
   args.push_back(ToStdString(extDep));
   args.push_back(ToStdString(uiMetadata));
@@ -967,6 +982,7 @@ void DFGUICmdHandlerDCC::dfgDoReorderPorts(
   FabricCore::DFGBinding const &binding,
   QString execPath,
   FabricCore::DFGExec const &exec,
+  QString itemPath,
   QList<int> indices
   )
 {
@@ -975,6 +991,7 @@ void DFGUICmdHandlerDCC::dfgDoReorderPorts(
 
   args.push_back(getDCCObjectNameFromBinding(binding));
   args.push_back(ToStdString(execPath));
+  args.push_back(ToStdString(itemPath));
 
   char n[64];
   std::string indicesStr = "[";
@@ -1858,6 +1875,22 @@ FabricUI::DFG::DFGUICmd_EditPort *DFGUICmdHandlerDCC::createAndExecuteDFGCommand
     if (!DecodeString(args, ai, desiredNewPortName))
       return cmd;
 
+    QString portTypeString;
+    if (!DecodeString(args, ai, portTypeString))
+      return cmd;
+    FabricCore::DFGPortType portType;
+    if      (portTypeString == "In"  || portTypeString == "in" )  portType = FabricCore::DFGPortType_In;
+    else if (portTypeString == "IO"  || portTypeString == "io" )  portType = FabricCore::DFGPortType_IO;
+    else if (portTypeString == "Out" || portTypeString == "out")  portType = FabricCore::DFGPortType_Out;
+    else
+    {
+      std::string msg = "[DFGUICmd] Unrecognize port type \"";
+      msg += ToStdString( portTypeString );
+      msg += "\"";
+      feLogError(msg);
+      return cmd;
+    }
+
     QString typeSpec;
     if (!DecodeString(args, ai, typeSpec))
       return cmd;
@@ -1875,6 +1908,7 @@ FabricUI::DFG::DFGUICmd_EditPort *DFGUICmdHandlerDCC::createAndExecuteDFGCommand
                                               exec,
                                               oldPortName,
                                               desiredNewPortName,
+                                              portType,
                                               typeSpec,
                                               extDep,
                                               uiMetadata);
@@ -2466,6 +2500,10 @@ FabricUI::DFG::DFGUICmd_ReorderPorts *DFGUICmdHandlerDCC::createAndExecuteDFGCom
     if (!DecodeExec(args, ai, binding, execPath, exec))
       return cmd;
 
+    QString itemPath;
+    if (!DecodeName(args, ai, itemPath))
+      return cmd;
+
     QString indicesStr;
     if (!DecodeName(args, ai, indicesStr))
       return cmd;
@@ -2492,6 +2530,7 @@ FabricUI::DFG::DFGUICmd_ReorderPorts *DFGUICmdHandlerDCC::createAndExecuteDFGCom
     cmd = new FabricUI::DFG::DFGUICmd_ReorderPorts(binding,
                                                     execPath,
                                                     exec,
+                                                    itemPath,
                                                     indices);
     try
     {
@@ -3621,6 +3660,7 @@ SICALLBACK FabricCanvasEditPort_Init(XSI::CRef &in_ctxt)
   oArgs.Add(L"execPath",           XSI::CString());
   oArgs.Add(L"oldPortName",        XSI::CString());
   oArgs.Add(L"desiredNewPortName", XSI::CString());
+  oArgs.Add(L"portType",           XSI::CString());
   oArgs.Add(L"typeSpec",           XSI::CString());
   oArgs.Add(L"extDep",             XSI::CString());
   oArgs.Add(L"uiMetadata",         XSI::CString());
@@ -4508,6 +4548,7 @@ SICALLBACK FabricCanvasReorderPorts_Init(XSI::CRef &in_ctxt)
   XSI::ArgumentArray oArgs = oCmd.GetArguments();
   oArgs.Add(L"binding",  XSI::CString());
   oArgs.Add(L"execPath", XSI::CString());
+  oArgs.Add(L"itemPath", XSI::CString());
   oArgs.Add(L"indices",  XSI::CString());
 
   return XSI::CStatus::OK;

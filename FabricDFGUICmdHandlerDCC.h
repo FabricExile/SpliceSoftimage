@@ -160,6 +160,7 @@ protected:
     FabricCore::DFGExec const &exec,
     QString oldPortName,
     QString desiredNewPortName,
+    FabricCore::DFGPortType portType,
     QString typeSpec,
     QString extDep,
     QString uiMetadata
@@ -279,6 +280,7 @@ protected:
     FabricCore::DFGBinding const &binding,
     QString execPath,
     FabricCore::DFGExec const &exec,
+    QString itemPath,
     QList<int> indices
     );
 
