@@ -57,7 +57,11 @@ if os.environ.has_key('QT_DIR'):
   qtDir = env.Dir(os.environ['QT_DIR'])
 
 if qtDir:
-  env.Append(CPPPATH = [os.path.join(qtDir.abspath, 'include')])
+  env.Append(CPPPATH = [
+      os.path.join(qtDir.abspath, 'include', 'QtCore'),
+      os.path.join(qtDir.abspath, 'include', 'QtGui'),
+      os.path.join(qtDir.abspath, 'include', 'QtOpenGL'),
+      ])
   env.Append(LIBPATH = [os.path.join(qtDir.abspath, 'lib')])
 
 env.MergeFlags(sharedCapiFlags)
