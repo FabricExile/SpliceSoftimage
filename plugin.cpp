@@ -17,7 +17,7 @@
 
 #include <FabricUI/DFG/DFGUICmd/DFGUICmds.h>
 
-#include <QtGui/QApplication>
+#include <QApplication>
 
 using namespace XSI;
 

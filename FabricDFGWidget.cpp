@@ -8,10 +8,10 @@
 #include "FabricDFGOperators.h"
 #include "FabricDFGUICmdHandlerDCC.h"
 
-#include <QtGui/QApplication>
-#include <QtGui/QDialog>
-#include <QtGui/QBoxLayout>
-#include <QtGui/QPalette>
+#include <QApplication>
+#include <QDialog>
+#include <QBoxLayout>
+#include <QPalette>
 
 #ifdef _WIN32
   #include <windows.h>
