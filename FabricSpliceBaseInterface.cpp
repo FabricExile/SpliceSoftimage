@@ -794,7 +794,6 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
   }
 
   FabricCore::RTVal evalContext = _spliceGraph.getEvalContext();
-  evalContext.callMethod("", "_clear", 0, 0);
 
   // If the splice op has only output ports, then we should force an evaluation.
   // otherwize w must always provide one input param. (simple testing scenarios might not include input params).
