@@ -1450,6 +1450,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
       {
         evalContext = FabricCore::RTVal::Create(*client, "EvalContext", 0, 0);
         evalContext = evalContext.callMethod("EvalContext", "getInstance", 0, 0);
+        evalContext.setMember("host", FabricCore::RTVal::ConstructString(*client, "Softimage"));
       }
       catch(FabricCore::Exception e)
       {
