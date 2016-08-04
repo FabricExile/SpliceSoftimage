@@ -1375,7 +1375,6 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
   // check the FabricActive parameter.
   if (!(bool)ctxt.GetParameterValue(L"FabricActive"))
   {
-    pud->execFabricStep12 = false;
     return CStatus::OK;
   }
 
@@ -1394,104 +1393,44 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
     if (verbose) Application().LogMessage(functionName + L": amount of connected output ports = " + CString((LONG)numConnectedOutputPorts));
   }
 
-  // set the execFabric flags (i.e. check if we need to execute the Fabric steps 1 and 2).
-  bool activateExecFlagsForNextUpdate = false;
-  if ((LONG)ctxt.GetParameterValue(L"graphExecMode") == 0)
-  {
-    /* "always execute graph" */
-
-    // execute the Fabric steps 1 and 2 now, regardless of how things are connected.
-    pud->execFabricStep12 = true;
-  }
-  else
-  {
-    /* graphExecMode is "execute graph only if necessary" */
-
-    // CASE 1: this is the port reservedMatrixOut.
-    if (outputPort.GetName() == L"reservedMatrixOut")
-    {
-      if (numConnectedOutputPorts == 1)
-      {
-        // only the port reservedMatrixOut is connected, so we need to execute the Fabric steps 1 and 2 now.
-        pud->execFabricStep12 = true;
-      }
-      else
-      {
-        // aside from the port reservedMatrixOut we have at least one further connected port, so we will
-        // execute the Fabric steps 1 and 2 the next time this operator gets evaluated.
-        pud->execFabricStep12          = false;
-        activateExecFlagsForNextUpdate = true;
-      }
-    }
-
-    // case 2: this is not the port reservedMatrixOut.
-    else
-    {
-      // the only interesting case here is to check whether the port being currently evaluated has the same target
-      // as the reserved port (note: the reserved port's target is equal the operator's parent).
-      if (outputPortTarget.GetAsText() == op.GetParent().GetAsText())
-        pud->execFabricStep12 = true;
-    }
-  }
-
   // get pointers/refs at binding, graph & co.
   BaseInterface                                   *baseInterface  = pud->GetBaseInterface();
   FabricCore::Client                              *client         = pud->GetBaseInterface()->getClient();
   FabricCore::DFGBinding                          *binding        = pud->GetBaseInterface()->getBinding();
   FabricCore::DFGExec                              exec           = binding->getExec();
 
-  // Fabric Engine (step 0): update the base interface's evalContext.
+  // init the executeDFG flag and the value cache.
+  bool         executeDFG   = ((LONG)ctxt.GetParameterValue(L"graphExecMode") == 0); // 0: "always execute graph".
+  bool         cacheValues  = !executeDFG;
+  CValueArray &cachedValues = *pud->cachedValues;
+  if (!cacheValues)
   {
-    FabricCore::RTVal &evalContext = *baseInterface->getEvalContext();
-
-    if (!evalContext.isValid())
-    {
-      try
-      {
-        evalContext = FabricCore::RTVal::Create(*client, "EvalContext", 0, 0);
-        evalContext = evalContext.callMethod("EvalContext", "getInstance", 0, 0);
-        evalContext.setMember("host", FabricCore::RTVal::ConstructString(*client, "Softimage"));
-      }
-      catch(FabricCore::Exception e)
-      {
-        feLogError(e.getDesc_cstr());
-      }
-    }
-
-    if(evalContext.isValid())
-    {
-      try
-      {
-        evalContext.setMember("graph",           FabricCore::RTVal::ConstructString (*client, op.GetFullName().GetAsciiString()));
-        evalContext.setMember("time",            FabricCore::RTVal::ConstructFloat32(*client, (float)ctxt.GetTime().GetTime(CTime::Seconds)));
-        evalContext.setMember("currentFilePath", FabricCore::RTVal::ConstructString (*client, CString(Application().GetActiveProject().GetActiveScene().GetParameter(L"Filename").GetValue()).GetAsciiString()));
-      }
-      catch(FabricCore::Exception e)
-      {
-        feLogError(e.getDesc_cstr());
-      }
-    }
+    cachedValues.Clear();
+  }
+  else if (cachedValues.GetCount() != exec.getExecPortCount())
+  {
+    cachedValues.Resize(exec.getExecPortCount());
+    for (LONG i=0;i<cachedValues.GetCount();i++)
+      cachedValues[i].Clear();
   }
 
   // Fabric Engine (step 1): loop through all the DFG's input ports and set
-  //                         their values from the matching XSI ports or parameters.
-  if (pud->execFabricStep12)
+  //                         their values from the matching XSI ports or parameters
   {
     if (verbose) Application().LogMessage(L"------- SET DFG EXEC PORTS FROM XSI PARAMS/PORTS.");
     try
     {
-      for (int i=0;i<exec.getExecPortCount();i++)
+      for (int epi=0;epi<exec.getExecPortCount();epi++)
       {
-        bool done = false;
-
         // get/check DFG port.
-        if (exec.getExecPortType(i) != FabricCore::DFGPortType_In)
+        if (exec.getExecPortType(epi) != FabricCore::DFGPortType_In)
           continue;
 
-        CString portName                = exec.getExecPortName(i);
-        CString portResolvedType        = exec.getExecPortResolvedType(i);
+        CString portName                = exec.getExecPortName(epi);
+        CString portResolvedType        = exec.getExecPortResolvedType(epi);
         bool    portResolvedTypeIsArray = (portResolvedType.ReverseFindString(L"[]") != UINT_MAX);
         bool storable = true;
+        bool done     = false;
 
         // find a matching XSI port (singleton).
         if (!done && !portResolvedTypeIsArray)
@@ -1504,6 +1443,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
             //
             if (verbose) Application().LogMessage(functionName + L": transfer xsi port data to dfg port \"" + portName + L"\"");
 
+            //
             if      (portResolvedType == L"")
             {
               // do nothing.
@@ -1515,28 +1455,48 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                 KinematicState ks(xsiPortValue);
                 if (ks.IsValid())
                 {
-                  // put the XSI port's value into a std::vector.
+                  // get as array of floats.
                   MATH::CMatrix4 m = ks.GetTransform().GetMatrix4();
-                  std::vector <double> val(16);
-                  val[ 0] = m.GetValue(0, 0); // row 0.
-                  val[ 1] = m.GetValue(1, 0);
-                  val[ 2] = m.GetValue(2, 0);
-                  val[ 3] = m.GetValue(3, 0);
-                  val[ 4] = m.GetValue(0, 1); // row 1.
-                  val[ 5] = m.GetValue(1, 1);
-                  val[ 6] = m.GetValue(2, 1);
-                  val[ 7] = m.GetValue(3, 1);
-                  val[ 8] = m.GetValue(0, 2); // row 2.
-                  val[ 9] = m.GetValue(1, 2);
-                  val[10] = m.GetValue(2, 2);
-                  val[11] = m.GetValue(3, 2);
-                  val[12] = m.GetValue(0, 3); // row 3.
-                  val[13] = m.GetValue(1, 3);
-                  val[14] = m.GetValue(2, 3);
-                  val[15] = m.GetValue(3, 3);
+                  CFloatArray floats(16);
+                  floats[ 0] = (float)m.GetValue(0, 0); // row 0.
+                  floats[ 1] = (float)m.GetValue(1, 0);
+                  floats[ 2] = (float)m.GetValue(2, 0);
+                  floats[ 3] = (float)m.GetValue(3, 0);
+                  floats[ 4] = (float)m.GetValue(0, 1); // row 1.
+                  floats[ 5] = (float)m.GetValue(1, 1);
+                  floats[ 6] = (float)m.GetValue(2, 1);
+                  floats[ 7] = (float)m.GetValue(3, 1);
+                  floats[ 8] = (float)m.GetValue(0, 2); // row 2.
+                  floats[ 9] = (float)m.GetValue(1, 2);
+                  floats[10] = (float)m.GetValue(2, 2);
+                  floats[11] = (float)m.GetValue(3, 2);
+                  floats[12] = (float)m.GetValue(0, 3); // row 3.
+                  floats[13] = (float)m.GetValue(1, 3);
+                  floats[14] = (float)m.GetValue(2, 3);
+                  floats[15] = (float)m.GetValue(3, 3);
+                  
+                  // caching.
+                  bool set = true;
+                  if (cacheValues)
+                  {
+                    if (cachedValues[epi] == floats)
+                    {
+                      set = false;
+                    }
+                    else
+                    {
+                      cachedValues[epi] = floats;
+                      executeDFG = true;
+                    }
+                  }
 
-                  // set the DFG port from the std::vector.
-                  BaseInterface::SetValueOfArgMat44(*client, *binding, portName.GetAsciiString(), val);
+                  // set the DFG port from the array of floats.
+                  if (set)
+                  {
+                    std::vector <double> val(floats.GetCount());
+                    for (LONG i=0;i<floats.GetCount();i++)  val[i] = floats[i];
+                    BaseInterface::SetValueOfArgMat44(*client, *binding, portName.GetAsciiString(), val);
+                  }
                 }
               }
             }
@@ -1547,28 +1507,46 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                 KinematicState ks(xsiPortValue);
                 if (ks.IsValid())
                 {
-                  // put the XSI port's value into a std::vector.
+                  // get as array of floats.
                   MATH::CTransformation t = ks.GetTransform();
                   MATH::CQuaternion     q = t.GetRotationQuaternion();
-                  std::vector <double> val(10);
-                  val[0] = t.GetSclX();   // scaling.
-                  val[1] = t.GetSclY();
-                  val[2] = t.GetSclZ();
-                  val[3] = q.GetW();      // orientation.
-                  val[4] = q.GetX();
-                  val[5] = q.GetY();
-                  val[6] = q.GetZ();
-                  val[7] = t.GetPosX();   // position.
-                  val[8] = t.GetPosY();
-                  val[9] = t.GetPosZ();
+                  CFloatArray floats(16);
+                  floats[0] = (float)t.GetSclX();   // scaling.
+                  floats[1] = (float)t.GetSclY();
+                  floats[2] = (float)t.GetSclZ();
+                  floats[3] = (float)q.GetW();      // orientation.
+                  floats[4] = (float)q.GetX();
+                  floats[5] = (float)q.GetY();
+                  floats[6] = (float)q.GetZ();
+                  floats[7] = (float)t.GetPosX();   // position.
+                  floats[8] = (float)t.GetPosY();
+                  floats[9] = (float)t.GetPosZ();
 
-                  // set the DFG port from the std::vector.
-                  BaseInterface::SetValueOfArgXfo(*client, *binding, portName.GetAsciiString(), val);
+                  // caching.
+                  bool set = true;
+                  if (cacheValues)
+                  {
+                    if (cachedValues[epi] == floats)
+                    {
+                      set = false;
+                    }
+                    else
+                    {
+                      cachedValues[epi] = floats;
+                      executeDFG = true;
+                    }
+                  }
+
+                  // set the DFG port from the array of floats.
+                  if (set)
+                  {
+                    std::vector <double> val(floats.GetCount());
+                    for (LONG i=0;i<floats.GetCount();i++)  val[i] = floats[i];
+                    BaseInterface::SetValueOfArgXfo(*client, *binding, portName.GetAsciiString(), val);
+                  }
                 }
               }
             }
-
-            //
             else if (portResolvedType == L"PolygonMesh")
             {
               if (xsiPortValue.m_t == CValue::siRef)
@@ -1578,28 +1556,43 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                 ref.Set(s.GetSubString(0, s.ReverseFindString(L".")));
                 if (ref.IsValid())
                 {
-                  CString   errmsg;
-                  CString   wrnmsg;
-                  _polymesh val;
-                  if (dfgTools::GetGeometryFromX3DObject( X3DObject(ref),
-                                                          ctxt.GetTime().GetTime(),
-                                                          val,
-                                                          errmsg,
-                                                          wrnmsg  ) )
+                  // caching.
+                  bool set = true;
+                  if (cacheValues)
                   {
-                    // any warning?
-                    if (wrnmsg != L"")  Application().LogMessage(L"\"" + wrnmsg + L"\"", siWarningMsg);
-
-                    // verbose.
-                    if (verbose)  Application().LogMessage(functionName + L": polygon mesh \"" + ref.GetAsText() + L"\": #vertices = " + CString((ULONG)val.numVertices) + L"  #polygons = " + CString((ULONG)val.numPolygons) + L"  #samples = " + CString((ULONG)val.numSamples));
-
-                    // set the DFG port from val.
-                    BaseInterface::SetValueOfArgPolygonMesh(*client, *binding, portName.GetAsciiString(), val);
+                    /*
+                      for geometry we cannot rely on XSI::ProjectItem::GetEvaluationID(),
+                      because it's buggy: it doesn't increment when the geometry is modified.
+                    */
+                    executeDFG = true;
                   }
-                  else
+
+                  // set the DFG port.
+                  if (set)
                   {
-                    // failed to get geometry from X3DObject.
-                    Application().LogMessage(L"ERROR: failed to get geometry from \"" + ref.GetAsText() + "\": \"" + errmsg + L"\"", siWarningMsg);
+                    CString   errmsg;
+                    CString   wrnmsg;
+                    _polymesh val;
+                    if (dfgTools::GetGeometryFromX3DObject( X3DObject(ref),
+                                                            ctxt.GetTime().GetTime(),
+                                                            val,
+                                                            errmsg,
+                                                            wrnmsg  ) )
+                    {
+                      // any warning?
+                      if (wrnmsg != L"")  Application().LogMessage(L"\"" + wrnmsg + L"\"", siWarningMsg);
+
+                      // verbose.
+                      if (verbose)  Application().LogMessage(functionName + L": polygon mesh \"" + ref.GetAsText() + L"\": #vertices = " + CString((ULONG)val.numVertices) + L"  #polygons = " + CString((ULONG)val.numPolygons) + L"  #samples = " + CString((ULONG)val.numSamples));
+
+                      // set the DFG port from val.
+                      BaseInterface::SetValueOfArgPolygonMesh(*client, *binding, portName.GetAsciiString(), val);
+                    }
+                    else
+                    {
+                      // failed to get geometry from X3DObject.
+                      Application().LogMessage(L"ERROR: failed to get geometry from \"" + ref.GetAsText() + "\": \"" + errmsg + L"\"", siWarningMsg);
+                    }
                   }
                 }
               }
@@ -1627,7 +1620,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
             {
               // put the XSI port groups's values into a std::vector.
               MATH::CMatrix4 m;
-              std::vector <double> val(16 * portGroup.GetInstanceCount());
+              CFloatArray floats(16 * portGroup.GetInstanceCount());
               for (LONG i=0;i<portGroup.GetInstanceCount();i++)
               {
                 CValue xsiPortValue = op.GetInputValue(portName, portName, i);
@@ -1635,33 +1628,53 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                 if (ks.IsValid())   m = ks.GetTransform().GetMatrix4();
                 else                m . SetIdentity();
                 LONG vi = 16 * i;
-                val[vi + 0] = m.GetValue(0, 0); // row 0.
-                val[vi + 1] = m.GetValue(1, 0);
-                val[vi + 2] = m.GetValue(2, 0);
-                val[vi + 3] = m.GetValue(3, 0);
-                val[vi + 4] = m.GetValue(0, 1); // row 1.
-                val[vi + 5] = m.GetValue(1, 1);
-                val[vi + 6] = m.GetValue(2, 1);
-                val[vi + 7] = m.GetValue(3, 1);
-                val[vi + 8] = m.GetValue(0, 2); // row 2.
-                val[vi + 9] = m.GetValue(1, 2);
-                val[vi +10] = m.GetValue(2, 2);
-                val[vi +11] = m.GetValue(3, 2);
-                val[vi +12] = m.GetValue(0, 3); // row 3.
-                val[vi +13] = m.GetValue(1, 3);
-                val[vi +14] = m.GetValue(2, 3);
-                val[vi +15] = m.GetValue(3, 3);
+                floats[vi + 0] = (float)m.GetValue(0, 0); // row 0.
+                floats[vi + 1] = (float)m.GetValue(1, 0);
+                floats[vi + 2] = (float)m.GetValue(2, 0);
+                floats[vi + 3] = (float)m.GetValue(3, 0);
+                floats[vi + 4] = (float)m.GetValue(0, 1); // row 1.
+                floats[vi + 5] = (float)m.GetValue(1, 1);
+                floats[vi + 6] = (float)m.GetValue(2, 1);
+                floats[vi + 7] = (float)m.GetValue(3, 1);
+                floats[vi + 8] = (float)m.GetValue(0, 2); // row 2.
+                floats[vi + 9] = (float)m.GetValue(1, 2);
+                floats[vi +10] = (float)m.GetValue(2, 2);
+                floats[vi +11] = (float)m.GetValue(3, 2);
+                floats[vi +12] = (float)m.GetValue(0, 3); // row 3.
+                floats[vi +13] = (float)m.GetValue(1, 3);
+                floats[vi +14] = (float)m.GetValue(2, 3);
+                floats[vi +15] = (float)m.GetValue(3, 3);
               }
 
-              // set the DFG port from the std::vector.
-              BaseInterface::SetValueOfArgMat44Array(*client, *binding, portName.GetAsciiString(), val);
+              // caching.
+              bool set = true;
+              if (cacheValues)
+              {
+                if (cachedValues[epi] == floats)
+                {
+                  set = false;
+                }
+                else
+                {
+                  cachedValues[epi] = floats;
+                  executeDFG = true;
+                }
+              }
+
+              // set the DFG port from the array of floats.
+              if (set)
+              {
+                std::vector <double> val(floats.GetCount());
+                for (LONG i=0;i<floats.GetCount();i++)  val[i] = floats[i];
+                BaseInterface::SetValueOfArgMat44Array(*client, *binding, portName.GetAsciiString(), val);
+              }
             }
             else if (portResolvedType == L"Xfo[]")
             {
-              // put the XSI port groups's values into a std::vector.
+              // get as array of floats.
               MATH::CTransformation t;
               MATH::CQuaternion     q;
-              std::vector <double> val(10 * portGroup.GetInstanceCount());
+              CFloatArray floats(10 * portGroup.GetInstanceCount());
               for (LONG i=0;i<portGroup.GetInstanceCount();i++)
               {
                 CValue xsiPortValue = op.GetInputValue(portName, portName, i);
@@ -1670,20 +1683,40 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                 else                t . SetIdentity();
                 q = t.GetRotationQuaternion();
                 LONG vi = 10 * i;
-                val[vi + 0] = t.GetSclX();   // scaling.
-                val[vi + 1] = t.GetSclY();
-                val[vi + 2] = t.GetSclZ();
-                val[vi + 3] = q.GetW();      // orientation.
-                val[vi + 4] = q.GetX();
-                val[vi + 5] = q.GetY();
-                val[vi + 6] = q.GetZ();
-                val[vi + 7] = t.GetPosX();   // position.
-                val[vi + 8] = t.GetPosY();
-                val[vi + 9] = t.GetPosZ();
+                floats[vi + 0] = (float)t.GetSclX();   // scaling.
+                floats[vi + 1] = (float)t.GetSclY();
+                floats[vi + 2] = (float)t.GetSclZ();
+                floats[vi + 3] = (float)q.GetW();      // orientation.
+                floats[vi + 4] = (float)q.GetX();
+                floats[vi + 5] = (float)q.GetY();
+                floats[vi + 6] = (float)q.GetZ();
+                floats[vi + 7] = (float)t.GetPosX();   // position.
+                floats[vi + 8] = (float)t.GetPosY();
+                floats[vi + 9] = (float)t.GetPosZ();
               }
 
-              // set the DFG port from the std::vector.
-              BaseInterface::SetValueOfArgXfoArray(*client, *binding, portName.GetAsciiString(), val);
+              // caching.
+              bool set = true;
+              if (cacheValues)
+              {
+                if (cachedValues[epi] == floats)
+                {
+                  set = false;
+                }
+                else
+                {
+                  cachedValues[epi] = floats;
+                  executeDFG = true;
+                }
+              }
+
+              // set the DFG port from the array of floats.
+              if (set)
+              {
+                std::vector <double> val(floats.GetCount());
+                for (LONG i=0;i<floats.GetCount();i++)  val[i] = floats[i];
+                BaseInterface::SetValueOfArgXfoArray(*client, *binding, portName.GetAsciiString(), val);
+              }
             }
           }
         }
@@ -1702,8 +1735,26 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
             //
             CValue xsiValue = xsiParam.GetValue();
 
-            //
-            if      (   portResolvedType == "Boolean")    {
+            // caching.
+            bool set = true;
+            if (cacheValues)
+            {
+              if (cachedValues[epi] == xsiValue)
+              {
+                set = false;
+              }
+              else
+              {
+                cachedValues[epi] = xsiValue;
+                executeDFG = true;
+              }
+            }
+
+            // set the DFG port from the xsiValue.
+            if      (  !set  )                              {
+                                                              // do nothing.
+                                                            }
+            else if (   portResolvedType == "Boolean")      {
                                                               bool val = (bool)xsiValue;
                                                               BaseInterface::SetValueOfArgBoolean(*client, *binding, portName.GetAsciiString(), val);
                                                             }
@@ -1711,7 +1762,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                      || portResolvedType == "SInt8"
                      || portResolvedType == "SInt16"
                      || portResolvedType == "SInt32"
-                     || portResolvedType == "SInt64" )    {
+                     || portResolvedType == "SInt64" )      {
                                                               int val = (int)(LONG)xsiValue;
                                                               BaseInterface::SetValueOfArgSInt(*client, *binding, portName.GetAsciiString(), val);
                                                             }
@@ -1723,17 +1774,17 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
                      || portResolvedType == "Size"
                      || portResolvedType == "UInt32"
                      || portResolvedType == "DataSize"
-                     || portResolvedType == "UInt64" )    {
+                     || portResolvedType == "UInt64" )      {
                                                               unsigned int val = (unsigned int)(ULONG)xsiValue;
                                                               BaseInterface::SetValueOfArgUInt(*client, *binding, portName.GetAsciiString(), val);
                                                             }
             else if (   portResolvedType == "Scalar"
                      || portResolvedType == "Float32"
-                     || portResolvedType == "Float64")    {
+                     || portResolvedType == "Float64")      {
                                                               double val = (double)xsiValue;
                                                               BaseInterface::SetValueOfArgFloat(*client, *binding, portName.GetAsciiString(), val);
                                                             }
-            else if (   portResolvedType == "String" )    {
+            else if (   portResolvedType == "String" )      {
                                                               std::string val = CString(xsiValue).GetAsciiString();
                                                               BaseInterface::SetValueOfArgString(*client, *binding, portName.GetAsciiString(), val);
                                                             }
@@ -1763,10 +1814,44 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
   }
 
   // Fabric Engine (step 2): execute the DFG.
-  if (pud->execFabricStep12)
+  if (executeDFG)
   {
     if (verbose) Application().LogMessage(L"------- EXECUTE DFG.");
-    pud->execFabricStep12 = false;
+
+    // update the base interface's evalContext.
+    {
+      FabricCore::RTVal &evalContext = *baseInterface->getEvalContext();
+
+      if (!evalContext.isValid())
+      {
+        try
+        {
+          evalContext = FabricCore::RTVal::Create(*client, "EvalContext", 0, 0);
+          evalContext = evalContext.callMethod("EvalContext", "getInstance", 0, 0);
+          evalContext.setMember("host", FabricCore::RTVal::ConstructString(*client, "Softimage"));
+        }
+        catch(FabricCore::Exception e)
+        {
+          feLogError(e.getDesc_cstr());
+        }
+      }
+
+      if(evalContext.isValid())
+      {
+        try
+        {
+          evalContext.setMember("graph",           FabricCore::RTVal::ConstructString (*client, op.GetFullName().GetAsciiString()));
+          evalContext.setMember("time",            FabricCore::RTVal::ConstructFloat32(*client, (float)ctxt.GetTime().GetTime(CTime::Seconds)));
+          evalContext.setMember("currentFilePath", FabricCore::RTVal::ConstructString (*client, CString(Application().GetActiveProject().GetActiveScene().GetParameter(L"Filename").GetValue()).GetAsciiString()));
+        }
+        catch(FabricCore::Exception e)
+        {
+          feLogError(e.getDesc_cstr());
+        }
+      }
+    }
+
+    // execute DFG.
     try
     {
       binding->execute();
@@ -1776,6 +1861,10 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
       std::string s = functionName.GetAsciiString() + std::string("(step 2): ") + (e.getDesc_cstr() ? e.getDesc_cstr() : "\"\"");
       feLogError(s);
     }
+  }
+  else
+  {
+    if (verbose) Application().LogMessage(L"------- SKIPPING EXECUTION DFG.");
   }
 
   // Fabric Engine (step 3): set the XSI output port from the matching DFG output port and/or set the ICE data.
@@ -2073,12 +2162,6 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
     }
   }
   
-  // activate exec flags?
-  if (activateExecFlagsForNextUpdate)
-  {
-    pud->execFabricStep12 = true;
-  }
-
   // done.
   return CStatus::OK;
 }

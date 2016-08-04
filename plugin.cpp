@@ -336,13 +336,6 @@ CStatus helpFnct_siEventOpenSave(CRef &ctxt, int doWhat, CRef &modelRef)
         feLogError(s);
       }
       dfgTools::ClearUndoHistory();
-
-      // when importing models: make sure that the DFG gets
-      // properly evaluated by setting the according flag.
-      if (modelRef.IsValid())
-      {
-        pud->execFabricStep12 = true;
-      }
     }
 
     // do nothing.

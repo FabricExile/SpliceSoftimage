@@ -242,8 +242,9 @@ struct _opUserData
 
  public:
 
-  long int updateCounter;   // counts how many times the operator's _Update() function was called.
-  bool execFabricStep12;    // true: execute the Fabric steps 1 and 2 (i.e. set dfg args and execute graph).
+  long int updateCounter;           // counts how many times the operator's _Update() function was called.
+
+  XSI::CValueArray *cachedValues;   // cached input values.
 
   // this is used by the functions that create new operators.
   // note: we need to make this a global thing, because we cannot access
@@ -261,8 +262,8 @@ struct _opUserData
   _opUserData(unsigned int operatorObjectID)
   {
     // init
-    updateCounter     = 0;
-    execFabricStep12  = false;
+    updateCounter = 0;
+    cachedValues  = new XSI::CValueArray;
 
     // create base interface.
     m_baseInterface = new BaseInterface(feLog, feLogError);
@@ -277,6 +278,9 @@ struct _opUserData
   {
     if (m_baseInterface)
     {
+      // clean up.
+      delete cachedValues;
+
       // delete the base interface.
       delete m_baseInterface;
 
