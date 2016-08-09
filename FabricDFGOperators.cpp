@@ -1840,9 +1840,7 @@ XSIPLUGINCALLBACK CStatus CanvasOp_Update(CRef &in_ctxt)
       {
         try
         {
-          evalContext.setMember("graph",           FabricCore::RTVal::ConstructString (*client, op.GetFullName().GetAsciiString()));
           evalContext.setMember("time",            FabricCore::RTVal::ConstructFloat32(*client, (float)ctxt.GetTime().GetTime(CTime::Seconds)));
-          evalContext.setMember("currentFilePath", FabricCore::RTVal::ConstructString (*client, CString(Application().GetActiveProject().GetActiveScene().GetParameter(L"Filename").GetValue()).GetAsciiString()));
         }
         catch(FabricCore::Exception e)
         {

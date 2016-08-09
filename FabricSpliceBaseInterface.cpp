@@ -730,21 +730,6 @@ bool convertBasicOutputParameter(const CString &dataType, CValue &value, FabricC
 }
 
 
-void FabricSpliceBaseInterface::addDirtyInput(std::string portName, FabricCore::RTVal evalContext, int index){
-  if(index == -1)
-  {
-    FabricCore::RTVal input = FabricSplice::constructStringRTVal(portName.c_str());
-    evalContext.callMethod("", "_addDirtyInput", 1, &input);
-  }
-  else{
-    FabricCore::RTVal args[2] = { 
-      FabricSplice::constructStringRTVal(portName.c_str()),
-      FabricSplice::constructSInt32RTVal(index)
-    };
-    evalContext.callMethod("", "_addDirtyInput", 2, &args[0]);
-  }
-}
-
 bool FabricSpliceBaseInterface::checkIfValueChangedAndDirtyInput(CValue value, std::vector<XSI::CValue> &cachedValues, bool alwaysEvaluate, std::string portName, FabricCore::RTVal evalContext, int index){
   if(index == -1){
     cachedValues.resize(1);
@@ -755,7 +740,6 @@ bool FabricSpliceBaseInterface::checkIfValueChangedAndDirtyInput(CValue value, s
 
   bool result = false;
   if(cachedValues[index] != value || alwaysEvaluate) {
-    addDirtyInput(portName, evalContext, index);
     cachedValues[index] = value;
     result = true;
   }
@@ -810,7 +794,6 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
   }
 
   FabricCore::RTVal evalContext = _spliceGraph.getEvalContext();
-  evalContext.callMethod("", "_clear", 0, 0);
 
   // If the splice op has only output ports, then we should force an evaluation.
   // otherwize w must always provide one input param. (simple testing scenarios might not include input params).
@@ -929,7 +912,6 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
         ICEAttribute iceAttr = xsiGeo.GetICEAttributeFromName(iceAttrStr);
         if(iceAttr.IsValid()){
           convertInputICEAttribute(splicePort, it->second.dataType, iceAttr, xsiGeo);
-          addDirtyInput(portName, evalContext, -1);
           result = true;
         }
       }
@@ -999,7 +981,6 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
         FabricCore::RTVal currVal = splicePort.getRTVal();
         if(!currVal.callMethod("Boolean", "almostEqual", 1, &rtVal).getBoolean()){
           splicePort.setRTVal(rtVal);
-          addDirtyInput(portName, evalContext, -1);
           result = true;
         }
       }
@@ -1019,7 +1000,6 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
           if(arrayVal.getArraySize() <= i)
           {
             arrayVal.callMethod("", "push", 1, &rtVal);
-            addDirtyInput(portName, evalContext, i);
             result = true;
           }
           else
@@ -1027,7 +1007,6 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
             FabricCore::RTVal currVal = arrayVal.getArrayElement(i);
             if(!currVal.callMethod("Boolean", "almostEqual", 1, &rtVal).getBoolean()){
               arrayVal.setArrayElement(i, rtVal);
-              addDirtyInput(portName, evalContext, i);
               result = true;
             }
           }
@@ -1058,7 +1037,6 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
         convertInputPolygonMesh(mesh, rtVal);
         splicePort.setRTVal(rtVal);
 
-        addDirtyInput(portName, evalContext, -1);
         result = true;
       }
       else if(it->second.dataType == "PolygonMesh[]")
@@ -1091,7 +1069,6 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
             convertInputPolygonMesh( mesh, rtVal);
             arrayVal.setArrayElement(i, rtVal);
           }
-          addDirtyInput(portName, evalContext, i);
           result = true;
         }
         splicePort.setRTVal(arrayVal);
@@ -1116,7 +1093,6 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
         FabricCore::RTVal rtVal = splicePort.getRTVal();
         convertInputLines( curveList, rtVal);
         splicePort.setRTVal(rtVal);
-        addDirtyInput(portName, evalContext, -1);
         result = true;
       }
       else if(it->second.dataType == "Lines[]")
@@ -1149,7 +1125,6 @@ bool FabricSpliceBaseInterface::transferInputPorts(XSI::CRef opRef, OperatorCont
             convertInputLines( curveList, rtVal);
             arrayVal.setArrayElement(i, rtVal);
           }
-          addDirtyInput(portName, evalContext, i);
           result = true;
         }
         splicePort.setRTVal(arrayVal);
@@ -1390,10 +1365,7 @@ CStatus FabricSpliceBaseInterface::evaluate()
 
   // setup the context
   FabricCore::RTVal context = _spliceGraph.getEvalContext();
-  context.setMember("host", FabricSplice::constructStringRTVal("Softimage"));
-  context.setMember("graph", FabricSplice::constructStringRTVal(ofRef.GetAsText().GetAsciiString()));
   context.setMember("time", FabricSplice::constructFloat32RTVal(CTime().GetTime( CTime::Seconds )));
-  context.setMember("currentFilePath", FabricSplice::constructStringRTVal(xsiGetLastLoadedScene().GetAsciiString()));
 
   _spliceGraph.evaluate();
   return CStatus::OK;
