@@ -64,24 +64,29 @@ class FabricDFGWidget : public FabricUI::DFG::DFGCombinedWidget
       QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
       switch (keyEvent->key())
       {
-        case 89:  // redo.
+        case Qt::Key_Y:  // redo.
         {
-          XSI::CValueArray args;
-          XSI::CValue val;
-          XSI::Application().ExecuteCommand(L"Redo", args, val);
-          return true;
-        }
-        case 90:  // undo.
+          if (keyEvent->modifiers().testFlag(Qt::ControlModifier))
+          {
+            XSI::CValueArray args;
+            XSI::CValue val;
+            XSI::Application().ExecuteCommand(L"Redo", args, val);
+            return true;
+          }
+        } break;
+        case Qt::Key_Z:  // undo.
         {
-          XSI::CValueArray args;
-          XSI::CValue val;
-          XSI::Application().ExecuteCommand(L"Undo", args, val);
-          return true;
-        }
+          if (keyEvent->modifiers().testFlag(Qt::ControlModifier))
+          {
+            XSI::CValueArray args;
+            XSI::CValue val;
+            XSI::Application().ExecuteCommand(L"Undo", args, val);
+            return true;
+          }
+        } break;
         default:
         {
-          break;
-        }
+        } break;
       }
     }
     return false;
