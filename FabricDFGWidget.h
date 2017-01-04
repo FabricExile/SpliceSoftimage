@@ -86,7 +86,10 @@ class FabricDFGWidget : public FabricUI::DFG::DFGCombinedWidget
         } break;
         default:
         {
-        } break;
+          // the Canvas window in Softimage is a modal
+          // dialog, so we accept all key press events.
+          return true;
+        }
       }
     }
     return false;
