@@ -362,6 +362,29 @@ QString DFGUICmdHandlerDCC::dfgDoAddGraph(
   return result;
 }
 
+QString DFGUICmdHandlerDCC::dfgDoImportNodeFromJSON(
+  FabricCore::DFGBinding const &binding,
+  QString execPath,
+  FabricCore::DFGExec const &exec,
+  QString nodeName,
+  QString filePath,
+  QPointF pos
+  )
+{
+  std::string cmdName(FabricUI::DFG::DFGUICmd_ImportNodeFromJSON::CmdName());
+  std::vector<std::string> args;
+
+  args.push_back(getDCCObjectNameFromBinding(binding));
+  args.push_back(ToStdString(execPath));
+  args.push_back(ToStdString(nodeName));
+  args.push_back(ToStdString(filePath));
+  EncodePosition(pos, args);
+
+  QString result;
+  execCmd(cmdName, args, result);
+  return result;
+}
+
 QString DFGUICmdHandlerDCC::dfgDoAddFunc(
   FabricCore::DFGBinding const &binding,
   QString execPath,
