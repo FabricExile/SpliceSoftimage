@@ -52,6 +52,9 @@ BaseInterface::BaseInterface(void (*in_logFunc)     (void *, const char *, unsig
   {
     try
     {
+      std::string version = "Fabric Engine version " + std::string(FabricCore::GetVersionWithBuildInfoStr());
+      logFunc(NULL, version.c_str(), version.length());
+
       // create a client
       const int guarded = 1;
       s_client = FabricSplice::ConstructClient(guarded);
