@@ -1614,7 +1614,7 @@ SICALLBACK FabricCanvasLogStatus_Init(CRef &in_ctxt)
 
 SICALLBACK FabricCanvasLogStatus_Execute(CRef &in_ctxt)
 {
-  CString s = L"   Fabric Engine Plugin, Fabric Core v. " + CString(FabricCore::GetVersionStr()) + L"   ";
+  CString s = L"   Fabric Engine Plugin, Fabric Core v. " + CString(FabricCore::GetVersionWithBuildInfoStr()) + L"   ";
   CString line;
   for (int i=0;i<s.Length();i++)
     line += L"-";
