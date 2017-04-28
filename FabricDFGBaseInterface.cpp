@@ -86,6 +86,7 @@ BaseInterface::BaseInterface(void (*in_logFunc)     (void *, const char *, unsig
     // create an empty binding
     m_binding = s_host.createBindingToNewGraph();
     m_binding.setNotificationCallback(bindingNotificationCallback, this);
+    m_binding.setMetadata("host_app", "Softimage", false);
 
     // command handler.
     m_cmdHandler = new DFGUICmdHandlerDCC(this);
@@ -199,6 +200,7 @@ void BaseInterface::setFromJSON(const std::string &json)
   {
     m_binding = s_host.createBindingFromJSON(json.c_str());
     m_binding.setNotificationCallback(bindingNotificationCallback, this);
+    m_binding.setMetadata("host_app", "Softimage", false);
   }
   catch (FabricCore::Exception e)
   {
