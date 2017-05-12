@@ -821,7 +821,7 @@ QStringList DFGUICmdHandlerDCC::dfgDoExplodeNode(
   return result;
 }
 
-void DFGUICmdHandlerDCC::dfgDoAddBackDrop(
+QString DFGUICmdHandlerDCC::dfgDoAddBackDrop(
   FabricCore::DFGBinding const &binding,
   QString execPath,
   FabricCore::DFGExec const &exec,
@@ -837,8 +837,9 @@ void DFGUICmdHandlerDCC::dfgDoAddBackDrop(
   args.push_back(ToStdString(title));
   EncodePosition(pos, args);
 
-  std::string output;
-  execCmd(cmdName, args, output);
+  QString result;
+  execCmd(cmdName, args, result);
+  return result;
 }
 
 void DFGUICmdHandlerDCC::dfgDoSetNodeComment(
